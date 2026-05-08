@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build
+dist/
+build/
+
+# Uploads
+server/src/uploads/temp/*
+server/src/uploads/parsed/*
+server/src/uploads/originals/*
+!server/src/uploads/temp/.gitkeep
+!server/src/uploads/parsed/.gitkeep
+!server/src/uploads/originals/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Coverage
+coverage/
+
+# Docker
+docker-data/
