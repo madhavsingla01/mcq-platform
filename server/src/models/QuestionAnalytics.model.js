@@ -7,7 +7,7 @@ const questionAnalyticsSchema = new mongoose.Schema(
       ref: 'Question',
       required: true,
       unique: true,
-      index: true,
+      // index: true,
     },
     quizId: {
       type: mongoose.Schema.Types.ObjectId,

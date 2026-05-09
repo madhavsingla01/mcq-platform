@@ -120,7 +120,7 @@ quizSchema.pre('validate', function normalizeQuizVisibility(next) {
 
 // Indexes
 quizSchema.index({ uploader: 1, createdAt: -1 });
-quizSchema.index({ shareCode: 1 });
+// quizSchema.index({ shareCode: 1 });
 quizSchema.index({ isPublic: 1, createdAt: -1 });
 quizSchema.index({ visibility: 1, createdAt: -1 });
 quizSchema.index({ tags: 1 });
