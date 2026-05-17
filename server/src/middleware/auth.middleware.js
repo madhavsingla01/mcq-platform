@@ -13,6 +13,15 @@ import User from '../models/User.model.js';
  */
 export const protect = async (req, res, next) => {
   try {
+    // Debug: log cookie keys and presence (no token values)
+    try {
+      const keys = Object.keys(req.cookies || {}).join(', ');
+      // eslint-disable-next-line no-console
+      console.log(`[auth.protect] cookies: ${keys || '<none>'}, hasAccessToken: ${!!req.cookies?.accessToken}, hasRefreshToken: ${!!req.cookies?.refreshToken}`);
+    } catch (e) {
+      // ignore logging failures
+    }
+
     const token = req.cookies?.accessToken;
 
     if (!token) {
@@ -41,17 +50,25 @@ export const optionalAuth = async (req, res, next) => {
   try {
     const token = req.cookies?.accessToken;
 
-    if (token) {
-      const decoded = jwt.verify(token, env.JWT_SECRET);
-      const user = await User.findById(decoded.id).select('-password -refreshToken');
-      if (user) {
-        req.user = user;
-      }
+    if (!token) {
+      return next();
     }
+
+    const decoded = jwt.verify(token, env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select('-password -refreshToken');
+
+    if (user) {
+      req.user = user;
+    }
+
+    return next();
   } catch (error) {
-    // Token invalid — continue as guest
+    if (req.cookies?.refreshToken) {
+      return next(new AppError('Invalid or expired token.', 401));
+    }
+
+    return next();
   }
-  next();
 };
 
 /**

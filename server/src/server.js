@@ -13,6 +13,7 @@ import { fileURLToPath } from 'url';
 import http from 'http';
 import { Server } from 'socket.io';
 import { startCleanupWorker } from './jobs/cleanup.worker.js';
+import { setupSessionSocket } from './sockets/sessionSocket.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -46,13 +47,8 @@ const startServer = async () => {
       }
     });
 
-    // Basic socket connection stub
-    io.on('connection', (socket) => {
-      logger.debug(`Socket connected: ${socket.id}`);
-      socket.on('disconnect', () => {
-        logger.debug(`Socket disconnected: ${socket.id}`);
-      });
-    });
+    // Setup session socket handlers (chat, presence)
+    setupSessionSocket(io);
 
     // Attach io to app so routes can use it
     app.set('io', io);

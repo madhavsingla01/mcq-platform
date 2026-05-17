@@ -23,6 +23,10 @@ import attemptsRoutes from './routes/attempts.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
 import aiRoutes from './routes/ai.routes.js';
 import communityRoutes from './routes/community.routes.js';
+import sessionRoutes from './routes/session.routes.js';
+import adminRoutes from './routes/admin.routes.js';
+import chatRoutes from './routes/chat.routes.js';
+import activityRoutes from './routes/activity.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -74,6 +78,30 @@ app.use('/api/v1/attempts', attemptsRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/ai', aiRoutes);
 app.use('/api/v1/community', communityRoutes);
+app.use('/api/v1/sessions', sessionRoutes);
+app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/chat', chatRoutes);
+app.use('/api/v1/activity', activityRoutes);
+
+// ===== SPA FALLBACK =====
+// Serve frontend static files in production, or redirect to Vite dev server in development.
+const clientDistPath = path.join(__dirname, '../../client/dist');
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(clientDistPath));
+}
+
+app.get('*', (req, res, next) => {
+  if (req.originalUrl.startsWith('/api/')) {
+    return next();
+  }
+  
+  if (process.env.NODE_ENV === 'development') {
+    // Redirect direct backend frontend route hits (localhost:5000/admin) to frontend dev server
+    return res.redirect(`http://localhost:5173${req.originalUrl}`);
+  }
+  
+  res.sendFile(path.join(clientDistPath, 'index.html'));
+});
 
 // ===== ERROR HANDLING =====
 app.use(notFoundHandler);

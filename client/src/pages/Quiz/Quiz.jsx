@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../api/axios';
 import { Badge, Button, Card, Spinner } from '../../components/ui';
-import QuestionCard from '../../components/quiz/QuestionCard';
-import QuizNavSidebar from '../../components/quiz/QuizNavSidebar';
+import QuizLayout from '../../components/workspace/QuizLayout';
 import { useQuizStore } from '../../store/quizStore';
+import { useUIStore } from '../../store/uiStore';
+import { useAuthStore } from '../../store/authStore';
+import { useSessionStore } from '../../store/sessionStore';
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import {
   clearAttemptSnapshot,
-  formatDurationMs,
   getGuestSessionId,
   loadActiveAttemptRef,
   loadAttemptSnapshot,
@@ -46,8 +48,14 @@ export default function Quiz() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [quickModeToggle, setQuickModeToggle] = useState(false);
   const [recoveryNotice, setRecoveryNotice] = useState('');
+  const [quizEntered, setQuizEntered] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+  const [shareCopied, setShareCopied] = useState(false);
+  const user = useAuthStore((s) => s.user);
+  const { createSession } = useSessionStore();
+
+  const isCreator = user && quiz?.uploader && (quiz.uploader === user._id || quiz.uploader?._id === user._id);
 
   const currentQuestion = questions[currentIndex] || null;
   const answeredCount = useMemo(
@@ -65,9 +73,18 @@ export default function Quiz() {
 
       const sessionId = getGuestSessionId();
       const activeAttemptRef = loadActiveAttemptRef(quizId);
-      const localSnapshot = activeAttemptRef?.attemptId
+      let localSnapshot = activeAttemptRef?.attemptId
         ? loadAttemptSnapshot(activeAttemptRef.attemptId)
         : null;
+
+      // Discard stale snapshots: completed attempts or session mismatch
+      if (localSnapshot && (localSnapshot.isSubmitted || (localSnapshot.sessionId && localSnapshot.sessionId !== sessionId))) {
+        clearAttemptSnapshot({
+          attemptId: localSnapshot.attemptId,
+          quizId,
+        });
+        localSnapshot = null;
+      }
 
       try {
         let quizData = localSnapshot?.quiz || null;
@@ -141,44 +158,29 @@ export default function Quiz() {
     };
   }, [bootstrapQuiz, quizId, reset, teardownRuntime]);
 
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (!isStarted || isSubmitted) {
-        return;
-      }
 
-      if (event.key === 'ArrowRight') {
-        nextQuestion();
-      }
-
-      if (event.key === 'ArrowLeft') {
-        prevQuestion();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isStarted, isSubmitted, nextQuestion, prevQuestion]);
-
-  const handleStart = async () => {
+  const handleStart = async (forceNewAttempt = false) => {
     try {
       setLoading(true);
       setError('');
       const sessionId = getGuestSessionId();
       const activeAttemptRef = loadActiveAttemptRef(quizId);
 
-      if (activeAttemptRef?.attemptId) {
+      if (forceNewAttempt && activeAttemptRef?.attemptId) {
         clearAttemptSnapshot({
           attemptId: activeAttemptRef.attemptId,
           quizId,
         });
       }
 
+      if (forceNewAttempt) {
+        reset({ clearPersisted: true });
+      }
+
       const response = await api.post(
         `/quiz/${quizId}/attempt`,
         {
-          isQuickMode: quiz?.quickModeEnabled !== false && quickModeToggle,
-          forceNew: true,
+          forceNew: forceNewAttempt,
           sessionId,
         },
         {
@@ -194,10 +196,25 @@ export default function Quiz() {
         questions,
       });
       setRecoveryNotice('');
+      return true;
     } catch (requestError) {
       setError('Failed to start attempt');
+      return false;
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResume = () => {
+    setQuizEntered(true);
+  };
+
+  const handleStartNew = async () => {
+    if (window.confirm('This will discard your current progress. Are you sure?')) {
+      const success = await handleStart(true);
+      if (success) {
+        setQuizEntered(true);
+      }
     }
   };
 
@@ -239,6 +256,26 @@ export default function Quiz() {
     }
   };
 
+  // Keyboard shortcuts via centralized hook
+  useKeyboardShortcuts({
+    onPrev: prevQuestion,
+    onNext: nextQuestion,
+    onSelectOption: (index) => {
+      if (!currentQuestion || !isStarted || isSubmitted) return;
+      const options = currentQuestion.options || [];
+      if (index < options.length) {
+        useQuizStore.getState().selectAnswer(currentQuestion._id, options[index].label);
+      }
+    },
+    onFlag: () => {
+      if (currentQuestion) {
+        useQuizStore.getState().toggleReview(currentQuestion._id);
+      }
+    },
+    onSubmit: handleSubmit,
+    enabled: isStarted && !isSubmitted && quizEntered,
+  });
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', padding: '72px 0' }}>
@@ -259,7 +296,7 @@ export default function Quiz() {
     return <div style={{ textAlign: 'center', padding: '48px 16px' }}>No questions found.</div>;
   }
 
-  if (!isStarted) {
+  if (!quizEntered || isSubmitted) {
     return (
       <>
         <div className="quiz-entry-shell">
@@ -280,53 +317,122 @@ export default function Quiz() {
             </div>
 
             <div className="quiz-entry-body">
-              <div className="quick-mode-panel">
-                <div className="quick-mode-copy">
-                  <span className="quick-mode-label">Quick Mode</span>
-                  <h2>Reveal answer feedback instantly</h2>
-                  <p>
-                    Answers lock on selection. Correct answer, correctness state, and explanation are shown immediately.
-                  </p>
+              <div className="quiz-entry-body-grid">
+                <div className="entry-left">
+                  <div className="quiz-entry-grid">
+                    <div className="quiz-entry-stat">
+                      <span>Timer Mode</span>
+                      <strong>{quiz?.settings?.timerMode === 'strict' ? 'Strict' : quiz?.settings?.timerMode === 'soft' ? 'Soft' : 'None'}</strong>
+                    </div>
+                    <div className="quiz-entry-stat">
+                      <span>Instant Feedback</span>
+                      <strong>{quiz?.settings?.instantFeedback ? 'Enabled' : 'Disabled'}</strong>
+                    </div>
+                    <div className="quiz-entry-stat">
+                      <span>Question Review</span>
+                      <strong>{quiz?.settings?.allowReview === false ? 'Restricted' : 'Allowed'}</strong>
+                    </div>
+                    <div className="quiz-entry-stat">
+                      <span>Explanation Reveal</span>
+                      <strong>{quiz?.settings?.showExplanation === false ? 'Hidden' : 'Available'}</strong>
+                    </div>
+                    <div className="quiz-entry-stat">
+                      <span>Recovery</span>
+                      <strong>Auto Resume</strong>
+                    </div>
+                  </div>
+
+                  {recoveryNotice ? (
+                    <div className="quiz-status-banner info" style={{ marginTop: 16 }}>{recoveryNotice}</div>
+                  ) : null}
                 </div>
 
-                <button
-                  type="button"
-                  className={`quick-mode-toggle ${quickModeToggle ? 'is-enabled' : ''}`}
-                  aria-pressed={quickModeToggle && quiz?.quickModeEnabled !== false}
-                  disabled={quiz?.quickModeEnabled === false}
-                  onClick={() => setQuickModeToggle((value) => !value)}
-                >
-                  <span className="quick-mode-toggle-track" />
-                  <span className="quick-mode-toggle-thumb" />
-                </button>
+                <aside className="entry-actions">
+                  <div className="entry-actions-card">
+                    <div className="quiz-entry-badges" style={{ marginBottom: 8 }}>
+                      <Badge>{questions.length} Questions</Badge>
+                      <Badge variant="warning">
+                        {quiz?.settings?.timeLimit ? `${quiz.settings.timeLimit} min limit` : 'No time limit'}
+                      </Badge>
+                    </div>
+                    <div className="entry-actions-title">{quiz?.title}</div>
+                    <div className="entry-actions-desc">{quiz?.description || 'Start when ready. Progress is recovered automatically if the session is interrupted.'}</div>
+                  </div>
+
+                  <div className="entry-actions-buttons">
+                    {isStarted && !isSubmitted ? (
+                      <>
+                        <Button size="lg" onClick={handleResume} style={{ width: '100%', fontSize: 18, padding: '16px 20px', marginBottom: 10 }}>
+                          Resume Attempt
+                        </Button>
+                        <Button size="lg" variant="outline" onClick={handleStartNew} style={{ width: '100%', fontSize: 18, padding: '16px 20px', color: 'var(--color-danger)', borderColor: 'var(--color-danger)' }}>
+                          Start New Attempt
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        size="lg"
+                        onClick={async () => {
+                          const success = await handleStart(true);
+                          if (success) {
+                            setQuizEntered(true);
+                          }
+                        }}
+                        style={{ width: '100%', fontSize: 18, padding: '16px 20px' }}
+                      >
+                        Start Quiz
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Share Quiz Button — creator only */}
+                  {isCreator && (
+                    <div style={{ marginTop: 12 }}>
+                      {shareUrl ? (
+                        <button
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(`${window.location.origin}${shareUrl}`);
+                              setShareCopied(true);
+                              setTimeout(() => setShareCopied(false), 2000);
+                            } catch {}
+                          }}
+                          style={{
+                            width: '100%', padding: '12px 16px', borderRadius: 10,
+                            border: '1px solid var(--color-primary)', background: 'var(--color-primary-light)',
+                            color: 'var(--color-primary)', fontWeight: 700, fontSize: 14,
+                            cursor: 'pointer', display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', gap: 6,
+                          }}
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                            {shareCopied ? 'check' : 'content_copy'}
+                          </span>
+                          {shareCopied ? 'Link Copied!' : 'Copy Share Link'}
+                        </button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          onClick={async () => {
+                            try {
+                              const data = await createSession(quiz._id);
+                              setShareUrl(data.shareUrl);
+                            } catch {}
+                          }}
+                          style={{ width: '100%', fontSize: 14, padding: '12px 16px' }}
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: 18, marginRight: 6 }}>share</span>
+                          Share Quiz
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
+                  <div style={{ marginTop: 12, fontSize: 13, color: 'var(--color-text-secondary)' }}>
+                    Tip: Your progress is auto-saved and recoverable across sessions.
+                  </div>
+                </aside>
               </div>
-
-              <div className="quiz-entry-grid">
-                <div className="quiz-entry-stat">
-                  <span>Question Review</span>
-                  <strong>{quiz?.settings?.allowReview === false ? 'Restricted' : 'Allowed'}</strong>
-                </div>
-                <div className="quiz-entry-stat">
-                  <span>Explanation Reveal</span>
-                  <strong>{quiz?.settings?.showExplanation === false ? 'Hidden' : 'Available'}</strong>
-                </div>
-                <div className="quiz-entry-stat">
-                  <span>Recovery</span>
-                  <strong>Auto Resume</strong>
-                </div>
-              </div>
-
-              {recoveryNotice ? (
-                <div className="quiz-status-banner info">{recoveryNotice}</div>
-              ) : null}
-
-              <Button
-                size="lg"
-                onClick={handleStart}
-                style={{ width: '100%', fontSize: 18, padding: '16px 20px' }}
-              >
-                Start Quiz
-              </Button>
             </div>
           </Card>
         </div>
@@ -336,88 +442,7 @@ export default function Quiz() {
     );
   }
 
-  return (
-    <>
-      <div className="quiz-session-shell">
-        <div className="quiz-session-main">
-          <Card className="quiz-session-header" style={{ padding: 20 }}>
-            <div className="quiz-session-title-row">
-              <div>
-                <div className="quiz-session-badges">
-                  <Badge>{answeredCount} / {questions.length} Answered</Badge>
-                  {isQuickMode ? <Badge variant="success">Quick Mode</Badge> : null}
-                  {!isOnline ? <Badge variant="warning">Offline</Badge> : null}
-                  {hasPendingSync && isOnline ? <Badge>Sync Pending</Badge> : null}
-                </div>
-                <h2 className="quiz-session-title">{quiz?.title}</h2>
-              </div>
-
-              <div className="quiz-session-timer-block">
-                <span className="quiz-session-timer-label">Elapsed Time</span>
-                <strong>{formatDurationMs(totalElapsedMs)}</strong>
-              </div>
-            </div>
-
-            <div className="quiz-session-progress-row">
-              <div className="quiz-session-progress-copy">
-                <span>Question {currentIndex + 1} of {questions.length}</span>
-                <strong>{Math.round(((currentIndex + 1) / questions.length) * 100)}% through quiz</strong>
-              </div>
-              <div className="quiz-session-progress-bar">
-                <div
-                  className="quiz-session-progress-fill"
-                  style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
-                />
-              </div>
-            </div>
-          </Card>
-
-          {recoveryNotice ? <div className="quiz-status-banner info">{recoveryNotice}</div> : null}
-          {!isOnline ? (
-            <div className="quiz-status-banner warning">
-              Offline mode active. Timer is still running and progress is queued for sync.
-            </div>
-          ) : null}
-          {lastSyncError ? <div className="quiz-status-banner danger">{lastSyncError}</div> : null}
-
-          <Card className="quiz-question-card" style={{ padding: 24 }}>
-            {currentQuestion ? (
-              <QuestionCard
-                question={currentQuestion}
-                questionNumber={currentIndex + 1}
-                showExplanation={quiz?.settings?.showExplanation !== false}
-              />
-            ) : null}
-
-            <div className="quiz-nav-actions">
-              <Button variant="secondary" onClick={prevQuestion} disabled={currentIndex === 0}>
-                Previous
-              </Button>
-              {currentIndex === questions.length - 1 ? (
-                <Button onClick={handleSubmit} disabled={submitting}>
-                  {submitting ? 'Submitting...' : 'Submit Quiz'}
-                </Button>
-              ) : (
-                <Button onClick={nextQuestion}>Next</Button>
-              )}
-            </div>
-          </Card>
-        </div>
-
-        <QuizNavSidebar
-          questions={questions}
-          currentIndex={currentIndex}
-          answers={answers}
-          markedForReview={markedForReview}
-          onSelect={setCurrentIndex}
-          onSubmit={handleSubmit}
-          submitting={submitting}
-        />
-      </div>
-
-      <style>{quizPageStyles}</style>
-    </>
-  );
+  return <QuizLayout />;
 }
 
 const quizPageStyles = `
@@ -429,8 +454,8 @@ const quizPageStyles = `
 
   .quiz-entry-card {
     background:
-      radial-gradient(circle at top right, rgba(99, 102, 241, 0.16), transparent 34%),
-      radial-gradient(circle at bottom left, rgba(6, 182, 212, 0.14), transparent 28%),
+      radial-gradient(circle at top right, rgba(91, 80, 214, 0.04), transparent 40%),
+      radial-gradient(circle at bottom left, rgba(124, 110, 240, 0.03), transparent 35%),
       var(--color-surface);
   }
 
@@ -447,234 +472,101 @@ const quizPageStyles = `
   }
 
   .quiz-entry-title {
-    font-size: clamp(28px, 4vw, 38px);
-    line-height: 1.1;
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.2;
     margin-bottom: 12px;
+    letter-spacing: -0.02em;
   }
 
   .quiz-entry-description {
+    font-size: 16px;
     color: var(--color-text-secondary);
-    font-size: 15px;
-    max-width: 620px;
+    max-width: 600px;
   }
 
   .quiz-entry-body {
+    padding: 32px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding: 32px;
-  }
-
-  .quick-mode-panel {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    padding: 20px;
-    border: 1px solid var(--color-border);
-    border-radius: 16px;
-    background: var(--color-surface-alt);
-  }
-
-  .quick-mode-copy h2 {
-    margin: 6px 0;
-    font-size: 20px;
-  }
-
-  .quick-mode-copy p {
-    color: var(--color-text-secondary);
-    font-size: 14px;
-  }
-
-  .quick-mode-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--color-accent);
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-
-  .quick-mode-toggle {
-    position: relative;
-    width: 74px;
-    min-width: 74px;
-    height: 40px;
-    border: none;
-    border-radius: 999px;
-    background: transparent;
-    cursor: pointer;
-    padding: 0;
-  }
-
-  .quick-mode-toggle:disabled {
-    cursor: not-allowed;
-    opacity: 0.55;
-  }
-
-  .quick-mode-toggle-track {
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: rgba(148, 163, 184, 0.24);
-    border: 1px solid var(--color-border-light);
-    transition: all 0.25s ease;
-  }
-
-  .quick-mode-toggle-thumb {
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: #ffffff;
-    box-shadow: var(--shadow-md);
-    transition: transform 0.25s ease;
-  }
-
-  .quick-mode-toggle.is-enabled .quick-mode-toggle-track {
-    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-    border-color: transparent;
-  }
-
-  .quick-mode-toggle.is-enabled .quick-mode-toggle-thumb {
-    transform: translateX(34px);
+    gap: 24px;
   }
 
   .quiz-entry-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
   }
 
   .quiz-entry-stat {
     padding: 16px;
-    border-radius: 14px;
+    border-radius: 12px;
     background: var(--color-surface-alt);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-light);
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
   }
 
   .quiz-entry-stat span {
     font-size: 12px;
-    color: var(--color-text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
   }
 
   .quiz-entry-stat strong {
-    font-size: 15px;
+    font-size: 18px;
+    font-weight: 700;
+    min-height: 0;
   }
 
-  .quiz-session-shell {
+  .quiz-entry-body-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-columns: 1fr 320px;
     gap: 24px;
-    min-height: calc(100vh - 120px);
+    align-items: start;
   }
 
-  .quiz-session-main {
+  .entry-left {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    min-width: 0;
   }
 
-  .quiz-session-header {
-    background:
-      radial-gradient(circle at top right, rgba(99, 102, 241, 0.12), transparent 30%),
-      var(--color-surface);
-  }
-
-  .quiz-session-title-row {
+  .entry-actions {
     display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
   }
 
-  .quiz-session-badges {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-  }
-
-  .quiz-session-title {
-    font-size: clamp(22px, 3vw, 28px);
-    line-height: 1.1;
-  }
-
-  .quiz-session-timer-block {
-    min-width: 156px;
-    padding: 14px 18px;
-    border-radius: 16px;
-    background: var(--color-surface-alt);
+  .entry-actions-card {
+    padding: 16px;
+    border-radius: 12px;
     border: 1px solid var(--color-border);
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
+    background: var(--color-surface);
   }
 
-  .quiz-session-timer-block strong {
-    font-size: 28px;
-    letter-spacing: 0.04em;
+  .entry-actions-title {
+    font-size: 18px;
+    font-weight: 800;
+    margin-top: 8px;
   }
 
-  .quiz-session-timer-label {
-    font-size: 12px;
+  .entry-actions-desc {
     color: var(--color-text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    margin-top: 8px;
+    font-size: 14px;
+    max-height: 120px;
+    overflow: auto;
   }
 
-  .quiz-session-progress-row {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    margin-top: 18px;
-  }
-
-  .quiz-session-progress-copy {
+  .entry-actions-buttons {
+    margin-top: 8px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    min-width: 190px;
-  }
-
-  .quiz-session-progress-copy span {
-    color: var(--color-text-secondary);
-    font-size: 13px;
-  }
-
-  .quiz-session-progress-copy strong {
-    font-size: 15px;
-  }
-
-  .quiz-session-progress-bar {
-    flex: 1;
-    height: 12px;
-    border-radius: 999px;
-    overflow: hidden;
-    background: var(--color-border);
-  }
-
-  .quiz-session-progress-fill {
-    height: 100%;
-    border-radius: inherit;
-    background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
-    transition: width 0.35s ease;
-  }
-
-  .quiz-question-card {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 520px;
+    gap: 10px;
   }
 
   .quiz-nav-actions {
@@ -683,6 +575,7 @@ const quizPageStyles = `
     gap: 12px;
     margin-top: auto;
     padding-top: 24px;
+    border-top: 1px solid var(--color-border);
   }
 
   .quiz-status-banner {
@@ -693,20 +586,20 @@ const quizPageStyles = `
   }
 
   .quiz-status-banner.info {
-    background: rgba(59, 130, 246, 0.08);
-    border-color: rgba(59, 130, 246, 0.24);
+    background: rgba(79, 70, 229, 0.05);
+    border-color: rgba(79, 70, 229, 0.15);
     color: var(--color-text);
   }
 
   .quiz-status-banner.warning {
     background: var(--color-warning-light);
-    border-color: rgba(245, 158, 11, 0.28);
+    border-color: rgba(217, 119, 6, 0.2);
     color: var(--color-text);
   }
 
   .quiz-status-banner.danger {
     background: var(--color-danger-light);
-    border-color: rgba(239, 68, 68, 0.28);
+    border-color: rgba(220, 38, 38, 0.2);
     color: var(--color-text);
   }
 
@@ -736,6 +629,14 @@ const quizPageStyles = `
 
     .quiz-entry-grid {
       grid-template-columns: 1fr;
+    }
+
+    .quiz-entry-body-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .entry-actions {
+      border-left: none;
     }
 
     .quiz-nav-actions {

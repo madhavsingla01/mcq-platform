@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.model.js';
 import env from '../config/env.js';
 import { AppError, catchAsync } from '../middleware/error.middleware.js';
+import { recordEvent } from '../services/activity/activity.service.js';
 
 const authCookieOptions = {
   httpOnly: true,
@@ -62,6 +63,12 @@ export const register = catchAsync(async (req, res, next) => {
   // Store refresh token
   user.refreshToken = refreshToken;
   await user.save({ validateBeforeSave: false });
+  await recordEvent({
+    req,
+    eventType: 'USER_REGISTERED',
+    category: 'auth',
+    userId: user._id,
+  });
 
   res.status(201).json({
     success: true,
@@ -89,6 +96,12 @@ export const login = catchAsync(async (req, res, next) => {
 
   user.refreshToken = refreshToken;
   await user.save({ validateBeforeSave: false });
+  await recordEvent({
+    req,
+    eventType: 'USER_LOGGED_IN',
+    category: 'auth',
+    userId: user._id,
+  });
 
   // Remove password from response
   user.password = undefined;
@@ -118,6 +131,12 @@ export const logout = catchAsync(async (req, res) => {
   }
 
   clearAuthCookies(res);
+  await recordEvent({
+    req,
+    eventType: 'USER_LOGGED_OUT',
+    category: 'auth',
+    userId: req.user?._id || null,
+  });
 
   res.json({
     success: true,
@@ -172,4 +191,72 @@ export const getMe = catchAsync(async (req, res) => {
   });
 });
 
-export default { register, login, logout, refresh, getMe };
+/**
+ * PATCH /api/auth/me
+ * Update current user's profile (name, email, avatar, preferences)
+ */
+export const updateMe = catchAsync(async (req, res, next) => {
+  const allowed = [
+    'name', 'email', 'avatar', 'preferences',
+    'phone', 'dateOfBirth', 'gender', 'address', 'bio', 'age', 'password'
+  ];
+
+  const updates = {};
+  for (const key of allowed) {
+    if (req.body[key] !== undefined) updates[key] = req.body[key];
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return next(new AppError('No valid fields to update', 400));
+  }
+
+  // Password change requires confirmation
+  if (updates.password !== undefined) {
+    if (req.body.confirmPassword === undefined || req.body.confirmPassword !== updates.password) {
+      return next(new AppError('Password confirmation does not match', 400));
+    }
+  }
+
+  const user = await User.findById(req.user._id);
+  if (!user) return next(new AppError('User not found', 404));
+
+  if (updates.name !== undefined) user.name = updates.name;
+  if (updates.email !== undefined) user.email = updates.email;
+  if (updates.avatar !== undefined) user.avatar = updates.avatar;
+  if (updates.phone !== undefined) user.phone = updates.phone;
+  if (updates.dateOfBirth !== undefined) {
+    const d = new Date(updates.dateOfBirth);
+    if (!Number.isNaN(d.getTime())) user.dateOfBirth = d;
+  }
+  if (updates.gender !== undefined) user.gender = updates.gender;
+  if (updates.age !== undefined) user.age = Number(updates.age) || undefined;
+  if (updates.address !== undefined && typeof updates.address === 'object') user.address = updates.address;
+  if (updates.bio !== undefined) user.bio = updates.bio;
+
+  if (updates.preferences !== undefined && typeof updates.preferences === 'object') {
+    user.preferences = { ...(user.preferences || {}), ...updates.preferences };
+  }
+
+  if (updates.password !== undefined) {
+    user.password = updates.password;
+  }
+
+  await user.save({ validateBeforeSave: true });
+  await recordEvent({
+    req,
+    eventType: updates.preferences ? 'USER_PREFERENCES_UPDATED' : 'USER_PROFILE_UPDATED',
+    category: updates.preferences ? 'settings' : 'auth',
+    userId: req.user._id,
+    metadata: {
+      fields: Object.keys(updates),
+      preferences: updates.preferences || undefined,
+    },
+  });
+  // Ensure sensitive fields are not returned
+  user.password = undefined;
+  user.refreshToken = undefined;
+
+  res.json({ success: true, message: 'Profile updated', data: { user } });
+});
+
+export default { register, login, logout, refresh, getMe, updateMe };

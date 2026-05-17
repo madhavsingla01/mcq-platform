@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 
-export function Button({ children, variant = 'primary', size = 'md', disabled, onClick, style, ...props }) {
+export function Button({ children, variant = 'primary', size = 'md', disabled, onClick, style, type, ...props }) {
   const base = {
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
     fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer',
@@ -14,8 +14,9 @@ export function Button({ children, variant = 'primary', size = 'md', disabled, o
   };
   const variants = {
     primary: {
-      background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
-      color: '#fff', boxShadow: '0 2px 12px rgba(99,102,241,0.3)',
+      background: 'var(--color-primary)',
+      color: '#fff',
+      boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.2), 0 1px 3px rgba(79,70,229,0.2)',
     },
     secondary: {
       background: 'var(--color-surface)', color: 'var(--color-text)',
@@ -29,7 +30,7 @@ export function Button({ children, variant = 'primary', size = 'md', disabled, o
     },
   };
   return (
-    <button onClick={onClick} disabled={disabled}
+    <button onClick={onClick} disabled={disabled} type={type || 'button'}
       style={{ ...base, ...sizes[size], ...variants[variant], ...style }} {...props}>
       {children}
     </button>
@@ -39,7 +40,7 @@ export function Button({ children, variant = 'primary', size = 'md', disabled, o
 export const Card = forwardRef(function Card({ children, style, className, ...props }, ref) {
   return (
     <div ref={ref} style={{
-      background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+      background: 'var(--color-surface)', border: '1px solid #f0f0f0',
       borderRadius: 16, padding: 24, transition: 'all 0.2s ease', ...style,
     }} className={className} {...props}>
       {children}
@@ -59,7 +60,7 @@ export function Spinner({ size = 24 }) {
 
 export function Badge({ children, variant = 'default', style }) {
   const variants = {
-    default: { background: 'var(--color-primary-light)', color: 'var(--color-primary-hover)' },
+    default: { background: 'var(--color-primary-light)', color: 'var(--color-primary)' },
     success: { background: 'var(--color-success-light)', color: 'var(--color-success)' },
     warning: { background: 'var(--color-warning-light)', color: 'var(--color-warning)' },
     danger: { background: 'var(--color-danger-light)', color: 'var(--color-danger)' },
@@ -76,12 +77,12 @@ export function ProgressBar({ value, max = 100, height = 6, color }) {
   const pct = Math.min(100, (value / max) * 100);
   return (
     <div style={{
-      width: '100%', height, background: 'var(--color-border)', borderRadius: height,
+      width: '100%', height, background: 'var(--color-surface-alt)', borderRadius: height,
       overflow: 'hidden',
     }}>
       <div style={{
         height: '100%', width: `${pct}%`, borderRadius: height,
-        background: color || 'linear-gradient(90deg, var(--color-primary), var(--color-accent))',
+        background: color || 'var(--color-primary)',
         transition: 'width 0.4s ease',
       }} />
     </div>

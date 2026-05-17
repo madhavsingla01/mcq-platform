@@ -11,9 +11,10 @@ import {
   loadAttemptSnapshot,
   saveAttemptSnapshot,
 } from '../utils/quizSession';
+import { useTimerStore } from './timerStore';
 
 const TIMER_TICK_MS = 1000;
-const SYNC_INTERVAL_MS = 5000;
+const SYNC_INTERVAL_MS = 30000;
 const ANSWER_SYNC_DEBOUNCE_MS = 450;
 const MAX_PENDING_SYNC_JOBS = 50;
 
@@ -221,7 +222,7 @@ const queueSyncJob = (state, reason) => ({
 });
 
 const serializeSnapshot = (state) => {
-  if (!state.attemptId || !state.quiz?._id) {
+  if (!state.attemptId || !state.quiz?._id || state.isSubmitted) {
     return null;
   }
 
@@ -237,6 +238,7 @@ const serializeSnapshot = (state) => {
     totalElapsedMs: state.totalElapsedMs,
     lastElapsedUpdateAtMs: state.lastElapsedUpdateAtMs,
     isQuickMode: state.isQuickMode,
+    instantFeedback: state.instantFeedback,
     isStarted: state.isStarted,
     isSubmitted: state.isSubmitted,
     sessionId: state.sessionId,
@@ -310,6 +312,7 @@ const buildSyncPayload = (state) => {
     clientTimestamp: new Date().toISOString(),
     currentQuestionId,
     stateVersion: state.snapshotVersion,
+    markedForReview: cloneMarkedForReview(state.markedForReview),
     questionStates: state.questions.map((question) => {
       const answer = state.answers[question._id] || createDefaultAnswerState();
       return {
@@ -410,6 +413,18 @@ const buildHydratedState = ({ quiz, questions, serverAttempt = null, localSnapsh
     Number(serverAttempt?.totalTimeMs || 0),
     Number(normalizedSnapshot?.totalElapsedMs || 0)
   );
+  const serverMarkedForReview = Array.isArray(serverAttempt?.markedForReview)
+    ? serverAttempt.markedForReview
+        .filter((item) => item?.isActive !== false)
+        .map((item) => String(item.questionId?._id || item.questionId))
+        .filter(Boolean)
+    : [];
+
+  // Resolve instantFeedback: server attempt > quiz setting > legacy quickMode
+  const instantFeedback = serverAttempt?.instantFeedback === true ||
+    normalizedSnapshot?.instantFeedback === true ||
+    serverAttempt?.isQuickMode === true ||
+    normalizedSnapshot?.isQuickMode === true;
 
   return {
     quiz,
@@ -419,12 +434,13 @@ const buildHydratedState = ({ quiz, questions, serverAttempt = null, localSnapsh
     answers,
     markedForReview: Array.isArray(normalizedSnapshot?.markedForReview)
       ? [...new Set(normalizedSnapshot.markedForReview)]
-      : [],
+      : [...new Set(serverMarkedForReview)],
     attemptId: serverAttempt?._id || normalizedSnapshot?.attemptId || null,
     sessionId: normalizedSnapshot?.sessionId || getGuestSessionId(),
     tabId: getTabId(),
     isStarted,
     isQuickMode: serverAttempt?.isQuickMode ?? normalizedSnapshot?.isQuickMode ?? false,
+    instantFeedback,
     isSubmitted,
     result: null,
     totalElapsedMs,
@@ -459,6 +475,7 @@ export const useQuizStore = create((set, get) => ({
   tabId: getTabId(),
   isStarted: false,
   isQuickMode: false,
+  instantFeedback: false,
   isSubmitted: false,
   result: null,
   totalElapsedMs: 0,
@@ -492,6 +509,7 @@ export const useQuizStore = create((set, get) => ({
     }
 
     persistRuntimeState();
+    scheduleImmediateSync();
   },
 
   tickClock: () => {
@@ -501,6 +519,11 @@ export const useQuizStore = create((set, get) => ({
 
   commitElapsed: () => {
     set((state) => commitElapsedToState(state));
+    persistRuntimeState();
+  },
+
+  setInstantFeedback: (enabled) => {
+    set({ instantFeedback: Boolean(enabled) });
     persistRuntimeState();
   },
 
@@ -538,6 +561,7 @@ export const useQuizStore = create((set, get) => ({
     });
 
     persistRuntimeState();
+    scheduleImmediateSync();
   },
 
   startAttemptFromServer: ({ attempt, quiz, questions }) => {
@@ -549,11 +573,21 @@ export const useQuizStore = create((set, get) => ({
       localSnapshot: snapshot,
     });
 
+    // Initialize timer from attempt data
+    useTimerStore.getState().initTimer({
+      timerMode: attempt.timerMode || 'none',
+      deadlineAt: attempt.deadlineAt,
+      startedAt: attempt.startedAt,
+      allowedDurationMs: attempt.allowedDurationMs || 0,
+      attemptId: attempt._id,
+    });
+
     set((state) => {
       if (state.questions.length === 0) {
         return state;
       }
 
+      const instantFeedback = attempt.instantFeedback === true || attempt.isQuickMode === true;
       const firstQuestionId = getQuestionIdAtIndex(state.questions, state.currentIndex);
       const currentAnswer = normalizeAnswerState(state.answers[firstQuestionId] || {});
       const visitedAt = currentAnswer.visitTimestamps.length > 0
@@ -565,6 +599,7 @@ export const useQuizStore = create((set, get) => ({
           ...state,
           isStarted: true,
           isQuickMode: attempt.isQuickMode === true,
+          instantFeedback,
           attemptId: attempt._id,
           attemptStartedAt: attempt.startedAt,
           lastElapsedUpdateAtMs: Date.now(),
@@ -575,6 +610,7 @@ export const useQuizStore = create((set, get) => ({
         ...state,
         isStarted: true,
         isQuickMode: attempt.isQuickMode === true,
+        instantFeedback,
         attemptId: attempt._id,
         attemptStartedAt: attempt.startedAt,
         lastElapsedUpdateAtMs: Date.now(),
@@ -592,6 +628,7 @@ export const useQuizStore = create((set, get) => ({
 
     startRuntimeLoops();
     persistRuntimeState();
+    scheduleImmediateSync();
   },
 
   selectAnswer: (questionId, selectedAnswer) => {
@@ -602,16 +639,17 @@ export const useQuizStore = create((set, get) => ({
         return state;
       }
 
+      const shouldLock = state.instantFeedback || state.isQuickMode;
       let nextState = commitElapsedToState(state);
       const answeredAt = new Date().toISOString();
-      const lockedAt = state.isQuickMode ? answeredAt : null;
+      const lockedAt = shouldLock ? answeredAt : null;
       const nextAnswerState = {
         ...currentAnswer,
         selectedAnswer,
         submissionTimestamps: appendUniqueIso(currentAnswer.submissionTimestamps, answeredAt),
         submittedAt: answeredAt,
-        isLocked: state.isQuickMode ? true : currentAnswer.isLocked,
-        lockedAt: state.isQuickMode ? lockedAt : currentAnswer.lockedAt,
+        isLocked: shouldLock ? true : currentAnswer.isLocked,
+        lockedAt: shouldLock ? lockedAt : currentAnswer.lockedAt,
         lastClientUpdatedAt: answeredAt,
       };
 
@@ -624,7 +662,7 @@ export const useQuizStore = create((set, get) => ({
         snapshotVersion: nextState.snapshotVersion + 1,
       };
 
-      return queueSyncJob(nextState, state.isQuickMode ? 'quick-answer-lock' : 'answer-update');
+      return queueSyncJob(nextState, shouldLock ? 'instant-feedback-lock' : 'answer-update');
     });
 
     persistRuntimeState();
@@ -645,6 +683,11 @@ export const useQuizStore = create((set, get) => ({
     });
 
     persistRuntimeState();
+    scheduleImmediateSync();
+  },
+
+  toggleReview: (questionId) => {
+    get().toggleMark(questionId);
   },
 
   nextQuestion: () => {
@@ -743,10 +786,32 @@ export const useQuizStore = create((set, get) => ({
         };
       });
 
+      // Calibrate timer from server time
+      const syncData = response.data.data?.sync;
+      if (syncData?.serverTime) {
+        useTimerStore.getState().calibrateFromServer(syncData.serverTime);
+      }
+
       persistRuntimeState();
       return response.data.data;
     } catch (error) {
       const isOfflineError = !error.response;
+      const statusCode = error.response?.status;
+      const isFatalError = statusCode === 401 || statusCode === 403 || statusCode === 404;
+
+      if (isFatalError) {
+        // Stop all sync loops — this attempt is no longer accessible
+        stopRuntimeLoops();
+        set({
+          isSyncing: false,
+          inFlightSyncVersion: null,
+          hasPendingSync: false,
+          pendingSyncQueue: [],
+          lastSyncError: error.response?.data?.message || 'Not authorized',
+        });
+        return null;
+      }
+
       set({
         isSyncing: false,
         inFlightSyncVersion: null,
@@ -774,9 +839,12 @@ export const useQuizStore = create((set, get) => ({
       quizId: current.quiz?._id,
     });
 
+    useTimerStore.getState().reset();
+
     set((state) => ({
       ...state,
       result,
+      attemptId: null,
       isStarted: false,
       isSubmitted: true,
       hasPendingSync: false,
@@ -827,7 +895,8 @@ export const useQuizStore = create((set, get) => ({
         attemptId: current.attemptId,
         quizId: current.quiz?._id,
       });
-    } else {
+    } else if (current.isStarted && !current.isSubmitted && current.attemptId) {
+      // Only persist if there's an active in-progress session worth recovering
       persistRuntimeState();
     }
 
@@ -843,6 +912,7 @@ export const useQuizStore = create((set, get) => ({
       tabId: getTabId(),
       isStarted: false,
       isQuickMode: false,
+      instantFeedback: false,
       isSubmitted: false,
       result: null,
       totalElapsedMs: 0,

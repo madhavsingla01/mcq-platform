@@ -57,7 +57,6 @@ export default function Upload() {
       navigate(`/mapping/${uploadId}`);
 
     } catch (err) {
-      console.error(err);
       const securityOverride = getSecurityOverrideError(err);
       if (!importAnyway && securityOverride) {
         setSecurityOverrideFile(file);
@@ -84,51 +83,93 @@ export default function Upload() {
   };
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 0' }}>
-      <div style={{ textAlign: 'center', marginBottom: 40 }}>
-        <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 12 }}>Upload your MCQ file</h1>
-        <p style={{ color: 'var(--color-text-secondary)' }}>
-          We support Excel (.xlsx, .xls), CSV, and JSON files.
-          {!isAuthenticated && <span style={{ display: 'block', marginTop: 4, color: 'var(--color-warning)' }}>Guest limit: 20KB. Log in for 10MB limit.</span>}
-        </p>
+    <>
+      <div className="qf-upload-shell">
+        <div className="qf-upload-header">
+          <h1>Upload Dataset</h1>
+          <p>
+            Feed your workspace. Upload your question banks to generate intelligent quizzes instantly.
+            {!isAuthenticated && <span className="qf-upload-guest-note">Guest limit: 20KB. Log in for 10MB limit.</span>}
+          </p>
+        </div>
+
+        {status === 'idle' || status === 'error' ? (
+          <>
+            <FileDropzone onFileDrop={handleDrop} maxSize={isAuthenticated ? 10485760 : 20480} />
+            {error && (
+              <Card style={{ marginTop: 24, borderLeft: '4px solid var(--color-danger)' }}>
+                <h4 style={{ color: 'var(--color-danger)', marginBottom: 8, fontWeight: 600, fontSize: 15 }}>
+                  {securityOverrideFile ? 'Security check failed' : 'Error'}
+                </h4>
+                <p style={{ color: 'var(--color-text-secondary)', fontSize: 14 }}>{error}</p>
+                {securityOverrideFile && (
+                  <p style={{ color: 'var(--color-text-muted)', fontSize: 13, marginTop: 8 }}>
+                    Only import this file if you trust its source.
+                  </p>
+                )}
+                <div style={{ display: 'flex', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
+                  <Button variant="secondary" onClick={handleTryAgain}>Try Again</Button>
+                  {securityOverrideFile && (
+                    <Button variant="danger" onClick={handleImportAnyway} disabled={isImportingAnyway}>
+                      {isImportingAnyway ? 'Importing...' : 'Import Anyway'}
+                    </Button>
+                  )}
+                </div>
+              </Card>
+            )}
+          </>
+        ) : (
+          <Card style={{ textAlign: 'center', padding: '60px 40px', maxWidth: 600, margin: '0 auto' }}>
+            <div style={{ marginBottom: 20 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 40, color: 'var(--color-primary)' }}>
+                {status === 'uploading' ? 'cloud_upload' : 'search'}
+              </span>
+            </div>
+            <h3 style={{ fontSize: 20, marginBottom: 24, fontWeight: 600 }}>
+              {status === 'uploading' ? 'Uploading file...' : 'Analyzing columns...'}
+            </h3>
+            <ProgressBar value={status === 'parsing' ? 100 : progress} />
+            <p style={{ marginTop: 16, color: 'var(--color-text-secondary)', fontSize: 14 }}>
+              {status === 'uploading' ? `${progress}% complete` : 'Running smart detection engine...'}
+            </p>
+          </Card>
+        )}
       </div>
 
-      {status === 'idle' || status === 'error' ? (
-        <>
-          <FileDropzone onFileDrop={handleDrop} maxSize={isAuthenticated ? 10485760 : 20480} />
-          {error && (
-            <Card style={{ marginTop: 24, border: '1px solid var(--color-danger)', background: 'var(--color-danger-light)' }}>
-              <h4 style={{ color: 'var(--color-danger)', marginBottom: 8, fontWeight: 600 }}>
-                {securityOverrideFile ? 'Security check failed' : 'Error'}
-              </h4>
-              <p style={{ color: 'var(--color-text)' }}>{error}</p>
-              {securityOverrideFile && (
-                <p style={{ color: 'var(--color-text-secondary)', fontSize: 14, marginTop: 8 }}>
-                  Only import this file if you trust its source.
-                </p>
-              )}
-              <div style={{ display: 'flex', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
-                <Button variant="secondary" onClick={handleTryAgain}>Try Again</Button>
-                {securityOverrideFile && (
-                  <Button variant="danger" onClick={handleImportAnyway} disabled={isImportingAnyway}>
-                    {isImportingAnyway ? 'Importing...' : 'Import Anyway'}
-                  </Button>
-                )}
-              </div>
-            </Card>
-          )}
-        </>
-      ) : (
-        <Card style={{ textAlign: 'center', padding: '60px 40px' }}>
-          <h3 style={{ fontSize: 20, marginBottom: 24 }}>
-            {status === 'uploading' ? 'Uploading file...' : 'Analyzing columns...'}
-          </h3>
-          <ProgressBar value={status === 'parsing' ? 100 : progress} />
-          <p style={{ marginTop: 16, color: 'var(--color-text-secondary)', fontSize: 14 }}>
-            {status === 'uploading' ? `${progress}% complete` : 'Running smart detection engine...'}
-          </p>
-        </Card>
-      )}
-    </div>
+      <style>{uploadStyles}</style>
+    </>
   );
 }
+
+const uploadStyles = `
+  .qf-upload-shell {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 0;
+  }
+
+  .qf-upload-header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .qf-upload-header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    letter-spacing: -0.03em;
+  }
+
+  .qf-upload-header p {
+    color: var(--color-text-secondary);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .qf-upload-guest-note {
+    display: block;
+    margin-top: 6px;
+    color: var(--color-warning);
+    font-size: 13px;
+  }
+`;

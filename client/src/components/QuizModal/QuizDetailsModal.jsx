@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../api/axios';
 import { Badge, Button, ProgressBar, Spinner } from '../ui';
@@ -110,8 +110,16 @@ export default function QuizDetailsModal({ quizId, onClose }) {
     };
   }, [quizId]);
 
+  const initialSortRef = useRef(true);
+
   useEffect(() => {
     if (loading) return undefined;
+
+    // Skip the first render — the main useEffect already fetched attempts
+    if (initialSortRef.current) {
+      initialSortRef.current = false;
+      return undefined;
+    }
 
     let cancelled = false;
 
@@ -363,8 +371,8 @@ const quizDetailsModalStyles = `
     align-items: center;
     justify-content: center;
     padding: 24px;
-    background: rgba(7, 10, 18, 0.72);
-    backdrop-filter: blur(14px);
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
   }
 
   .quiz-details-modal {
@@ -373,8 +381,8 @@ const quizDetailsModalStyles = `
     overflow: hidden;
     border: 1px solid var(--color-border);
     border-radius: 24px;
-    background: var(--color-background);
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
+    background: var(--color-bg);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.12);
     display: flex;
     flex-direction: column;
   }
@@ -403,6 +411,7 @@ const quizDetailsModalStyles = `
     margin: 0;
     font-size: 24px;
     line-height: 1.2;
+    letter-spacing: -0.02em;
   }
 
   .quiz-modal-close {
@@ -415,6 +424,11 @@ const quizDetailsModalStyles = `
     cursor: pointer;
     font-size: 26px;
     line-height: 1;
+    transition: background 0.2s;
+  }
+
+  .quiz-modal-close:hover {
+    background: var(--color-surface-hover);
   }
 
   .quiz-modal-content {
@@ -445,8 +459,8 @@ const quizDetailsModalStyles = `
 
   .quiz-modal-alert {
     padding: 12px 14px;
-    border: 1px solid var(--color-danger-light);
-    border-radius: 14px;
+    border: 1px solid rgba(220, 38, 38, 0.15);
+    border-radius: 12px;
     background: var(--color-danger-light);
     font-size: 14px;
   }
@@ -487,7 +501,7 @@ const quizDetailsModalStyles = `
     min-width: 0;
     padding: 16px;
     border: 1px solid var(--color-border);
-    border-radius: 16px;
+    border-radius: 14px;
     background: var(--color-surface);
   }
 
@@ -535,6 +549,7 @@ const quizDetailsModalStyles = `
 
   .quiz-attempts-header h3 {
     margin: 0 0 4px;
+    font-weight: 600;
   }
 
   .quiz-attempts-header p {
@@ -547,10 +562,11 @@ const quizDetailsModalStyles = `
     min-width: 150px;
     padding: 10px 12px;
     border: 1px solid var(--color-border);
-    border-radius: 12px;
+    border-radius: 10px;
     background: var(--color-surface);
     color: var(--color-text);
     font: inherit;
+    font-size: 14px;
   }
 
   .quiz-empty-attempts {
@@ -575,18 +591,19 @@ const quizDetailsModalStyles = `
     gap: 18px;
     padding: 14px 16px;
     border: 1px solid var(--color-border);
-    border-radius: 16px;
+    border-radius: 14px;
     background: var(--color-surface);
     color: var(--color-text);
     cursor: pointer;
     text-align: left;
-    transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
   }
 
   .quiz-attempt-row:hover {
     transform: translateY(-1px);
     border-color: var(--color-primary);
     background: var(--color-surface-alt);
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.04);
   }
 
   .quiz-attempt-row strong,

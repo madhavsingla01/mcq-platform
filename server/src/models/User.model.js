@@ -37,10 +37,42 @@ const userSchema = new mongoose.Schema(
       type: String,
       select: false,
     },
+    // Personal profile fields
+    phone: { type: String },
+    dateOfBirth: { type: Date },
+    gender: { type: String, enum: ['male', 'female', 'other', 'prefer_not_to_say'] },
+    address: {
+      street: String,
+      city: String,
+      region: String,
+      postalCode: String,
+      country: String,
+    },
+    bio: { type: String, maxlength: 2000 },
+    age: { type: Number, min: 0 },
     preferences: {
       theme: { type: String, default: 'dark' },
+      // UI preferences
+      fontSize: { type: String, enum: ['sm', 'md', 'lg'], default: 'md' },
+      density: { type: String, enum: ['comfortable', 'compact'], default: 'comfortable' },
+      timerVisibility: { type: String, enum: ['visible', 'hidden'], default: 'visible' },
+      showCorrectAnswerInstantly: { type: Boolean, default: false },
+      reducedMotion: { type: Boolean, default: false },
+      focusMode: { type: Boolean, default: false },
+      isNavigatorCollapsed: { type: Boolean, default: false },
+      isAICollapsed: { type: Boolean, default: false },
+      // AI preferences
+      aiExplanations: { type: Boolean, default: true },
+      aiPersonality: { type: String, default: 'Encouraging' },
+      // Misc
       quizTimer: { type: Boolean, default: false },
       shuffleQuestions: { type: Boolean, default: false },
+      keyboardShortcutsEnabled: { type: Boolean, default: true },
+      panelWidths: {
+        navigator: { type: Number, default: 20 },
+        workspace: { type: Number, default: 55 },
+        ai: { type: Number, default: 25 },
+      },
     },
     avatar: String,
     isActive: {

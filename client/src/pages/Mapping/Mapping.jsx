@@ -94,122 +94,127 @@ export default function Mapping() {
     navigate(`/quiz/${generatedQuizId}`);
   };
 
-  if (!parsedData) return <div>Loading mapping data...</div>;
+  if (!parsedData) return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0', color: 'var(--color-text-secondary)' }}>
+      Loading mapping data...
+    </div>
+  );
 
   return (
-    <div style={{ display: 'flex', gap: 24, height: 'calc(100vh - 140px)', position: 'relative' }}>
-      
-      {/* Validation Errors Modal overlay */}
-      {validationErrors && (
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.8)', zIndex: 100,
-          display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }}>
-          <Card style={{ width: 600, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
-            <h3 style={{ fontSize: 20, color: 'var(--color-warning)', marginBottom: 16 }}>⚠️ Parser Validation Issues</h3>
-            <p style={{ marginBottom: 16 }}>
-              The quiz was generated, but {validationErrors.length} rows were skipped due to formatting errors.
-            </p>
-            <div style={{ flex: 1, overflowY: 'auto', background: 'var(--color-surface-alt)', padding: 16, borderRadius: 8, marginBottom: 24 }}>
-              {validationErrors.map((err, i) => (
-                <div key={i} style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: 8, marginBottom: 8 }}>
-                  <span style={{ fontWeight: 600, color: 'var(--color-danger)' }}>Row {err.row}:</span> {err.error}
-                </div>
-              ))}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-              <Button onClick={() => setValidationErrors(null)} variant="secondary">Go Back</Button>
-              <Button onClick={handleProceedWithErrors}>Proceed to Quiz Anyway</Button>
-            </div>
-          </Card>
-        </div>
-      )}
-      {/* Left: Preview Table */}
-      <Card style={{ flex: 2, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <h2 style={{ fontSize: 20, marginBottom: 16 }}>Data Preview</h2>
-        <div style={{ overflow: 'auto', flex: 1, border: '1px solid var(--color-border)', borderRadius: 8 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
-            <thead style={{ position: 'sticky', top: 0, background: 'var(--color-surface-alt)', zIndex: 1 }}>
-              <tr>
-                {parsedData.headers.map(h => (
-                  <th key={h} style={{ padding: '12px 16px', borderBottom: '1px solid var(--color-border)', whiteSpace: 'nowrap' }}>
-                    {h}
-                  </th>
+    <>
+      <div className="qf-mapping-shell">
+        
+        {/* Validation Errors Modal overlay */}
+        {validationErrors && (
+          <div className="qf-mapping-overlay">
+            <Card style={{ width: 600, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <span className="material-symbols-outlined" style={{ color: 'var(--color-warning)', fontSize: 24 }}>warning</span>
+                <h3 style={{ fontSize: 20, fontWeight: 600 }}>Parser Validation Issues</h3>
+              </div>
+              <p style={{ marginBottom: 16, color: 'var(--color-text-secondary)', fontSize: 14 }}>
+                The quiz was generated, but {validationErrors.length} rows were skipped due to formatting errors.
+              </p>
+              <div className="qf-mapping-errors-list">
+                {validationErrors.map((err, i) => (
+                  <div key={i} className="qf-mapping-error-row">
+                    <span style={{ fontWeight: 600, color: 'var(--color-danger)' }}>Row {err.row}:</span> {err.error}
+                  </div>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {parsedData.preview.map((row, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 20 }}>
+                <Button onClick={() => setValidationErrors(null)} variant="secondary">Go Back</Button>
+                <Button onClick={handleProceedWithErrors}>Proceed to Quiz Anyway</Button>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Left: Preview Table */}
+        <Card className="qf-mapping-preview">
+          <h2 style={{ fontSize: 18, marginBottom: 16, fontWeight: 600 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 20, verticalAlign: 'middle', marginRight: 8, color: 'var(--color-primary)' }}>table_chart</span>
+            Data Preview
+          </h2>
+          <div className="qf-mapping-table-wrap">
+            <table className="qf-mapping-table">
+              <thead>
+                <tr>
                   {parsedData.headers.map(h => (
-                    <td key={h} style={{ padding: '12px 16px', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {String(row[h] || '')}
-                    </td>
+                    <th key={h}>{h}</th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody>
+                {parsedData.preview.map((row, i) => (
+                  <tr key={i}>
+                    {parsedData.headers.map(h => (
+                      <td key={h}>{String(row[h] || '')}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
 
-      {/* Right: Mapping Controls */}
-      <Card style={{ flex: 1, overflowY: 'auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <h2 style={{ fontSize: 20 }}>Column Mapping</h2>
-          {confidence !== null && (
-            <Badge variant={confidence > 80 ? 'success' : confidence > 50 ? 'warning' : 'danger'}>
-              AI Confidence: {confidence}%
-            </Badge>
-          )}
-        </div>
+        {/* Right: Mapping Controls */}
+        <Card className="qf-mapping-controls">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 600 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 20, verticalAlign: 'middle', marginRight: 8, color: 'var(--color-primary)' }}>tune</span>
+              Column Mapping
+            </h2>
+            {confidence !== null && (
+              <Badge variant={confidence > 80 ? 'success' : confidence > 50 ? 'warning' : 'danger'}>
+                AI Confidence: {confidence}%
+              </Badge>
+            )}
+          </div>
 
-        {error && <div style={{ color: 'var(--color-danger)', marginBottom: 16, fontSize: 14 }}>{error}</div>}
+          {error && <div style={{ color: 'var(--color-danger)', marginBottom: 16, fontSize: 14, padding: '10px 14px', background: 'var(--color-danger-light)', borderRadius: 10 }}>{error}</div>}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <SelectField 
-            label="Question Text *" 
-            value={mapping.question} 
-            onChange={v => setMapping({...mapping, question: v})} 
-            options={parsedData.headers} 
-          />
-          
-          <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 8 }}>
-              Options * (Select at least 2)
-            </label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {parsedData.headers.map(h => (
-                <button 
-                  key={h}
-                  onClick={() => handleOptionToggle(h)}
-                  style={{
-                    padding: '6px 12px', borderRadius: 20, fontSize: 12, cursor: 'pointer', border: 'none',
-                    background: mapping.options.includes(h) ? 'var(--color-primary)' : 'var(--color-surface-alt)',
-                    color: mapping.options.includes(h) ? '#fff' : 'var(--color-text)',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  {h}
-                </button>
-              ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <SelectField 
+              label="Question Text *" 
+              value={mapping.question} 
+              onChange={v => setMapping({...mapping, question: v})} 
+              options={parsedData.headers} 
+            />
+            
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 8 }}>
+                Options * (Select at least 2)
+              </label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {parsedData.headers.map(h => (
+                  <button 
+                    key={h}
+                    onClick={() => handleOptionToggle(h)}
+                    className={`qf-mapping-chip ${mapping.options.includes(h) ? 'active' : ''}`}
+                  >
+                    {h}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <SelectField label="Correct Answer" value={mapping.answer} onChange={v => setMapping({...mapping, answer: v})} options={parsedData.headers} />
+            <SelectField label="Explanation" value={mapping.explanation} onChange={v => setMapping({...mapping, explanation: v})} options={parsedData.headers} />
+            <SelectField label="Topic / Tags" value={mapping.topic} onChange={v => setMapping({...mapping, topic: v})} options={parsedData.headers} />
+            <SelectField label="Difficulty" value={mapping.difficulty} onChange={v => setMapping({...mapping, difficulty: v})} options={parsedData.headers} />
+            
+            <div style={{ marginTop: 'auto', paddingTop: 24 }}>
+              <Button onClick={handleConfirm} disabled={isSubmitting} style={{ width: '100%' }}>
+                {isSubmitting ? 'Generating Quiz...' : 'Looks Good, Generate Quiz!'}
+              </Button>
             </div>
           </div>
+        </Card>
+      </div>
 
-          <SelectField label="Correct Answer" value={mapping.answer} onChange={v => setMapping({...mapping, answer: v})} options={parsedData.headers} />
-          <SelectField label="Explanation" value={mapping.explanation} onChange={v => setMapping({...mapping, explanation: v})} options={parsedData.headers} />
-          <SelectField label="Topic / Tags" value={mapping.topic} onChange={v => setMapping({...mapping, topic: v})} options={parsedData.headers} />
-          <SelectField label="Difficulty" value={mapping.difficulty} onChange={v => setMapping({...mapping, difficulty: v})} options={parsedData.headers} />
-          
-          <div style={{ marginTop: 'auto', paddingTop: 24 }}>
-            <Button onClick={handleConfirm} disabled={isSubmitting} style={{ width: '100%' }}>
-              {isSubmitting ? 'Generating Quiz...' : 'Looks Good, Generate Quiz!'}
-            </Button>
-          </div>
-        </div>
-      </Card>
-    </div>
+      <style>{mappingStyles}</style>
+    </>
   );
 }
 
@@ -220,10 +225,7 @@ function SelectField({ label, value, onChange, options }) {
       <select 
         value={value || ''} 
         onChange={e => onChange(e.target.value)}
-        style={{
-          width: '100%', padding: '10px 12px', borderRadius: 8, background: 'var(--color-surface-alt)',
-          border: '1px solid var(--color-border)', color: 'var(--color-text)', outline: 'none'
-        }}
+        className="qf-mapping-select"
       >
         <option value="">None (Column not present)</option>
         {options.map(o => <option key={o} value={o}>{o}</option>)}
@@ -231,3 +233,150 @@ function SelectField({ label, value, onChange, options }) {
     </div>
   );
 }
+
+const mappingStyles = `
+  .qf-mapping-shell {
+    display: flex;
+    gap: 24px;
+    height: calc(100vh - 140px);
+    position: relative;
+  }
+
+  .qf-mapping-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+  }
+
+  .qf-mapping-preview {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .qf-mapping-controls {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .qf-mapping-table-wrap {
+    overflow: auto;
+    flex: 1;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+  }
+
+  .qf-mapping-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 13px;
+  }
+
+  .qf-mapping-table thead {
+    position: sticky;
+    top: 0;
+    background: var(--color-surface-alt);
+    z-index: 1;
+  }
+
+  .qf-mapping-table th {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-secondary);
+  }
+
+  .qf-mapping-table td {
+    padding: 12px 16px;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-bottom: 1px solid #f5f5f5;
+  }
+
+  .qf-mapping-table tr:hover td {
+    background: var(--color-surface-alt);
+  }
+
+  .qf-mapping-select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--color-surface-alt);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    outline: none;
+    font: inherit;
+    font-size: 14px;
+    transition: border-color 0.2s;
+  }
+
+  .qf-mapping-select:focus {
+    border-color: var(--color-primary);
+  }
+
+  .qf-mapping-chip {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-alt);
+    color: var(--color-text);
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+
+  .qf-mapping-chip.active {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+  }
+
+  .qf-mapping-chip:hover:not(.active) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .qf-mapping-errors-list {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--color-surface-alt);
+    padding: 16px;
+    border-radius: 10px;
+    margin-bottom: 0;
+  }
+
+  .qf-mapping-error-row {
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+
+  .qf-mapping-error-row:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  @media (max-width: 768px) {
+    .qf-mapping-shell {
+      flex-direction: column;
+      height: auto;
+    }
+  }
+`;

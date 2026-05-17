@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import api from '../../api/axios';
 import { Card, Spinner, Button } from '../ui';
 
@@ -6,48 +6,62 @@ export default function AttemptDetailView({ quizId, attemptId, onBack }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
-  const [filter, setFilter] = useState('all'); // 'all', 'correct', 'wrong', 'unanswered'
+  const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [expandedExplanations, setExpandedExplanations] = useState(new Set());
   const pageSize = 10;
-  
+
   const questionRefs = useRef({});
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchAttemptData = async () => {
+      setLoading(true);
+      setError(null);
       try {
         const res = await api.get(`/quiz/${quizId}/attempt/${attemptId}/result`);
-        setData(res.data.data);
-      } catch (err) {
-        console.error(err);
-        setError('Failed to load attempt details');
+        if (!cancelled) {
+          setData(res.data.data);
+        }
+      } catch {
+        if (!cancelled) {
+          setError('Failed to load attempt details');
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
+
     fetchAttemptData();
+
+    return () => {
+      cancelled = true;
+    };
   }, [quizId, attemptId]);
 
   useEffect(() => {
     setPage(1);
   }, [filter, searchQuery]);
 
-  const toggleExplanation = (id) => {
+  const toggleExplanation = useCallback((id) => {
     setExpandedExplanations(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  };
+  }, []);
 
-  const scrollToQuestion = (id) => {
+  const scrollToQuestion = useCallback((id) => {
     const el = questionRefs.current[id];
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  };
+  }, []);
 
   if (loading) {
     return (
@@ -61,33 +75,56 @@ export default function AttemptDetailView({ quizId, attemptId, onBack }) {
     return (
       <div style={{ padding: '40px', textAlign: 'center' }}>
         <h3 style={{ color: 'var(--color-danger)' }}>{error}</h3>
-        <Button onClick={onBack}>Back to Attempts</Button>
+        <div style={{ marginTop: 16 }}>
+          <Button onClick={onBack}>Back to Attempts</Button>
+        </div>
       </div>
     );
   }
 
+  if (!data) {
+    return null;
+  }
+
   const { attempt, questions } = data;
 
-  const correctAnswers = attempt.correctCount ?? attempt.answers.filter(a => a.isCorrect).length;
-  const wrongAnswers = attempt.wrongCount ?? attempt.answers.filter(a => !a.isCorrect && a.selectedAnswer !== null).length;
-  const unansweredCount = attempt.unansweredCount ?? attempt.answers.filter(a => a.selectedAnswer === null).length;
-  const totalTime = Number(attempt.totalTime || 0) || attempt.answers.reduce((acc, curr) => acc + (curr.timeTaken || 0), 0);
+  if (!attempt || !questions) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <h3 style={{ color: 'var(--color-danger)' }}>Invalid attempt data</h3>
+        <div style={{ marginTop: 16 }}>
+          <Button onClick={onBack}>Back to Attempts</Button>
+        </div>
+      </div>
+    );
+  }
 
-  const formatTime = (seconds) => {
+  const correctAnswers = attempt.correctCount ?? (attempt.answers || []).filter(a => a.isCorrect).length;
+  const wrongAnswers = attempt.wrongCount ?? (attempt.answers || []).filter(a => !a.isCorrect && a.selectedAnswer !== null).length;
+  const unansweredCount = attempt.unansweredCount ?? (attempt.answers || []).filter(a => a.selectedAnswer === null).length;
+  const totalTimeMs = Number(attempt.totalTimeMs || 0) || Number(attempt.totalTime || 0) * 1000;
+
+  const formatTime = (ms) => {
+    const totalSeconds = Math.round(ms / 1000);
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins}m ${secs}s`;
+  };
+
+  const formatTimeSeconds = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}m ${secs}s`;
   };
 
-  // Map each question to include its answer status for easy filtering
   const questionsWithStatus = questions.map(q => {
-    const answerData = attempt.answers.find(a => String(a.questionId) === String(q._id));
+    const answerData = (attempt.answers || []).find(a => String(a.questionId) === String(q._id));
     let status = 'unanswered';
     if (answerData) {
       if (answerData.isCorrect) status = 'correct';
-      else if (answerData.selectedAnswer !== null) status = 'wrong';
+      else if (answerData.selectedAnswer !== null && answerData.selectedAnswer !== undefined) status = 'wrong';
     }
-    return { ...q, answerData, status };
+    return { ...q, answerData: answerData || null, status };
   });
 
   const filteredQuestions = questionsWithStatus.filter(q => {
@@ -100,67 +137,69 @@ export default function AttemptDetailView({ quizId, attemptId, onBack }) {
   const paginatedQuestions = filteredQuestions.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, overflow: 'hidden', backgroundColor: '#000000', color: '#ffffff' }}>
-      
+    <div className="attempt-detail-root">
+
       {/* Sticky Header */}
-      <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--color-border, #333)', display: 'flex', alignItems: 'center', gap: '16px', position: 'sticky', top: 0, backgroundColor: '#000000', zIndex: 10, borderTopLeftRadius: '12px', borderTopRightRadius: '12px' }}>
-        <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#1a1a1a', color: '#ffffff' }}>
+      <div className="attempt-detail-header">
+        <button onClick={onBack} className="attempt-detail-back-btn" aria-label="Go back">
           ←
         </button>
         <div>
           <h2 style={{ margin: 0, fontSize: '20px' }}>Attempt Review</h2>
-          <div style={{ fontSize: '12px', color: 'var(--color-text-secondary, #9ca3af)', marginTop: '4px' }}>
-            Submitted on {new Date(attempt.createdAt).toLocaleString()}
+          <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
+            Submitted on {new Date(attempt.completedAt || attempt.createdAt).toLocaleString()}
           </div>
         </div>
       </div>
 
-      <div style={{ padding: '24px', overflowY: 'auto', flex: 1, minHeight: 0, display: 'flex', gap: '24px' }}>
-        
-        {/* Main Content (Questions List) */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          
+      <div className="attempt-detail-body">
+
+        {/* Main Content */}
+        <div className="attempt-detail-main">
+
           {/* Overview Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '12px', backgroundColor: '#1a1a1a', padding: '16px', borderRadius: '8px' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '12px', color: '#9ca3af' }}>Score</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', color: attempt.percentage >= 50 ? '#10b981' : '#ef4444' }}>{attempt.score}/{attempt.totalMarks || attempt.totalQuestions}</div>
+          <div className="attempt-stats-grid">
+            <div className="attempt-stat-item">
+              <div className="attempt-stat-label">Score</div>
+              <div className="attempt-stat-value" style={{ color: (attempt.percentage || 0) >= 50 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                {attempt.score}/{attempt.totalMarks || attempt.totalQuestions}
+              </div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '12px', color: '#9ca3af' }}>Status</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{attempt.percentage >= 50 ? 'Pass' : 'Fail'}</div>
+            <div className="attempt-stat-item">
+              <div className="attempt-stat-label">Status</div>
+              <div className="attempt-stat-value">{(attempt.percentage || 0) >= 50 ? 'Pass' : 'Fail'}</div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '12px', color: '#9ca3af' }}>Correct</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#10b981' }}>{correctAnswers}</div>
+            <div className="attempt-stat-item">
+              <div className="attempt-stat-label">Correct</div>
+              <div className="attempt-stat-value" style={{ color: 'var(--color-success)' }}>{correctAnswers}</div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '12px', color: '#9ca3af' }}>Wrong</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#ef4444' }}>{wrongAnswers}</div>
+            <div className="attempt-stat-item">
+              <div className="attempt-stat-label">Wrong</div>
+              <div className="attempt-stat-value" style={{ color: 'var(--color-danger)' }}>{wrongAnswers}</div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '12px', color: '#9ca3af' }}>Skipped</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#f59e0b' }}>{unansweredCount}</div>
+            <div className="attempt-stat-item">
+              <div className="attempt-stat-label">Skipped</div>
+              <div className="attempt-stat-value" style={{ color: 'var(--color-warning)' }}>{unansweredCount}</div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '12px', color: '#9ca3af' }}>Time</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{formatTime(totalTime)}</div>
+            <div className="attempt-stat-item">
+              <div className="attempt-stat-label">Time</div>
+              <div className="attempt-stat-value">{formatTime(totalTimeMs)}</div>
             </div>
           </div>
 
           {/* Filters & Search */}
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <input 
-              type="text" 
-              placeholder="Search questions..." 
+          <div className="attempt-filters">
+            <input
+              type="text"
+              placeholder="Search questions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ flex: 1, padding: '10px 16px', borderRadius: '6px', border: '1px solid #333', backgroundColor: '#1a1a1a', color: '#fff' }}
+              className="attempt-search-input"
             />
-            <select 
-              value={filter} 
+            <select
+              value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              style={{ padding: '10px 16px', borderRadius: '6px', border: '1px solid #333', backgroundColor: '#1a1a1a', color: '#fff' }}
+              className="attempt-filter-select"
             >
               <option value="all">All Questions</option>
               <option value="correct">Correct Only</option>
@@ -171,105 +210,98 @@ export default function AttemptDetailView({ quizId, attemptId, onBack }) {
 
           {/* Questions List */}
           {filteredQuestions.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-secondary)' }}>
               No questions match your criteria.
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div className="attempt-questions-list">
               {paginatedQuestions.map((q) => {
                 const { answerData, status } = q;
                 const isExpanded = expandedExplanations.has(q._id);
-                
-                let borderColor = '#333';
+                const answerTimeMs = Number(answerData?.timeTakenMs || 0) || Number(answerData?.timeTaken || 0) * 1000;
+
+                let borderColor = 'var(--color-border)';
                 let statusLabel = 'Unanswered';
-                let statusColor = '#f59e0b'; // warning
-                
+                let statusColor = 'var(--color-warning)';
+
                 if (status === 'correct') {
-                  borderColor = '#10b981'; // success
+                  borderColor = 'var(--color-success)';
                   statusLabel = 'Correct';
-                  statusColor = '#10b981';
+                  statusColor = 'var(--color-success)';
                 } else if (status === 'wrong') {
-                  borderColor = '#ef4444'; // danger
+                  borderColor = 'var(--color-danger)';
                   statusLabel = 'Wrong';
-                  statusColor = '#ef4444';
+                  statusColor = 'var(--color-danger)';
                 }
 
                 return (
-                  <Card 
-                    key={q._id} 
-                    ref={el => questionRefs.current[q._id] = el}
-                    style={{ borderLeft: `4px solid ${borderColor}`, padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: '#111827', borderColor: '#333' }}
+                  <Card
+                    key={q._id}
+                    ref={el => { questionRefs.current[q._id] = el; }}
+                    style={{ borderLeft: `4px solid ${borderColor}`, padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <h4 style={{ margin: 0, fontSize: '18px', color: '#fff' }}>Question {q.questionNumber}</h4>
-                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                        <span style={{ fontSize: '12px', padding: '2px 8px', borderRadius: '12px', backgroundColor: `${statusColor}20`, color: statusColor, fontWeight: 'bold' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+                      <h4 style={{ margin: 0, fontSize: '18px' }}>Question {q.questionNumber}</h4>
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <span className="attempt-status-pill" style={{ backgroundColor: `color-mix(in srgb, ${statusColor} 15%, transparent)`, color: statusColor }}>
                           {statusLabel}
                         </span>
-                        <span style={{ fontSize: '12px', color: '#9ca3af' }}>Marks: {answerData?.marksAwarded ?? 0}/{q.marks ?? 1}</span>
-                        <span style={{ fontSize: '12px', color: '#9ca3af' }}>Time: {answerData?.timeTaken || 0}s</span>
+                        <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>Marks: {answerData?.marksAwarded ?? 0}/{q.marks ?? 1}</span>
+                        <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>Time: {answerTimeMs > 0 ? formatTime(answerTimeMs) : `${answerData?.timeTaken || 0}s`}</span>
                       </div>
                     </div>
-                    
-                    <p style={{ margin: 0, fontSize: '16px', lineHeight: '1.5', color: '#e5e7eb' }}>{q.questionText}</p>
-                    
+
+                    <p style={{ margin: 0, fontSize: '16px', lineHeight: '1.5' }}>{q.questionText}</p>
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {q.options.map((opt, i) => {
+                      {(q.options || []).map((opt) => {
                         const isSelected = answerData?.selectedAnswer === opt.label;
                         const isCorrectOption = opt.isCorrect === true || q.correctAnswer === opt.label;
-                        
-                        let bg = '#000000';
-                        let color = '#d1d5db';
-                        let border = '1px solid #333';
+
+                        let optionClass = 'attempt-option-neutral';
                         let indicatorText = null;
-                        
+
                         if (isCorrectOption) {
-                          bg = 'rgba(16, 185, 129, 0.1)';
-                          border = '1px solid #10b981';
-                          color = '#10b981';
+                          optionClass = 'attempt-option-correct';
                           indicatorText = isSelected ? 'Correctly Selected' : 'Correct Answer';
                         } else if (isSelected && !isCorrectOption) {
-                          bg = 'rgba(239, 68, 68, 0.1)';
-                          border = '1px solid #ef4444';
-                          color = '#ef4444';
+                          optionClass = 'attempt-option-wrong';
                           indicatorText = 'Your Answer';
                         }
 
                         return (
-                          <div key={i} style={{ padding: '12px 16px', borderRadius: '6px', backgroundColor: bg, border, color, display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <span style={{ width: '24px', height: '24px', borderRadius: '50%', border: '1px solid currentColor', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', flexShrink: 0 }}>
-                              {opt.label}
-                            </span>
+                          <div key={opt.label} className={`attempt-option ${optionClass}`}>
+                            <span className="attempt-option-label-pill">{opt.label}</span>
                             <span style={{ flex: 1 }}>{opt.text}</span>
-                            {indicatorText && <span style={{ fontSize: '12px', fontWeight: 'bold', marginLeft: 'auto' }}>{indicatorText}</span>}
+                            {indicatorText ? <span className="attempt-option-indicator">{indicatorText}</span> : null}
                           </div>
                         );
                       })}
                     </div>
-                    
-                    {q.explanation && (
+
+                    {q.explanation ? (
                       <div style={{ marginTop: '8px' }}>
-                        <button 
+                        <button
                           onClick={() => toggleExplanation(q._id)}
-                          style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', padding: 0, fontSize: '14px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          className="attempt-explanation-toggle"
                         >
                           {isExpanded ? 'Hide Explanation' : 'View Explanation'}
                         </button>
-                        
-                        {isExpanded && (
-                          <div style={{ marginTop: '12px', padding: '16px', backgroundColor: '#1a1a1a', borderRadius: '8px', fontSize: '14px', color: '#d1d5db', borderLeft: '3px solid #3b82f6', animation: 'fadeIn 0.2s ease-in-out' }}>
-                            <strong style={{ display: 'block', marginBottom: '8px', color: '#fff' }}>Solution:</strong>
+
+                        {isExpanded ? (
+                          <div className="attempt-explanation-box animate-fade-in">
+                            <strong style={{ display: 'block', marginBottom: '8px' }}>Solution:</strong>
                             {q.explanation}
                           </div>
-                        )}
+                        ) : null}
                       </div>
-                    )}
+                    ) : null}
                   </Card>
                 );
               })}
 
-              {totalPages > 1 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, color: '#9ca3af', fontSize: 13 }}>
+              {totalPages > 1 ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, color: 'var(--color-text-secondary)', fontSize: 13 }}>
                   <Button variant="secondary" size="sm" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>
                     Previous
                   </Button>
@@ -278,43 +310,28 @@ export default function AttemptDetailView({ quizId, attemptId, onBack }) {
                     Next
                   </Button>
                 </div>
-              )}
+              ) : null}
             </div>
           )}
         </div>
 
         {/* Sidebar Palette */}
-        <div style={{ width: '260px', flexShrink: 0, display: 'none', '@media(minWidth: 768px)': { display: 'block' } }} className="palette-sidebar">
-          <div style={{ position: 'sticky', top: '24px', backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px', border: '1px solid #333' }}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#fff' }}>Question Palette</h3>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
-              {questionsWithStatus.map((q, index) => {
-                let bgColor = '#333';
-                if (q.status === 'correct') bgColor = '#10b981';
-                else if (q.status === 'wrong') bgColor = '#ef4444';
-                else bgColor = '#f59e0b';
-                
+        <div className="attempt-palette-sidebar">
+          <div className="attempt-palette-inner">
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '16px' }}>Question Palette</h3>
+
+            <div className="attempt-palette-grid">
+              {questionsWithStatus.map((q) => {
+                let bgColor = 'var(--color-warning)';
+                if (q.status === 'correct') bgColor = 'var(--color-success)';
+                else if (q.status === 'wrong') bgColor = 'var(--color-danger)';
+
                 return (
                   <button
                     key={q._id}
                     onClick={() => scrollToQuestion(q._id)}
-                    style={{
-                      aspectRatio: '1',
-                      border: 'none',
-                      borderRadius: '4px',
-                      backgroundColor: bgColor,
-                      color: '#fff',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'transform 0.1s',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
-                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                    className="attempt-palette-btn"
+                    style={{ backgroundColor: bgColor }}
                     title={`Question ${q.questionNumber}`}
                   >
                     {q.questionNumber}
@@ -322,38 +339,296 @@ export default function AttemptDetailView({ quizId, attemptId, onBack }) {
                 );
               })}
             </div>
-            
-            <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', color: '#9ca3af' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ width: '12px', height: '12px', backgroundColor: '#10b981', borderRadius: '2px' }}></span> Correct
+
+            <div className="attempt-palette-legend">
+              <div className="attempt-palette-legend-item">
+                <span style={{ backgroundColor: 'var(--color-success)' }} /> Correct
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ width: '12px', height: '12px', backgroundColor: '#ef4444', borderRadius: '2px' }}></span> Wrong
+              <div className="attempt-palette-legend-item">
+                <span style={{ backgroundColor: 'var(--color-danger)' }} /> Wrong
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ width: '12px', height: '12px', backgroundColor: '#f59e0b', borderRadius: '2px' }}></span> Unanswered
+              <div className="attempt-palette-legend-item">
+                <span style={{ backgroundColor: 'var(--color-warning)' }} /> Unanswered
               </div>
             </div>
-            
           </div>
         </div>
-
       </div>
-      
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-4px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @media (max-width: 768px) {
-          .palette-sidebar {
-            display: none !important;
-          }
-        }
-        .palette-sidebar {
-          display: block;
-        }
-      `}</style>
+
+      <style>{attemptDetailStyles}</style>
     </div>
   );
 }
+
+const attemptDetailStyles = `
+  .attempt-detail-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .attempt-detail-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    background: var(--color-bg);
+    z-index: 10;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+  }
+
+  .attempt-detail-back-btn {
+    background: var(--color-surface-alt);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    color: var(--color-text);
+    font-size: 16px;
+    transition: background 0.2s;
+  }
+
+  .attempt-detail-back-btn:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .attempt-detail-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 24px;
+  }
+
+  .attempt-detail-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-width: 0;
+  }
+
+  .attempt-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 12px;
+    background: var(--color-surface-alt);
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+  }
+
+  .attempt-stat-item {
+    text-align: center;
+  }
+
+  .attempt-stat-label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .attempt-stat-value {
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  .attempt-filters {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .attempt-search-input {
+    flex: 1;
+    min-width: 180px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-alt);
+    color: var(--color-text);
+    font: inherit;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .attempt-search-input:focus {
+    border-color: var(--color-primary);
+  }
+
+  .attempt-filter-select {
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-alt);
+    color: var(--color-text);
+    font: inherit;
+    font-size: 14px;
+  }
+
+  .attempt-questions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .attempt-status-pill {
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: bold;
+  }
+
+  .attempt-option {
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-alt);
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .attempt-option-correct {
+    background: var(--color-success-light);
+    border-color: rgba(22, 163, 74, 0.25);
+    color: var(--color-success);
+  }
+
+  .attempt-option-wrong {
+    background: var(--color-danger-light);
+    border-color: rgba(220, 38, 38, 0.25);
+    color: var(--color-danger);
+  }
+
+  .attempt-option-label-pill {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .attempt-option-indicator {
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+
+  .attempt-explanation-toggle {
+    background: none;
+    border: none;
+    color: var(--color-primary);
+    cursor: pointer;
+    padding: 0;
+    font-size: 14px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .attempt-explanation-toggle:hover {
+    text-decoration: underline;
+  }
+
+  .attempt-explanation-box {
+    margin-top: 12px;
+    padding: 16px;
+    background: rgba(79, 70, 229, 0.04);
+    border-radius: 12px;
+    font-size: 14px;
+    color: var(--color-text);
+    border-left: 3px solid var(--color-primary);
+  }
+
+  .attempt-palette-sidebar {
+    width: 260px;
+    flex-shrink: 0;
+  }
+
+  .attempt-palette-inner {
+    position: sticky;
+    top: 24px;
+    background: var(--color-surface-alt);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+  }
+
+  .attempt-palette-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+
+  .attempt-palette-btn {
+    aspect-ratio: 1;
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease;
+  }
+
+  .attempt-palette-btn:hover {
+    transform: scale(1.1);
+  }
+
+  .attempt-palette-legend {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+
+  .attempt-palette-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .attempt-palette-legend-item span {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    display: inline-block;
+  }
+
+  @media (max-width: 860px) {
+    .attempt-palette-sidebar {
+      display: none;
+    }
+
+    .attempt-detail-body {
+      padding: 16px;
+    }
+  }
+`;

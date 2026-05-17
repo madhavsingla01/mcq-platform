@@ -42,6 +42,40 @@ const uploadSchema = new mongoose.Schema(
       rowCount: Number,
       preview: [mongoose.Schema.Types.Mixed], // First 5 rows
     },
+    parseHistory: {
+      type: [{
+        status: {
+          type: String,
+          enum: ['parsed', 'error'],
+          required: true,
+        },
+        headers: {
+          type: [String],
+          default: [],
+        },
+        rowCount: {
+          type: Number,
+          default: 0,
+        },
+        sheetNames: {
+          type: [String],
+          default: [],
+        },
+        autoMapping: {
+          type: mongoose.Schema.Types.Mixed,
+          default: null,
+        },
+        error: {
+          type: String,
+          default: '',
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      }],
+      default: [],
+    },
     columnMapping: {
       question: String,
       options: [String],
@@ -55,6 +89,24 @@ const uploadSchema = new mongoose.Schema(
     autoMapping: {
       type: mongoose.Schema.Types.Mixed, // Auto-detected mapping with confidence
       default: null,
+    },
+    mappingHistory: {
+      type: [{
+        mappedColumns: {
+          type: mongoose.Schema.Types.Mixed,
+          default: {},
+        },
+        source: {
+          type: String,
+          enum: ['auto', 'manual', 'import'],
+          default: 'manual',
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      }],
+      default: [],
     },
     errorLog: {
       type: [mongoose.Schema.Types.Mixed],
@@ -73,6 +125,7 @@ const uploadSchema = new mongoose.Schema(
 
 // Index
 uploadSchema.index({ userId: 1, createdAt: -1 });
+uploadSchema.index({ status: 1, updatedAt: -1 });
 
 const Upload = mongoose.model('Upload', uploadSchema);
 export default Upload;

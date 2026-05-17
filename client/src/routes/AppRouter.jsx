@@ -15,10 +15,16 @@ const Result = lazy(() => import('../pages/Result/Result'));
 const Dashboard = lazy(() => import('../pages/Dashboard/Dashboard'));
 const Login = lazy(() => import('../pages/Auth/Login'));
 const Register = lazy(() => import('../pages/Auth/Register'));
+const Settings = lazy(() => import('../pages/Settings/Settings'));
+const SettingsProfile = lazy(() => import('../pages/Settings/Profile'));
+const SettingsPreferences = lazy(() => import('../pages/Settings/Preferences'));
+const SharedSession = lazy(() => import('../pages/Session/SharedSession'));
+const SessionQuiz = lazy(() => import('../pages/Session/SessionQuiz'));
+const Admin = lazy(() => import('../pages/Admin/Admin'));
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, isLoading } = useAuthStore();
-  if (isLoading) return <div style={{ display: 'flex', justifyContent: 'center', py: 60 }}><Spinner size={40} /></div>;
+  if (isLoading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><Spinner size={40} /></div>;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 }
@@ -35,23 +41,54 @@ export default function AppRouter() {
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Home />} />
-        <Route path="upload" element={<Upload />} />
-        <Route path="mapping/:uploadId" element={<Mapping />} />
-        <Route path="quiz/:quizId" element={<Quiz />} />
-        <Route path="result/:attemptId" element={<Result />} />
-        
-        {/* Protected Routes */}
-        <Route path="dashboard" element={
+          <Route path="upload" element={<Upload />} />
+          <Route path="mapping/:uploadId" element={<Mapping />} />
+          <Route path="quiz/:quizId" element={<Quiz />} />
+          <Route path="result/:attemptId" element={<Result />} />
+
+          {/* Protected Routes */}
+          <Route path="dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+
+          <Route path="admin" element={
+            <ProtectedRoute>
+              <Admin />
+            </ProtectedRoute>
+          } />
+
+          <Route path="settings" element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          }>
+            <Route index element={<SettingsProfile />} />
+            <Route path="profile" element={<SettingsProfile />} />
+            <Route path="preferences" element={<SettingsPreferences />} />
+          </Route>
+
+          {/* Session Routes (within main layout for landing page) */}
+          <Route path="session/:shareCode" element={
+            <ProtectedRoute>
+              <SharedSession />
+            </ProtectedRoute>
+          } />
+
+          {/* Auth Routes */}
+          <Route path="login" element={<Login />} />
+          <Route path="register" element={<Register />} />
+        </Route>
+
+        {/* Session Quiz — standalone full-screen layout (outside MainLayout) */}
+        <Route path="session/:shareCode/quiz" element={
           <ProtectedRoute>
-            <Dashboard />
+            <SessionQuiz />
           </ProtectedRoute>
         } />
-        
-        {/* Auth Routes */}
-        <Route path="login" element={<Login />} />
-        <Route path="register" element={<Register />} />
-      </Route>
       </Routes>
     </Suspense>
   );
 }
+

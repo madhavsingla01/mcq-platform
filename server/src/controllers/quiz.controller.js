@@ -21,6 +21,12 @@ import {
   getRequestSessionId,
   mergeAttemptTrackingPayload,
 } from '../services/quiz/attemptTracking.service.js';
+import {
+  recordAnswerChanges,
+  recordEvent,
+  recordSearch,
+  upsertRecentQuiz,
+} from '../services/activity/activity.service.js';
 
 const getParser = (fileType) => {
   if (fileType === 'xlsx' || fileType === 'xls') {
@@ -62,8 +68,10 @@ const syncQuizAggregateFields = async (quizId) => {
   });
 };
 
-const getQuizQuestionsSorted = async (quizId) => {
-  return Question.find({ quizId }).sort({ orderIndex: 1, questionNumber: 1 });
+const getQuizQuestionsSorted = (quizId) => {
+  return Question.find({ quizId })
+    .select('-metadata -createdAt -updatedAt -__v')
+    .sort({ orderIndex: 1, questionNumber: 1 });
 };
 
 const toObjectIdString = (value) => (value ? String(value) : '');
@@ -196,6 +204,9 @@ const normalizeQuizInput = (payload) => {
     throw new AppError('title is required', 400);
   }
 
+  const rawTimerMode = payload.timerMode ?? payload.settings?.timerMode ?? 'none';
+  const timerMode = ['none', 'soft', 'strict'].includes(rawTimerMode) ? rawTimerMode : 'none';
+
   return {
     title,
     description: String(payload.description || '').trim(),
@@ -206,6 +217,8 @@ const normalizeQuizInput = (payload) => {
     quickModeEnabled: payload.quickModeEnabled !== false && payload.quick_mode_enabled !== false,
     settings: {
       timeLimit: Math.max(Number(payload.timeLimit ?? payload.time_limit ?? payload.settings?.timeLimit ?? 0) || 0, 0),
+      timerMode,
+      instantFeedback: payload.instantFeedback === true || payload.settings?.instantFeedback === true,
       shuffleQuestions: payload.shuffleQuestions === true || payload.settings?.shuffleQuestions === true,
       shuffleOptions: payload.shuffleOptions === true || payload.settings?.shuffleOptions === true,
       showExplanation: payload.showExplanation !== false && payload.settings?.showExplanation !== false,
@@ -244,7 +257,7 @@ const syncQuestionAnalyticsForQuiz = async (quizId) => {
         return;
       }
 
-      totalTime += Number(answer.timeTakenMs || answer.timeTaken * 1000 || 0);
+      totalTime += Number(answer.timeTakenMs) || Number(answer.timeTaken || 0) * 1000;
 
       if (answer.isCorrect) {
         correctAttempts += 1;
@@ -384,6 +397,20 @@ export const generateQuiz = catchAsync(async (req, res, next) => {
   upload.quizId = quiz._id;
   await upload.save();
 
+  await recordEvent({
+    req,
+    eventType: 'QUIZ_CREATED',
+    category: 'quiz',
+    quizId: quiz._id,
+    uploadId: upload._id,
+    metadata: {
+      questionCount: questions.length,
+      skipped,
+      sourceFile: upload.originalName,
+      generatedFromUpload: true,
+    },
+  });
+
   logger.info(`Quiz: "${quiz.title}" — ${questions.length} questions, ${skipped} skipped`);
 
   res.status(201).json({
@@ -403,6 +430,9 @@ export const getQuiz = catchAsync(async (req, res, next) => {
     return next(new AppError('Quiz not found', 404));
   }
 
+  assertQuizReadAccess(quiz, req);
+  await upsertRecentQuiz({ req, quizId: quiz._id });
+
   res.json({
     success: true,
     data: {
@@ -417,6 +447,8 @@ export const getQuizQuestions = catchAsync(async (req, res, next) => {
   if (!quiz) {
     return next(new AppError('Quiz not found', 404));
   }
+
+  assertQuizReadAccess(quiz, req);
 
   const questions = await getQuizQuestionsSorted(quiz._id);
 
@@ -435,6 +467,8 @@ export const getActiveAttempt = catchAsync(async (req, res, next) => {
   if (!quiz) {
     return next(new AppError('Quiz not found', 404));
   }
+
+  assertQuizReadAccess(quiz, req);
 
   const ownerFilter = buildAttemptOwnerFilter(req);
 
@@ -483,6 +517,8 @@ export const startAttempt = catchAsync(async (req, res, next) => {
     return next(new AppError('Quiz not found', 404));
   }
 
+  assertQuizReadAccess(quiz, req);
+
   const sessionId = getRequestSessionId(req);
 
   if (!req.user && !sessionId) {
@@ -508,6 +544,21 @@ export const startAttempt = catchAsync(async (req, res, next) => {
   }
 
   if (existingAttempt) {
+    await Promise.all([
+      upsertRecentQuiz({ req, quizId: quiz._id, attempt: existingAttempt }),
+      recordEvent({
+        req,
+        eventType: 'ATTEMPT_RECOVERED',
+        category: 'attempt',
+        quizId: quiz._id,
+        attemptId: existingAttempt._id,
+        metadata: {
+          status: existingAttempt.status,
+          recoveryMode: 'server',
+        },
+      }),
+    ]);
+
     return res.json({
       success: true,
       data: {
@@ -519,6 +570,17 @@ export const startAttempt = catchAsync(async (req, res, next) => {
 
   const questions = await getQuizQuestionsSorted(quiz._id);
   const isQuickMode = quiz.quickModeEnabled !== false && req.body.isQuickMode === true;
+  const instantFeedback = quiz.settings?.instantFeedback === true || req.body.instantFeedback === true || isQuickMode;
+
+  // Timer architecture: compute deadline from quiz settings
+  const timeLimitMinutes = Number(quiz.settings?.timeLimit || 0);
+  const timerMode = quiz.settings?.timerMode || 'none';
+  const allowedDurationMs = timeLimitMinutes > 0 ? timeLimitMinutes * 60 * 1000 : 0;
+  const startedAt = new Date();
+  const deadlineAt = allowedDurationMs > 0 && timerMode !== 'none'
+    ? new Date(startedAt.getTime() + allowedDurationMs)
+    : null;
+
   const attempt = await Attempt.create({
     quizId: quiz._id,
     userId: req.user?._id || null,
@@ -527,10 +589,39 @@ export const startAttempt = catchAsync(async (req, res, next) => {
     totalQuestions: quiz.questionCount,
     totalMarks: quiz.totalMarks || getQuizTotalMarks(questions),
     isQuickMode,
-    startedAt: new Date(),
+    instantFeedback,
+    timerMode,
+    allowedDurationMs,
+    deadlineAt,
+    startedAt,
     lastServerSyncAt: new Date(),
     syncStatus: 'synced',
+    progress: {
+      currentQuestionId: questions[0]?._id || null,
+      answeredCount: 0,
+      markedForReviewCount: 0,
+      totalQuestions: questions.length,
+      percentage: 0,
+      updatedAt: new Date(),
+    },
   });
+
+  await Promise.all([
+    upsertRecentQuiz({ req, quizId: quiz._id, attempt }),
+    recordEvent({
+      req,
+      eventType: 'ATTEMPT_STARTED',
+      category: 'attempt',
+      quizId: quiz._id,
+      attemptId: attempt._id,
+      metadata: {
+        totalQuestions: questions.length,
+        timerMode,
+        isQuickMode,
+        instantFeedback,
+      },
+    }),
+  ]);
 
   res.status(201).json({
     success: true,
@@ -558,7 +649,7 @@ export const syncAttempt = catchAsync(async (req, res, next) => {
   }
 
   const questions = await getQuizQuestionsSorted(attempt.quizId);
-  const { flags } = mergeAttemptTrackingPayload({
+  const { flags, answerChanges } = mergeAttemptTrackingPayload({
     attempt,
     questions,
     payload: req.body,
@@ -567,6 +658,49 @@ export const syncAttempt = catchAsync(async (req, res, next) => {
 
   attempt.syncStatus = 'synced';
   await attempt.save();
+  await Promise.all([
+    recordAnswerChanges({ req, attempt, changes: answerChanges, source: 'sync' }),
+    upsertRecentQuiz({
+      req,
+      quizId: attempt.quizId,
+      attempt,
+      lastVisitedQuestionId: attempt.lastActiveQuestionId,
+    }),
+    recordEvent({
+      req,
+      eventType: 'ATTEMPT_SYNCED',
+      category: 'attempt',
+      quizId: attempt.quizId,
+      attemptId: attempt._id,
+      questionId: attempt.lastActiveQuestionId,
+      metadata: {
+        stateVersion: attempt.syncVersion,
+        progress: attempt.progress,
+        suspiciousFlagCount: flags.length,
+      },
+    }),
+    req.body.currentQuestionId ? recordEvent({
+      req,
+      eventType: 'QUESTION_NAVIGATED',
+      category: 'attempt',
+      quizId: attempt.quizId,
+      attemptId: attempt._id,
+      questionId: req.body.currentQuestionId,
+      metadata: {
+        stateVersion: attempt.syncVersion,
+      },
+    }) : null,
+    Array.isArray(req.body.markedForReview) ? recordEvent({
+      req,
+      eventType: 'MARKED_FOR_REVIEW_UPDATED',
+      category: 'attempt',
+      quizId: attempt.quizId,
+      attemptId: attempt._id,
+      metadata: {
+        markedForReview: req.body.markedForReview,
+      },
+    }) : null,
+  ]);
 
   res.json({
     success: true,
@@ -574,6 +708,8 @@ export const syncAttempt = catchAsync(async (req, res, next) => {
       attempt,
       sync: {
         serverTime: new Date().toISOString(),
+        deadlineAt: attempt.deadlineAt ? attempt.deadlineAt.toISOString() : null,
+        timerMode: attempt.timerMode || 'none',
         suspiciousFlags: flags,
       },
     },
@@ -612,14 +748,53 @@ export const submitAttempt = catchAsync(async (req, res, next) => {
     });
   }
 
-  mergeAttemptTrackingPayload({
+  // Deadline validation for strict timer mode
+  const isLateSubmission = attempt.timerMode === 'strict' &&
+    attempt.deadlineAt &&
+    new Date() > new Date(attempt.deadlineAt);
+
+  if (isLateSubmission) {
+    logger.info(`Late submission flagged for attempt ${attempt._id}`);
+  }
+
+  const { flags, answerChanges } = mergeAttemptTrackingPayload({
     attempt,
     questions,
     payload: req.body,
     finalizing: true,
   });
 
+  if (isLateSubmission) {
+    attempt.suspiciousActivity = attempt.suspiciousActivity || {};
+    attempt.suspiciousActivity.flags = [
+      ...(attempt.suspiciousActivity.flags || []),
+      { code: 'LATE_SUBMISSION', message: 'Submitted after deadline expired', createdAt: new Date() },
+    ];
+  }
+
   await attempt.save();
+  await Promise.all([
+    recordAnswerChanges({ req, attempt, changes: answerChanges, source: 'submit' }),
+    upsertRecentQuiz({
+      req,
+      quizId: attempt.quizId,
+      attempt,
+      lastVisitedQuestionId: attempt.lastActiveQuestionId,
+    }),
+    recordEvent({
+      req,
+      eventType: 'ATTEMPT_SUBMITTED',
+      category: 'attempt',
+      quizId: attempt.quizId,
+      attemptId: attempt._id,
+      metadata: {
+        score: attempt.score,
+        percentage: attempt.percentage,
+        totalQuestions: attempt.totalQuestions,
+        suspiciousFlagCount: flags.length + (isLateSubmission ? 1 : 0),
+      },
+    }),
+  ]);
   await syncQuizAggregateFields(attempt.quizId);
   await syncQuestionAnalyticsForQuiz(attempt.quizId);
 
@@ -755,6 +930,19 @@ export const listQuizzes = catchAsync(async (req, res) => {
     Quiz.countDocuments(filter),
   ]);
 
+  if (search) {
+    await recordSearch({
+      req,
+      query: search,
+      context: 'quiz_search',
+      filters: {
+        category: req.query.category || null,
+        difficulty: req.query.difficulty || null,
+      },
+      resultCount: total,
+    });
+  }
+
   res.json({
     success: true,
     data: {
@@ -793,6 +981,17 @@ export const createQuiz = catchAsync(async (req, res) => {
       quizId: quiz._id,
     }))
   );
+
+  await recordEvent({
+    req,
+    eventType: 'QUIZ_CREATED',
+    category: 'quiz',
+    quizId: quiz._id,
+    metadata: {
+      questionCount: questions.length,
+      createdManually: true,
+    },
+  });
 
   res.status(201).json({
     success: true,
@@ -838,6 +1037,15 @@ export const updateQuiz = catchAsync(async (req, res) => {
   }
 
   await quiz.save();
+  await recordEvent({
+    req,
+    eventType: 'QUIZ_UPDATED',
+    category: 'quiz',
+    quizId: quiz._id,
+    metadata: {
+      fields: Object.keys(req.body || {}),
+    },
+  });
 
   res.json({
     success: true,
@@ -862,6 +1070,16 @@ export const deleteQuiz = catchAsync(async (req, res) => {
     Attempt.deleteMany({ quizId: quiz._id }),
     QuestionAnalytics.deleteMany({ quizId: quiz._id }),
   ]);
+
+  await recordEvent({
+    req,
+    eventType: 'QUIZ_DELETED',
+    category: 'quiz',
+    quizId: quiz._id,
+    metadata: {
+      title: quiz.title,
+    },
+  });
 
   res.json({
     success: true,
@@ -908,7 +1126,7 @@ export const answerAttempt = catchAsync(async (req, res) => {
     throw new AppError('Locked answers cannot be changed', 409);
   }
 
-  const { flags } = mergeAttemptTrackingPayload({
+  const { flags, answerChanges } = mergeAttemptTrackingPayload({
     attempt,
     questions,
     payload: {
@@ -935,6 +1153,27 @@ export const answerAttempt = catchAsync(async (req, res) => {
 
   attempt.syncStatus = 'synced';
   await attempt.save();
+  await Promise.all([
+    recordAnswerChanges({ req, attempt, changes: answerChanges, source: 'answer' }),
+    upsertRecentQuiz({
+      req,
+      quizId: attempt.quizId,
+      attempt,
+      lastVisitedQuestionId: attempt.lastActiveQuestionId,
+    }),
+    recordEvent({
+      req,
+      eventType: 'ANSWER_SELECTED',
+      category: 'answer',
+      quizId: attempt.quizId,
+      attemptId: attempt._id,
+      questionId,
+      metadata: {
+        selectedAnswer: req.body.selectedAnswer || null,
+        suspiciousFlagCount: flags.length,
+      },
+    }),
+  ]);
 
   res.json({
     success: true,
@@ -962,7 +1201,7 @@ export const syncAttemptTime = catchAsync(async (req, res) => {
   }
 
   const questions = await getQuizQuestionsSorted(attempt.quizId);
-  const { flags } = mergeAttemptTrackingPayload({
+  const { flags, answerChanges } = mergeAttemptTrackingPayload({
     attempt,
     questions,
     payload: {
@@ -979,6 +1218,28 @@ export const syncAttemptTime = catchAsync(async (req, res) => {
 
   attempt.syncStatus = 'synced';
   await attempt.save();
+  await Promise.all([
+    recordAnswerChanges({ req, attempt, changes: answerChanges, source: 'sync' }),
+    upsertRecentQuiz({
+      req,
+      quizId: attempt.quizId,
+      attempt,
+      lastVisitedQuestionId: attempt.lastActiveQuestionId,
+    }),
+    recordEvent({
+      req,
+      eventType: 'ATTEMPT_TIME_SYNCED',
+      category: 'attempt',
+      quizId: attempt.quizId,
+      attemptId: attempt._id,
+      questionId: attempt.lastActiveQuestionId,
+      metadata: {
+        totalTimeMs: attempt.totalTimeMs,
+        progress: attempt.progress,
+        suspiciousFlagCount: flags.length,
+      },
+    }),
+  ]);
 
   res.json({
     success: true,
@@ -988,6 +1249,31 @@ export const syncAttemptTime = catchAsync(async (req, res) => {
         serverTime: new Date().toISOString(),
         suspiciousFlags: flags,
       },
+    },
+  });
+});
+
+/**
+ * GET /api/v1/attempts/in-progress
+ * Fetch the authenticated user's active/in-progress attempts.
+ */
+export const getInProgressAttempts = catchAsync(async (req, res) => {
+  const limit = parseInt(req.query.limit, 10) || 10;
+  
+  const attempts = await Attempt.find({
+    userId: req.user._id,
+    completed: false,
+    status: 'in_progress',
+  })
+    .sort({ updatedAt: -1 })
+    .limit(Math.min(limit, 50))
+    .populate('quizId', 'title questionCount settings')
+    .lean();
+
+  res.status(200).json({
+    success: true,
+    data: {
+      attempts: attempts.filter(a => a.quizId),
     },
   });
 });
@@ -1004,7 +1290,7 @@ export const submitAttemptById = catchAsync(async (req, res) => {
   const questions = await getQuizQuestionsSorted(attempt.quizId);
 
   if (attempt.status !== 'completed') {
-    mergeAttemptTrackingPayload({
+    const { answerChanges } = mergeAttemptTrackingPayload({
       attempt,
       questions,
       payload: req.body,
@@ -1012,6 +1298,27 @@ export const submitAttemptById = catchAsync(async (req, res) => {
     });
 
     await attempt.save();
+    await Promise.all([
+      recordAnswerChanges({ req, attempt, changes: answerChanges, source: 'submit' }),
+      upsertRecentQuiz({
+        req,
+        quizId: attempt.quizId,
+        attempt,
+        lastVisitedQuestionId: attempt.lastActiveQuestionId,
+      }),
+      recordEvent({
+        req,
+        eventType: 'ATTEMPT_SUBMITTED',
+        category: 'attempt',
+        quizId: attempt.quizId,
+        attemptId: attempt._id,
+        metadata: {
+          score: attempt.score,
+          percentage: attempt.percentage,
+          totalQuestions: attempt.totalQuestions,
+        },
+      }),
+    ]);
     await syncQuizAggregateFields(attempt.quizId);
     await syncQuestionAnalyticsForQuiz(attempt.quizId);
   }
@@ -1213,16 +1520,16 @@ export const getUserAnalytics = catchAsync(async (req, res) => {
   const totalScore = attempts.reduce((sum, attempt) => sum + Number(attempt.score || 0), 0);
   const totalPercentage = attempts.reduce((sum, attempt) => sum + Number(attempt.percentage || 0), 0);
   const totalTimeMs = attempts.reduce(
-    (sum, attempt) => sum + Number(attempt.totalTimeMs || attempt.totalTime * 1000 || 0),
+    (sum, attempt) => sum + (Number(attempt.totalTimeMs) || Number(attempt.totalTime || 0) * 1000),
     0
   );
   const passCount = attempts.filter((attempt) => Number(attempt.percentage || 0) >= 50).length;
   const highestAttempt = attempts.reduce(
-    (best, attempt) => (!best || Number(attempt.percentage || 0) > Number(best.percentage || 0) ? attempt : best),
+    (best, attempt) => (!best || (Number(attempt.percentage || 0) > Number(best.percentage || 0))) ? attempt : best,
     null
   );
   const lowestAttempt = attempts.reduce(
-    (worst, attempt) => (!worst || Number(attempt.percentage || 0) < Number(worst.percentage || 0) ? attempt : worst),
+    (worst, attempt) => (!worst || (Number(attempt.percentage || 0) < Number(worst.percentage || 0))) ? attempt : worst,
     null
   );
 

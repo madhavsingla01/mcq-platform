@@ -213,6 +213,7 @@ const normalizeQuestionStates = (questionStates = []) => {
         lockedAt: parseDateValue(state.lockedAt),
         lastClientUpdatedAt: parseDateValue(state.lastClientUpdatedAt),
         isLocked: state.isLocked === true,
+        stateVersion: Number.isFinite(Number(state.stateVersion)) ? Number(state.stateVersion) : null,
       };
     })
     .filter(Boolean);
@@ -224,6 +225,14 @@ const buildQuestionLookup = (questions) => {
     questionMap.set(toObjectIdString(question._id), question);
   });
   return questionMap;
+};
+
+const normalizeQuestionIdList = (questionIds = []) => {
+  if (!Array.isArray(questionIds)) {
+    return [];
+  }
+
+  return [...new Set(questionIds.map(toObjectIdString).filter(Boolean))];
 };
 
 const calculateValidatedTotalTimeMs = ({ attempt, incomingTotalTimeMs, serverElapsedMs, flags }) => {
@@ -254,7 +263,17 @@ const calculateValidatedTotalTimeMs = ({ attempt, incomingTotalTimeMs, serverEla
   return Math.max(currentStoredMs, Math.min(incomingTotalTimeMs, allowedUpperBound));
 };
 
-const mergeAnswerState = ({ attempt, answer, question, incomingState, flags, now, finalizing }) => {
+const mergeAnswerState = ({
+  attempt,
+  answer,
+  question,
+  incomingState,
+  flags,
+  now,
+  finalizing,
+  answerChanges,
+  stateVersion,
+}) => {
   const visitTimestamps = uniqueSortedDates([
     ...(Array.isArray(answer.visitTimestamps) ? answer.visitTimestamps : []),
     ...incomingState.visitTimestamps,
@@ -323,7 +342,22 @@ const mergeAnswerState = ({ attempt, answer, question, incomingState, flags, now
         );
 
       if (shouldReplaceSelection) {
+        const previousAnswer = answer.selectedAnswer || null;
         answer.selectedAnswer = normalizedSelectedAnswer;
+
+        if (previousAnswer !== normalizedSelectedAnswer) {
+          answerChanges.push({
+            questionId: question._id,
+            previousAnswer,
+            newAnswer: normalizedSelectedAnswer,
+            changedAt: incomingSubmittedAt || incomingState.submittedAt || now,
+            stateVersion: incomingState.stateVersion ?? stateVersion,
+            metadata: {
+              source: finalizing ? 'submit' : 'sync',
+              questionNumber: question.questionNumber,
+            },
+          });
+        }
       }
     }
   }
@@ -588,9 +622,11 @@ export const mergeAttemptTrackingPayload = ({ attempt, questions, payload = {}, 
   const now = new Date();
   const questionLookup = buildQuestionLookup(questions);
   const flags = [];
+  const answerChanges = [];
   const normalizedQuestionStates = normalizeQuestionStates(
     payload.questionStates || payload.answers || []
   );
+  const stateVersion = Number.isFinite(Number(payload.stateVersion)) ? Number(payload.stateVersion) : null;
   const serverElapsedMs = Math.max(0, now.getTime() - new Date(attempt.startedAt).getTime());
   const incomingTotalTimeMs = clampMs(
     payload.totalElapsedMs ??
@@ -620,6 +656,42 @@ export const mergeAttemptTrackingPayload = ({ attempt, questions, payload = {}, 
     attempt.syncVersion = Math.max(attempt.syncVersion || 0, Number(payload.stateVersion));
   }
 
+  if (Array.isArray(payload.markedForReview)) {
+    const activeMarkedQuestionIds = normalizeQuestionIdList(payload.markedForReview);
+    const activeMarkedSet = new Set(activeMarkedQuestionIds);
+    const existingByQuestionId = new Map(
+      (attempt.markedForReview || []).map((item) => [toObjectIdString(item.questionId), item])
+    );
+
+    activeMarkedQuestionIds.forEach((questionId) => {
+      if (!questionLookup.has(questionId)) {
+        return;
+      }
+
+      const existing = existingByQuestionId.get(questionId);
+      if (existing) {
+        existing.isActive = true;
+        existing.unmarkedAt = null;
+        existing.markedAt = existing.markedAt || now;
+      } else {
+        attempt.markedForReview.push({
+          questionId,
+          markedAt: now,
+          unmarkedAt: null,
+          isActive: true,
+        });
+      }
+    });
+
+    (attempt.markedForReview || []).forEach((item) => {
+      const questionId = toObjectIdString(item.questionId);
+      if (!activeMarkedSet.has(questionId) && item.isActive) {
+        item.isActive = false;
+        item.unmarkedAt = now;
+      }
+    });
+  }
+
   normalizedQuestionStates.forEach((incomingState) => {
     const question = questionLookup.get(incomingState.questionId);
 
@@ -637,6 +709,8 @@ export const mergeAttemptTrackingPayload = ({ attempt, questions, payload = {}, 
       flags,
       now,
       finalizing,
+      answerChanges,
+      stateVersion,
     });
   });
 
@@ -677,6 +751,19 @@ export const mergeAttemptTrackingPayload = ({ attempt, questions, payload = {}, 
     );
   }
 
+  const answeredCount = attempt.answers.filter((answer) => Boolean(answer.selectedAnswer)).length;
+  const markedForReviewCount = (attempt.markedForReview || []).filter((item) => item.isActive).length;
+  const totalQuestions = questions.length || attempt.totalQuestions || 0;
+
+  attempt.progress = {
+    currentQuestionId: attempt.lastActiveQuestionId || null,
+    answeredCount,
+    markedForReviewCount,
+    totalQuestions,
+    percentage: totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0,
+    updatedAt: now,
+  };
+
   if (finalizing) {
     attempt.totalTimeMs = Math.max(attempt.totalTimeMs, serverElapsedMs);
     attempt.totalTime = msToSeconds(attempt.totalTimeMs);
@@ -707,6 +794,7 @@ export const mergeAttemptTrackingPayload = ({ attempt, questions, payload = {}, 
   return {
     flags,
     serverElapsedMs,
+    answerChanges,
   };
 };
 

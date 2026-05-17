@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getGuestSessionId } from '../utils/quizSession';
 
 export const AUTH_SESSION_EXPIRED_EVENT = 'mcq:auth-session-expired';
 
@@ -16,6 +17,15 @@ const refreshClient = axios.create({
 
 let isRefreshing = false;
 let failedQueue = [];
+
+api.interceptors.request.use((config) => {
+  const sessionId = getGuestSessionId();
+  config.headers = config.headers || {};
+  if (sessionId && !config.headers['x-client-session-id'] && !config.headers['x-quiz-session-id']) {
+    config.headers['x-client-session-id'] = sessionId;
+  }
+  return config;
+});
 
 const processQueue = (error, token = null) => {
   failedQueue.forEach(prom => {

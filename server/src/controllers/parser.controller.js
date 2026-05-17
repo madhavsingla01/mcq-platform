@@ -9,6 +9,10 @@ import { parseCsv } from '../services/parser/csvParser.js';
 import { parseJson } from '../services/parser/jsonParser.js';
 import { smartMapColumns } from '../services/parser/smartColumnMapper.js';
 import { logger } from '../utils/logger.js';
+import {
+  recordEvent,
+  recordMappingConfig,
+} from '../services/activity/activity.service.js';
 
 /**
  * Get the right parser for a file type.
@@ -65,7 +69,32 @@ export const parseFile = catchAsync(async (req, res, next) => {
     };
     upload.autoMapping = autoMapping;
     upload.status = 'parsed';
+    upload.parseHistory = [
+      ...(Array.isArray(upload.parseHistory) ? upload.parseHistory : []),
+      {
+        status: 'parsed',
+        headers,
+        rowCount: rows.length,
+        sheetNames: sheetNames || [],
+        autoMapping,
+        createdAt: new Date(),
+      },
+    ];
     await upload.save();
+
+    await recordEvent({
+      req,
+      eventType: 'FILE_PARSED',
+      category: 'parser',
+      uploadId: upload._id,
+      metadata: {
+        originalName: upload.originalName,
+        headerCount: headers.length,
+        rowCount: rows.length,
+        sheetNames: sheetNames || [],
+        confidence: autoMapping.overallConfidence,
+      },
+    });
 
     logger.info(`File parsed: ${upload.originalName} → ${headers.length} cols, ${rows.length} rows`);
 
@@ -85,8 +114,26 @@ export const parseFile = catchAsync(async (req, res, next) => {
     });
   } catch (error) {
     upload.status = 'error';
-    upload.errorLog = error.message;
+    upload.errorLog = [...(Array.isArray(upload.errorLog) ? upload.errorLog : []), error.message];
+    upload.parseHistory = [
+      ...(Array.isArray(upload.parseHistory) ? upload.parseHistory : []),
+      {
+        status: 'error',
+        error: error.message,
+        createdAt: new Date(),
+      },
+    ];
     await upload.save();
+    await recordEvent({
+      req,
+      eventType: 'FILE_PARSE_FAILED',
+      category: 'parser',
+      uploadId: upload._id,
+      metadata: {
+        originalName: upload.originalName,
+        error: error.message,
+      },
+    });
     return next(new AppError(`Parsing failed: ${error.message}`, 422));
   }
 });
@@ -127,7 +174,21 @@ export const applyMapping = catchAsync(async (req, res, next) => {
     difficulty: difficulty || null,
   };
   upload.status = 'mapped';
+  upload.mappingHistory = [
+    ...(Array.isArray(upload.mappingHistory) ? upload.mappingHistory : []),
+    {
+      mappedColumns: upload.columnMapping,
+      source: 'manual',
+      createdAt: new Date(),
+    },
+  ];
   await upload.save();
+  await recordMappingConfig({
+    req,
+    upload,
+    mappedColumns: upload.columnMapping,
+    source: 'manual',
+  });
 
   res.json({
     success: true,

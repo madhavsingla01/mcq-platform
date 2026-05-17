@@ -159,12 +159,12 @@ const questionCardStyles = `
 
   .question-feedback-banner.success {
     background: var(--color-success-light);
-    border-color: rgba(16, 185, 129, 0.28);
+    border-color: rgba(22, 163, 74, 0.2);
   }
 
   .question-feedback-banner.danger {
     background: var(--color-danger-light);
-    border-color: rgba(239, 68, 68, 0.28);
+    border-color: rgba(220, 38, 38, 0.2);
   }
 
   .question-options-list {
@@ -180,39 +180,40 @@ const questionCardStyles = `
     gap: 14px;
     align-items: center;
     padding: 16px 18px;
-    border-radius: 16px;
-    border: 2px solid var(--color-border);
-    background: var(--color-surface-alt);
+    border-radius: 14px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
     color: var(--color-text);
     text-align: left;
     cursor: pointer;
     transform: translateZ(0);
-    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
   }
 
   .question-option-card:hover:not(.locked) {
     transform: translateY(-1px);
     border-color: var(--color-primary);
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.06);
   }
 
   .question-option-card.selected {
     border-color: var(--color-primary);
     background: var(--color-primary-light);
-    box-shadow: var(--shadow-glow);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
   }
 
   .question-option-card.correct {
-    border-color: rgba(16, 185, 129, 0.4);
+    border-color: rgba(22, 163, 74, 0.3);
     background: var(--color-success-light);
   }
 
   .question-option-card.wrong {
-    border-color: rgba(239, 68, 68, 0.42);
+    border-color: rgba(220, 38, 38, 0.3);
     background: var(--color-danger-light);
   }
 
   .question-option-card.muted {
-    opacity: 0.7;
+    opacity: 0.6;
   }
 
   .question-option-card.locked {
@@ -226,9 +227,10 @@ const questionCardStyles = `
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    border: 1px solid var(--color-border-light);
+    border: 1px solid var(--color-border);
     font-weight: 700;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--color-surface-alt);
+    font-size: 14px;
   }
 
   .question-option-text {
@@ -252,8 +254,8 @@ const questionCardStyles = `
   .question-explanation-panel {
     padding: 18px;
     border-radius: 16px;
-    background: rgba(59, 130, 246, 0.08);
-    border: 1px solid rgba(59, 130, 246, 0.24);
+    background: rgba(79, 70, 229, 0.04);
+    border: 1px solid rgba(79, 70, 229, 0.12);
     overflow: hidden;
   }
 
@@ -264,7 +266,7 @@ const questionCardStyles = `
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--color-accent);
+    color: var(--color-primary);
   }
 
   .question-explanation-content {

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import api, { AUTH_SESSION_EXPIRED_EVENT } from '../api/axios';
+import { useSettingsStore } from './settingsStore';
 
 const SESSION_HINT_KEY = 'mcq.auth.has-session.v1';
 const SESSION_CHECKED_KEY = 'mcq.auth.session-checked.v1';
@@ -64,6 +65,24 @@ export const useAuthStore = create((set) => ({
         const { data } = await api.get('/auth/me', { skipAuthRefresh: true });
         setSessionHint();
         set({ user: data.data.user, isAuthenticated: true, isLoading: false });
+        try {
+          const prefs = data.data.user?.preferences || {};
+          const s = useSettingsStore.getState();
+          if (prefs.fontSize !== undefined && s.setFontSize) s.setFontSize(prefs.fontSize);
+          if (prefs.density !== undefined && s.setDensity) s.setDensity(prefs.density);
+          if (prefs.timerVisibility !== undefined && s.setTimerVisibility) s.setTimerVisibility(prefs.timerVisibility);
+          if (prefs.showCorrectAnswerInstantly !== undefined && s.setShowCorrectAnswerInstantly) s.setShowCorrectAnswerInstantly(prefs.showCorrectAnswerInstantly);
+          if (prefs.reducedMotion !== undefined && s.setReducedMotion) s.setReducedMotion(prefs.reducedMotion);
+          if (prefs.aiExplanations !== undefined && s.setAIExplanations) s.setAIExplanations(prefs.aiExplanations);
+          if (prefs.aiPersonality !== undefined && s.setAIPersonality) s.setAIPersonality(prefs.aiPersonality);
+          if (prefs.keyboardShortcutsEnabled !== undefined && s.setKeyboardShortcutsEnabled) s.setKeyboardShortcutsEnabled(prefs.keyboardShortcutsEnabled);
+          if (prefs.focusMode !== undefined && s.setFocusMode) s.setFocusMode(prefs.focusMode);
+          if (prefs.isNavigatorCollapsed !== undefined && s.setNavigatorCollapsed) s.setNavigatorCollapsed(prefs.isNavigatorCollapsed);
+          if (prefs.isAICollapsed !== undefined && s.setAICollapsed) s.setAICollapsed(prefs.isAICollapsed);
+          if (prefs.panelWidths !== undefined && s.setPanelWidths) s.setPanelWidths(prefs.panelWidths);
+        } catch (e) {
+          // ignore
+        }
         return data;
       } catch (error) {
         if (error.response?.status === 401) {
@@ -72,6 +91,24 @@ export const useAuthStore = create((set) => ({
             const { data } = await api.get('/auth/me', { skipAuthRefresh: true });
             setSessionHint();
             set({ user: data.data.user, isAuthenticated: true, isLoading: false });
+            try {
+              const prefs = data.data.user?.preferences || {};
+              const s = useSettingsStore.getState();
+              if (prefs.fontSize !== undefined && s.setFontSize) s.setFontSize(prefs.fontSize);
+              if (prefs.density !== undefined && s.setDensity) s.setDensity(prefs.density);
+              if (prefs.timerVisibility !== undefined && s.setTimerVisibility) s.setTimerVisibility(prefs.timerVisibility);
+              if (prefs.showCorrectAnswerInstantly !== undefined && s.setShowCorrectAnswerInstantly) s.setShowCorrectAnswerInstantly(prefs.showCorrectAnswerInstantly);
+              if (prefs.reducedMotion !== undefined && s.setReducedMotion) s.setReducedMotion(prefs.reducedMotion);
+              if (prefs.aiExplanations !== undefined && s.setAIExplanations) s.setAIExplanations(prefs.aiExplanations);
+              if (prefs.aiPersonality !== undefined && s.setAIPersonality) s.setAIPersonality(prefs.aiPersonality);
+              if (prefs.keyboardShortcutsEnabled !== undefined && s.setKeyboardShortcutsEnabled) s.setKeyboardShortcutsEnabled(prefs.keyboardShortcutsEnabled);
+              if (prefs.focusMode !== undefined && s.setFocusMode) s.setFocusMode(prefs.focusMode);
+              if (prefs.isNavigatorCollapsed !== undefined && s.setNavigatorCollapsed) s.setNavigatorCollapsed(prefs.isNavigatorCollapsed);
+              if (prefs.isAICollapsed !== undefined && s.setAICollapsed) s.setAICollapsed(prefs.isAICollapsed);
+              if (prefs.panelWidths !== undefined && s.setPanelWidths) s.setPanelWidths(prefs.panelWidths);
+            } catch (e) {
+              // ignore
+            }
             return data;
           } catch {
             clearSessionHint();
@@ -96,6 +133,24 @@ export const useAuthStore = create((set) => ({
     const { data } = await api.post('/auth/login', { email, password }, { skipAuthRefresh: true });
     setSessionHint();
     set({ user: data.data.user, isAuthenticated: true, isLoading: false });
+    try {
+      const prefs = data.data.user?.preferences || {};
+      const s = useSettingsStore.getState();
+      if (prefs.fontSize !== undefined && s.setFontSize) s.setFontSize(prefs.fontSize);
+      if (prefs.density !== undefined && s.setDensity) s.setDensity(prefs.density);
+      if (prefs.timerVisibility !== undefined && s.setTimerVisibility) s.setTimerVisibility(prefs.timerVisibility);
+      if (prefs.showCorrectAnswerInstantly !== undefined && s.setShowCorrectAnswerInstantly) s.setShowCorrectAnswerInstantly(prefs.showCorrectAnswerInstantly);
+      if (prefs.reducedMotion !== undefined && s.setReducedMotion) s.setReducedMotion(prefs.reducedMotion);
+      if (prefs.aiExplanations !== undefined && s.setAIExplanations) s.setAIExplanations(prefs.aiExplanations);
+      if (prefs.aiPersonality !== undefined && s.setAIPersonality) s.setAIPersonality(prefs.aiPersonality);
+      if (prefs.keyboardShortcutsEnabled !== undefined && s.setKeyboardShortcutsEnabled) s.setKeyboardShortcutsEnabled(prefs.keyboardShortcutsEnabled);
+      if (prefs.focusMode !== undefined && s.setFocusMode) s.setFocusMode(prefs.focusMode);
+      if (prefs.isNavigatorCollapsed !== undefined && s.setNavigatorCollapsed) s.setNavigatorCollapsed(prefs.isNavigatorCollapsed);
+      if (prefs.isAICollapsed !== undefined && s.setAICollapsed) s.setAICollapsed(prefs.isAICollapsed);
+      if (prefs.panelWidths !== undefined && s.setPanelWidths) s.setPanelWidths(prefs.panelWidths);
+    } catch (e) {
+      // ignore
+    }
     return data;
   },
 
@@ -103,6 +158,24 @@ export const useAuthStore = create((set) => ({
     const { data } = await api.post('/auth/register', { name, email, password }, { skipAuthRefresh: true });
     setSessionHint();
     set({ user: data.data.user, isAuthenticated: true, isLoading: false });
+    try {
+      const prefs = data.data.user?.preferences || {};
+      const s = useSettingsStore.getState();
+      if (prefs.fontSize !== undefined && s.setFontSize) s.setFontSize(prefs.fontSize);
+      if (prefs.density !== undefined && s.setDensity) s.setDensity(prefs.density);
+      if (prefs.timerVisibility !== undefined && s.setTimerVisibility) s.setTimerVisibility(prefs.timerVisibility);
+      if (prefs.showCorrectAnswerInstantly !== undefined && s.setShowCorrectAnswerInstantly) s.setShowCorrectAnswerInstantly(prefs.showCorrectAnswerInstantly);
+      if (prefs.reducedMotion !== undefined && s.setReducedMotion) s.setReducedMotion(prefs.reducedMotion);
+      if (prefs.aiExplanations !== undefined && s.setAIExplanations) s.setAIExplanations(prefs.aiExplanations);
+      if (prefs.aiPersonality !== undefined && s.setAIPersonality) s.setAIPersonality(prefs.aiPersonality);
+      if (prefs.keyboardShortcutsEnabled !== undefined && s.setKeyboardShortcutsEnabled) s.setKeyboardShortcutsEnabled(prefs.keyboardShortcutsEnabled);
+      if (prefs.focusMode !== undefined && s.setFocusMode) s.setFocusMode(prefs.focusMode);
+      if (prefs.isNavigatorCollapsed !== undefined && s.setNavigatorCollapsed) s.setNavigatorCollapsed(prefs.isNavigatorCollapsed);
+      if (prefs.isAICollapsed !== undefined && s.setAICollapsed) s.setAICollapsed(prefs.isAICollapsed);
+      if (prefs.panelWidths !== undefined && s.setPanelWidths) s.setPanelWidths(prefs.panelWidths);
+    } catch (e) {
+      // ignore
+    }
     return data;
   },
 
@@ -113,6 +186,29 @@ export const useAuthStore = create((set) => ({
       clearSessionHint();
       set(unauthenticatedState);
     }
+  },
+  updateProfile: async (payload) => {
+    const { data } = await api.patch('/auth/me', payload);
+    set({ user: data.data.user });
+    try {
+      const prefs = data.data.user?.preferences || {};
+      const s = useSettingsStore.getState();
+      if (prefs.fontSize !== undefined && s.setFontSize) s.setFontSize(prefs.fontSize);
+      if (prefs.density !== undefined && s.setDensity) s.setDensity(prefs.density);
+      if (prefs.timerVisibility !== undefined && s.setTimerVisibility) s.setTimerVisibility(prefs.timerVisibility);
+      if (prefs.showCorrectAnswerInstantly !== undefined && s.setShowCorrectAnswerInstantly) s.setShowCorrectAnswerInstantly(prefs.showCorrectAnswerInstantly);
+      if (prefs.reducedMotion !== undefined && s.setReducedMotion) s.setReducedMotion(prefs.reducedMotion);
+      if (prefs.aiExplanations !== undefined && s.setAIExplanations) s.setAIExplanations(prefs.aiExplanations);
+      if (prefs.aiPersonality !== undefined && s.setAIPersonality) s.setAIPersonality(prefs.aiPersonality);
+      if (prefs.keyboardShortcutsEnabled !== undefined && s.setKeyboardShortcutsEnabled) s.setKeyboardShortcutsEnabled(prefs.keyboardShortcutsEnabled);
+      if (prefs.focusMode !== undefined && s.setFocusMode) s.setFocusMode(prefs.focusMode);
+      if (prefs.isNavigatorCollapsed !== undefined && s.setNavigatorCollapsed) s.setNavigatorCollapsed(prefs.isNavigatorCollapsed);
+      if (prefs.isAICollapsed !== undefined && s.setAICollapsed) s.setAICollapsed(prefs.isAICollapsed);
+      if (prefs.panelWidths !== undefined && s.setPanelWidths) s.setPanelWidths(prefs.panelWidths);
+    } catch (e) {
+      // ignore
+    }
+    return data;
   },
 }));
 

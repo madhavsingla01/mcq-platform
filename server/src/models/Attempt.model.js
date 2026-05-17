@@ -260,6 +260,24 @@ const attemptSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    instantFeedback: {
+      type: Boolean,
+      default: false,
+    },
+    timerMode: {
+      type: String,
+      enum: ['none', 'soft', 'strict'],
+      default: 'none',
+    },
+    deadlineAt: {
+      type: Date,
+      default: null,
+    },
+    allowedDurationMs: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     syncStatus: {
       type: String,
       enum: ['pending', 'synced', 'failed'],
@@ -288,6 +306,60 @@ const attemptSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Question',
       default: null,
+    },
+    progress: {
+      currentQuestionId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Question',
+        default: null,
+      },
+      answeredCount: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      markedForReviewCount: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      totalQuestions: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      percentage: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100,
+      },
+      updatedAt: {
+        type: Date,
+        default: null,
+      },
+    },
+    markedForReview: {
+      type: [{
+        questionId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Question',
+          required: true,
+        },
+        markedAt: {
+          type: Date,
+          default: Date.now,
+        },
+        unmarkedAt: {
+          type: Date,
+          default: null,
+        },
+        isActive: {
+          type: Boolean,
+          default: true,
+        },
+      }],
+      default: [],
     },
     syncVersion: {
       type: Number,
@@ -322,6 +394,8 @@ attemptSchema.index({ userId: 1, createdAt: -1 });
 attemptSchema.index({ userId: 1, completedAt: -1 });
 attemptSchema.index({ sessionId: 1, createdAt: -1 });
 attemptSchema.index({ 'answers.questionId': 1 });
+attemptSchema.index({ 'markedForReview.questionId': 1 });
+attemptSchema.index({ 'progress.currentQuestionId': 1 });
 attemptSchema.index({ createdAt: -1 });
 attemptSchema.index({ completedAt: -1 });
 

@@ -95,6 +95,7 @@ const sidebarStyles = `
   .quiz-sidebar-header h3 {
     margin: 0 0 4px;
     font-size: 16px;
+    font-weight: 600;
   }
 
   .quiz-sidebar-header span {
@@ -131,14 +132,14 @@ const sidebarStyles = `
 
   .quiz-sidebar-index {
     aspect-ratio: 1 / 1;
-    border-radius: 12px;
+    border-radius: 10px;
     border: 1px solid var(--color-border);
     background: var(--color-surface-alt);
     color: var(--color-text);
     font-size: 14px;
     font-weight: 700;
     cursor: pointer;
-    transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
   }
 
   .quiz-sidebar-index:hover {
@@ -149,16 +150,17 @@ const sidebarStyles = `
   .quiz-sidebar-index.current {
     border-width: 2px;
     border-color: var(--color-primary);
+    background: var(--color-primary-light);
   }
 
   .quiz-sidebar-index.answered {
     background: var(--color-primary-light);
-    border-color: rgba(99, 102, 241, 0.36);
+    border-color: rgba(79, 70, 229, 0.25);
   }
 
   .quiz-sidebar-index.locked {
     background: var(--color-success-light);
-    border-color: rgba(16, 185, 129, 0.32);
+    border-color: rgba(22, 163, 74, 0.25);
   }
 
   .quiz-sidebar-index.review {

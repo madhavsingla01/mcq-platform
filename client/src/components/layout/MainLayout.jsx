@@ -1,20 +1,31 @@
+import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Header from './Header';
+import { useUIStore } from '../../store/uiStore';
+// Focus mode styles removed
 
 export default function MainLayout() {
+  const contentDensity = useUIStore((s) => s.contentDensity);
+
+  // Sync density custom property
+  useEffect(() => {
+    document.documentElement.style.setProperty(
+      '--space-unit',
+      contentDensity === 'compact' ? '0.75rem' : '1rem'
+    );
+  }, [contentDensity]);
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Header />
-      <main style={{ flex: 1, maxWidth: 1280, margin: '0 auto', padding: '32px 24px', width: '100%' }}>
+      <main
+        className="app-main"
+        style={{ flex: 1, maxWidth: 1200, margin: '0 auto', padding: '32px 24px', width: '100%' }}
+      >
         <Outlet />
       </main>
-      <footer style={{
-        borderTop: '1px solid var(--color-border)',
-        padding: '24px', textAlign: 'center',
-        color: 'var(--color-text-muted)', fontSize: 13,
-      }}>
-        © 2026 MCQ Quiz Platform. Built with ♥
-      </footer>
+      {/* Footer removed per request */}
     </div>
   );
 }
+

@@ -90,14 +90,14 @@ export default function Result() {
   return (
     <>
       <div className="result-shell">
-        <Card className="result-hero" style={{ padding: 28 }}>
+        <Card className="result-hero" style={{ padding: 32 }}>
           <div className="result-hero-header">
             <div>
               <div className="result-badges">
                 <Badge variant={attempt.percentage >= 50 ? 'success' : 'danger'}>
                   {attempt.percentage >= 50 ? 'Passed' : 'Completed'}
                 </Badge>
-                {attempt.isQuickMode ? <Badge>Quick Mode</Badge> : null}
+                {attempt.instantFeedback ? <Badge>Instant Feedback</Badge> : null}
               </div>
               <h1>Quiz Complete</h1>
               <p>{attempt.quizId?.title}</p>
@@ -242,8 +242,8 @@ const resultStyles = `
 
   .result-hero {
     background:
-      radial-gradient(circle at top right, rgba(99, 102, 241, 0.14), transparent 30%),
-      radial-gradient(circle at bottom left, rgba(6, 182, 212, 0.1), transparent 32%),
+      radial-gradient(circle at top right, rgba(79, 70, 229, 0.05), transparent 30%),
+      radial-gradient(circle at bottom left, rgba(99, 102, 241, 0.03), transparent 32%),
       var(--color-surface);
   }
 
@@ -265,6 +265,7 @@ const resultStyles = `
   .result-hero h1 {
     margin-bottom: 8px;
     font-size: clamp(28px, 4vw, 38px);
+    letter-spacing: -0.03em;
   }
 
   .result-hero p {
@@ -286,6 +287,7 @@ const resultStyles = `
   .result-score-block strong {
     font-size: 42px;
     line-height: 1;
+    color: var(--color-primary);
   }
 
   .result-score-block span {
@@ -295,19 +297,23 @@ const resultStyles = `
   .result-stat-grid,
   .result-metrics-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 20px;
+  }
+
+  .result-metrics-grid {
+    margin-top: 12px;
   }
 
   .result-stat-card,
   .result-metric-card {
-    padding: 16px;
+    padding: 20px;
     border-radius: 16px;
     background: var(--color-surface-alt);
     border: 1px solid var(--color-border);
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
   }
 
   .result-stat-card span,
@@ -329,16 +335,16 @@ const resultStyles = `
   }
 
   .result-actions {
-    margin-top: 24px;
+    margin-top: 28px;
     display: flex;
-    gap: 12px;
+    gap: 14px;
     flex-wrap: wrap;
   }
 
   .result-review-list {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
   }
 
   .result-review-card.correct {
@@ -363,10 +369,12 @@ const resultStyles = `
 
   .result-review-header h3 {
     margin-bottom: 8px;
+    font-weight: 600;
   }
 
   .result-review-header p {
     color: var(--color-text);
+    line-height: 1.5;
   }
 
   .result-review-meta {
@@ -385,39 +393,41 @@ const resultStyles = `
   .result-options-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
   }
 
   .result-option-chip {
     display: grid;
-    grid-template-columns: 36px minmax(0, 1fr) auto;
+    grid-template-columns: 40px minmax(0, 1fr) auto;
     gap: 12px;
     align-items: center;
-    padding: 12px 14px;
+    padding: 14px 16px;
     border-radius: 14px;
     border: 1px solid var(--color-border);
     background: var(--color-surface-alt);
   }
 
   .result-option-chip.correct {
-    border-color: rgba(16, 185, 129, 0.34);
+    border-color: rgba(22, 163, 74, 0.25);
     background: var(--color-success-light);
   }
 
   .result-option-chip.wrong {
-    border-color: rgba(239, 68, 68, 0.34);
+    border-color: rgba(220, 38, 38, 0.25);
     background: var(--color-danger-light);
   }
 
   .result-option-label {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--color-border-light);
+    border: 1px solid var(--color-border);
     font-weight: 700;
+    font-size: 13px;
+    background: var(--color-surface);
   }
 
   .result-option-text {
@@ -434,15 +444,16 @@ const resultStyles = `
 
   .result-explanation-box {
     margin-top: 16px;
-    padding: 16px;
-    border-radius: 14px;
-    background: rgba(59, 130, 246, 0.08);
-    border: 1px solid rgba(59, 130, 246, 0.24);
+    padding: 18px;
+    border-radius: 12px;
+    background: rgba(79, 70, 229, 0.04);
+    border: 1px solid rgba(79, 70, 229, 0.12);
   }
 
   .result-explanation-box strong {
     display: inline-block;
     margin-bottom: 8px;
+    color: var(--color-primary);
   }
 
   @media (max-width: 768px) {
@@ -463,7 +474,7 @@ const resultStyles = `
     }
 
     .result-option-chip {
-      grid-template-columns: 36px minmax(0, 1fr);
+      grid-template-columns: 40px minmax(0, 1fr);
     }
 
     .result-option-status {

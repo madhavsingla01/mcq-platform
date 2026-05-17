@@ -30,8 +30,12 @@ export const catchAsync = (fn) => {
  * 404 handler — catch unmatched routes.
  */
 export const notFoundHandler = (req, res, next) => {
-  const error = new AppError(`Route not found: ${req.method} ${req.originalUrl}`, 404);
-  next(error);
+  res.status(404).json({
+    success: false,
+    message: 'Route not found',
+    path: req.originalUrl,
+    method: req.method
+  });
 };
 
 /**

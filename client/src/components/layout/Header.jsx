@@ -11,47 +11,52 @@ export default function Header() {
   };
 
   return (
-    <header className="glass" style={{
+    <header className="app-header glass" style={{
       position: 'sticky', top: 0, zIndex: 50,
-      borderBottom: '1px solid var(--color-border)',
     }}>
       <div style={{
-        maxWidth: 1280, margin: '0 auto', padding: '0 24px',
-        height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        maxWidth: 1200, margin: '0 auto', padding: '0 24px',
+        height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
+        {/* Logo */}
         <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
             width: 36, height: 36, borderRadius: 10,
-            background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
+            background: 'var(--color-primary)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 18, fontWeight: 800, color: '#fff',
+            boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.2)',
           }}>Q</div>
           <span style={{
-            fontSize: 20, fontWeight: 700,
-            background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>MCQ Platform</span>
+            fontSize: 20, fontWeight: 700, color: 'var(--color-primary)',
+            letterSpacing: '-0.02em',
+          }}>QuizFocus</span>
         </Link>
 
-        <nav style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {/* Nav */}
+        <nav style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <Link to="/upload" style={navLinkStyle}>Upload</Link>
           {isAuthenticated && (
             <Link to="/dashboard" style={navLinkStyle}>Dashboard</Link>
           )}
+
+          {/* Removed: Focus Mode and Density toggles */}
+
           {isAuthenticated ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginLeft: 8 }}>
-              <span style={{ color: 'var(--color-text-secondary)', fontSize: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginLeft: 12 }}>
+              <Link to="/settings" style={{ color: 'var(--color-text-secondary)', textDecoration: 'none', fontSize: 14, fontWeight: 500 }}>
                 {user?.name}
-              </span>
+              </Link>
               <button onClick={handleLogout} style={btnStyle}>Logout</button>
             </div>
           ) : (
-            <div style={{ display: 'flex', gap: 8, marginLeft: 8 }}>
+            <div style={{ display: 'flex', gap: 8, marginLeft: 12 }}>
               <Link to="/login" style={btnStyle}>Login</Link>
               <Link to="/register" style={{
                 ...btnStyle,
-                background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
+                background: 'var(--color-primary)',
                 color: '#fff', borderColor: 'transparent',
+                boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.2)',
               }}>Sign Up</Link>
             </div>
           )}
@@ -64,7 +69,7 @@ export default function Header() {
 const navLinkStyle = {
   color: 'var(--color-text-secondary)', textDecoration: 'none',
   padding: '8px 16px', borderRadius: 8, fontSize: 14, fontWeight: 500,
-  transition: 'all 0.2s',
+  transition: 'all 0.2s', letterSpacing: '0.01em',
 };
 
 const btnStyle = {

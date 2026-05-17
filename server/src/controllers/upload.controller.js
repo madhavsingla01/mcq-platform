@@ -6,6 +6,7 @@ import path from 'path';
 import Upload from '../models/Upload.model.js';
 import { catchAsync, AppError } from '../middleware/error.middleware.js';
 import { logger } from '../utils/logger.js';
+import { recordEvent } from '../services/activity/activity.service.js';
 
 /**
  * POST /api/upload
@@ -26,6 +27,18 @@ export const uploadFile = catchAsync(async (req, res) => {
   });
 
   logger.info(`File uploaded: ${file.originalname} (${(file.size / 1024).toFixed(1)}KB) → ${upload._id}`);
+  await recordEvent({
+    req,
+    eventType: 'FILE_UPLOADED',
+    category: 'upload',
+    uploadId: upload._id,
+    metadata: {
+      originalName: upload.originalName,
+      fileType: upload.fileType,
+      fileSize: upload.fileSize,
+      hasSecurityWarning: Boolean(req.securityWarning),
+    },
+  });
 
   res.status(201).json({
     success: true,
@@ -75,6 +88,16 @@ export const deleteUpload = catchAsync(async (req, res, next) => {
   }
 
   await Upload.findByIdAndDelete(req.params.id);
+  await recordEvent({
+    req,
+    eventType: 'UPLOAD_DELETED',
+    category: 'upload',
+    uploadId: upload._id,
+    metadata: {
+      originalName: upload.originalName,
+      fileType: upload.fileType,
+    },
+  });
 
   res.json({
     success: true,

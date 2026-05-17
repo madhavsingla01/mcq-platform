@@ -70,6 +70,8 @@ const quizSchema = new mongoose.Schema(
     },
     settings: {
       timeLimit: { type: Number, default: 0 }, // 0 = no time limit, value in minutes
+      timerMode: { type: String, enum: ['none', 'soft', 'strict'], default: 'none' },
+      instantFeedback: { type: Boolean, default: false },
       shuffleQuestions: { type: Boolean, default: false },
       shuffleOptions: { type: Boolean, default: false },
       showExplanation: { type: Boolean, default: true },

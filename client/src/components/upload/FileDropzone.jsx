@@ -57,54 +57,110 @@ export default function FileDropzone({ onFileDrop, accept = ".xlsx,.xls,.csv,.js
     }
   };
 
+  const formatLabels = {
+    '.xlsx': 'XLSX',
+    '.xls': 'XLS',
+    '.csv': 'CSV',
+    '.json': 'JSON',
+  };
+
   return (
-    <div style={{ width: '100%', maxWidth: 600, margin: '0 auto' }}>
-      <div
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-        style={{
-          border: `2px dashed ${isDragActive ? 'var(--color-primary)' : 'var(--color-border-light)'}`,
-          borderRadius: 16,
-          padding: '60px 40px',
-          textAlign: 'center',
-          background: isDragActive ? 'var(--color-primary-light)' : 'var(--color-surface)',
-          transition: 'all 0.3s ease',
-          cursor: 'pointer',
-        }}
-        onClick={() => document.getElementById('fileInput').click()}
-      >
-        <div style={{ fontSize: 48, marginBottom: 16 }}>📄</div>
-        <h3 style={{ fontSize: 20, marginBottom: 8, color: 'var(--color-text)' }}>
-          {isDragActive ? 'Drop file here' : 'Drag & Drop your MCQ file'}
-        </h3>
-        <p style={{ color: 'var(--color-text-secondary)', marginBottom: 24, fontSize: 14 }}>
-          or click to browse from your computer
-        </p>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-          {accept.split(',').map(ext => (
-            <span key={ext} style={{ 
-              background: 'var(--color-surface-alt)', 
-              padding: '4px 10px', 
-              borderRadius: 6, 
-              fontSize: 12,
-              color: 'var(--color-text-muted)',
-              border: '1px solid var(--color-border)'
-            }}>
-              {ext}
+    <>
+      <div className="qf-dropzone-wrapper">
+        <div
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          className={`qf-dropzone ${isDragActive ? 'active' : ''}`}
+          onClick={() => document.getElementById('fileInput').click()}
+        >
+          <div className="qf-dropzone-icon">
+            <span className="material-symbols-outlined" style={{ fontSize: 40, color: 'var(--color-primary)' }}>
+              upload_file
             </span>
-          ))}
+          </div>
+          <h3 className="qf-dropzone-title">
+            {isDragActive ? 'Drop file here' : 'Drop Excel, CSV, JSON or click to upload'}
+          </h3>
+          <p className="qf-dropzone-subtitle">
+            Supported: {accept.split(',').map(e => formatLabels[e] || e).join(' • ')} • Multi-sheet
+          </p>
+          <input 
+            id="fileInput"
+            type="file" 
+            style={{ display: 'none' }} 
+            accept={accept}
+            onChange={handleChange}
+          />
         </div>
-        <input 
-          id="fileInput"
-          type="file" 
-          style={{ display: 'none' }} 
-          accept={accept}
-          onChange={handleChange}
-        />
+        {error && <div className="qf-dropzone-error">{error}</div>}
       </div>
-      {error && <div style={{ color: 'var(--color-danger)', marginTop: 12, textAlign: 'center', fontSize: 14 }}>{error}</div>}
-    </div>
+
+      <style>{dropzoneStyles}</style>
+    </>
   );
 }
+
+const dropzoneStyles = `
+  .qf-dropzone-wrapper {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .qf-dropzone {
+    border: 2px dashed var(--color-border-light);
+    border-radius: 16px;
+    padding: 60px 40px;
+    text-align: center;
+    background: var(--color-surface);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .qf-dropzone:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+  }
+
+  .qf-dropzone.active {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.06);
+  }
+
+  .qf-dropzone-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: var(--color-surface-alt);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+  }
+
+  .qf-dropzone-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text);
+    letter-spacing: -0.01em;
+  }
+
+  .qf-dropzone-subtitle {
+    font-size: 13px;
+    color: var(--color-text-muted);
+  }
+
+  .qf-dropzone-error {
+    color: var(--color-danger);
+    margin-top: 12px;
+    text-align: center;
+    font-size: 14px;
+  }
+`;
