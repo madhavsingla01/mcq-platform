@@ -9,10 +9,76 @@ import Quiz from '../models/Quiz.model.js';
 import { AppError } from '../middleware/error.middleware.js';
 import { generateShareCode } from '../utils/generateId.js';
 import {
+  getSessionAccess,
+  getSessionExpirationLabel,
+  isSessionExpired,
+  normalizeSessionSettings,
+  publicSessionSettings,
+} from '../utils/sessionSettings.js';
+import {
   recordEvent,
   recordSessionActivity,
   upsertRecentQuiz,
 } from '../services/activity/activity.service.js';
+
+const buildShareUrl = (shareCode) => `/session/${shareCode}`;
+
+const ensureUniqueShareCode = async () => {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const shareCode = generateShareCode();
+    const exists = await QuizSession.exists({ shareCode });
+    if (!exists) {
+      return shareCode;
+    }
+  }
+
+  throw new AppError('Could not generate a unique share link. Please try again.', 500);
+};
+
+const deactivateIfExpired = async (session) => {
+  if (session?.isActive !== false && isSessionExpired(session)) {
+    session.isActive = false;
+    await session.save();
+  }
+};
+
+const assertSessionAccess = async (session, user) => {
+  await deactivateIfExpired(session);
+  const access = getSessionAccess(session, user);
+
+  if (!access.allowed) {
+    throw new AppError(access.message, access.status);
+  }
+};
+
+const setSessionActivity = async (session) => {
+  if (!session) return;
+  session.lastActivityAt = new Date();
+  await session.save();
+};
+
+const presentSession = (session, { includePrivateSettings = false } = {}) => {
+  const raw = session.toObject ? session.toObject() : session;
+
+  return {
+    _id: raw._id,
+    shareCode: raw.shareCode,
+    participantCount: raw.participantCount,
+    isPublic: raw.isPublic,
+    isActive: raw.isActive,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt,
+    lastActivityAt: raw.lastActivityAt,
+    expiresAt: getSessionExpirationLabel(raw),
+    settings: includePrivateSettings
+      ? normalizeSessionSettings({}, raw.settings)
+      : publicSessionSettings(raw.settings),
+    quiz: raw.quizId,
+    quizId: raw.quizId?._id || raw.quizId,
+    creator: raw.creatorId,
+    creatorId: raw.creatorId?._id || raw.creatorId,
+  };
+};
 
 /**
  * POST /api/v1/sessions/:quizId/share
@@ -33,11 +99,16 @@ export const shareQuiz = async (req, res, next) => {
       return next(new AppError('Only the quiz creator can share this quiz.', 403));
     }
 
+    const { settings } = req.body;
+    const normalizedSettings = settings
+      ? normalizeSessionSettings(settings)
+      : undefined;
+
     // Upsert — return existing session or create one
     let session = await QuizSession.findOne({ quizId });
 
     if (!session) {
-      const shareCode = quiz.shareCode || generateShareCode();
+      const shareCode = quiz.shareCode || await ensureUniqueShareCode();
 
       session = await QuizSession.create({
         quizId,
@@ -45,8 +116,19 @@ export const shareQuiz = async (req, res, next) => {
         shareCode,
         participantCount: 1,
         participants: [req.user._id],
-        isPublic: true,
+        isPublic: (normalizedSettings?.linkType || 'anyone') === 'anyone',
+        lastActivityAt: new Date(),
+        settings: normalizedSettings || undefined
       });
+    } else {
+      // Update existing session settings and ensure it is active
+      if (normalizedSettings) {
+        session.settings = normalizeSessionSettings(settings, session.settings);
+        session.isPublic = session.settings.linkType === 'anyone';
+      }
+      session.isActive = true;
+      session.lastActivityAt = new Date();
+      await session.save();
     }
 
     await recordSessionActivity({
@@ -56,15 +138,19 @@ export const shareQuiz = async (req, res, next) => {
       quizId: session.quizId,
       metadata: {
         shareCode: session.shareCode,
-        shareUrl: `/session/${session.shareCode}`,
+        shareUrl: buildShareUrl(session.shareCode),
       },
     });
+
+    const populatedSession = await QuizSession.findById(session._id)
+      .populate('creatorId', 'name avatar username')
+      .populate('quizId', 'title description questionCount category difficulty settings tags');
 
     res.status(200).json({
       success: true,
       data: {
-        session,
-        shareUrl: `/session/${session.shareCode}`,
+        session: presentSession(populatedSession || session, { includePrivateSettings: true }),
+        shareUrl: buildShareUrl(session.shareCode),
       },
     });
   } catch (error) {
@@ -81,12 +167,14 @@ export const getSessionByCode = async (req, res, next) => {
     const { shareCode } = req.params;
 
     const session = await QuizSession.findOne({ shareCode })
-      .populate('creatorId', 'name avatar')
+      .populate('creatorId', 'name avatar username')
       .populate('quizId', 'title description questionCount category difficulty settings tags');
 
     if (!session) {
       return next(new AppError('Session not found.', 404));
     }
+
+    await assertSessionAccess(session, req.user);
 
     await recordSessionActivity({
       req,
@@ -98,6 +186,11 @@ export const getSessionByCode = async (req, res, next) => {
       },
     });
 
+    await setSessionActivity(session);
+
+    const isCreator = req.user && session.creatorId && 
+      (session.creatorId._id.toString() === req.user._id.toString());
+
     // Check if current user has already joined
     const hasJoined = req.user
       ? session.participants.some((p) => p.toString() === req.user._id.toString())
@@ -106,15 +199,7 @@ export const getSessionByCode = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: {
-        session: {
-          _id: session._id,
-          shareCode: session.shareCode,
-          participantCount: session.participantCount,
-          isPublic: session.isPublic,
-          createdAt: session.createdAt,
-          quiz: session.quizId,
-          creator: session.creatorId,
-        },
+        session: presentSession(session, { includePrivateSettings: isCreator }),
         hasJoined,
       },
     });
@@ -131,54 +216,73 @@ export const joinSession = async (req, res, next) => {
   try {
     const { sessionId } = req.params;
 
-    const session = await QuizSession.findById(sessionId);
+    const session = await QuizSession.findById(sessionId)
+      .populate('creatorId', 'name avatar username')
+      .populate('quizId', 'title description questionCount category difficulty settings tags');
+
     if (!session) {
       return next(new AppError('Session not found.', 404));
     }
 
-    const userId = req.user._id.toString();
-    const alreadyJoined = session.participants.some((p) => p.toString() === userId);
+    await assertSessionAccess(session, req.user);
 
-    if (!alreadyJoined) {
-      session.participants.push(req.user._id);
-      session.participantCount = session.participants.length;
-      await session.save();
+    const isCreator = req.user && session.creatorId && 
+      ((session.creatorId._id || session.creatorId).toString() === req.user._id.toString());
+
+    let alreadyJoined = false;
+
+    if (req.user) {
+      const userId = req.user._id.toString();
+      alreadyJoined = session.participants.some((p) => p.toString() === userId);
+
+      if (!alreadyJoined) {
+        session.participants.push(req.user._id);
+        session.participantCount = session.participants.length;
+      }
     }
 
-    // Upsert JoinedSession to track for dashboard
-    await JoinedSession.findOneAndUpdate(
-      { userId: req.user._id, sessionId: session._id },
-      {
-        $setOnInsert: { quizId: session.quizId, joinedAt: new Date() },
-        $set: { lastOpenedAt: new Date() },
-      },
-      { upsert: true, new: true }
-    );
+    session.lastActivityAt = new Date();
+    await session.save();
+
+    if (req.user) {
+      // Upsert JoinedSession to track for dashboard
+      await JoinedSession.findOneAndUpdate(
+        { userId: req.user._id, sessionId: session._id },
+        {
+          $setOnInsert: { quizId: session.quizId?._id || session.quizId, joinedAt: new Date() },
+          $set: { lastOpenedAt: new Date() },
+        },
+        { upsert: true, new: true }
+      );
+    }
 
     await Promise.all([
       recordSessionActivity({
         req,
         eventType: alreadyJoined ? 'SESSION_REOPENED' : 'JOIN_SESSION',
         sessionId: session._id,
-        quizId: session.quizId,
+        quizId: session.quizId?._id || session.quizId,
         metadata: {
           participantCount: session.participantCount,
           alreadyJoined,
+          guest: !req.user,
         },
       }),
-      upsertRecentQuiz({
-        req,
-        quizId: session.quizId,
-        sessionId: session._id,
-        progress: { status: 'session_joined' },
-      }),
+      req.user
+        ? upsertRecentQuiz({
+            req,
+            quizId: session.quizId?._id || session.quizId,
+            sessionId: session._id,
+            progress: { status: 'session_joined' },
+          })
+        : Promise.resolve(),
     ]);
 
     res.status(200).json({
       success: true,
       data: {
-        session,
-        quizId: session.quizId,
+        session: presentSession(session, { includePrivateSettings: isCreator }),
+        quizId: session.quizId?._id || session.quizId,
       },
     });
   } catch (error) {
@@ -197,6 +301,13 @@ export const getMessages = async (req, res, next) => {
     const { before, limit = 30 } = req.query;
     const parsedLimit = Math.min(parseInt(limit, 10) || 30, 50);
 
+    const session = await QuizSession.findById(sessionId);
+    if (!session) {
+      return next(new AppError('Session not found.', 404));
+    }
+
+    await assertSessionAccess(session, req.user);
+
     const query = { sessionId };
 
     if (before) {
@@ -209,7 +320,8 @@ export const getMessages = async (req, res, next) => {
     const messages = await SessionMessage.find(query)
       .sort({ createdAt: -1 })
       .limit(parsedLimit + 1)
-      .populate('senderId', 'name avatar')
+      .populate('senderId', 'name avatar username')
+      .populate('mentions', 'name username avatar')
       .lean();
 
     const hasMore = messages.length > parsedLimit;
@@ -246,7 +358,7 @@ export const getMessages = async (req, res, next) => {
  */
 export const getRecentSessions = async (req, res, next) => {
   try {
-    const sessions = await QuizSession.find({ isPublic: true })
+    const sessions = await QuizSession.find({ isPublic: true, isActive: true })
       .sort({ createdAt: -1 })
       .limit(12)
       .populate('creatorId', 'name avatar')
@@ -254,7 +366,7 @@ export const getRecentSessions = async (req, res, next) => {
       .lean();
 
     // Filter out sessions whose quiz has been deleted
-    const validSessions = sessions.filter((s) => s.quizId);
+    const validSessions = sessions.filter((s) => s.quizId && !isSessionExpired(s));
     await recordEvent({
       req,
       eventType: 'RECENT_SESSIONS_VIEWED',
@@ -345,38 +457,59 @@ export const openLink = async (req, res, next) => {
       return next(new AppError('Link or code is required', 400));
     }
 
-    // Extract share code (handles full URLs or just the code)
-    const match = linkOrCode.match(/(?:session\/)?([a-zA-Z0-9_-]+)$/);
-    const shareCode = match ? match[1] : linkOrCode.trim();
+    const rawLink = String(linkOrCode).trim();
+    let shareCode = rawLink;
+
+    try {
+      const parsedUrl = new URL(rawLink);
+      const segments = parsedUrl.pathname.split('/').filter(Boolean);
+      const sessionSegmentIndex = segments.indexOf('session');
+      shareCode = sessionSegmentIndex >= 0 && segments[sessionSegmentIndex + 1]
+        ? segments[sessionSegmentIndex + 1]
+        : segments[segments.length - 1];
+    } catch {
+      const sessionMatch = rawLink.match(/session\/([^/?#]+)/i);
+      shareCode = sessionMatch ? sessionMatch[1] : rawLink.replace(/^\/+|\/+$/g, '');
+    }
 
     // 1. Validate session
     const session = await QuizSession.findOne({ shareCode })
       .populate('quizId', 'title description questionCount category difficulty settings tags')
-      .populate('creatorId', 'name avatar');
+      .populate('creatorId', 'name avatar username');
 
     if (!session) {
       return next(new AppError('Session not found or link has expired', 404));
     }
 
-    // 2. Join session (idempotent)
-    const userId = req.user._id.toString();
-    const alreadyJoined = session.participants.some((p) => p.toString() === userId);
+    await assertSessionAccess(session, req.user);
 
-    if (!alreadyJoined) {
-      session.participants.push(req.user._id);
-      session.participantCount = session.participants.length;
-      await session.save();
+    // 2. Join session (idempotent)
+    let alreadyJoined = false;
+
+    if (req.user) {
+      const userId = req.user._id.toString();
+      alreadyJoined = session.participants.some((p) => p.toString() === userId);
+
+      if (!alreadyJoined) {
+        session.participants.push(req.user._id);
+        session.participantCount = session.participants.length;
+      }
     }
 
+    session.lastActivityAt = new Date();
+    await session.save();
+
     // 3. Upsert JoinedSession (for dashboard persistence)
-    await JoinedSession.findOneAndUpdate(
-      { userId: req.user._id, sessionId: session._id },
-      {
-        $setOnInsert: { quizId: session.quizId._id, joinedAt: new Date() },
-        $set: { lastOpenedAt: new Date() },
-      },
-      { upsert: true, new: true }
-    );
+    if (req.user) {
+      await JoinedSession.findOneAndUpdate(
+        { userId: req.user._id, sessionId: session._id },
+        {
+          $setOnInsert: { quizId: session.quizId._id, joinedAt: new Date() },
+          $set: { lastOpenedAt: new Date() },
+        },
+        { upsert: true, new: true }
+      );
+    }
 
     await Promise.all([
       recordSessionActivity({
@@ -388,24 +521,187 @@ export const openLink = async (req, res, next) => {
           source: 'open_link',
           shareCode: session.shareCode,
           participantCount: session.participantCount,
+          guest: !req.user,
         },
       }),
-      upsertRecentQuiz({
-        req,
-        quizId: session.quizId._id,
-        sessionId: session._id,
-        progress: { status: 'session_opened' },
-      }),
+      req.user
+        ? upsertRecentQuiz({
+            req,
+            quizId: session.quizId._id,
+            sessionId: session._id,
+            progress: { status: 'session_opened' },
+          })
+        : Promise.resolve(),
     ]);
 
     // 4. Return quiz metadata
     res.status(200).json({
       success: true,
       data: {
-        session,
+        session: presentSession(session, {
+          includePrivateSettings: req.user && session.creatorId?._id?.toString() === req.user._id.toString(),
+        }),
         shareCode: session.shareCode
       },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/v1/sessions/:sessionId/leave
+ * Lightweight beacon-friendly endpoint for session leave persistence.
+ * Fired by sendBeacon on tab close as a fallback when socket disconnect is unreliable.
+ */
+export const leaveSession = async (req, res, next) => {
+  try {
+    const { sessionId } = req.params;
+    const userId = req.user?._id || req.body?.userId;
+
+    if (!userId || !sessionId) {
+      return res.status(204).end();
+    }
+
+    // Record activity — fire-and-forget semantics; beacon expects no response body
+    await recordSessionActivity({
+      req,
+      eventType: 'PARTICIPANT_LEFT',
+      sessionId,
+      userId,
+      source: 'api',
+      metadata: { trigger: 'beacon_fallback' },
+    });
+
+    res.status(204).end();
+  } catch (error) {
+    // Beacons don't process responses, so just end quietly
+    res.status(204).end();
+  }
+};
+
+/**
+ * GET /api/v1/sessions/:sessionId/leaderboard
+ * Return ranked list of completed attempts for a shared session.
+ */
+export const getLeaderboard = async (req, res, next) => {
+  try {
+    const { sessionId } = req.params;
+    const Attempt = (await import('../models/Attempt.model.js')).default;
+
+    const session = await QuizSession.findById(sessionId);
+    if (!session) {
+      return next(new AppError('Session not found.', 404));
+    }
+
+    await assertSessionAccess(session, req.user);
+
+    const attempts = await Attempt.find({
+      sharedSessionId: sessionId,
+      completed: true,
+    })
+      .sort({ score: -1, totalTimeMs: 1 })
+      .populate('userId', 'name avatar')
+      .select('userId score totalQuestions percentage totalTimeMs completedAt correctCount wrongCount')
+      .lean();
+
+    const ranked = attempts.map((a, idx) => ({
+      rank: idx + 1,
+      user: a.userId,
+      score: a.score,
+      totalQuestions: a.totalQuestions,
+      percentage: a.percentage,
+      correctCount: a.correctCount,
+      wrongCount: a.wrongCount,
+      totalTimeMs: a.totalTimeMs,
+      completedAt: a.completedAt,
+    }));
+
+    res.json({ success: true, data: { leaderboard: ranked } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/v1/sessions/:sessionId/regenerate-link
+ * Rotate the share code for an active session. Only the creator can do this.
+ */
+export const regenerateShareLink = async (req, res, next) => {
+  try {
+    const { sessionId } = req.params;
+
+    const session = await QuizSession.findById(sessionId);
+    if (!session) {
+      return next(new AppError('Session not found.', 404));
+    }
+
+    if (session.creatorId.toString() !== req.user._id.toString()) {
+      return next(new AppError('Only the session creator can generate a new link.', 403));
+    }
+
+    session.shareCode = await ensureUniqueShareCode();
+    session.isActive = true;
+    session.lastActivityAt = new Date();
+    await session.save();
+
+    const populatedSession = await QuizSession.findById(session._id)
+      .populate('creatorId', 'name avatar username')
+      .populate('quizId', 'title description questionCount category difficulty settings tags');
+
+    await recordSessionActivity({
+      req,
+      eventType: 'SHARE_LINK_REGENERATED',
+      sessionId: session._id,
+      quizId: session.quizId,
+      metadata: {
+        shareCode: session.shareCode,
+        shareUrl: buildShareUrl(session.shareCode),
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        session: presentSession(populatedSession || session, { includePrivateSettings: true }),
+        shareUrl: buildShareUrl(session.shareCode),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/v1/sessions/:sessionId/destroy
+ * Deactivate a session's share link. Only the creator can do this.
+ * Preserves all attempts, messages, and analytics.
+ */
+export const destroySession = async (req, res, next) => {
+  try {
+    const { sessionId } = req.params;
+
+    const session = await QuizSession.findById(sessionId);
+    if (!session) {
+      return next(new AppError('Session not found.', 404));
+    }
+
+    if (session.creatorId.toString() !== req.user._id.toString()) {
+      return next(new AppError('Only the session creator can destroy the link.', 403));
+    }
+
+    session.isActive = false;
+    await session.save();
+
+    await recordSessionActivity({
+      req,
+      eventType: 'SESSION_DESTROYED',
+      sessionId: session._id,
+      quizId: session.quizId,
+      metadata: { destroyedBy: req.user._id },
+    });
+
+    res.status(204).end();
   } catch (error) {
     next(error);
   }

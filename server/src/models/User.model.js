@@ -22,6 +22,16 @@ const userSchema = new mongoose.Schema(
       trim: true,
       match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please provide a valid email'],
     },
+    username: {
+      type: String,
+      unique: true,
+      sparse: true,
+      lowercase: true,
+      trim: true,
+      match: [/^[a-z0-9_.]+$/, 'Username can only contain lowercase letters, numbers, underscores, and dots'],
+      minlength: [3, 'Username must be at least 3 characters'],
+      maxlength: [30, 'Username must be at most 30 characters'],
+    },
     password: {
       type: String,
       required: [true, 'Password is required'],
@@ -78,6 +88,14 @@ const userSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    followersCount: { type: Number, default: 0 },
+    followingCount: { type: Number, default: 0 },
+    quizCount: { type: Number, default: 0 },
+    isProfilePublic: { type: Boolean, default: true },
+    socialLinks: {
+      website: { type: String, default: '' },
+      personalId: { type: String, default: '' },
     },
   },
   {

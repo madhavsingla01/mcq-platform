@@ -5,6 +5,8 @@
  */
 
 import { useMemo, memo } from 'react';
+import { Link } from 'react-router-dom';
+import { FileText } from 'lucide-react';
 
 function timeAgo(dateStr) {
   const now = new Date();
@@ -22,17 +24,49 @@ function timeAgo(dateStr) {
   return date.toLocaleDateString();
 }
 
-const ChatMessage = memo(function ChatMessage({ message, isOwn, isCreator }) {
+const renderMessageText = (text = '', currentUsername = '') => {
+  const parts = String(text).split(/(@[a-z0-9_.]{3,30})/gi);
+  return parts.map((part, index) => {
+    const isMention = /^@[a-z0-9_.]{3,30}$/i.test(part);
+    if (!isMention) return <span key={`${part}-${index}`}>{part}</span>;
+
+    const username = part.slice(1).toLowerCase();
+    const isCurrentUser = username === currentUsername.toLowerCase();
+
+    return (
+      <Link
+        key={`${part}-${index}`}
+        to={`/@${username}`}
+        className={`chat-msg-mention ${isCurrentUser ? 'chat-msg-mention--me' : ''}`}
+      >
+        {part}
+      </Link>
+    );
+  });
+};
+
+const ChatMessage = memo(function ChatMessage({ message, isOwn, isCreator, currentUsername = '' }) {
   const timestamp = useMemo(() => timeAgo(message.createdAt), [message.createdAt]);
   const sender = message.senderId;
   const displayName = typeof sender === 'object' ? sender.name : 'User';
+  const avatarUrl = typeof sender === 'object' && sender.avatar ? sender.avatar : null;
+  
+  const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/api(\/v1)?$/, '') || '';
+  const imgSrc = message.imageUrl ? (message.imageUrl.startsWith('http') ? message.imageUrl : `${baseUrl}${message.imageUrl}`) : null;
+  const attachmentUrl = message.attachmentUrl && !message.imageUrl
+    ? (message.attachmentUrl.startsWith('http') ? message.attachmentUrl : `${baseUrl}${message.attachmentUrl}`)
+    : null;
 
   return (
     <>
       <div className={`chat-msg ${isOwn ? 'chat-msg--own' : ''}`}>
         {!isOwn && (
           <div className="chat-msg-avatar">
-            {displayName.charAt(0).toUpperCase()}
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={displayName} className="chat-msg-avatar-img" />
+            ) : (
+              displayName.charAt(0).toUpperCase()
+            )}
           </div>
         )}
         <div className="chat-msg-body">
@@ -41,14 +75,28 @@ const ChatMessage = memo(function ChatMessage({ message, isOwn, isCreator }) {
               <span className="chat-msg-name">{displayName}</span>
               {isCreator && (
                 <span className="chat-msg-badge" title="Quiz Creator">
-                  <span className="material-symbols-outlined" style={{ fontSize: 13 }}>star</span>
-                  Creator
+                  ★ Creator
                 </span>
               )}
             </div>
           )}
           <div className={`chat-msg-bubble ${isOwn ? 'chat-msg-bubble--own' : ''}`}>
-            {message.message}
+            {message.imageUrl && (
+              <div className="chat-msg-image">
+                <img 
+                  src={imgSrc} 
+                  alt="Attachment" 
+                  onClick={() => window.open(imgSrc, '_blank')}
+                />
+              </div>
+            )}
+            {attachmentUrl && (
+              <a className="chat-msg-file" href={attachmentUrl} target="_blank" rel="noreferrer">
+                <FileText size={16} />
+                <span>{message.attachmentName || 'Attachment'}</span>
+              </a>
+            )}
+            {message.message && <div className="chat-msg-text">{renderMessageText(message.message, currentUsername)}</div>}
           </div>
           <div className={`chat-msg-time ${isOwn ? 'chat-msg-time--own' : ''}`}>
             {timestamp}
@@ -86,6 +134,13 @@ export const chatMessageStyles = `
     font-weight: 700;
     flex-shrink: 0;
     margin-bottom: 18px;
+    overflow: hidden;
+  }
+
+  .chat-msg-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .chat-msg-body {
@@ -133,6 +188,75 @@ export const chatMessageStyles = `
     color: var(--color-text);
     word-wrap: break-word;
     overflow-wrap: break-word;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .chat-msg-image img {
+    max-width: 100%;
+    border-radius: 8px;
+    max-height: 200px;
+    object-fit: contain;
+    cursor: pointer;
+    background: rgba(0,0,0,0.05);
+  }
+
+  .chat-msg-text {
+    white-space: pre-wrap;
+  }
+
+  .chat-msg-mention {
+    color: var(--color-primary);
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .chat-msg-mention--me {
+    padding: 1px 5px;
+    border-radius: 6px;
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .chat-msg-bubble--own .chat-msg-mention {
+    color: #fff;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+  }
+
+  .chat-msg-bubble--own .chat-msg-mention--me {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+    text-decoration: none;
+  }
+
+  .chat-msg-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.7);
+    border: 1px solid var(--color-border-light);
+    color: var(--color-text);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 650;
+  }
+
+  .chat-msg-file span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .chat-msg-bubble--own .chat-msg-file {
+    background: rgba(255,255,255,0.14);
+    color: #fff;
+    border-color: rgba(255,255,255,0.18);
   }
 
   .chat-msg-bubble--own {

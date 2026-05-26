@@ -12,6 +12,7 @@ import User from '../models/User.model.js';
 import QuizSession from '../models/QuizSession.model.js';
 import SessionMessage from '../models/SessionMessage.model.js';
 import { logger } from '../utils/logger.js';
+import { getSessionAccess, isSessionCreator } from '../utils/sessionSettings.js';
 import {
   recordEvent,
   recordSessionActivity,
@@ -71,7 +72,7 @@ function sanitizeMessage(msg) {
   return msg
     .replace(/<[^>]*>/g, '')
     .trim()
-    .slice(0, 1000);
+    .slice(0, 4096);
 }
 
 /**
@@ -94,7 +95,7 @@ async function authenticateSocket(socket, next) {
     }
 
     const decoded = jwt.verify(token, env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('name avatar');
+    const user = await User.findById(decoded.id).select('name avatar username email');
 
     if (!user) {
       return next(new Error('User not found'));
@@ -102,7 +103,9 @@ async function authenticateSocket(socket, next) {
 
     socket.userId = user._id.toString();
     socket.userName = user.name;
+    socket.userUsername = user.username || '';
     socket.userAvatar = user.avatar || '';
+    socket.user = user;
     next();
   } catch (error) {
     logger.debug(`Socket auth failed: ${error.message}`);
@@ -132,6 +135,12 @@ export function setupSessionSocket(io) {
           return;
         }
 
+        const access = getSessionAccess(session, socket.user);
+        if (!access.allowed) {
+          socket.emit('session:error', { message: access.message });
+          return;
+        }
+
         socket.join(sessionId);
         socket.currentSessionId = sessionId;
 
@@ -143,6 +152,7 @@ export function setupSessionSocket(io) {
         room.set(socket.userId, {
           userId: socket.userId,
           name: socket.userName,
+          username: socket.userUsername,
           avatar: socket.userAvatar,
           socketId: socket.id,
         });
@@ -151,7 +161,7 @@ export function setupSessionSocket(io) {
 
         // Notify room
         io.to(sessionId).emit('session:user-joined', {
-          user: { userId: socket.userId, name: socket.userName, avatar: socket.userAvatar },
+          user: { userId: socket.userId, name: socket.userName, username: socket.userUsername, avatar: socket.userAvatar },
           onlineCount: onlineList.length,
           onlineUsers: onlineList,
         });
@@ -182,11 +192,26 @@ export function setupSessionSocket(io) {
     });
 
     // ── Send chat message ──
-    socket.on('chat:send', async ({ sessionId, message }) => {
-      if (!sessionId || !message) return;
+    socket.on('chat:send', async ({
+      sessionId,
+      message,
+      imageUrl,
+      attachmentUrl,
+      attachmentName,
+      attachmentType,
+      attachmentSize,
+      mentions,
+      tempId,
+    }) => {
+      if (!sessionId || (!message && !imageUrl && !attachmentUrl)) return;
 
-      const sanitized = sanitizeMessage(message);
-      if (!sanitized) return;
+      const sanitized = sanitizeMessage(message || '');
+      const finalAttachmentUrl = attachmentUrl || imageUrl || null;
+      const finalAttachmentType = String(attachmentType || (imageUrl ? 'image' : '')).slice(0, 120);
+      const hasAttachment = Boolean(finalAttachmentUrl);
+      const isImageAttachment = Boolean(imageUrl) || finalAttachmentType.startsWith('image/');
+
+      if (!sanitized && !hasAttachment) return;
 
       // Rate limit check
       if (!checkChatRateLimit(socket.userId)) {
@@ -197,12 +222,60 @@ export function setupSessionSocket(io) {
       }
 
       try {
+        const session = await QuizSession.findById(sessionId);
+        const access = getSessionAccess(session, socket.user);
+        if (!access.allowed) {
+          socket.emit('session:error', { message: access.message });
+          return;
+        }
+
+        if (session.settings?.chatSettings === 'disabled') {
+          socket.emit('session:error', { message: 'Chat is disabled for this session.' });
+          return;
+        }
+
+        if (session.settings?.chatSettings === 'read_only' && !isSessionCreator(session, socket.user)) {
+          socket.emit('session:error', { message: 'Chat is read-only for participants.' });
+          return;
+        }
+
+        if (session.settings?.chatFileSharing === 'text_only' && hasAttachment) {
+          socket.emit('session:error', { message: 'File sharing is disabled for this session.' });
+          return;
+        }
+
+        if (session.settings?.chatFileSharing === 'images_only' && hasAttachment && !isImageAttachment) {
+          socket.emit('session:error', { message: 'Only images can be shared in this session.' });
+          return;
+        }
+
+        const mentionUsernames = Array.isArray(mentions)
+          ? [...new Set(
+              mentions
+                .map((item) => String(item || '').replace(/^@/, '').toLowerCase().trim())
+                .filter((item) => /^[a-z0-9_.]{3,30}$/.test(item))
+            )].slice(0, 10)
+          : [];
+        const mentionedUsers = mentionUsernames.length
+          ? await User.find({ username: { $in: mentionUsernames } }).select('_id name username avatar').lean()
+          : [];
+        const mentionedUserIds = mentionedUsers.map((user) => user._id);
+
         // Save to DB
         const saved = await SessionMessage.create({
           sessionId,
           senderId: socket.userId,
           message: sanitized,
+          imageUrl: isImageAttachment ? finalAttachmentUrl : null,
+          attachmentUrl: finalAttachmentUrl,
+          attachmentName: String(attachmentName || '').slice(0, 255),
+          attachmentType: finalAttachmentType,
+          attachmentSize: Number(attachmentSize || 0),
+          mentions: mentionedUserIds,
         });
+
+        session.lastActivityAt = new Date();
+        await session.save();
 
         await Promise.all([
           recordSessionActivity({
@@ -213,6 +286,8 @@ export function setupSessionSocket(io) {
             metadata: {
               messageId: saved._id,
               length: sanitized.length,
+              hasImage: isImageAttachment,
+              hasAttachment,
             },
           }),
           recordEvent({
@@ -224,6 +299,8 @@ export function setupSessionSocket(io) {
             messageId: saved._id,
             metadata: {
               length: sanitized.length,
+              hasImage: isImageAttachment,
+              hasAttachment,
             },
           }),
         ]);
@@ -235,11 +312,38 @@ export function setupSessionSocket(io) {
           senderId: {
             _id: socket.userId,
             name: socket.userName,
+            username: socket.userUsername,
             avatar: socket.userAvatar,
           },
           message: sanitized,
+          imageUrl: saved.imageUrl,
+          attachmentUrl: saved.attachmentUrl,
+          attachmentName: saved.attachmentName,
+          attachmentType: saved.attachmentType,
+          attachmentSize: saved.attachmentSize,
+          mentions: mentionedUsers,
           createdAt: saved.createdAt,
+          tempId: tempId, // Pass back tempId to original sender for deduplication
         });
+
+        const room = onlineUsers.get(sessionId);
+        if (room && mentionedUsers.length) {
+          for (const mentionedUser of mentionedUsers) {
+            const online = room.get(mentionedUser._id.toString());
+            if (online && online.userId !== socket.userId) {
+              io.to(online.socketId).emit('chat:mention', {
+                sessionId,
+                messageId: saved._id,
+                from: {
+                  _id: socket.userId,
+                  name: socket.userName,
+                  username: socket.userUsername,
+                  avatar: socket.userAvatar,
+                },
+              });
+            }
+          }
+        }
       } catch (error) {
         logger.error(`chat:send error: ${error.message}`);
         socket.emit('session:error', { message: 'Failed to send message' });

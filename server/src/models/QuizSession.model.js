@@ -39,6 +39,26 @@ const quizSessionSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+      index: true,
+    },
+    lastActivityAt: {
+      type: Date,
+      default: Date.now,
+      index: true,
+    },
+    settings: {
+      linkType: { type: String, enum: ['anyone', 'logged_in', 'invite_only'], default: 'anyone' },
+      lifetime: { type: String, enum: ['forever', 'auto_expire', 'manual'], default: 'forever' },
+      participantVisibility: { type: String, enum: ['all', 'count_only', 'hidden'], default: 'all' },
+      chatSettings: { type: String, enum: ['enabled', 'disabled', 'read_only'], default: 'enabled' },
+      chatFileSharing: { type: String, enum: ['images_only', 'images_files', 'text_only'], default: 'images_only' },
+      postSubmissionAccess: { type: String, enum: ['review_answers', 'reopen_quiz', 'results_only'], default: 'review_answers' },
+      invitees: [{ type: String }],
+      expiresAt: { type: Date, default: null },
+    }
   },
   {
     timestamps: true,

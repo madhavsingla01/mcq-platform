@@ -27,6 +27,8 @@ import sessionRoutes from './routes/session.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import chatRoutes from './routes/chat.routes.js';
 import activityRoutes from './routes/activity.routes.js';
+import profileRoutes from './routes/profile.routes.js';
+import leaderboardRoutes from './routes/leaderboard.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -82,6 +84,8 @@ app.use('/api/v1/sessions', sessionRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/chat', chatRoutes);
 app.use('/api/v1/activity', activityRoutes);
+app.use('/api/v1/users', profileRoutes);
+app.use('/api/v1/leaderboard', leaderboardRoutes);
 
 // ===== SPA FALLBACK =====
 // Serve frontend static files in production, or redirect to Vite dev server in development.

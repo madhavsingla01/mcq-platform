@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
+import api from '../../api/axios';
 
 const genderOptions = ['male', 'female', 'other', 'prefer_not_to_say'];
 
@@ -7,6 +8,12 @@ export default function Profile() {
   const { user, updateProfile } = useAuthStore();
   const [firstName, setFirstName] = useState((user?.name || '').split(' ')[0] || '');
   const [lastName, setLastName] = useState(((user?.name || '').split(' ').slice(1).join(' ')) || '');
+  const [username, setUsername] = useState(user?.username || '');
+  const [usernameError, setUsernameError] = useState('');
+  const [usernameAvailable, setUsernameAvailable] = useState(true);
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const usernameTimeoutRef = useRef(null);
+
   const [email, setEmail] = useState(user?.email || '');
   const [avatarPreview, setAvatarPreview] = useState(user?.avatar || '');
   const [phone, setPhone] = useState(user?.phone || '');
@@ -19,10 +26,52 @@ export default function Profile() {
   const [addressPostalCode, setAddressPostalCode] = useState(user?.address?.postalCode || '');
   const [addressCountry, setAddressCountry] = useState(user?.address?.country || '');
   const [bio, setBio] = useState(user?.bio || '');
+  const [isProfilePublic, setIsProfilePublic] = useState(user?.isProfilePublic !== false);
+  const [website, setWebsite] = useState(user?.socialLinks?.website || '');
+  const [personalId, setPersonalId] = useState(user?.socialLinks?.personalId || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
   const fileRef = useRef();
+
+  // Username validation effect
+  useEffect(() => {
+    if (username === user?.username) {
+      setUsernameError('');
+      setUsernameAvailable(true);
+      return;
+    }
+    
+    if (usernameTimeoutRef.current) clearTimeout(usernameTimeoutRef.current);
+    
+    if (username.length < 3 || username.length > 30 || !/^[a-z0-9_.]+$/.test(username)) {
+      setUsernameError('3-30 chars, lowercase, numbers, _, . only');
+      setUsernameAvailable(false);
+      return;
+    }
+
+    setUsernameError('');
+    setCheckingUsername(true);
+    
+    usernameTimeoutRef.current = setTimeout(async () => {
+      try {
+        const { data } = await api.get(`/auth/check-username?username=${username}`);
+        if (!data.available) {
+          setUsernameError(data.message || 'Username is already taken');
+          setUsernameAvailable(false);
+        } else {
+          setUsernameAvailable(true);
+        }
+      } catch (err) {
+        setUsernameError('Error checking username');
+        setUsernameAvailable(false);
+      } finally {
+        setCheckingUsername(false);
+      }
+    }, 500);
+    
+    return () => clearTimeout(usernameTimeoutRef.current);
+  }, [username, user?.username]);
 
   const handleChangeAvatar = (file) => {
     if (!file) return;
@@ -53,8 +102,14 @@ export default function Profile() {
         setSaving(false);
         return;
       }
+      
+      if (!usernameAvailable) {
+        alert('Please choose a valid and available username');
+        setSaving(false);
+        return;
+      }
 
-      const payload = { name, email, avatar: avatarPreview || '' };
+      const payload = { name, email, username, avatar: avatarPreview || '' };
       // include optional profile fields
       payload.phone = phone || '';
       if (dateOfBirth) payload.dateOfBirth = dateOfBirth;
@@ -69,6 +124,8 @@ export default function Profile() {
       };
       payload.address = address;
       payload.bio = bio || '';
+      payload.isProfilePublic = isProfilePublic;
+      payload.socialLinks = { website, personalId };
       if (password) {
         payload.password = password;
         payload.confirmPassword = confirmPassword;
@@ -109,6 +166,27 @@ export default function Profile() {
           <label style={{ display: 'block', fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 6 }}>Last Name</label>
           <input value={lastName} onChange={(e) => setLastName(e.target.value)} style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--color-border)' }} />
         </div>
+      </div>
+
+      <div style={{ marginBottom: 18 }}>
+        <label style={{ display: 'block', fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 6 }}>Username (Special ID)</label>
+        <div style={{ position: 'relative' }}>
+          <input 
+            value={username} 
+            onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ''))} 
+            style={{ 
+              width: '100%', 
+              padding: 10, 
+              paddingRight: 40,
+              borderRadius: 8, 
+              border: `1px solid ${usernameError ? 'var(--color-danger)' : 'var(--color-border)'}` 
+            }} 
+            placeholder="e.g. madhav_123"
+          />
+          {checkingUsername && <div style={{ position: 'absolute', right: 12, top: 12, fontSize: 12, color: 'var(--color-text-muted)' }}>...</div>}
+          {!checkingUsername && usernameAvailable && username.length > 2 && <div style={{ position: 'absolute', right: 12, top: 12, color: 'var(--color-success)' }}>✓</div>}
+        </div>
+        {usernameError && <div style={{ fontSize: 12, color: 'var(--color-danger)', marginTop: 4 }}>{usernameError}</div>}
       </div>
 
       <div style={{ marginBottom: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -162,6 +240,55 @@ export default function Profile() {
         <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={4} style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--color-border)' }} />
       </div>
 
+      {/* Profile Visibility Toggle */}
+      <div style={{ marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--color-background)', padding: '14px 16px', borderRadius: 10, border: '1px solid var(--color-border)' }}>
+        <div>
+          <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: 'var(--color-text)', marginBottom: 2 }}>Public Profile</label>
+          <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: 0 }}>Allow others to view your profile and public quizzes at @{username}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsProfilePublic(v => !v)}
+          style={{
+            width: 48, height: 26, borderRadius: 999, border: 'none', cursor: 'pointer',
+            background: isProfilePublic ? 'linear-gradient(135deg, #6366f1, #a855f7)' : 'var(--color-border)',
+            position: 'relative', transition: 'background 0.25s', flexShrink: 0,
+          }}
+        >
+          <div style={{
+            width: 20, height: 20, borderRadius: '50%', background: '#fff',
+            position: 'absolute', top: 3,
+            left: isProfilePublic ? 25 : 3,
+            transition: 'left 0.25s cubic-bezier(.4,0,.2,1)',
+          }} />
+        </button>
+      </div>
+
+      {/* Social Links Section */}
+      <div style={{ marginBottom: 18 }}>
+        <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: 'var(--color-text)', marginBottom: 10 }}>Social Links</label>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 6 }}>Website URL</label>
+            <input
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              placeholder="https://yourwebsite.com"
+              style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--color-border)' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 6 }}>Personal ID</label>
+            <input
+              value={personalId}
+              onChange={(e) => setPersonalId(e.target.value)}
+              placeholder="Your personal identifier"
+              style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--color-border)' }}
+            />
+          </div>
+        </div>
+      </div>
+
       <div style={{ marginBottom: 18, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
           <label style={{ display: 'block', fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 6 }}>New Password</label>
@@ -176,6 +303,29 @@ export default function Profile() {
       <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 18, display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
         <button onClick={() => window.history.back()} style={{ padding: '8px 14px', borderRadius: 8 }}>Cancel</button>
         <button onClick={onSave} disabled={saving} style={{ padding: '8px 14px', borderRadius: 8, background: 'var(--color-primary)', color: '#fff' }}>{saving ? 'Saving...' : 'Save Changes'}</button>
+      </div>
+
+      <div style={{ marginTop: 40, paddingTop: 24, borderTop: '1px solid var(--color-border)' }}>
+        <h3 style={{ color: '#ef4444', marginBottom: 8 }}>Danger Zone</h3>
+        <p style={{ color: 'var(--color-text-secondary)', marginBottom: 16, fontSize: 14 }}>
+          Permanently delete your account and all your data (quizzes, attempts, chat messages). This action cannot be undone.
+        </p>
+        <button 
+          onClick={async () => {
+            if (window.confirm('Are you absolutely sure you want to delete your account? This will erase EVERYTHING and cannot be undone.')) {
+              if (window.confirm('Final warning: Delete account?')) {
+                try {
+                  await useAuthStore.getState().deleteAccount();
+                } catch (err) {
+                  alert('Failed to delete account');
+                }
+              }
+            }
+          }}
+          style={{ padding: '10px 16px', borderRadius: 8, background: '#fee2e2', color: '#ef4444', border: '1px solid #fca5a5', fontWeight: 600, cursor: 'pointer' }}
+        >
+          Delete Account
+        </button>
       </div>
     </div>
   );

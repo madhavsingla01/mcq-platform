@@ -9,6 +9,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useSessionStore } from '../../store/sessionStore';
 import { useAuthStore } from '../../store/authStore';
 import { Spinner, Button } from '../../components/ui';
+import { getSelectedShareSettings } from '../../utils/shareSettings';
 
 function timeAgo(dateStr) {
   const now = new Date();
@@ -46,14 +47,18 @@ export default function SharedSession() {
     setJoining(true);
     try {
       await joinSession(session._id);
-      navigate(`/session/${shareCode}/quiz`);
-    } catch {
+      navigate(`/quiz/${session.quiz?._id || session.quizId}?sessionId=${session._id}&shareCode=${shareCode}`);
+    } catch (err) {
+      if (err.response?.status === 401) {
+        navigate(`/login?redirect=${encodeURIComponent(`/session/${shareCode}`)}`);
+        return;
+      }
       setJoining(false);
     }
   };
 
   const handleEnterSession = () => {
-    navigate(`/session/${shareCode}/quiz`);
+    navigate(`/quiz/${session.quiz?._id || session.quizId}?sessionId=${session._id}&shareCode=${shareCode}`);
   };
 
   if (isLoading) {
@@ -65,16 +70,22 @@ export default function SharedSession() {
   }
 
   if (error) {
+    const requiresLogin = /log in/i.test(error);
+
     return (
       <div style={{ textAlign: 'center', padding: '72px 16px' }}>
         <span className="material-symbols-outlined" style={{ fontSize: 48, color: 'var(--color-text-muted)', marginBottom: 16 }}>
-          search_off
+          {requiresLogin ? 'lock' : 'search_off'}
         </span>
-        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Session Not Found</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
+          {requiresLogin ? 'Login Required' : 'Session Not Found'}
+        </h2>
         <p style={{ color: 'var(--color-text-secondary)', marginBottom: 24 }}>
-          This session link may have expired or doesn't exist.
+          {error || "This session link may have expired or doesn't exist."}
         </p>
-        <Button onClick={() => navigate('/')}>Go Home</Button>
+        <Button onClick={() => requiresLogin ? navigate(`/login?redirect=${encodeURIComponent(`/session/${shareCode}`)}`) : navigate('/')}>
+          {requiresLogin ? 'Log in to continue' : 'Go Home'}
+        </Button>
       </div>
     );
   }
@@ -83,6 +94,12 @@ export default function SharedSession() {
 
   const quiz = session.quiz || {};
   const creator = session.creator || {};
+  const settings = session.settings || {};
+  const selectedSettings = getSelectedShareSettings(settings);
+  const hideParticipants = settings.participantVisibility === 'hidden';
+  const showParticipantCount = settings.participantVisibility !== 'hidden';
+  const loginRequired = settings.linkType === 'logged_in' || settings.linkType === 'invite_only';
+  const shouldPromptLogin = loginRequired && !user;
 
   return (
     <>
@@ -115,10 +132,12 @@ export default function SharedSession() {
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }}>quiz</span>
                 <span><strong>{quiz.questionCount || 0}</strong> Questions</span>
               </div>
-              <div className="shared-session-meta-item">
-                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>group</span>
-                <span><strong>{session.participantCount || 0}</strong> Participants</span>
-              </div>
+              {showParticipantCount ? (
+                <div className="shared-session-meta-item">
+                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>group</span>
+                  <span><strong>{session.participantCount || 0}</strong> Participants</span>
+                </div>
+              ) : null}
               <div className="shared-session-meta-item">
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }}>schedule</span>
                 <span>{timeAgo(session.createdAt)}</span>
@@ -140,12 +159,32 @@ export default function SharedSession() {
               ))}
             </div>
 
+            <div className="shared-session-rules">
+              {selectedSettings.map(({ label, option }) => (
+                <div className="shared-session-rule" key={label}>
+                  <span>{label}</span>
+                  <strong>{option.title}</strong>
+                </div>
+              ))}
+              {hideParticipants ? (
+                <div className="shared-session-rule muted">
+                  <span>Participants</span>
+                  <strong>Hidden by creator</strong>
+                </div>
+              ) : null}
+            </div>
+
             {/* CTA */}
             <div className="shared-session-cta">
-              {hasJoined ? (
+              {shouldPromptLogin ? (
+                <Button size="lg" onClick={() => navigate(`/login?redirect=${encodeURIComponent(`/session/${shareCode}`)}`)} style={{ width: '100%', fontSize: 17, padding: '16px 24px' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 20, marginRight: 8 }}>lock</span>
+                  Log in to Open Quiz
+                </Button>
+              ) : hasJoined ? (
                 <Button size="lg" onClick={handleEnterSession} style={{ width: '100%', fontSize: 17, padding: '16px 24px' }}>
                   <span className="material-symbols-outlined" style={{ fontSize: 20, marginRight: 8 }}>login</span>
-                  Enter Session
+                  Open Quiz
                 </Button>
               ) : (
                 <Button
@@ -155,11 +194,11 @@ export default function SharedSession() {
                   style={{ width: '100%', fontSize: 17, padding: '16px 24px' }}
                 >
                   {joining ? (
-                    <><Spinner size={18} /> Joining...</>
+                    <><Spinner size={18} /> Opening...</>
                   ) : (
                     <>
-                      <span className="material-symbols-outlined" style={{ fontSize: 20, marginRight: 8 }}>group_add</span>
-                      Join Session
+                      <span className="material-symbols-outlined" style={{ fontSize: 20, marginRight: 8 }}>play_arrow</span>
+                      Open Quiz
                     </>
                   )}
                 </Button>
@@ -167,7 +206,11 @@ export default function SharedSession() {
             </div>
 
             <p className="shared-session-hint">
-              Solve the quiz at your own pace while chatting with other participants in real time.
+              {settings.chatSettings === 'disabled'
+                ? 'Live chat is disabled for this shared quiz.'
+                : settings.chatSettings === 'read_only'
+                  ? 'Chat is read-only for participant announcements.'
+                  : 'Solve normally and use live chat when collaboration helps.'}
             </p>
           </div>
         </div>
@@ -264,6 +307,40 @@ const sharedSessionStyles = `
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+  }
+
+  .shared-session-rules {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 14px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border-light);
+    background: var(--color-surface-alt);
+  }
+
+  .shared-session-rule {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+    font-size: 13px;
+  }
+
+  .shared-session-rule span {
+    color: var(--color-text-muted);
+    font-weight: 650;
+  }
+
+  .shared-session-rule strong {
+    color: var(--color-text);
+    font-weight: 750;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  .shared-session-rule.muted strong {
+    color: var(--color-text-secondary);
   }
 
   .shared-session-chip {

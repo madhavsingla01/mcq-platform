@@ -1,67 +1,56 @@
 import { useSettingsStore } from '../../store/settingsStore';
-import { useAIStore } from '../../store/aiStore';
 import TopNavbar from './navbar/TopNavbar';
-import NavigatorSidebar from './navigator/NavigatorSidebar';
 import QuestionWorkspace from './question/QuestionWorkspace';
-import AIWorkspace from './ai/AIWorkspace';
 import SettingsDrawer from './settings/SettingsDrawer';
 
-export default function QuizLayout() {
-  const {
-    focusMode,
-    panelWidths,
-    isDrawerOpen,
-    isNavigatorCollapsed,
-    isAICollapsed,
-    
-  } = useSettingsStore();
-
-  const { isOpen: isAIOpen } = useAIStore();
-
-  const navPercent = panelWidths?.navigator ?? 20;
-  const aiPercent = panelWidths?.ai ?? 25;
+export default function QuizLayout({ collaboration = null }) {
+  const { isDrawerOpen } = useSettingsStore();
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[#fafafa] text-zinc-900 font-sans">
-      <TopNavbar />
+    <div className="ws-root">
+      <TopNavbar collaboration={collaboration} />
 
-      <main className="flex-1 min-h-0 relative">
-        <div className="h-full flex">
-          {/* Panels control moved to header for a cleaner, professional UI */}
-          {/* Navigator Column */}
-          {!focusMode && (
-            <aside
-              className="bg-[#fcfcfc] border-r border-zinc-200 flex flex-col"
-              style={{ flex: `0 0 ${isNavigatorCollapsed ? '64px' : `${navPercent}%`}` }}
-            >
-              
-              <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
-                <NavigatorSidebar collapsed={isNavigatorCollapsed} />
-              </div>
-            </aside>
-          )}
-
-          {/* Main Workspace */}
-          <div className="flex-1 min-w-0">
+      <main className="ws-main">
+        <div className="ws-columns">
+          {/* Main Workspace Only */}
+          <div className="ws-workspace">
             <QuestionWorkspace />
           </div>
-
-          {/* AI Column */}
-          {!focusMode && isAIOpen && (
-            <aside
-              className="bg-white border-l border-zinc-200 flex flex-col"
-              style={{ flex: `0 0 ${isAICollapsed ? '64px' : `${aiPercent}%`}` }}
-            >
-              <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
-                <AIWorkspace collapsed={isAICollapsed} />
-              </div>
-            </aside>
-          )}
         </div>
       </main>
 
       {/* Settings Drawer Overlay */}
-      {isDrawerOpen && <SettingsDrawer />}
+      {isDrawerOpen && <SettingsDrawer collaboration={collaboration} />}
+
+      <style>{layoutStyles}</style>
     </div>
   );
 }
+
+const layoutStyles = `
+  .ws-root {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    background: transparent;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: #18181b;
+  }
+
+  .ws-main {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+  }
+
+  .ws-columns {
+    height: 100%;
+    display: flex;
+  }
+
+  .ws-workspace {
+    flex: 1;
+    min-width: 0;
+  }
+`;

@@ -1,8 +1,10 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { useSettingsStore } from '../../../store/settingsStore';
-import { X, Type, MonitorSmartphone, Clock, Maximize, Keyboard } from 'lucide-react';
+import { X, Type, MonitorSmartphone, Maximize, Keyboard, MessageCircle, Users, Settings as SettingsIcon, Link as LinkIcon } from 'lucide-react';
+import ChatPanel from '../../session/ChatPanel';
+import ParticipantsPanel from '../../session/ParticipantsPanel';
 
-function SettingsDrawer() {
+function SettingsDrawer({ collaboration }) {
   const {
     isDrawerOpen,
     toggleDrawer,
@@ -10,153 +12,402 @@ function SettingsDrawer() {
     setFontSize,
     density,
     setDensity,
-    timerVisibility,
-    setTimerVisibility,
-    focusMode,
-    toggleFocusMode,
     keyboardShortcutsEnabled,
     setKeyboardShortcutsEnabled
   } = useSettingsStore();
 
+  const [activeTab, setActiveTab] = useState('settings'); // 'settings', 'chat', 'participants'
+  const [copied, setCopied] = useState(false);
+
   if (!isDrawerOpen) return null;
+
+  const copyShareLink = async () => {
+    if (!collaboration?.shareCode) return;
+    const url = `${window.location.origin}/session/${collaboration.shareCode}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {}
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+    else document.exitFullscreen().catch(() => {});
+  };
+
+  const showCollaboration = Boolean(collaboration?.sessionId);
 
   return (
     <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[100]"
-        onClick={toggleDrawer}
-      />
+      <div className="ws-drawer-backdrop" onClick={toggleDrawer} />
 
-      {/* Drawer */}
-      <div className="fixed top-0 right-0 h-full w-[480px] bg-white shadow-2xl z-[101] flex flex-col animate-slide-in-right border-l border-zinc-200">
-        <div className="h-14 px-5 flex items-center justify-between border-b border-zinc-100 shrink-0">
-          <h2 className="text-sm font-semibold text-zinc-900 tracking-tight">Appearance & Settings</h2>
-          <button
-            onClick={toggleDrawer}
-            className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
-          >
-            <X className="w-4 h-4" />
+      <div className="ws-drawer">
+        <div className="ws-drawer-header">
+          <div className="ws-drawer-tabs">
+            <button 
+              className={`ws-tab-btn ${activeTab === 'settings' ? 'ws-tab-btn--active' : ''}`}
+              onClick={() => setActiveTab('settings')}
+            >
+              <SettingsIcon className="w-4 h-4" />
+            </button>
+            {showCollaboration && (
+              <>
+                <button 
+                  className={`ws-tab-btn ${activeTab === 'chat' ? 'ws-tab-btn--active' : ''}`}
+                  onClick={() => setActiveTab('chat')}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                </button>
+                <button 
+                  className={`ws-tab-btn ${activeTab === 'participants' ? 'ws-tab-btn--active' : ''}`}
+                  onClick={() => setActiveTab('participants')}
+                >
+                  <Users className="w-4 h-4" />
+                </button>
+              </>
+            )}
+          </div>
+          <button onClick={toggleDrawer} className="ws-drawer-close">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 space-y-10 divide-y divide-zinc-100 custom-scrollbar">
-
-          {/* Typography */}
-          <section>
-            <div className="flex items-center gap-2 mb-4 text-zinc-800">
-              <Type className="w-4 h-4" />
-              <h3 className="text-sm font-semibold">Typography</h3>
-            </div>
-            <div className="bg-zinc-50 p-2 rounded-xl flex gap-2">
-              {['sm', 'md', 'lg'].map((size) => (
-                <button
-                  key={size}
-                  onClick={() => setFontSize(size)}
-                  className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg capitalize transition-colors min-h-[40px] ${fontSize === size ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-zinc-200/50' : 'text-zinc-500 hover:text-zinc-900'}`}
-                >
-                  {size === 'sm' ? 'Small' : size === 'md' ? 'Medium' : 'Large'}
+        <div className="ws-drawer-body">
+          {activeTab === 'settings' && (
+            <div className="ws-settings-tab">
+              <SettingsSection icon={<LinkIcon className="w-4 h-4" />} title="Share Link">
+                <button className="ws-drawer-action-btn" onClick={copyShareLink}>
+                  {copied ? 'Copied!' : 'Copy Link'}
                 </button>
-              ))}
-            </div>
-          </section>
+              </SettingsSection>
 
-          {/* Layout Density */}
-          <section>
-            <div className="flex items-center gap-2 mb-4 text-zinc-800">
-              <MonitorSmartphone className="w-4 h-4" />
-              <h3 className="text-sm font-semibold">Layout Density</h3>
-            </div>
-            <div className="bg-zinc-50 p-2 rounded-xl flex gap-2">
-              {['compact', 'comfortable'].map((d) => (
-                <button
-                  key={d}
-                  onClick={() => setDensity(d)}
-                  className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg capitalize transition-colors min-h-[40px] ${density === d ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-zinc-200/50' : 'text-zinc-500 hover:text-zinc-900'}`}
-                >
-                  {d}
+              <SettingsSection icon={<Maximize className="w-4 h-4" />} title="Screen">
+                <button className="ws-drawer-action-btn" onClick={toggleFullscreen}>
+                  Toggle Full Screen
                 </button>
-              ))}
-            </div>
-          </section>
+              </SettingsSection>
 
-          {/* Timer */}
-          <section>
-            <div className="flex items-center gap-2 mb-4 text-zinc-800">
-              <Clock className="w-4 h-4" />
-              <h3 className="text-sm font-semibold">Timer Display</h3>
-            </div>
-            <div className="bg-zinc-50 p-2 rounded-xl flex gap-2">
-              {['visible', 'hidden'].map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setTimerVisibility(v)}
-                  className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg capitalize transition-colors min-h-[40px] ${timerVisibility === v ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-zinc-200/50' : 'text-zinc-500 hover:text-zinc-900'}`}
-                >
-                  {v}
-                </button>
-              ))}
-            </div>
-          </section>
+              <SettingsSection icon={<Type className="w-4 h-4" />} title="Font Size">
+                <div className="ws-seg-control">
+                  {[['sm', 'Small'], ['md', 'Medium'], ['lg', 'Large']].map(([val, label]) => (
+                    <button key={val} onClick={() => setFontSize(val)}
+                      className={`ws-seg-btn ${fontSize === val ? 'ws-seg-btn--active' : ''}`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </SettingsSection>
 
-          {/* Focus Mode Toggle */}
-          <section>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-zinc-800">
-                <Maximize className="w-4 h-4" />
-                <h3 className="text-sm font-semibold">Focus Mode</h3>
-              </div>
-              <button
-                type="button"
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 ${focusMode ? 'bg-indigo-600' : 'bg-zinc-200'}`}
-                role="switch"
-                aria-checked={focusMode}
-                onClick={toggleFocusMode}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${focusMode ? 'translate-x-5' : 'translate-x-0'}`}
-                />
-              </button>
-            </div>
-            <p className="text-sm text-zinc-500 pl-8">Hides the navigator and AI panels for distraction-free reading.</p>
-          </section>
+              <SettingsSection icon={<MonitorSmartphone className="w-4 h-4" />} title="Density">
+                <div className="ws-seg-control">
+                  {[['compact', 'Compact'], ['comfortable', 'Comfortable']].map(([val, label]) => (
+                    <button key={val} onClick={() => setDensity(val)}
+                      className={`ws-seg-btn ${density === val ? 'ws-seg-btn--active' : ''}`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </SettingsSection>
 
-          {/* Keyboard Shortcuts */}
-          <section>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-zinc-800">
-                <Keyboard className="w-4 h-4" />
-                <h3 className="text-sm font-semibold">Keyboard Shortcuts</h3>
-              </div>
-              <button
-                type="button"
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 ${keyboardShortcutsEnabled ? 'bg-indigo-600' : 'bg-zinc-200'}`}
-                role="switch"
-                aria-checked={keyboardShortcutsEnabled}
-                onClick={() => setKeyboardShortcutsEnabled(!keyboardShortcutsEnabled)}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${keyboardShortcutsEnabled ? 'translate-x-5' : 'translate-x-0'}`}
-                />
-              </button>
+              <SettingsSection icon={<Keyboard className="w-4 h-4" />} title="Keyboard Shortcuts">
+                <ToggleSwitch enabled={keyboardShortcutsEnabled} onToggle={() => setKeyboardShortcutsEnabled(!keyboardShortcutsEnabled)} />
+                {keyboardShortcutsEnabled && (
+                  <div className="ws-shortcuts-grid">
+                    <ShortcutRow label="Previous / Next" keys="← / →" />
+                    <ShortcutRow label="Select Option" keys="1-4 or A-D" />
+                    <ShortcutRow label="Flag Question" keys="F" />
+                    <ShortcutRow label="Submit Quiz" keys="Ctrl+Enter" />
+                  </div>
+                )}
+              </SettingsSection>
             </div>
-              {keyboardShortcutsEnabled && (
-              <div className="mt-4 bg-zinc-50 rounded-xl p-6 text-sm text-zinc-600 space-y-3">
-                <div className="flex justify-between"><span>Previous/Next</span><kbd className="font-sans font-bold">← / →</kbd></div>
-                <div className="flex justify-between"><span>Select Option</span><kbd className="font-sans font-bold">1-4 / A-D</kbd></div>
-                <div className="flex justify-between"><span>Flag Question</span><kbd className="font-sans font-bold">F</kbd></div>
-                <div className="flex justify-between"><span>Toggle Focus</span><kbd className="font-sans font-bold">Ctrl+Shift+F</kbd></div>
-                <div className="flex justify-between"><span>Submit Quiz</span><kbd className="font-sans font-bold">Ctrl+Enter</kbd></div>
-              </div>
-            )}
-          </section>
+          )}
 
+          {activeTab === 'chat' && showCollaboration && (
+            <div className="ws-drawer-embedded-panel">
+              <ChatPanel creatorId={collaboration.creatorId} />
+            </div>
+          )}
+
+          {activeTab === 'participants' && showCollaboration && (
+            <div className="ws-drawer-embedded-panel">
+              <ParticipantsPanel creatorId={collaboration.creatorId} />
+            </div>
+          )}
         </div>
       </div>
+
+      <style>{drawerStyles}</style>
     </>
   );
 }
 
+function SettingsSection({ icon, title, children }) {
+  return (
+    <section className="ws-setting-section">
+      <div className="ws-setting-header">
+        {icon}
+        <h3>{title}</h3>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function ToggleSwitch({ enabled, onToggle }) {
+  return (
+    <button type="button" className={`ws-toggle ${enabled ? 'ws-toggle--on' : ''}`} role="switch" aria-checked={enabled} onClick={onToggle}>
+      <span className="ws-toggle-thumb" />
+    </button>
+  );
+}
+
+function ShortcutRow({ label, keys }) {
+  return (
+    <div className="ws-shortcut-row">
+      <span>{label}</span>
+      <kbd>{keys}</kbd>
+    </div>
+  );
+}
+
 export default memo(SettingsDrawer);
+
+const drawerStyles = `
+  .ws-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+  }
+
+  .ws-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 380px;
+    max-width: 100vw;
+    background: #fff;
+    border-left: 1px solid #e4e4e7;
+    z-index: 101;
+    display: flex;
+    flex-direction: column;
+    animation: ws-drawer-in 0.2s ease-out;
+  }
+
+  @keyframes ws-drawer-in {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+
+  .ws-drawer-header {
+    height: 52px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #f4f4f5;
+    flex-shrink: 0;
+  }
+
+  .ws-drawer-tabs {
+    display: flex;
+    gap: 8px;
+  }
+
+  .ws-tab-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #71717a;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .ws-tab-btn:hover {
+    background: #f4f4f5;
+    color: #18181b;
+  }
+
+  .ws-tab-btn--active {
+    background: #eef2ff;
+    color: #6366f1;
+  }
+
+  .ws-drawer-close {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: none;
+    border-radius: 8px;
+    color: #a1a1aa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .ws-drawer-close:hover { background: #f4f4f5; color: #18181b; }
+
+  .ws-drawer-body {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ws-settings-tab {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .ws-drawer-embedded-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .ws-drawer-embedded-panel > * {
+    flex: 1;
+  }
+
+  .ws-setting-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .ws-setting-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #3f3f46;
+  }
+
+  .ws-setting-header h3 {
+    font-size: 13px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+
+  .ws-drawer-action-btn {
+    padding: 10px 16px;
+    border: 1px solid #e4e4e7;
+    background: #fafafa;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #18181b;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-align: left;
+  }
+
+  .ws-drawer-action-btn:hover {
+    background: #f4f4f5;
+  }
+
+  /* ── Segmented Control ── */
+  .ws-seg-control {
+    display: flex;
+    gap: 4px;
+    background: #f4f4f5;
+    padding: 4px;
+    border-radius: 12px;
+  }
+
+  .ws-seg-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 550;
+    color: #71717a;
+    background: none;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .ws-seg-btn:hover { color: #18181b; }
+
+  .ws-seg-btn--active {
+    background: #fff;
+    color: #6366f1;
+    
+  }
+
+  /* ── Toggle ── */
+  .ws-toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    border: none;
+    border-radius: 12px;
+    background: #e4e4e7;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .ws-toggle--on { background: #6366f1; }
+
+  .ws-toggle-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    background: #fff;
+    
+    transition: transform 0.2s;
+  }
+
+  .ws-toggle--on .ws-toggle-thumb { transform: translateX(20px); }
+
+  /* ── Shortcuts ── */
+  .ws-shortcuts-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: #fafafa;
+    border-radius: 12px;
+    padding: 4px 0;
+    margin-top: 4px;
+  }
+
+  .ws-shortcut-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    font-size: 13px;
+    color: #52525b;
+  }
+
+  .ws-shortcut-row kbd {
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    color: #3f3f46;
+    background: #fff;
+    border: 1px solid #e4e4e7;
+    padding: 2px 8px;
+    border-radius: 6px;
+  }
+`;

@@ -2,7 +2,12 @@ import Quiz from '../models/Quiz.model.js';
 import Question from '../models/Question.model.js';
 import Attempt from '../models/Attempt.model.js';
 import Upload from '../models/Upload.model.js';
+import User from '../models/User.model.js';
 import QuestionAnalytics from '../models/QuestionAnalytics.model.js';
+import QuizSession from '../models/QuizSession.model.js';
+import SessionMessage from '../models/SessionMessage.model.js';
+import JoinedSession from '../models/JoinedSession.model.js';
+import mongoose from 'mongoose';
 import { catchAsync, AppError } from '../middleware/error.middleware.js';
 import { parseExcel } from '../services/parser/excelParser.js';
 import { parseCsv } from '../services/parser/csvParser.js';
@@ -10,6 +15,7 @@ import { parseJson } from '../services/parser/jsonParser.js';
 import { extractOptions } from '../services/parser/optionExtractor.js';
 import { normalizeAnswer } from '../services/parser/answerDetector.js';
 import { generateShareCode } from '../utils/generateId.js';
+import { getSessionAccess, isSessionCreator } from '../utils/sessionSettings.js';
 import { logger } from '../utils/logger.js';
 import {
   assertAttemptReadAccess,
@@ -27,6 +33,59 @@ import {
   recordSearch,
   upsertRecentQuiz,
 } from '../services/activity/activity.service.js';
+
+const getSharedSessionIdFromRequest = (req) => (
+  req.get('x-shared-session-id') ||
+  req.body?.sharedSessionId ||
+  req.query?.sharedSessionId ||
+  null
+);
+
+const resolveSharedSessionContext = async (req, quizId) => {
+  const sharedSessionId = getSharedSessionIdFromRequest(req);
+
+  if (!sharedSessionId) {
+    return null;
+  }
+
+  if (!mongoose.isValidObjectId(sharedSessionId)) {
+    throw new AppError('Invalid shared session id', 400);
+  }
+
+  const session = await QuizSession.findOne({
+    _id: sharedSessionId,
+    quizId,
+  });
+
+  if (!session) {
+    throw new AppError('Shared session not found for this quiz', 404);
+  }
+
+  const access = getSessionAccess(session, req.user);
+  if (!access.allowed) {
+    throw new AppError(access.message, access.status);
+  }
+
+  const lastActivityAt = session.lastActivityAt ? new Date(session.lastActivityAt).getTime() : 0;
+  if (Date.now() - lastActivityAt > 5 * 60 * 1000) {
+    session.lastActivityAt = new Date();
+    await session.save();
+  }
+
+  return session;
+};
+
+const applySharedSessionContext = (attempt, sharedSession) => {
+  if (!attempt || !sharedSession?._id) {
+    return null;
+  }
+
+  if (String(attempt.sharedSessionId || '') !== String(sharedSession._id)) {
+    attempt.sharedSessionId = sharedSession._id;
+  }
+
+  return sharedSession._id;
+};
 
 const getParser = (fileType) => {
   if (fileType === 'xlsx' || fileType === 'xls') {
@@ -97,6 +156,19 @@ const normalizeVisibility = (visibility, fallback = 'private') => {
   return ['public', 'private', 'unlisted'].includes(visibility) ? visibility : fallback;
 };
 
+const publicQuizCountFilterFor = (userId) => ({
+  uploader: userId,
+  $or: [{ visibility: 'public' }, { isPublic: true }],
+});
+
+const syncUserPublicQuizCount = async (userId) => {
+  if (!userId) return null;
+
+  const quizCount = await Quiz.countDocuments(publicQuizCountFilterFor(userId));
+  await User.findByIdAndUpdate(userId, { quizCount });
+  return quizCount;
+};
+
 const normalizeDifficulty = (difficulty) => {
   return ['Beginner', 'Intermediate', 'Advanced', 'All Levels'].includes(difficulty)
     ? difficulty
@@ -108,7 +180,7 @@ const assertQuizManageAccess = (quiz, req) => {
     throw new AppError('Not authorized', 401);
   }
 
-  const isOwner = toObjectIdString(quiz.uploader) === toObjectIdString(req.user._id);
+  const isOwner = toObjectIdString(quiz.uploader?._id || quiz.uploader) === toObjectIdString(req.user._id);
   const isAdmin = req.user.role === 'admin';
 
   if (!isOwner && !isAdmin) {
@@ -116,16 +188,25 @@ const assertQuizManageAccess = (quiz, req) => {
   }
 };
 
-const assertQuizReadAccess = (quiz, req) => {
+const assertQuizReadAccess = async (quiz, req) => {
   if (quiz.visibility === 'public' || quiz.visibility === 'unlisted' || quiz.isPublic) {
     return;
+  }
+
+  try {
+    const sharedSession = await resolveSharedSessionContext(req, quiz._id);
+    if (sharedSession) {
+      return;
+    }
+  } catch (err) {
+    // Ignore errors from shared session resolution and fallback to normal checks
   }
 
   if (!req.user) {
     throw new AppError('Not authorized to view this quiz', 401);
   }
 
-  const isOwner = toObjectIdString(quiz.uploader) === toObjectIdString(req.user._id);
+  const isOwner = toObjectIdString(quiz.uploader?._id || quiz.uploader) === toObjectIdString(req.user._id);
   const isAdmin = req.user.role === 'admin';
 
   if (!isOwner && !isAdmin) {
@@ -396,6 +477,7 @@ export const generateQuiz = catchAsync(async (req, res, next) => {
   upload.status = 'generated';
   upload.quizId = quiz._id;
   await upload.save();
+  await syncUserPublicQuizCount(quiz.uploader);
 
   await recordEvent({
     req,
@@ -430,7 +512,7 @@ export const getQuiz = catchAsync(async (req, res, next) => {
     return next(new AppError('Quiz not found', 404));
   }
 
-  assertQuizReadAccess(quiz, req);
+  await assertQuizReadAccess(quiz, req);
   await upsertRecentQuiz({ req, quizId: quiz._id });
 
   res.json({
@@ -448,7 +530,7 @@ export const getQuizQuestions = catchAsync(async (req, res, next) => {
     return next(new AppError('Quiz not found', 404));
   }
 
-  assertQuizReadAccess(quiz, req);
+  await assertQuizReadAccess(quiz, req);
 
   const questions = await getQuizQuestionsSorted(quiz._id);
 
@@ -468,9 +550,10 @@ export const getActiveAttempt = catchAsync(async (req, res, next) => {
     return next(new AppError('Quiz not found', 404));
   }
 
-  assertQuizReadAccess(quiz, req);
+  await assertQuizReadAccess(quiz, req);
 
   const ownerFilter = buildAttemptOwnerFilter(req);
+  const sharedSession = await resolveSharedSessionContext(req, quiz._id);
 
   if (!ownerFilter) {
     return res.json({
@@ -501,6 +584,18 @@ export const getActiveAttempt = catchAsync(async (req, res, next) => {
     }).sort({ createdAt: -1 });
   }
 
+  if (attempt && sharedSession) {
+    applySharedSessionContext(attempt, sharedSession);
+    await attempt.save();
+    await upsertRecentQuiz({
+      req,
+      quizId: quiz._id,
+      attempt,
+      sessionId: sharedSession._id,
+      lastVisitedQuestionId: attempt.lastActiveQuestionId,
+    });
+  }
+
   res.json({
     success: true,
     data: {
@@ -517,9 +612,10 @@ export const startAttempt = catchAsync(async (req, res, next) => {
     return next(new AppError('Quiz not found', 404));
   }
 
-  assertQuizReadAccess(quiz, req);
+  await assertQuizReadAccess(quiz, req);
 
   const sessionId = getRequestSessionId(req);
+  const sharedSession = await resolveSharedSessionContext(req, quiz._id);
 
   if (!req.user && !sessionId) {
     return next(new AppError('sessionId required for guest attempts', 400));
@@ -544,17 +640,29 @@ export const startAttempt = catchAsync(async (req, res, next) => {
   }
 
   if (existingAttempt) {
+    applySharedSessionContext(existingAttempt, sharedSession);
+    if (sharedSession) {
+      await existingAttempt.save();
+    }
+
     await Promise.all([
-      upsertRecentQuiz({ req, quizId: quiz._id, attempt: existingAttempt }),
+      upsertRecentQuiz({
+        req,
+        quizId: quiz._id,
+        attempt: existingAttempt,
+        sessionId: existingAttempt.sharedSessionId || sharedSession?._id,
+      }),
       recordEvent({
         req,
         eventType: 'ATTEMPT_RECOVERED',
         category: 'attempt',
         quizId: quiz._id,
         attemptId: existingAttempt._id,
+        sessionId: existingAttempt.sharedSessionId || sharedSession?._id,
         metadata: {
           status: existingAttempt.status,
           recoveryMode: 'server',
+          sharedSessionId: existingAttempt.sharedSessionId || null,
         },
       }),
     ]);
@@ -585,6 +693,7 @@ export const startAttempt = catchAsync(async (req, res, next) => {
     quizId: quiz._id,
     userId: req.user?._id || null,
     sessionId: sessionId || null,
+    sharedSessionId: sharedSession?._id || null,
     answers: buildInitialAnswerStates(questions),
     totalQuestions: quiz.questionCount,
     totalMarks: quiz.totalMarks || getQuizTotalMarks(questions),
@@ -607,18 +716,25 @@ export const startAttempt = catchAsync(async (req, res, next) => {
   });
 
   await Promise.all([
-    upsertRecentQuiz({ req, quizId: quiz._id, attempt }),
+    upsertRecentQuiz({
+      req,
+      quizId: quiz._id,
+      attempt,
+      sessionId: sharedSession?._id,
+    }),
     recordEvent({
       req,
       eventType: 'ATTEMPT_STARTED',
       category: 'attempt',
       quizId: quiz._id,
       attemptId: attempt._id,
+      sessionId: sharedSession?._id,
       metadata: {
         totalQuestions: questions.length,
         timerMode,
         isQuickMode,
         instantFeedback,
+        sharedSessionId: sharedSession?._id || null,
       },
     }),
   ]);
@@ -648,6 +764,8 @@ export const syncAttempt = catchAsync(async (req, res, next) => {
     return next(new AppError('Attempt is no longer in progress', 400));
   }
 
+  const sharedSession = await resolveSharedSessionContext(req, attempt.quizId);
+  const recentSessionId = applySharedSessionContext(attempt, sharedSession) || attempt.sharedSessionId;
   const questions = await getQuizQuestionsSorted(attempt.quizId);
   const { flags, answerChanges } = mergeAttemptTrackingPayload({
     attempt,
@@ -664,6 +782,7 @@ export const syncAttempt = catchAsync(async (req, res, next) => {
       req,
       quizId: attempt.quizId,
       attempt,
+      sessionId: recentSessionId,
       lastVisitedQuestionId: attempt.lastActiveQuestionId,
     }),
     recordEvent({
@@ -673,9 +792,11 @@ export const syncAttempt = catchAsync(async (req, res, next) => {
       quizId: attempt.quizId,
       attemptId: attempt._id,
       questionId: attempt.lastActiveQuestionId,
+      sessionId: recentSessionId,
       metadata: {
         stateVersion: attempt.syncVersion,
         progress: attempt.progress,
+        sharedSessionId: recentSessionId || null,
         suspiciousFlagCount: flags.length,
       },
     }),
@@ -728,6 +849,8 @@ export const submitAttempt = catchAsync(async (req, res, next) => {
 
   assertAttemptWriteAccess(attempt, req);
 
+  const sharedSession = await resolveSharedSessionContext(req, attempt.quizId);
+  const recentSessionId = applySharedSessionContext(attempt, sharedSession) || attempt.sharedSessionId;
   const questions = await getQuizQuestionsSorted(attempt.quizId);
 
   if (attempt.status === 'completed') {
@@ -735,6 +858,16 @@ export const submitAttempt = catchAsync(async (req, res, next) => {
       attempt.analytics = buildAttemptAnalytics({ attempt, questions });
       await attempt.save();
     }
+    if (attempt.isModified('sharedSessionId')) {
+      await attempt.save();
+    }
+    await upsertRecentQuiz({
+      req,
+      quizId: attempt.quizId,
+      attempt,
+      sessionId: recentSessionId,
+      lastVisitedQuestionId: attempt.lastActiveQuestionId,
+    });
     await syncQuestionAnalyticsForQuiz(attempt.quizId);
 
     return res.json({
@@ -779,6 +912,7 @@ export const submitAttempt = catchAsync(async (req, res, next) => {
       req,
       quizId: attempt.quizId,
       attempt,
+      sessionId: recentSessionId,
       lastVisitedQuestionId: attempt.lastActiveQuestionId,
     }),
     recordEvent({
@@ -787,10 +921,12 @@ export const submitAttempt = catchAsync(async (req, res, next) => {
       category: 'attempt',
       quizId: attempt.quizId,
       attemptId: attempt._id,
+      sessionId: recentSessionId,
       metadata: {
         score: attempt.score,
         percentage: attempt.percentage,
         totalQuestions: attempt.totalQuestions,
+        sharedSessionId: recentSessionId || null,
         suspiciousFlagCount: flags.length + (isLateSubmission ? 1 : 0),
       },
     }),
@@ -810,10 +946,19 @@ export const submitAttempt = catchAsync(async (req, res, next) => {
 });
 
 const getAttemptResultPayload = async ({ attemptId, req }) => {
-  const attempt = await Attempt.findById(attemptId).populate({
-    path: 'quizId',
-    select: 'title uploader questionCount settings',
-  });
+  const attempt = await Attempt.findById(attemptId)
+    .populate({
+      path: 'quizId',
+      select: 'title uploader questionCount settings',
+    })
+    .populate({
+      path: 'sharedSessionId',
+      select: 'shareCode participantCount creatorId settings',
+      populate: {
+        path: 'creatorId',
+        select: 'name avatar',
+      },
+    });
 
   if (!attempt) {
     throw new AppError('Attempt not found', 404);
@@ -832,9 +977,13 @@ const getAttemptResultPayload = async ({ attemptId, req }) => {
     attempt.analytics = buildAttemptAnalytics({ attempt, questions });
   }
 
+  const sharedSession = attempt.sharedSessionId;
+  const resultsOnly = sharedSession?.settings?.postSubmissionAccess === 'results_only';
+  const canReviewAnswers = !resultsOnly || isSessionCreator(sharedSession, req.user);
+
   return {
     attempt,
-    questions,
+    questions: canReviewAnswers ? questions : [],
   };
 };
 
@@ -887,43 +1036,56 @@ export const getMyQuizzes = catchAsync(async (req, res) => {
 export const listQuizzes = catchAsync(async (req, res) => {
   const { page, limit, skip } = clampPagination(req.query);
   const search = String(req.query.search || '').trim();
-  const filter = req.user
-    ? {
-        $or: [
-          { visibility: 'public' },
-          { isPublic: true },
-          { uploader: req.user._id },
-        ],
-      }
-    : {
-        $or: [
-          { visibility: 'public' },
-          { isPublic: true },
-        ],
-      };
+  const publicOnly = req.query.publicOnly === 'true' || req.query.scope === 'public';
+  const visibilityFilter = publicOnly || !req.user
+    ? { $or: [{ visibility: 'public' }, { isPublic: true }] }
+    : { $or: [{ visibility: 'public' }, { isPublic: true }, { uploader: req.user._id }] };
+  const andFilters = [visibilityFilter];
+  const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
   if (search) {
-    filter.$and = [{
+    const searchRegex = new RegExp(escapedSearch, 'i');
+    const matchingUsers = await User.find({
       $or: [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { category: { $regex: search, $options: 'i' } },
+        { username: searchRegex },
+        { name: searchRegex },
       ],
-    }];
+    })
+      .select('_id')
+      .limit(50)
+      .lean();
+
+    andFilters.push({
+      $or: [
+        { title: searchRegex },
+        { description: searchRegex },
+        { category: searchRegex },
+        { tags: searchRegex },
+        { uploader: { $in: matchingUsers.map((user) => user._id) } },
+      ],
+    });
   }
 
   if (req.query.category) {
-    filter.category = String(req.query.category).trim();
+    andFilters.push({ category: String(req.query.category).trim() });
   }
 
   if (req.query.difficulty) {
-    filter.difficulty = normalizeDifficulty(req.query.difficulty);
+    andFilters.push({ difficulty: normalizeDifficulty(req.query.difficulty) });
   }
+
+  const filter = andFilters.length === 1 ? andFilters[0] : { $and: andFilters };
+  const sort =
+    req.query.sort === 'popular'
+      ? { totalAttempts: -1, avgScore: -1, createdAt: -1 }
+      : req.query.sort === 'top'
+        ? { avgScore: -1, totalAttempts: -1, createdAt: -1 }
+        : { createdAt: -1 };
 
   const [quizzes, total] = await Promise.all([
     Quiz.find(filter)
-      .populate('uploader', 'name')
-      .sort({ createdAt: -1 })
+      .populate('uploader', 'name username avatar followersCount')
+      .sort(sort)
       .skip(skip)
       .limit(limit)
       .lean(),
@@ -938,6 +1100,8 @@ export const listQuizzes = catchAsync(async (req, res) => {
       filters: {
         category: req.query.category || null,
         difficulty: req.query.difficulty || null,
+        publicOnly,
+        sort: req.query.sort || 'recent',
       },
       resultCount: total,
     });
@@ -981,6 +1145,7 @@ export const createQuiz = catchAsync(async (req, res) => {
       quizId: quiz._id,
     }))
   );
+  await syncUserPublicQuizCount(quiz.uploader);
 
   await recordEvent({
     req,
@@ -1010,6 +1175,7 @@ export const updateQuiz = catchAsync(async (req, res) => {
   }
 
   assertQuizManageAccess(quiz, req);
+  const originalUploaderId = quiz.uploader;
 
   const quizInput = normalizeQuizInput({
     ...quiz.toObject(),
@@ -1037,6 +1203,8 @@ export const updateQuiz = catchAsync(async (req, res) => {
   }
 
   await quiz.save();
+  await syncUserPublicQuizCount(originalUploaderId);
+
   await recordEvent({
     req,
     eventType: 'QUIZ_UPDATED',
@@ -1064,12 +1232,20 @@ export const deleteQuiz = catchAsync(async (req, res) => {
 
   assertQuizManageAccess(quiz, req);
 
+  const quizSessions = await QuizSession.find({ quizId: quiz._id }, '_id');
+  const sessionIds = quizSessions.map(s => s._id);
+
   await Promise.all([
     Quiz.deleteOne({ _id: quiz._id }),
     Question.deleteMany({ quizId: quiz._id }),
     Attempt.deleteMany({ quizId: quiz._id }),
     QuestionAnalytics.deleteMany({ quizId: quiz._id }),
+    QuizSession.deleteMany({ quizId: quiz._id }),
+    SessionMessage.deleteMany({ sessionId: { $in: sessionIds } }),
+    JoinedSession.deleteMany({ sessionId: { $in: sessionIds } }),
+    Upload.deleteMany({ quizId: quiz._id })
   ]);
+  await syncUserPublicQuizCount(quiz.uploader);
 
   await recordEvent({
     req,
@@ -1268,6 +1444,7 @@ export const getInProgressAttempts = catchAsync(async (req, res) => {
     .sort({ updatedAt: -1 })
     .limit(Math.min(limit, 50))
     .populate('quizId', 'title questionCount settings')
+    .populate('sharedSessionId', 'shareCode participantCount creatorId')
     .lean();
 
   res.status(200).json({
@@ -1287,6 +1464,8 @@ export const submitAttemptById = catchAsync(async (req, res) => {
 
   assertAttemptWriteAccess(attempt, req);
 
+  const sharedSession = await resolveSharedSessionContext(req, attempt.quizId);
+  const recentSessionId = applySharedSessionContext(attempt, sharedSession) || attempt.sharedSessionId;
   const questions = await getQuizQuestionsSorted(attempt.quizId);
 
   if (attempt.status !== 'completed') {
@@ -1304,6 +1483,7 @@ export const submitAttemptById = catchAsync(async (req, res) => {
         req,
         quizId: attempt.quizId,
         attempt,
+        sessionId: recentSessionId,
         lastVisitedQuestionId: attempt.lastActiveQuestionId,
       }),
       recordEvent({
@@ -1312,10 +1492,12 @@ export const submitAttemptById = catchAsync(async (req, res) => {
         category: 'attempt',
         quizId: attempt.quizId,
         attemptId: attempt._id,
+        sessionId: recentSessionId,
         metadata: {
           score: attempt.score,
           percentage: attempt.percentage,
           totalQuestions: attempt.totalQuestions,
+          sharedSessionId: recentSessionId || null,
         },
       }),
     ]);
@@ -1335,10 +1517,12 @@ export const submitAttemptById = catchAsync(async (req, res) => {
 });
 
 export const getAttemptById = catchAsync(async (req, res) => {
-  const attempt = await Attempt.findById(req.params.id).populate({
-    path: 'quizId',
-    select: 'title uploader questionCount totalMarks settings',
-  });
+  const attempt = await Attempt.findById(req.params.id)
+    .populate({
+      path: 'quizId',
+      select: 'title uploader questionCount totalMarks settings',
+    })
+    .populate('sharedSessionId', 'shareCode participantCount creatorId');
 
   if (!attempt) {
     throw new AppError('Attempt not found', 404);
@@ -1437,7 +1621,8 @@ export const getQuizAttempts = catchAsync(async (req, res, next) => {
   const attempts = await Attempt.find(matchCondition)
     .sort(sortOption)
     .skip(skip)
-    .limit(limit);
+    .limit(limit)
+    .populate('sharedSessionId', 'shareCode participantCount creatorId');
 
   const total = await Attempt.countDocuments(matchCondition);
 
@@ -1468,7 +1653,7 @@ export const getQuestionAnalytics = catchAsync(async (req, res) => {
     throw new AppError('Quiz not found', 404);
   }
 
-  assertQuizReadAccess(quiz, req);
+  await assertQuizReadAccess(quiz, req);
 
   let analytics = await QuestionAnalytics.findOne({ questionId: question._id }).lean();
 

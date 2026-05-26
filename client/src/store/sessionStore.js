@@ -4,9 +4,30 @@
  */
 
 import { create } from 'zustand';
+import CryptoJS from 'crypto-js';
+import imageCompression from 'browser-image-compression';
 import api from '../api/axios';
 import { getSocket, disconnectSocket } from '../api/socket';
 import { useAuthStore } from './authStore';
+
+const decryptMessage = (encryptedText, secret) => {
+  if (!encryptedText) return encryptedText;
+  try {
+    const bytes = CryptoJS.AES.decrypt(encryptedText, secret);
+    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+    return decrypted || encryptedText;
+  } catch (err) {
+    return encryptedText;
+  }
+};
+
+const extractMentions = (text = '') => (
+  [...new Set(
+    String(text)
+      .match(/@[a-z0-9_.]{3,30}/gi)
+      ?.map((item) => item.slice(1).toLowerCase()) || []
+  )].slice(0, 10)
+);
 
 export const useSessionStore = create((set, get) => ({
   // Session state
@@ -23,6 +44,7 @@ export const useSessionStore = create((set, get) => ({
   // Online presence
   onlineCount: 0,
   onlineUsers: [],
+  isParticipantsOpen: false,
 
   // Socket state
   isConnected: false,
@@ -33,14 +55,29 @@ export const useSessionStore = create((set, get) => ({
   /**
    * Create or get a shared session for a quiz (creator action).
    */
-  createSession: async (quizId) => {
+  createSession: async (quizId, settings = undefined) => {
     set({ isLoading: true, error: null });
     try {
-      const { data } = await api.post(`/sessions/${quizId}/share`);
+      const payload = settings ? { settings } : {};
+      const { data } = await api.post(`/sessions/${quizId}/share`, payload);
       set({ session: data.data.session, isLoading: false });
       return data.data;
     } catch (err) {
       set({ error: err.response?.data?.message || 'Failed to create session', isLoading: false });
+      throw err;
+    }
+  },
+
+  /**
+   * Rotate a creator-owned session share code.
+   */
+  regenerateShareLink: async (sessionId) => {
+    try {
+      const { data } = await api.post(`/sessions/${sessionId}/regenerate-link`);
+      set({ session: data.data.session });
+      return data.data;
+    } catch (err) {
+      set({ error: err.response?.data?.message || 'Failed to generate a new link' });
       throw err;
     }
   },
@@ -86,7 +123,16 @@ export const useSessionStore = create((set, get) => ({
       if (cursor) params.before = cursor;
 
       const { data } = await api.get(`/sessions/${sessionId}/messages`, { params });
-      const newMessages = data.data.messages;
+      let newMessages = data.data.messages;
+
+      const session = get().session;
+      if (session) {
+        const secret = `${session._id}-${session.shareCode}`;
+        newMessages = newMessages.map(msg => ({
+          ...msg,
+          message: decryptMessage(msg.message, secret)
+        }));
+      }
 
       set((state) => ({
         messages: cursor ? [...newMessages, ...state.messages] : newMessages,
@@ -161,11 +207,17 @@ export const useSessionStore = create((set, get) => ({
       });
 
       socket.on('chat:message', (message) => {
+        const session = get().session;
+        if (session) {
+          const secret = `${session._id}-${session.shareCode}`;
+          message.message = decryptMessage(message.message, secret);
+        }
+
         set((state) => {
           // Deduplicate: if we already have an optimistic version with a temp ID,
           // replace it with the server-confirmed version.
           const existingIdx = state.messages.findIndex(
-            (m) => m._optimistic && m._tempKey === `${message.senderId?._id || message.senderId}-${message.message}`
+            (m) => m._optimistic && message.tempId && m._tempKey === message.tempId
           );
           if (existingIdx !== -1) {
             const updated = [...state.messages];
@@ -189,6 +241,11 @@ export const useSessionStore = create((set, get) => ({
         setTimeout(() => set({ error: null }), 3000);
       });
 
+      socket.on('chat:mention', ({ from }) => {
+        set({ error: `${from?.name || from?.username || 'Someone'} mentioned you in chat` });
+        setTimeout(() => set({ error: null }), 5000);
+      });
+
       socket.on('session:error', ({ message }) => {
         set({ error: message });
         setTimeout(() => set({ error: null }), 3000);
@@ -204,9 +261,10 @@ export const useSessionStore = create((set, get) => ({
   /**
    * Send a chat message via socket with optimistic UI.
    */
-  sendMessage: (message) => {
+  sendMessage: (message, attachment = null) => {
     const { session } = get();
-    if (!session?._id || !message.trim()) return;
+    const attachmentUrl = attachment?.attachmentUrl || attachment?.imageUrl || null;
+    if (!session?._id || (!message.trim() && !attachmentUrl)) return;
 
     const trimmed = message.trim();
 
@@ -214,17 +272,25 @@ export const useSessionStore = create((set, get) => ({
     const user = useAuthStore.getState().user;
 
     // Optimistic: show message immediately
+    const tempId = `optimistic-${Date.now()}-${Math.random()}`;
     const optimisticMsg = {
-      _id: `optimistic-${Date.now()}-${Math.random()}`,
+      _id: tempId,
       _optimistic: true,
-      _tempKey: `${user?._id}-${trimmed}`,
+      _tempKey: tempId,
       sessionId: session._id,
       senderId: {
         _id: user?._id,
         name: user?.name || 'You',
+        username: user?.username || '',
         avatar: user?.avatar || '',
       },
       message: trimmed,
+      mentions: extractMentions(trimmed).map((username) => ({ username })),
+      imageUrl: attachment?.imageUrl || null,
+      attachmentUrl,
+      attachmentName: attachment?.attachmentName || '',
+      attachmentType: attachment?.attachmentType || '',
+      attachmentSize: attachment?.attachmentSize || 0,
       createdAt: new Date().toISOString(),
     };
 
@@ -233,10 +299,66 @@ export const useSessionStore = create((set, get) => ({
     }));
 
     const socket = getSocket();
+    let finalMessage = trimmed;
+    if (trimmed) {
+      const secret = `${session._id}-${session.shareCode}`;
+      finalMessage = CryptoJS.AES.encrypt(trimmed, secret).toString();
+    }
+
     socket.emit('chat:send', {
       sessionId: session._id,
-      message: trimmed,
+      message: finalMessage,
+      imageUrl: attachment?.imageUrl || null,
+      attachmentUrl,
+      attachmentName: attachment?.attachmentName || '',
+      attachmentType: attachment?.attachmentType || '',
+      attachmentSize: attachment?.attachmentSize || 0,
+      mentions: extractMentions(trimmed),
+      tempId: tempId, // Pass tempId to backend
     });
+  },
+
+  /**
+   * Upload chat attachment
+   */
+  uploadChatAttachment: async (file, sessionId) => {
+    let finalFile = file;
+    const isImage = file?.type?.startsWith('image/');
+
+    if (isImage) {
+      try {
+        // Compress the image before uploading
+        const options = {
+          maxSizeMB: 0.5,
+          maxWidthOrHeight: 1200,
+          useWebWorker: true
+        };
+        finalFile = await imageCompression(file, options);
+      } catch (error) {
+        console.error('Image compression failed:', error);
+        // Fallback to original file
+      }
+    }
+
+    const formData = new FormData();
+    formData.append('attachment', finalFile);
+    formData.append('sessionId', sessionId || get().session?._id || '');
+    
+    try {
+      const { data } = await api.post('/chat/attachment', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return data.data;
+    } catch (err) {
+      set({ error: err.response?.data?.message || 'Failed to upload attachment' });
+      setTimeout(() => set({ error: null }), 3000);
+      throw err;
+    }
+  },
+
+  uploadChatImage: async (file) => {
+    const attachment = await get().uploadChatAttachment(file);
+    return attachment.imageUrl || attachment.attachmentUrl;
   },
 
   /**
@@ -251,7 +373,17 @@ export const useSessionStore = create((set, get) => ({
         sessionId: state.session?._id,
         metadata: { isChatOpen },
       }).catch(() => {});
-      return { isChatOpen };
+      return { isChatOpen, isParticipantsOpen: isChatOpen ? false : state.isParticipantsOpen };
+    });
+  },
+
+  /**
+   * Toggle participants panel visibility.
+   */
+  toggleParticipants: () => {
+    set((state) => {
+      const isParticipantsOpen = !state.isParticipantsOpen;
+      return { isParticipantsOpen, isChatOpen: isParticipantsOpen ? false : state.isChatOpen };
     });
   },
 
@@ -300,3 +432,23 @@ export const useSessionStore = create((set, get) => ({
     });
   },
 }));
+
+// ── Beacon fallback for session leave on tab close ──
+// Socket disconnect is unreliable on `beforeunload`, so we fire a beacon
+// to the server as a last-resort persistence mechanism.
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    const session = useSessionStore.getState().session;
+    const userId = useAuthStore.getState().user?._id;
+    if (session?._id && userId) {
+      const url = `${api.defaults.baseURL || '/api/v1'}/sessions/${session._id}/leave`;
+      navigator.sendBeacon(
+        url,
+        new Blob(
+          [JSON.stringify({ userId })],
+          { type: 'application/json' }
+        )
+      );
+    }
+  });
+}

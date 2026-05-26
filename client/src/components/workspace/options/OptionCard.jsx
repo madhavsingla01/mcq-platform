@@ -9,7 +9,7 @@ const renderMarkdown = (content) => (
     remarkPlugins={[remarkMath]}
     rehypePlugins={[rehypeKatex]}
     components={{
-      p: ({ node, ...props }) => <span {...props} /> // prevent block-level p tags breaking inline flex
+      p: ({ node, ...props }) => <span {...props} />
     }}
   >
     {content}
@@ -29,62 +29,160 @@ function OptionCard({
   const isCorrectSelection = isSelected && isCorrect;
   const isWrongSelection = isSelected && !isCorrect;
 
-  // Determine styles based on state
-  let containerStyle = "bg-white border-zinc-200 text-zinc-700 hover:border-indigo-300 hover:bg-indigo-50/30 rounded-3xl";
-  let pillStyle = "bg-zinc-100 text-zinc-500 border-zinc-200";
-
+  let containerClass = 'opt-card';
   if (shouldRevealFeedback) {
-    if (isCorrect) {
-      containerStyle = "bg-green-50/50 border-green-200 text-green-900 shadow-sm shadow-green-500/10";
-      pillStyle = "bg-green-500 text-white border-green-500";
-    } else if (isWrongSelection) {
-      containerStyle = "bg-red-50/50 border-red-200 text-red-900";
-      pillStyle = "bg-red-500 text-white border-red-500";
-    } else {
-      containerStyle = "bg-zinc-50/50 border-zinc-200 text-zinc-400 opacity-60";
-      pillStyle = "bg-zinc-100 text-zinc-400 border-zinc-200";
-    }
+    if (isCorrect) containerClass += ' opt-card--correct-answer';
+    else if (isWrongSelection) containerClass += ' opt-card--wrong';
+    else containerClass += ' opt-card--dimmed';
   } else if (isSelected) {
-    containerStyle = "bg-indigo-50 border-indigo-500 text-indigo-900 shadow-sm shadow-indigo-500/20 ring-1 ring-indigo-500";
-    pillStyle = "bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-600/30";
+    containerClass += ' opt-card--selected';
   }
 
-  const fontClasses = {
-    sm: 'text-sm py-4 px-4',
-    md: 'text-base py-5 px-6',
-    lg: 'text-lg py-6 px-7',
-  };
+  if (isLocked) containerClass += ' opt-card--locked';
+
+  const sizeClass = fontSize === 'lg' ? 'opt-card--lg' : fontSize === 'sm' ? 'opt-card--sm' : '';
 
   return (
-    <motion.button
-      type="button"
-      onClick={onSelect}
-      disabled={isLocked}
-      whileHover={!isLocked && !shouldRevealFeedback ? { scale: 1.01, transition: { duration: 0.1 } } : {}}
-      whileTap={!isLocked && !shouldRevealFeedback ? { scale: 0.99, transition: { duration: 0.1 } } : {}}
-      className={`
-        w-full text-left rounded-2xl border transition-all duration-200 flex items-center gap-4
-        ${fontClasses[fontSize]} ${containerStyle}
-        ${isLocked ? 'cursor-default' : 'cursor-pointer'}
-      `}
-    >
-      <div className={`
-        shrink-0 w-10 h-10 rounded-full border flex items-center justify-center text-base font-semibold transition-colors duration-200
-        ${pillStyle}
-      `}>
-        {option.label}
-      </div>
-      <div className="flex-1 leading-relaxed">
-        {renderMarkdown(option.text)}
-      </div>
-
-      {shouldRevealFeedback && isSelected && !isCorrect && (
-        <span className="text-[10px] uppercase tracking-widest font-bold text-red-500 bg-red-100 px-2 py-0.5 rounded-full shrink-0">
-          Your Answer
-        </span>
-      )}
-    </motion.button>
+    <>
+      <motion.button
+        type="button"
+        onClick={onSelect}
+        disabled={isLocked}
+        whileHover={!isLocked && !shouldRevealFeedback ? { y: -1 } : {}}
+        whileTap={!isLocked && !shouldRevealFeedback ? { scale: 0.995 } : {}}
+        className={`${containerClass} ${sizeClass}`}
+      >
+        <div className={`opt-pill ${isSelected && !shouldRevealFeedback ? 'opt-pill--selected' : ''} ${shouldRevealFeedback && isCorrect ? 'opt-pill--correct' : ''} ${shouldRevealFeedback && isWrongSelection ? 'opt-pill--wrong' : ''}`}>
+          {option.label}
+        </div>
+        <div className="opt-text">
+          {renderMarkdown(option.text)}
+        </div>
+        {shouldRevealFeedback && isSelected && !isCorrect && (
+          <span className="opt-badge opt-badge--wrong">Your Answer</span>
+        )}
+        {shouldRevealFeedback && isCorrect && (
+          <span className="opt-badge opt-badge--correct">Correct</span>
+        )}
+      </motion.button>
+      <style>{optionStyles}</style>
+    </>
   );
 }
 
 export default memo(OptionCard);
+
+const optionStyles = `
+  .opt-card {
+    width: 100%;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    border-radius: 16px;
+    border: 1.5px solid #e4e4e7;
+    background: #fff;
+    color: #3f3f46;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+
+  .opt-card--sm { padding: 12px 14px; }
+  .opt-card--lg { padding: 20px 22px; }
+
+  .opt-card:hover:not(.opt-card--locked):not(.opt-card--selected) {
+    border-color: #c7d2fe;
+    background: #fafaff;
+    
+  }
+
+  .opt-card--selected {
+    border-color: #6366f1;
+    background: #eef2ff;
+    color: #312e81;
+    
+  }
+
+  .opt-card--correct-answer {
+    border-color: #86efac;
+    background: #f0fdf4;
+    color: #14532d;
+  }
+
+  .opt-card--wrong {
+    border-color: #fca5a5;
+    background: #fef2f2;
+    color: #7f1d1d;
+  }
+
+  .opt-card--dimmed {
+    opacity: 0.5;
+    border-color: #e4e4e7;
+  }
+
+  .opt-card--locked { cursor: default; }
+
+  /* ── Pill ── */
+  .opt-pill {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1.5px solid #e4e4e7;
+    background: #f4f4f5;
+    color: #71717a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .opt-pill--selected {
+    background: #6366f1;
+    border-color: #6366f1;
+    color: #fff;
+    
+  }
+
+  .opt-pill--correct {
+    background: #22c55e;
+    border-color: #22c55e;
+    color: #fff;
+  }
+
+  .opt-pill--wrong {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: #fff;
+  }
+
+  /* ── Text ── */
+  .opt-text {
+    flex: 1;
+    font-size: 15px;
+    line-height: 1.6;
+    min-width: 0;
+  }
+
+  .opt-card--sm .opt-text { font-size: 14px; }
+  .opt-card--lg .opt-text { font-size: 16px; }
+
+  /* ── Badge ── */
+  .opt-badge {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 3px 8px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .opt-badge--correct { background: rgba(34, 197, 94, 0.12); color: #16a34a; }
+  .opt-badge--wrong { background: rgba(239, 68, 68, 0.12); color: #dc2626; }
+`;

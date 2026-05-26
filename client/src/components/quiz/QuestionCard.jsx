@@ -193,13 +193,13 @@ const questionCardStyles = `
   .question-option-card:hover:not(.locked) {
     transform: translateY(-1px);
     border-color: var(--color-primary);
-    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.06);
+    
   }
 
   .question-option-card.selected {
     border-color: var(--color-primary);
     background: var(--color-primary-light);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+    
   }
 
   .question-option-card.correct {

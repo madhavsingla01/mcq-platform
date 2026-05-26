@@ -63,10 +63,9 @@ export const optionalAuth = async (req, res, next) => {
 
     return next();
   } catch (error) {
-    if (req.cookies?.refreshToken) {
-      return next(new AppError('Invalid or expired token.', 401));
-    }
-
+    // If the access token is expired or invalid, we simply proceed as a guest.
+    // We shouldn't throw a 401 for optional routes, otherwise it breaks guest access
+    // when an old cookie is present.
     return next();
   }
 };

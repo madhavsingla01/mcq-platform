@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, logout, refresh, getMe, updateMe } from '../controllers/auth.controller.js';
+import { register, login, logout, refresh, getMe, updateMe, deleteAccount, checkUsername, searchUsers } from '../controllers/auth.controller.js';
 import { optionalAuth, protect } from '../middleware/auth.middleware.js';
 import { validateBody } from '../middleware/validation.middleware.js';
 import { authRateLimit } from '../middleware/rateLimit.middleware.js';
@@ -12,6 +12,9 @@ router.use((req, res, next) => {
   res.set('Expires', '0');
   next();
 });
+
+router.get('/check-username', optionalAuth, checkUsername);
+router.get('/users/search', optionalAuth, searchUsers);
 
 router.post('/register', authRateLimit, validateBody({
   name: { required: true, type: 'string', min: 2, max: 50 },
@@ -29,6 +32,7 @@ router.post('/refresh', refresh);
 router.get('/me', protect, getMe);
 router.patch('/me', protect, validateBody({
   name: { required: false, type: 'string', min: 2, max: 50 },
+  username: { required: false, type: 'string', min: 3, max: 30 },
   email: { required: false, type: 'string', email: true },
   avatar: { required: false, type: 'string' },
   password: { required: false, type: 'string', min: 6 },
@@ -40,5 +44,7 @@ router.patch('/me', protect, validateBody({
   address: { required: false, type: 'object' },
   bio: { required: false, type: 'string' },
 }), updateMe);
+
+router.delete('/me', protect, deleteAccount);
 
 export default router;

@@ -214,6 +214,12 @@ const attemptSchema = new mongoose.Schema(
       default: null,
       trim: true,
     },
+    sharedSessionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'QuizSession',
+      default: null,
+      index: true,
+    },
     answers: {
       type: [answerSchema],
       default: [],
@@ -389,6 +395,7 @@ const attemptSchema = new mongoose.Schema(
 
 attemptSchema.index({ quizId: 1, userId: 1, status: 1, createdAt: -1 });
 attemptSchema.index({ quizId: 1, sessionId: 1, status: 1, createdAt: -1 });
+attemptSchema.index({ quizId: 1, sharedSessionId: 1, status: 1, createdAt: -1 });
 attemptSchema.index({ quizId: 1, completedAt: -1 });
 attemptSchema.index({ userId: 1, createdAt: -1 });
 attemptSchema.index({ userId: 1, completedAt: -1 });

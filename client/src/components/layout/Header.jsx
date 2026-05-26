@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import GlobalSearch from './GlobalSearch';
 
 export default function Header() {
   const { user, isAuthenticated, logout } = useAuthStore();
@@ -16,7 +17,8 @@ export default function Header() {
     }}>
       <div style={{
         maxWidth: 1200, margin: '0 auto', padding: '0 24px',
-        height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        minHeight: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        flexWrap: 'wrap',
       }}>
         {/* Logo */}
         <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -33,9 +35,12 @@ export default function Header() {
           }}>QuizFocus</span>
         </Link>
 
+        <GlobalSearch />
+
         {/* Nav */}
         <nav style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <Link to="/upload" style={navLinkStyle}>Upload</Link>
+          <Link to="/leaderboard" style={navLinkStyle}>Leaderboard</Link>
           {isAuthenticated && (
             <Link to="/dashboard" style={navLinkStyle}>Dashboard</Link>
           )}
@@ -44,6 +49,11 @@ export default function Header() {
 
           {isAuthenticated ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginLeft: 12 }}>
+              {user?.username ? (
+                <Link to={`/@${user.username}`} style={{ color: 'var(--color-text-secondary)', textDecoration: 'none', fontSize: 14, fontWeight: 500 }}>
+                  @{user.username}
+                </Link>
+              ) : null}
               <Link to="/settings" style={{ color: 'var(--color-text-secondary)', textDecoration: 'none', fontSize: 14, fontWeight: 500 }}>
                 {user?.name}
               </Link>

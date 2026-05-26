@@ -122,6 +122,7 @@ const mergeAnswerStates = (baseAnswer = createDefaultAnswerState(), incomingAnsw
       : null
   );
 
+
   return {
     selectedAnswer: selectionConflict ? normalizedBase.selectedAnswer : selectedAnswer,
     timeSpentMs: Math.max(normalizedBase.timeSpentMs, normalizedIncoming.timeSpentMs),
@@ -242,6 +243,8 @@ const serializeSnapshot = (state) => {
     isStarted: state.isStarted,
     isSubmitted: state.isSubmitted,
     sessionId: state.sessionId,
+    sharedSessionId: state.sharedSessionId,
+    shareCode: state.shareCode,
     snapshotVersion: state.snapshotVersion,
     pendingSyncQueue: state.pendingSyncQueue,
     hasPendingSync: state.hasPendingSync,
@@ -308,6 +311,7 @@ const buildSyncPayload = (state) => {
 
   return {
     sessionId: state.sessionId,
+    sharedSessionId: state.sharedSessionId || undefined,
     totalElapsedMs: Math.round(state.totalElapsedMs),
     clientTimestamp: new Date().toISOString(),
     currentQuestionId,
@@ -367,7 +371,7 @@ const mergeStateWithSnapshot = (state, snapshot) => {
   };
 };
 
-const buildHydratedState = ({ quiz, questions, serverAttempt = null, localSnapshot = null }) => {
+const buildHydratedState = ({ quiz, questions, serverAttempt = null, localSnapshot = null, collaborationContext = null }) => {
   const questionIndexLookup = buildQuestionIndexLookup(questions);
   let normalizedSnapshot = localSnapshot;
 
@@ -426,6 +430,8 @@ const buildHydratedState = ({ quiz, questions, serverAttempt = null, localSnapsh
     serverAttempt?.isQuickMode === true ||
     normalizedSnapshot?.isQuickMode === true;
 
+  const serverSharedSessionId = serverAttempt?.sharedSessionId?._id || serverAttempt?.sharedSessionId || null;
+
   return {
     quiz,
     questions,
@@ -437,6 +443,8 @@ const buildHydratedState = ({ quiz, questions, serverAttempt = null, localSnapsh
       : [...new Set(serverMarkedForReview)],
     attemptId: serverAttempt?._id || normalizedSnapshot?.attemptId || null,
     sessionId: normalizedSnapshot?.sessionId || getGuestSessionId(),
+    sharedSessionId: collaborationContext?.sessionId || serverSharedSessionId || normalizedSnapshot?.sharedSessionId || null,
+    shareCode: collaborationContext?.shareCode || normalizedSnapshot?.shareCode || null,
     tabId: getTabId(),
     isStarted,
     isQuickMode: serverAttempt?.isQuickMode ?? normalizedSnapshot?.isQuickMode ?? false,
@@ -472,6 +480,8 @@ export const useQuizStore = create((set, get) => ({
   markedForReview: [],
   attemptId: null,
   sessionId: getGuestSessionId(),
+  sharedSessionId: null,
+  shareCode: null,
   tabId: getTabId(),
   isStarted: false,
   isQuickMode: false,
@@ -491,12 +501,13 @@ export const useQuizStore = create((set, get) => ({
   isOnline: typeof navigator === 'undefined' ? true : navigator.onLine,
   recoveryMode: 'fresh',
 
-  bootstrapQuiz: ({ quiz, questions, serverAttempt = null, localSnapshot = null }) => {
+  bootstrapQuiz: ({ quiz, questions, serverAttempt = null, localSnapshot = null, collaborationContext = null }) => {
     const hydratedState = buildHydratedState({
       quiz,
       questions,
       serverAttempt,
       localSnapshot,
+      collaborationContext,
     });
 
     set(hydratedState);
@@ -564,13 +575,14 @@ export const useQuizStore = create((set, get) => ({
     scheduleImmediateSync();
   },
 
-  startAttemptFromServer: ({ attempt, quiz, questions }) => {
+  startAttemptFromServer: ({ attempt, quiz, questions, collaborationContext = null }) => {
     const snapshot = loadAttemptSnapshot(attempt._id);
     get().bootstrapQuiz({
       quiz,
       questions,
       serverAttempt: attempt,
       localSnapshot: snapshot,
+      collaborationContext,
     });
 
     // Initialize timer from attempt data
@@ -746,11 +758,12 @@ export const useQuizStore = create((set, get) => ({
 
     try {
       const response = await api.put(
-        `/quiz/${state.quiz._id}/attempt/${state.attemptId}/sync`,
+        `/quiz/${state.quiz._id}/attempt/${state.attemptId}/sync-progress`,
         payload,
         {
           headers: {
             'x-quiz-session-id': state.sessionId,
+            ...(state.sharedSessionId ? { 'x-shared-session-id': state.sharedSessionId } : {}),
           },
         }
       );
@@ -763,6 +776,9 @@ export const useQuizStore = create((set, get) => ({
           questions: current.questions,
           serverAttempt,
           localSnapshot: serializeSnapshot(current),
+          collaborationContext: current.sharedSessionId
+            ? { sessionId: current.sharedSessionId, shareCode: current.shareCode }
+            : null,
         });
 
         return {
@@ -909,6 +925,8 @@ export const useQuizStore = create((set, get) => ({
       markedForReview: [],
       attemptId: null,
       sessionId: getGuestSessionId(),
+      sharedSessionId: null,
+      shareCode: null,
       tabId: getTabId(),
       isStarted: false,
       isQuickMode: false,
@@ -940,20 +958,24 @@ function sendUnloadSync() {
     !state.isStarted ||
     state.isSubmitted ||
     !state.hasPendingSync ||
-    typeof navigator === 'undefined' ||
-    typeof navigator.sendBeacon !== 'function'
+    typeof navigator === 'undefined'
   ) {
     return;
   }
 
   const payload = buildSyncPayload(state);
-  const endpoint = `/api/v1/quiz/${state.quiz._id}/attempt/${state.attemptId}/sync`;
+  const endpoint = `/api/v1/quiz/${state.quiz._id}/attempt/${state.attemptId}/sync-progress`;
   const blob = new Blob([JSON.stringify(payload)], {
     type: 'application/json',
   });
 
   try {
-    navigator.sendBeacon(endpoint, blob);
+    fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive: true
+    }).catch(() => {});
   } catch {
     // ignore unload sync failures
   }

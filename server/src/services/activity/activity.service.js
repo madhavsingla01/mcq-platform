@@ -203,6 +203,7 @@ export const upsertRecentQuiz = async ({
 }) => {
   const actor = getActor(req);
   const resolvedQuizId = asObjectId(quizId || attempt?.quizId);
+  const resolvedSessionId = asObjectId(sessionId || attempt?.sharedSessionId);
 
   if (!resolvedQuizId || (!actor.userId && !actor.clientSessionId)) {
     return null;
@@ -229,7 +230,7 @@ export const upsertRecentQuiz = async ({
           clientSessionId: actor.userId ? null : actor.clientSessionId,
           quizId: resolvedQuizId,
           attemptId: asObjectId(attempt?._id),
-          sessionId: asObjectId(sessionId),
+          sessionId: resolvedSessionId,
           lastVisitedQuestionId: asObjectId(lastVisitedQuestionId || attempt?.lastActiveQuestionId),
           progress: {
             answeredCount,
@@ -249,7 +250,7 @@ export const upsertRecentQuiz = async ({
       category: 'quiz',
       quizId: resolvedQuizId,
       attemptId: attempt?._id,
-      sessionId,
+      sessionId: resolvedSessionId,
       metadata: { progress: recent.progress },
     });
 
