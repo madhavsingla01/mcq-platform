@@ -98,8 +98,14 @@ const scoreOption = (normalized) => {
     if (pattern.test(normalized)) return 90;
   }
 
-  // Keyword match
-  return scoreKeyword(normalized, OPTION_KEYWORDS);
+  // Keyword match. Keep this stricter than scoreKeyword so short headers
+  // like "ans" do not reverse-match "ans_option" and get treated as choices.
+  if (OPTION_KEYWORDS.includes(normalized)) return 100;
+  for (const keyword of OPTION_KEYWORDS) {
+    if (normalized.includes(keyword)) return 80;
+  }
+
+  return 0;
 };
 
 /**

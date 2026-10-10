@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import api from '../api/axios';
 import { useQuizStore } from '../store/quizStore';
+import { useSettingsStore } from '../store/settingsStore';
 import {
   clearAttemptSnapshot,
   getGuestSessionId,
@@ -44,6 +45,7 @@ export function useQuizAttemptController({
     startAttemptFromServer,
     syncWithBackend,
     getSubmitPayload,
+    setInstantFeedback,
     setResult,
     teardownRuntime,
     reset,
@@ -141,6 +143,7 @@ export function useQuizAttemptController({
           return;
         }
 
+        const userInstantFeedback = useSettingsStore.getState().showCorrectAnswerInstantly === true;
         bootstrapQuiz({
           quiz: quizData,
           questions: questionData,
@@ -148,18 +151,13 @@ export function useQuizAttemptController({
           localSnapshot,
           collaborationContext: attemptCollaborationContext,
         });
+        setInstantFeedback(
+          activeAttempt?.instantFeedback === true ||
+          activeAttempt?.isQuickMode === true ||
+          quizData?.settings?.instantFeedback === true ||
+          userInstantFeedback
+        );
 
-        // Persist quiz reopen event for analytics and activity history
-        api.post('/activity/events', {
-          eventType: 'QUIZ_REOPENED',
-          category: 'quiz',
-          quizId,
-          metadata: {
-            source: attemptCollaborationContext ? 'shared' : 'direct',
-            hasActiveAttempt: Boolean(activeAttempt),
-            recoveredOffline,
-          },
-        }).catch(() => {});
 
         if (recoveredOffline) {
           setRecoveryNotice('Recovered locally. Progress will sync when the connection returns.');
@@ -184,7 +182,16 @@ export function useQuizAttemptController({
       cancelled = true;
       teardownRuntime();
     };
-  }, [attemptCollaborationContext, bootstrapQuiz, enabled, quizId, reset, sharedSessionId, teardownRuntime]);
+  }, [
+    attemptCollaborationContext,
+    bootstrapQuiz,
+    enabled,
+    quizId,
+    reset,
+    setInstantFeedback,
+    sharedSessionId,
+    teardownRuntime,
+  ]);
 
   const handleStart = useCallback(async (forceNewAttempt = false) => {
     if (!quizId) {
@@ -199,6 +206,9 @@ export function useQuizAttemptController({
       const activeAttemptRef = loadActiveAttemptRef(quizId);
       const loadedQuiz = useQuizStore.getState().quiz;
       const loadedQuestions = useQuizStore.getState().questions;
+      const instantFeedback =
+        loadedQuiz?.settings?.instantFeedback === true ||
+        useSettingsStore.getState().showCorrectAnswerInstantly === true;
 
       if (forceNewAttempt && activeAttemptRef?.attemptId) {
         clearAttemptSnapshot({
@@ -215,6 +225,7 @@ export function useQuizAttemptController({
         `/quiz/${quizId}/attempt`,
         {
           forceNew: forceNewAttempt,
+          instantFeedback,
           ...getAttemptPayload(clientSessionId, sharedSessionId),
         },
         {

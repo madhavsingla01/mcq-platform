@@ -6,6 +6,29 @@
 import { AppError } from './error.middleware.js';
 
 const rateLimitStore = new Map();
+let cleanupStarted = false;
+
+const startCleanupWorker = () => {
+  if (cleanupStarted) return;
+  cleanupStarted = true;
+
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, data] of rateLimitStore) {
+      if (now > data.resetAt) {
+        rateLimitStore.delete(key);
+      }
+    }
+  }, 60 * 1000).unref?.();
+};
+
+const defaultKeyGenerator = (req) => req.ip || req.connection?.remoteAddress || 'unknown';
+
+const setRateLimitHeaders = (res, { limit, remaining, resetAt }) => {
+  res.set('RateLimit-Limit', String(limit));
+  res.set('RateLimit-Remaining', String(Math.max(remaining, 0)));
+  res.set('RateLimit-Reset', String(Math.ceil(resetAt / 1000)));
+};
 
 /**
  * Create a rate limiter.
@@ -16,33 +39,33 @@ export const rateLimit = (options = {}) => {
     windowMs = 15 * 60 * 1000, // 15 minutes
     max = 100,
     message = 'Too many requests, please try again later.',
+    keyPrefix = 'global',
+    keyGenerator = defaultKeyGenerator,
   } = options;
 
-  // Clean up expired entries periodically
-  setInterval(() => {
-    const now = Date.now();
-    for (const [key, data] of rateLimitStore) {
-      if (now - data.startTime > windowMs) {
-        rateLimitStore.delete(key);
-      }
-    }
-  }, windowMs);
+  startCleanupWorker();
 
   return (req, res, next) => {
-    const key = req.ip || req.connection.remoteAddress;
+    const key = `${keyPrefix}:${keyGenerator(req)}`;
     const now = Date.now();
     const data = rateLimitStore.get(key);
 
-    if (!data || now - data.startTime > windowMs) {
-      rateLimitStore.set(key, { count: 1, startTime: now });
+    if (!data || now > data.resetAt) {
+      const resetAt = now + windowMs;
+      rateLimitStore.set(key, { count: 1, resetAt });
+      setRateLimitHeaders(res, { limit: max, remaining: max - 1, resetAt });
       return next();
     }
 
+    setRateLimitHeaders(res, { limit: max, remaining: max - data.count, resetAt: data.resetAt });
+
     if (data.count >= max) {
+      res.set('Retry-After', String(Math.ceil((data.resetAt - now) / 1000)));
       return next(new AppError(message, 429));
     }
 
     data.count++;
+    setRateLimitHeaders(res, { limit: max, remaining: max - data.count, resetAt: data.resetAt });
     next();
   };
 };
@@ -51,6 +74,7 @@ export const rateLimit = (options = {}) => {
  * Strict rate limit for auth endpoints.
  */
 export const authRateLimit = rateLimit({
+  keyPrefix: 'auth',
   windowMs: 15 * 60 * 1000,
   max: 20,
   message: 'Too many authentication attempts. Please try again in 15 minutes.',
@@ -60,6 +84,7 @@ export const authRateLimit = rateLimit({
  * Upload rate limit.
  */
 export const uploadRateLimit = rateLimit({
+  keyPrefix: 'upload',
   windowMs: 60 * 60 * 1000,
   max: 50,
   message: 'Upload limit reached. Please try again later.',

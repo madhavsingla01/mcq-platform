@@ -59,6 +59,21 @@ const userSchema = new mongoose.Schema(
       country: String,
     },
     bio: { type: String, maxlength: 2000 },
+    socialLinks: {
+      type: [{
+        platform: {
+          type: String,
+          trim: true,
+          maxlength: 40,
+        },
+        url: {
+          type: String,
+          trim: true,
+          maxlength: 500,
+        },
+      }],
+      default: [],
+    },
     age: { type: Number, min: 0 },
     preferences: {
       theme: { type: String, default: 'dark' },
@@ -69,11 +84,6 @@ const userSchema = new mongoose.Schema(
       showCorrectAnswerInstantly: { type: Boolean, default: false },
       reducedMotion: { type: Boolean, default: false },
       focusMode: { type: Boolean, default: false },
-      isNavigatorCollapsed: { type: Boolean, default: false },
-      isAICollapsed: { type: Boolean, default: false },
-      // AI preferences
-      aiExplanations: { type: Boolean, default: true },
-      aiPersonality: { type: String, default: 'Encouraging' },
       // Misc
       quizTimer: { type: Boolean, default: false },
       shuffleQuestions: { type: Boolean, default: false },
@@ -81,7 +91,6 @@ const userSchema = new mongoose.Schema(
       panelWidths: {
         navigator: { type: Number, default: 20 },
         workspace: { type: Number, default: 55 },
-        ai: { type: Number, default: 25 },
       },
     },
     avatar: String,
@@ -89,13 +98,28 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    followersCount: { type: Number, default: 0 },
-    followingCount: { type: Number, default: 0 },
-    quizCount: { type: Number, default: 0 },
     isProfilePublic: { type: Boolean, default: true },
-    socialLinks: {
-      website: { type: String, default: '' },
-      personalId: { type: String, default: '' },
+    quizCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      index: true,
+    },
+    followersCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      index: true,
+    },
+    followingCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    activityCount: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
   },
   {
@@ -105,7 +129,8 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Index for email lookups (removed explicit index as unique:true creates one)
+userSchema.index({ username: 1, isProfilePublic: 1 });
+userSchema.index({ isProfilePublic: 1, followersCount: -1 });
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {

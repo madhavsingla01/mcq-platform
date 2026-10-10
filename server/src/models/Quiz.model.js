@@ -49,6 +49,17 @@ const quizSchema = new mongoose.Schema(
       default: 'private',
       index: true,
     },
+    contentKind: {
+      type: String,
+      enum: ['quiz', 'form', 'coding', 'upload', 'rating', 'survey', 'universal'],
+      default: 'quiz',
+      index: true,
+    },
+    builderMode: {
+      type: String,
+      trim: true,
+      default: 'exam',
+    },
     uploader: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -82,6 +93,10 @@ const quizSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },
+    metadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
     isPublic: {
       type: Boolean,
       default: false,
@@ -90,11 +105,6 @@ const quizSchema = new mongoose.Schema(
       type: String,
       trim: true,
     }],
-    shareCode: {
-      type: String,
-      unique: true,
-      sparse: true,
-    },
     totalAttempts: {
       type: Number,
       default: 0,
@@ -102,6 +112,33 @@ const quizSchema = new mongoose.Schema(
     avgScore: {
       type: Number,
       default: 0,
+    },
+    likeCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      index: true,
+    },
+    commentCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      index: true,
+    },
+    bookmarkCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    shareCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    lastSocialActivityAt: {
+      type: Date,
+      default: null,
+      index: true,
     },
   },
   {
@@ -122,9 +159,10 @@ quizSchema.pre('validate', function normalizeQuizVisibility(next) {
 
 // Indexes
 quizSchema.index({ uploader: 1, createdAt: -1 });
-// quizSchema.index({ shareCode: 1 });
 quizSchema.index({ isPublic: 1, createdAt: -1 });
 quizSchema.index({ visibility: 1, createdAt: -1 });
+quizSchema.index({ visibility: 1, lastSocialActivityAt: -1, createdAt: -1 });
+quizSchema.index({ visibility: 1, likeCount: -1, totalAttempts: -1, createdAt: -1 });
 quizSchema.index({ tags: 1 });
 quizSchema.index({ createdAt: -1 });
 

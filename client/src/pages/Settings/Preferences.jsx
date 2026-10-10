@@ -1,6 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useQuizStore } from '../../store/quizStore';
+import { Input, Button, Spinner } from '../../components/ui';
+
 
 const personalities = ['Encouraging', 'Neutral', 'Analytical'];
 
@@ -29,6 +32,13 @@ export default function Preferences() {
 
   const [local, setLocal] = useState(settings);
   const [saving, setSaving] = useState(false);
+  const navigate = useNavigate();
+  
+  // Join session UI state
+  const [joinInput, setJoinInput] = useState('');
+  const [joinError, setJoinError] = useState('');
+  const [joinLoading, setJoinLoading] = useState(false);
+  const [codeOnly, setCodeOnly] = useState(false);
 
   const onSave = () => {
     setSaving(true);
@@ -53,6 +63,12 @@ export default function Preferences() {
     }
   };
 
+  const handleInstantFeedbackChange = (enabled) => {
+    setLocal((current) => ({ ...current, showCorrectAnswerInstantly: enabled }));
+    actions.setShowCorrectAnswerInstantly(enabled);
+    setInstant(enabled);
+  };
+
   return (
     <div style={{ background: 'var(--color-surface)', padding: 24, borderRadius: 10, border: '1px solid var(--color-border)' }}>
       <h2 style={{ marginBottom: 8 }}>Preferences</h2>
@@ -66,7 +82,7 @@ export default function Preferences() {
             <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Reveal the correct answer as soon as you submit an answer.</div>
           </div>
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <input type="checkbox" checked={local.showCorrectAnswerInstantly} onChange={(e) => setLocal({ ...local, showCorrectAnswerInstantly: e.target.checked })} />
+            <input type="checkbox" checked={local.showCorrectAnswerInstantly} onChange={(e) => handleInstantFeedbackChange(e.target.checked)} />
           </label>
         </div>
       </section>
@@ -90,27 +106,9 @@ export default function Preferences() {
         </div>
       </section>
 
-      <section style={{ marginBottom: 20 }}>
-        <h3 style={{ marginBottom: 8 }}>AI Configuration</h3>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--color-border)', marginBottom: 12 }}>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 600 }}>AI Explanations</div>
-            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Enable AI-generated explanations for questions.</div>
-          </div>
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <input type="checkbox" checked={local.aiExplanations} onChange={(e) => setLocal({ ...local, aiExplanations: e.target.checked })} />
-          </label>
-        </div>
+      
 
-        <div style={{ display: 'flex', gap: 12 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 6 }}>AI Personality</div>
-            <select value={local.aiPersonality} onChange={(e) => setLocal({ ...local, aiPersonality: e.target.value })} style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--color-border)' }}>
-              {personalities.map((p) => <option key={p} value={p}>{p}</option>)}
-            </select>
-          </div>
-        </div>
-      </section>
+      
 
       <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 18, display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
         <button onClick={() => window.history.back()} style={{ padding: '8px 14px', borderRadius: 8 }}>Cancel</button>

@@ -243,8 +243,8 @@ const serializeSnapshot = (state) => {
     isStarted: state.isStarted,
     isSubmitted: state.isSubmitted,
     sessionId: state.sessionId,
-    sharedSessionId: state.sharedSessionId,
-    shareCode: state.shareCode,
+    
+    
     snapshotVersion: state.snapshotVersion,
     pendingSyncQueue: state.pendingSyncQueue,
     hasPendingSync: state.hasPendingSync,
@@ -311,7 +311,7 @@ const buildSyncPayload = (state) => {
 
   return {
     sessionId: state.sessionId,
-    sharedSessionId: state.sharedSessionId || undefined,
+    
     totalElapsedMs: Math.round(state.totalElapsedMs),
     clientTimestamp: new Date().toISOString(),
     currentQuestionId,
@@ -430,7 +430,7 @@ const buildHydratedState = ({ quiz, questions, serverAttempt = null, localSnapsh
     serverAttempt?.isQuickMode === true ||
     normalizedSnapshot?.isQuickMode === true;
 
-  const serverSharedSessionId = serverAttempt?.sharedSessionId?._id || serverAttempt?.sharedSessionId || null;
+  
 
   return {
     quiz,
@@ -443,8 +443,8 @@ const buildHydratedState = ({ quiz, questions, serverAttempt = null, localSnapsh
       : [...new Set(serverMarkedForReview)],
     attemptId: serverAttempt?._id || normalizedSnapshot?.attemptId || null,
     sessionId: normalizedSnapshot?.sessionId || getGuestSessionId(),
-    sharedSessionId: collaborationContext?.sessionId || serverSharedSessionId || normalizedSnapshot?.sharedSessionId || null,
-    shareCode: collaborationContext?.shareCode || normalizedSnapshot?.shareCode || null,
+    sharedSessionId: null,
+    shareCode: null,
     tabId: getTabId(),
     isStarted,
     isQuickMode: serverAttempt?.isQuickMode ?? normalizedSnapshot?.isQuickMode ?? false,
@@ -763,7 +763,7 @@ export const useQuizStore = create((set, get) => ({
         {
           headers: {
             'x-quiz-session-id': state.sessionId,
-            ...(state.sharedSessionId ? { 'x-shared-session-id': state.sharedSessionId } : {}),
+            
           },
         }
       );

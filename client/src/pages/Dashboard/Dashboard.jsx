@@ -1,10 +1,9 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Card, Button, Spinner, Badge } from '../../components/ui';
 import { Link, useNavigate } from 'react-router-dom';
-import { Copy, Eye, EyeOff, Link2, Share2, UserCircle } from 'lucide-react';
+import { Boxes, Copy, Eye, EyeOff, FileText, Link2, Share2, UserCircle } from 'lucide-react';
 import api from '../../api/axios';
 import QuizDetailsModal from '../../components/QuizModal/QuizDetailsModal';
-import OpenLinkModal from '../../components/Dashboard/OpenLinkModal';
 import { useAuthStore } from '../../store/authStore';
 
 function timeAgo(dateStr) {
@@ -30,11 +29,12 @@ export default function Dashboard() {
   const [recentQuizzes, setRecentQuizzes] = useState([]);
   const [joinedSessions, setJoinedSessions] = useState([]);
   const [activeAttempts, setActiveAttempts] = useState([]);
+  const [recentWorkspaceItems, setRecentWorkspaceItems] = useState([]);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedQuizId, setSelectedQuizId] = useState(null);
-  const [isOpenLinkModalOpen, setIsOpenLinkModalOpen] = useState(false);
+
   const [publishingQuizId, setPublishingQuizId] = useState('');
   const [copiedQuizId, setCopiedQuizId] = useState('');
 
@@ -42,17 +42,16 @@ export default function Dashboard() {
     setLoading(true);
     setError('');
     try {
-      const [myQuizzesRes, joinedRes, attemptsRes, recentRes] = await Promise.all([
+      const [myQuizzesRes, attemptsRes] = await Promise.all([
         api.get('/quiz/my'),
-        api.get('/sessions/joined'),
-        api.get('/attempts/in-progress'),
-        api.get('/activity/recent-quizzes')
+        api.get('/attempts/in-progress')
       ]);
       
       setQuizzes(myQuizzesRes.data.data.quizzes || []);
-      setJoinedSessions(joinedRes.data.data.sessions || []);
       setActiveAttempts(attemptsRes.data.data.attempts || []);
-      setRecentQuizzes(recentRes.data.data.quizzes || []);
+      setJoinedSessions([]);
+      setRecentQuizzes([]);
+      setRecentWorkspaceItems([]);
     } catch {
       setError('Failed to load dashboard data. Please try again.');
     } finally {
@@ -178,32 +177,6 @@ export default function Dashboard() {
             <h1>Dashboard</h1>
             <p>Publish a quiz to make it appear on your public profile.</p>
           </div>
-          <div className="flex items-center gap-3">
-            {user?.username ? (
-              <>
-                <Link to={`/@${user.username}`} style={{ textDecoration: 'none' }}>
-                  <Button variant="secondary" style={{ gap: 6 }}>
-                    <UserCircle className="w-4 h-4" />
-                    Public Profile
-                  </Button>
-                </Link>
-                <Button variant="secondary" onClick={handleCopyProfileLink} style={{ gap: 6 }}>
-                  <Copy className="w-4 h-4" />
-                  {copiedQuizId === 'profile' ? 'Copied' : 'Copy Profile'}
-                </Button>
-              </>
-            ) : null}
-            <Button variant="secondary" onClick={() => setIsOpenLinkModalOpen(true)} style={{ gap: 6 }}>
-              <Link2 className="w-4 h-4" />
-              Open Link
-            </Button>
-            <Link to="/upload" style={{ textDecoration: 'none' }}>
-              <Button>
-                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
-                Upload New Quiz
-              </Button>
-            </Link>
-          </div>
         </div>
 
         {error ? (
@@ -212,6 +185,36 @@ export default function Dashboard() {
             <Button variant="secondary" onClick={fetchDashboardData}>Retry</Button>
           </Card>
         ) : null}
+
+        {!error && recentWorkspaceItems.length > 0 && (
+          <section className="qf-dash-section">
+            <h2 className="qf-dash-section-title">Recent Files</h2>
+            <div className="qf-dash-grid">
+              {recentWorkspaceItems.map((item) => (
+                <Card
+                  key={item._id}
+                  className="qf-dash-quiz-card"
+                  onClick={() => navigate(item.type === 'folder' ? `/workspace?folder=${item._id}` : '/workspace?view=recent')}
+                >
+                  <div className="qf-dash-quiz-header">
+                    <div className="qf-dash-quiz-icon" style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}>
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <span className="qf-dash-quiz-date">Opened {timeAgo(item.openedAt)}</span>
+                  </div>
+                  <h3>{item.name}</h3>
+                  <div className="qf-dash-quiz-meta">
+                    <Badge>{item.type?.replaceAll('_', ' ') || 'workspace item'}</Badge>
+                    <span>{item.tags?.slice(0, 1).map((tag) => `#${tag}`).join('')}</span>
+                  </div>
+                  <div style={{ marginTop: 'auto', paddingTop: 16 }}>
+                    <Button style={{ width: '100%' }} variant="secondary">Open Workspace</Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
 
         {!error && recentQuizzes.length > 0 && (
           <section className="qf-dash-section">
@@ -231,7 +234,7 @@ export default function Dashboard() {
                   </div>
                   <h3>{item.quizId?.title || 'Untitled'}</h3>
                   <div className="qf-dash-quiz-meta">
-                    <Badge>{item.sessionId?.shareCode ? 'Shared Workspace' : (item.progress?.status || 'Opened')}</Badge>
+                    <Badge>{item.progress?.status || 'Opened'}</Badge>
                     <span>{item.progress?.percentage || 0}%</span>
                   </div>
                   <div style={{ marginTop: 'auto', paddingTop: 16 }}>
@@ -286,7 +289,7 @@ export default function Dashboard() {
                 <Card
                   key={attempt._id}
                   className="qf-dash-quiz-card"
-                  onClick={() => navigate(attempt.sharedSessionId?.shareCode ? `/quiz/${attempt.quizId._id}?sessionId=${attempt.sharedSessionId._id}&shareCode=${attempt.sharedSessionId.shareCode}` : `/quiz/${attempt.quizId._id}`)}
+                  onClick={() => navigate(`/quiz/${attempt.quizId._id}`)}
                 >
                   <div className="qf-dash-quiz-header">
                     <div className="qf-dash-quiz-icon" style={{ background: 'var(--color-warning-light)', color: 'var(--color-warning)' }}>
@@ -296,7 +299,7 @@ export default function Dashboard() {
                   </div>
                   <h3>{attempt.quizId?.title || 'Untitled'}</h3>
                   <div className="qf-dash-quiz-meta">
-                    <Badge variant="warning">{attempt.sharedSessionId?.shareCode ? 'Shared In Progress' : 'In Progress'}</Badge>
+                    <Badge variant="warning">In Progress</Badge>
                     <span>{attempt.quizId?.questionCount} Qs</span>
                   </div>
                   <div style={{ marginTop: 'auto', paddingTop: 16 }}>
@@ -318,7 +321,7 @@ export default function Dashboard() {
                   quiz
                 </span>
                 <p style={{ color: 'var(--color-text-secondary)', marginBottom: 16 }}>You haven't uploaded any quizzes yet.</p>
-                <Link to="/upload" style={{ textDecoration: 'none' }}>
+                <Link to="/create/upload" style={{ textDecoration: 'none' }}>
                   <Button variant="secondary">Create your first quiz</Button>
                 </Link>
               </Card>
@@ -397,9 +400,6 @@ export default function Dashboard() {
           />
         ) : null}
 
-        {isOpenLinkModalOpen && (
-          <OpenLinkModal onClose={() => setIsOpenLinkModalOpen(false)} />
-        )}
       </div>
 
       <style>{dashStyles}</style>
@@ -532,5 +532,141 @@ const dashStyles = `
     color: var(--color-text-secondary);
     font-size: 12px;
     line-height: 1.35;
+  }
+
+  /* ===== Tablet (max-width: 768px) ===== */
+  @media (max-width: 768px) {
+    .qf-dash-shell {
+      gap: 28px;
+      padding-bottom: 28px;
+    }
+
+    .qf-dash-header {
+      gap: 12px;
+    }
+
+    .qf-dash-grid {
+      gap: 16px;
+    }
+
+    .qf-dash-quiz-meta {
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+  }
+
+  /* ===== Mobile (max-width: 640px) ===== */
+  @media (max-width: 640px) {
+    .qf-dash-shell {
+      gap: 24px;
+      padding-bottom: 24px;
+    }
+
+    .qf-dash-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+    }
+
+    .qf-dash-header h1 {
+      font-size: 22px;
+    }
+
+    .qf-dash-header p {
+      font-size: 13px;
+    }
+
+    /* Action buttons row: full-width, wrap for touch targets */
+    .qf-dash-header > .flex {
+      width: 100%;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .qf-dash-header > .flex > * {
+      flex: 1 1 auto;
+      min-height: 44px;
+    }
+
+    .qf-dash-section-title {
+      font-size: 14px;
+    }
+
+    .qf-dash-grid {
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 14px;
+    }
+
+    .qf-dash-quiz-card {
+      padding: 14px !important;
+      gap: 10px;
+      border-radius: 12px;
+    }
+
+    .qf-dash-quiz-card h3 {
+      font-size: 15px;
+    }
+
+    .qf-dash-quiz-meta {
+      font-size: 12px;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .qf-dash-publish-help {
+      font-size: 11px;
+      padding: 8px;
+      min-height: unset;
+    }
+
+    /* Quiz card action buttons: auto-flex on mobile */
+    .qf-dash-quiz-card > div:last-child {
+      gap: 6px !important;
+    }
+
+    .qf-dash-quiz-card > div:last-child > button,
+    .qf-dash-quiz-card > div:last-child > a > button {
+      flex: 1 1 auto !important;
+      min-height: 44px;
+      font-size: 13px;
+      padding: 8px 10px !important;
+    }
+  }
+
+  /* ===== Small mobile (max-width: 480px) ===== */
+  @media (max-width: 480px) {
+    .qf-dash-header h1 {
+      font-size: 20px;
+    }
+
+    .qf-dash-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .qf-dash-quiz-card {
+      padding: 12px !important;
+    }
+
+    .qf-dash-quiz-meta {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+    }
+
+    /* Hide bullet separators when stacked vertically */
+    .qf-dash-quiz-meta > span:nth-child(even) {
+      display: none;
+    }
+
+    /* Stack action buttons vertically on very small screens */
+    .qf-dash-quiz-card > div:last-child {
+      flex-direction: column;
+    }
+
+    .qf-dash-quiz-card > div:last-child > button,
+    .qf-dash-quiz-card > div:last-child > a > button {
+      width: 100%;
+    }
   }
 `;

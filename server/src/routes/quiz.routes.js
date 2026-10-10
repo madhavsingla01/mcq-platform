@@ -13,6 +13,7 @@ import {
   syncAttempt,
   getActiveAttempt,
   deleteQuiz,
+  saveManualDraft,
 } from '../controllers/quiz.controller.js';
 import { optionalAuth, protect } from '../middleware/auth.middleware.js';
 import { validateObjectId } from '../middleware/validation.middleware.js';
@@ -20,6 +21,7 @@ import { validateObjectId } from '../middleware/validation.middleware.js';
 const router = Router();
 
 router.post('/generate', optionalAuth, generateQuiz);
+router.post('/manual', protect, saveManualDraft);
 router.get('/my', protect, getMyQuizzes);
 router.get('/attempts/:attemptId/result', validateObjectId('attemptId'), optionalAuth, getResultByAttemptId);
 router.get('/:id', validateObjectId('id'), optionalAuth, getQuiz);

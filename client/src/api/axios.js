@@ -7,12 +7,16 @@ const api = axios.create({
   baseURL: '/api/v1',
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
+  xsrfCookieName: 'csrfToken',
+  xsrfHeaderName: 'x-csrf-token',
 });
 
 const refreshClient = axios.create({
   baseURL: '/api/v1',
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
+  xsrfCookieName: 'csrfToken',
+  xsrfHeaderName: 'x-csrf-token',
 });
 
 let isRefreshing = false;

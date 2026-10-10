@@ -363,12 +363,23 @@ const mergeAnswerState = ({
   }
 
   const shouldLockAnswer =
-    (incomingState.isLocked || (attempt.isQuickMode && Boolean(answer.selectedAnswer)) || finalizing) &&
+    (
+      incomingState.isLocked ||
+      (attempt.isQuickMode && Boolean(answer.selectedAnswer)) ||
+      (attempt.instantFeedback && Boolean(answer.selectedAnswer)) ||
+      finalizing
+    ) &&
     Boolean(answer.selectedAnswer);
 
   if (shouldLockAnswer && !answer.isLocked) {
     answer.isLocked = true;
-    answer.lockSource = attempt.isQuickMode ? 'quick_mode' : finalizing ? 'submit' : 'sync';
+    answer.lockSource = attempt.isQuickMode
+      ? 'quick_mode'
+      : attempt.instantFeedback && !finalizing
+        ? 'instant_feedback'
+        : finalizing
+          ? 'submit'
+          : 'sync';
     answer.lockedAt = pickLatestByTimestamp(
       incomingState.lockedAt,
       answer.submittedAt,
@@ -648,6 +659,10 @@ export const mergeAttemptTrackingPayload = ({ attempt, questions, payload = {}, 
   attempt.lastClientSyncAt = parseDateValue(payload.clientTimestamp) || now;
   attempt.lastServerSyncAt = now;
 
+  if (payload.instantFeedback === true && attempt.instantFeedback !== true) {
+    attempt.instantFeedback = true;
+  }
+
   if (payload.currentQuestionId && questionLookup.has(toObjectIdString(payload.currentQuestionId))) {
     attempt.lastActiveQuestionId = payload.currentQuestionId;
   }
@@ -731,7 +746,11 @@ export const mergeAttemptTrackingPayload = ({ attempt, questions, payload = {}, 
 
     if (finalizing && answer.selectedAnswer && !answer.isLocked) {
       answer.isLocked = true;
-      answer.lockSource = attempt.isQuickMode ? 'quick_mode' : 'submit';
+      answer.lockSource = attempt.isQuickMode
+        ? 'quick_mode'
+        : attempt.instantFeedback
+          ? 'instant_feedback'
+          : 'submit';
       answer.lockedAt = pickLatestByTimestamp(answer.lockedAt, answer.submittedAt, now);
     }
 

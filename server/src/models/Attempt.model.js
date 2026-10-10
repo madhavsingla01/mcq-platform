@@ -53,7 +53,7 @@ const answerSchema = new mongoose.Schema(
     },
     lockSource: {
       type: String,
-      enum: ['quick_mode', 'submit', 'sync', null],
+      enum: ['quick_mode', 'instant_feedback', 'submit', 'sync', null],
       default: null,
     },
     timeTaken: {
@@ -208,17 +208,6 @@ const attemptSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       default: null,
-    },
-    sessionId: {
-      type: String,
-      default: null,
-      trim: true,
-    },
-    sharedSessionId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'QuizSession',
-      default: null,
-      index: true,
     },
     answers: {
       type: [answerSchema],
@@ -395,7 +384,6 @@ const attemptSchema = new mongoose.Schema(
 
 attemptSchema.index({ quizId: 1, userId: 1, status: 1, createdAt: -1 });
 attemptSchema.index({ quizId: 1, sessionId: 1, status: 1, createdAt: -1 });
-attemptSchema.index({ quizId: 1, sharedSessionId: 1, status: 1, createdAt: -1 });
 attemptSchema.index({ quizId: 1, completedAt: -1 });
 attemptSchema.index({ userId: 1, createdAt: -1 });
 attemptSchema.index({ userId: 1, completedAt: -1 });

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, logout, refresh, getMe, updateMe, deleteAccount, checkUsername, searchUsers } from '../controllers/auth.controller.js';
+import { register, login, logout, refresh, getMe, updateMe, deleteAccount, checkUsername, searchUsers, bootstrapSession } from '../controllers/auth.controller.js';
 import { optionalAuth, protect } from '../middleware/auth.middleware.js';
 import { validateBody } from '../middleware/validation.middleware.js';
 import { authRateLimit } from '../middleware/rateLimit.middleware.js';
@@ -15,6 +15,7 @@ router.use((req, res, next) => {
 
 router.get('/check-username', optionalAuth, checkUsername);
 router.get('/users/search', optionalAuth, searchUsers);
+router.get('/bootstrap', bootstrapSession);
 
 router.post('/register', authRateLimit, validateBody({
   name: { required: true, type: 'string', min: 2, max: 50 },

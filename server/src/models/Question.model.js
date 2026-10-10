@@ -41,18 +41,25 @@ const questionSchema = new mongoose.Schema(
       required: [true, 'Question text is required'],
       trim: true,
     },
+    questionType: {
+      type: String,
+      enum: ['short_answer', 'paragraph', 'multiple_choice', 'checkboxes', 'dropdown', 'file_upload', 'linear_scale', 'rating', 'multiple_choice_grid', 'tick_box_grid', 'date', 'time', 'code', 'coding_link'],
+      default: 'multiple_choice',
+    },
     options: {
       type: [optionSchema],
       validate: {
         validator: function (v) {
-          return v.length >= 2; // At least 2 options
+          if (['multiple_choice', 'checkboxes', 'dropdown'].includes(this.questionType)) {
+            return v && v.length >= 2;
+          }
+          return true;
         },
-        message: 'A question must have at least 2 options',
+        message: 'This question type must have at least 2 options',
       },
     },
     correctAnswer: {
-      type: String,
-      required: [true, 'Correct answer is required'],
+      type: mongoose.Schema.Types.Mixed,
     },
     explanation: {
       type: String,
@@ -89,6 +96,14 @@ const questionSchema = new mongoose.Schema(
       url: String,
     },
     metadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
+    grid: {
+      rows: [{ id: String, text: String }],
+      columns: [{ id: String, text: String }]
+    },
+    settings: {
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },

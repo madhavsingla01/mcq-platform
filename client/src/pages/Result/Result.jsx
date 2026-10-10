@@ -2,8 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import api from '../../api/axios';
 import { Badge, Button, Spinner } from '../../components/ui';
-import Leaderboard from '../../components/session/Leaderboard';
-import DestroySessionButton from '../../components/session/DestroySessionButton';
 import { useAuthStore } from '../../store/authStore';
 import { formatDurationMs, getGuestSessionId } from '../../utils/quizSession';
 
@@ -106,12 +104,6 @@ export default function Result() {
   const { attempt } = resultData;
   const analytics = attempt.analytics || {};
   const totalTimeMs = Number(attempt.totalTimeMs || 0) || Number(attempt.totalTime || 0) * 1000;
-  const sharedSession = attempt.sharedSessionId || null;
-  const sharedSessionId = sharedSession?._id || null;
-  const sharedSessionShareCode = sharedSession?.shareCode || null;
-  const sessionSettings = sharedSession?.settings || {};
-  const isCreator = currentUser && sharedSession?.creatorId &&
-    (sharedSession.creatorId === currentUser._id || sharedSession.creatorId?._id === currentUser._id);
   const tier = getScoreTier(attempt.percentage);
 
   const correctCount = attempt.correctCount ?? analytics.correctCount ?? 0;
@@ -119,9 +111,7 @@ export default function Result() {
   const skippedCount = analytics.skippedCount ?? attempt.answers.filter((a) => !a.selectedAnswer).length;
   const avgTimeMs = analytics.averageTimePerQuestionMs || (attempt.totalQuestions > 0 ? totalTimeMs / attempt.totalQuestions : 0);
 
-  const retakePath = sharedSessionShareCode
-    ? `/quiz/${attempt.quizId?._id}?sessionId=${sharedSessionId}&shareCode=${sharedSessionShareCode}`
-    : `/quiz/${attempt.quizId?._id}`;
+  const retakePath = `/quiz/${attempt.quizId?._id}`;
 
   const scrollToReview = (idx) => {
     setExpandedQ(idx);
@@ -147,7 +137,7 @@ export default function Result() {
               </div>
               <div className="r-hero-badges">
                 {attempt.instantFeedback && <Badge>Instant Feedback</Badge>}
-                {sharedSessionShareCode && <Badge>Shared Workspace</Badge>}
+                
               </div>
             </div>
           </div>
@@ -174,7 +164,6 @@ export default function Result() {
         </div>
 
         {/* ── Question Timeline ── */}
-        {sessionSettings.postSubmissionAccess !== 'results_only' && (
           <div className="r-section">
             <h2 className="r-section-title">Question Timeline</h2>
             <div className="r-timeline">
@@ -196,13 +185,8 @@ export default function Result() {
               })}
             </div>
           </div>
-        )}
-
-        {/* ── Leaderboard (shared quizzes only) ── */}
-        {sharedSessionId && <Leaderboard sessionId={sharedSessionId} />}
 
         {/* ── Question Review (Accordion) ── */}
-        {sessionSettings.postSubmissionAccess !== 'results_only' && (
           <div className="r-section">
             <h2 className="r-section-title">Review Answers</h2>
             <div className="r-review-list">
@@ -261,18 +245,15 @@ export default function Result() {
               })}
             </div>
           </div>
-        )}
 
         {/* ── Actions ── */}
         <div className="r-actions">
-          {(!sharedSessionId || sessionSettings.postSubmissionAccess === 'reopen_quiz' || isCreator) && (
             <Link to={retakePath} style={{ textDecoration: 'none' }}>
               <Button variant="secondary">
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }}>replay</span>
                 Retake Quiz
               </Button>
             </Link>
-          )}
           <Link to="/dashboard" style={{ textDecoration: 'none' }}>
             <Button variant="secondary">
               <span className="material-symbols-outlined" style={{ fontSize: 18 }}>dashboard</span>
@@ -285,9 +266,6 @@ export default function Result() {
               Upload New
             </Button>
           </Link>
-          {isCreator && sharedSessionId && (
-            <DestroySessionButton sessionId={sharedSessionId} />
-          )}
         </div>
       </div>
 

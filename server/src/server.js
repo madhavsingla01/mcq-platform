@@ -11,9 +11,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import http from 'http';
-import { Server } from 'socket.io';
 import { startCleanupWorker } from './jobs/cleanup.worker.js';
-import { setupSessionSocket } from './sockets/sessionSocket.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,19 +37,7 @@ const startServer = async () => {
     // Create HTTP Server
     const server = http.createServer(app);
 
-    // Initialize Socket.IO
-    const io = new Server(server, {
-      cors: {
-        origin: env.isProd ? process.env.CLIENT_URL : ['http://localhost:5173', 'http://127.0.0.1:5173'],
-        credentials: true
-      }
-    });
 
-    // Setup session socket handlers (chat, presence)
-    setupSessionSocket(io);
-
-    // Attach io to app so routes can use it
-    app.set('io', io);
 
     // Start server
     server.listen(env.PORT, () => {

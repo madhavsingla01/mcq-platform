@@ -3,19 +3,12 @@ import Question from '../models/Question.model.js';
 import Attempt from '../models/Attempt.model.js';
 import Upload from '../models/Upload.model.js';
 import User from '../models/User.model.js';
-import QuestionAnalytics from '../models/QuestionAnalytics.model.js';
-import QuizSession from '../models/QuizSession.model.js';
-import SessionMessage from '../models/SessionMessage.model.js';
-import JoinedSession from '../models/JoinedSession.model.js';
-import mongoose from 'mongoose';
 import { catchAsync, AppError } from '../middleware/error.middleware.js';
 import { parseExcel } from '../services/parser/excelParser.js';
 import { parseCsv } from '../services/parser/csvParser.js';
 import { parseJson } from '../services/parser/jsonParser.js';
 import { extractOptions } from '../services/parser/optionExtractor.js';
 import { normalizeAnswer } from '../services/parser/answerDetector.js';
-import { generateShareCode } from '../utils/generateId.js';
-import { getSessionAccess, isSessionCreator } from '../utils/sessionSettings.js';
 import { logger } from '../utils/logger.js';
 import {
   assertAttemptReadAccess,
@@ -24,68 +17,13 @@ import {
   buildAttemptOwnerFilter,
   buildInitialAnswerStates,
   buildQuizAnalytics,
-  getRequestSessionId,
   mergeAttemptTrackingPayload,
 } from '../services/quiz/attemptTracking.service.js';
 import {
-  recordAnswerChanges,
-  recordEvent,
-  recordSearch,
-  upsertRecentQuiz,
-} from '../services/activity/activity.service.js';
-
-const getSharedSessionIdFromRequest = (req) => (
-  req.get('x-shared-session-id') ||
-  req.body?.sharedSessionId ||
-  req.query?.sharedSessionId ||
-  null
-);
-
-const resolveSharedSessionContext = async (req, quizId) => {
-  const sharedSessionId = getSharedSessionIdFromRequest(req);
-
-  if (!sharedSessionId) {
-    return null;
-  }
-
-  if (!mongoose.isValidObjectId(sharedSessionId)) {
-    throw new AppError('Invalid shared session id', 400);
-  }
-
-  const session = await QuizSession.findOne({
-    _id: sharedSessionId,
-    quizId,
-  });
-
-  if (!session) {
-    throw new AppError('Shared session not found for this quiz', 404);
-  }
-
-  const access = getSessionAccess(session, req.user);
-  if (!access.allowed) {
-    throw new AppError(access.message, access.status);
-  }
-
-  const lastActivityAt = session.lastActivityAt ? new Date(session.lastActivityAt).getTime() : 0;
-  if (Date.now() - lastActivityAt > 5 * 60 * 1000) {
-    session.lastActivityAt = new Date();
-    await session.save();
-  }
-
-  return session;
-};
-
-const applySharedSessionContext = (attempt, sharedSession) => {
-  if (!attempt || !sharedSession?._id) {
-    return null;
-  }
-
-  if (String(attempt.sharedSessionId || '') !== String(sharedSession._id)) {
-    attempt.sharedSessionId = sharedSession._id;
-  }
-
-  return sharedSession._id;
-};
+  createQuizPublishedActivity,
+  deleteQuizSocialData,
+  recordActivity,
+} from '../services/social/activity.service.js';
 
 const getParser = (fileType) => {
   if (fileType === 'xlsx' || fileType === 'xls') {
@@ -191,15 +129,6 @@ const assertQuizManageAccess = (quiz, req) => {
 const assertQuizReadAccess = async (quiz, req) => {
   if (quiz.visibility === 'public' || quiz.visibility === 'unlisted' || quiz.isPublic) {
     return;
-  }
-
-  try {
-    const sharedSession = await resolveSharedSessionContext(req, quiz._id);
-    if (sharedSession) {
-      return;
-    }
-  } catch (err) {
-    // Ignore errors from shared session resolution and fallback to normal checks
   }
 
   if (!req.user) {
@@ -311,67 +240,6 @@ const normalizeQuizInput = (payload) => {
   };
 };
 
-const syncQuestionAnalyticsForQuiz = async (quizId) => {
-  const [questions, attempts] = await Promise.all([
-    getQuizQuestionsSorted(quizId).lean(),
-    Attempt.find({ quizId, status: 'completed' }).lean(),
-  ]);
-
-  const operations = questions.map((question) => {
-    const questionId = toObjectIdString(question._id);
-    const wrongAnswerFrequency = {};
-    let totalAttempts = 0;
-    let correctAttempts = 0;
-    let wrongAttempts = 0;
-    let skippedAttempts = 0;
-    let totalTime = 0;
-
-    attempts.forEach((attempt) => {
-      const answer = (attempt.answers || []).find(
-        (item) => toObjectIdString(item.questionId) === questionId
-      );
-
-      totalAttempts += 1;
-
-      if (!answer || !answer.selectedAnswer) {
-        skippedAttempts += 1;
-        return;
-      }
-
-      totalTime += Number(answer.timeTakenMs) || Number(answer.timeTaken || 0) * 1000;
-
-      if (answer.isCorrect) {
-        correctAttempts += 1;
-      } else {
-        wrongAttempts += 1;
-        wrongAnswerFrequency[answer.selectedAnswer] = (wrongAnswerFrequency[answer.selectedAnswer] || 0) + 1;
-      }
-    });
-
-    return {
-      updateOne: {
-        filter: { questionId: question._id },
-        update: {
-          $set: {
-            quizId,
-            totalAttempts,
-            correctAttempts,
-            wrongAttempts,
-            skippedAttempts,
-            avgTimeTaken: totalAttempts > 0 ? Math.round(totalTime / totalAttempts) : 0,
-            accuracyPercentage: totalAttempts > 0 ? Math.round((correctAttempts / totalAttempts) * 1000) / 10 : 0,
-            wrongAnswerFrequency,
-          },
-        },
-        upsert: true,
-      },
-    };
-  });
-
-  if (operations.length) {
-    await QuestionAnalytics.bulkWrite(operations);
-  }
-};
 
 export const generateQuiz = catchAsync(async (req, res, next) => {
   const { uploadId, title, description, settings } = req.body;
@@ -464,7 +332,6 @@ export const generateQuiz = catchAsync(async (req, res, next) => {
       size: upload.fileSize,
     },
     columnMapping,
-    shareCode: generateShareCode(),
   });
 
   await Question.insertMany(
@@ -478,20 +345,9 @@ export const generateQuiz = catchAsync(async (req, res, next) => {
   upload.quizId = quiz._id;
   await upload.save();
   await syncUserPublicQuizCount(quiz.uploader);
+  await createQuizPublishedActivity({ quiz, actorId: quiz.uploader });
 
-  await recordEvent({
-    req,
-    eventType: 'QUIZ_CREATED',
-    category: 'quiz',
-    quizId: quiz._id,
-    uploadId: upload._id,
-    metadata: {
-      questionCount: questions.length,
-      skipped,
-      sourceFile: upload.originalName,
-      generatedFromUpload: true,
-    },
-  });
+  
 
   logger.info(`Quiz: "${quiz.title}" — ${questions.length} questions, ${skipped} skipped`);
 
@@ -513,7 +369,6 @@ export const getQuiz = catchAsync(async (req, res, next) => {
   }
 
   await assertQuizReadAccess(quiz, req);
-  await upsertRecentQuiz({ req, quizId: quiz._id });
 
   res.json({
     success: true,
@@ -553,7 +408,6 @@ export const getActiveAttempt = catchAsync(async (req, res, next) => {
   await assertQuizReadAccess(quiz, req);
 
   const ownerFilter = buildAttemptOwnerFilter(req);
-  const sharedSession = await resolveSharedSessionContext(req, quiz._id);
 
   if (!ownerFilter) {
     return res.json({
@@ -584,18 +438,6 @@ export const getActiveAttempt = catchAsync(async (req, res, next) => {
     }).sort({ createdAt: -1 });
   }
 
-  if (attempt && sharedSession) {
-    applySharedSessionContext(attempt, sharedSession);
-    await attempt.save();
-    await upsertRecentQuiz({
-      req,
-      quizId: quiz._id,
-      attempt,
-      sessionId: sharedSession._id,
-      lastVisitedQuestionId: attempt.lastActiveQuestionId,
-    });
-  }
-
   res.json({
     success: true,
     data: {
@@ -613,13 +455,6 @@ export const startAttempt = catchAsync(async (req, res, next) => {
   }
 
   await assertQuizReadAccess(quiz, req);
-
-  const sessionId = getRequestSessionId(req);
-  const sharedSession = await resolveSharedSessionContext(req, quiz._id);
-
-  if (!req.user && !sessionId) {
-    return next(new AppError('sessionId required for guest attempts', 400));
-  }
 
   const ownerFilter = buildAttemptOwnerFilter(req);
   const forceNew = req.body.forceNew === true;
@@ -640,32 +475,13 @@ export const startAttempt = catchAsync(async (req, res, next) => {
   }
 
   if (existingAttempt) {
-    applySharedSessionContext(existingAttempt, sharedSession);
-    if (sharedSession) {
+
+    if (req.body.instantFeedback === true && existingAttempt.instantFeedback !== true) {
+      existingAttempt.instantFeedback = true;
       await existingAttempt.save();
     }
 
-    await Promise.all([
-      upsertRecentQuiz({
-        req,
-        quizId: quiz._id,
-        attempt: existingAttempt,
-        sessionId: existingAttempt.sharedSessionId || sharedSession?._id,
-      }),
-      recordEvent({
-        req,
-        eventType: 'ATTEMPT_RECOVERED',
-        category: 'attempt',
-        quizId: quiz._id,
-        attemptId: existingAttempt._id,
-        sessionId: existingAttempt.sharedSessionId || sharedSession?._id,
-        metadata: {
-          status: existingAttempt.status,
-          recoveryMode: 'server',
-          sharedSessionId: existingAttempt.sharedSessionId || null,
-        },
-      }),
-    ]);
+    
 
     return res.json({
       success: true,
@@ -692,8 +508,6 @@ export const startAttempt = catchAsync(async (req, res, next) => {
   const attempt = await Attempt.create({
     quizId: quiz._id,
     userId: req.user?._id || null,
-    sessionId: sessionId || null,
-    sharedSessionId: sharedSession?._id || null,
     answers: buildInitialAnswerStates(questions),
     totalQuestions: quiz.questionCount,
     totalMarks: quiz.totalMarks || getQuizTotalMarks(questions),
@@ -715,29 +529,7 @@ export const startAttempt = catchAsync(async (req, res, next) => {
     },
   });
 
-  await Promise.all([
-    upsertRecentQuiz({
-      req,
-      quizId: quiz._id,
-      attempt,
-      sessionId: sharedSession?._id,
-    }),
-    recordEvent({
-      req,
-      eventType: 'ATTEMPT_STARTED',
-      category: 'attempt',
-      quizId: quiz._id,
-      attemptId: attempt._id,
-      sessionId: sharedSession?._id,
-      metadata: {
-        totalQuestions: questions.length,
-        timerMode,
-        isQuickMode,
-        instantFeedback,
-        sharedSessionId: sharedSession?._id || null,
-      },
-    }),
-  ]);
+  
 
   res.status(201).json({
     success: true,
@@ -763,9 +555,6 @@ export const syncAttempt = catchAsync(async (req, res, next) => {
   if (attempt.status !== 'in_progress') {
     return next(new AppError('Attempt is no longer in progress', 400));
   }
-
-  const sharedSession = await resolveSharedSessionContext(req, attempt.quizId);
-  const recentSessionId = applySharedSessionContext(attempt, sharedSession) || attempt.sharedSessionId;
   const questions = await getQuizQuestionsSorted(attempt.quizId);
   const { flags, answerChanges } = mergeAttemptTrackingPayload({
     attempt,
@@ -776,52 +565,7 @@ export const syncAttempt = catchAsync(async (req, res, next) => {
 
   attempt.syncStatus = 'synced';
   await attempt.save();
-  await Promise.all([
-    recordAnswerChanges({ req, attempt, changes: answerChanges, source: 'sync' }),
-    upsertRecentQuiz({
-      req,
-      quizId: attempt.quizId,
-      attempt,
-      sessionId: recentSessionId,
-      lastVisitedQuestionId: attempt.lastActiveQuestionId,
-    }),
-    recordEvent({
-      req,
-      eventType: 'ATTEMPT_SYNCED',
-      category: 'attempt',
-      quizId: attempt.quizId,
-      attemptId: attempt._id,
-      questionId: attempt.lastActiveQuestionId,
-      sessionId: recentSessionId,
-      metadata: {
-        stateVersion: attempt.syncVersion,
-        progress: attempt.progress,
-        sharedSessionId: recentSessionId || null,
-        suspiciousFlagCount: flags.length,
-      },
-    }),
-    req.body.currentQuestionId ? recordEvent({
-      req,
-      eventType: 'QUESTION_NAVIGATED',
-      category: 'attempt',
-      quizId: attempt.quizId,
-      attemptId: attempt._id,
-      questionId: req.body.currentQuestionId,
-      metadata: {
-        stateVersion: attempt.syncVersion,
-      },
-    }) : null,
-    Array.isArray(req.body.markedForReview) ? recordEvent({
-      req,
-      eventType: 'MARKED_FOR_REVIEW_UPDATED',
-      category: 'attempt',
-      quizId: attempt.quizId,
-      attemptId: attempt._id,
-      metadata: {
-        markedForReview: req.body.markedForReview,
-      },
-    }) : null,
-  ]);
+  
 
   res.json({
     success: true,
@@ -848,9 +592,6 @@ export const submitAttempt = catchAsync(async (req, res, next) => {
   }
 
   assertAttemptWriteAccess(attempt, req);
-
-  const sharedSession = await resolveSharedSessionContext(req, attempt.quizId);
-  const recentSessionId = applySharedSessionContext(attempt, sharedSession) || attempt.sharedSessionId;
   const questions = await getQuizQuestionsSorted(attempt.quizId);
 
   if (attempt.status === 'completed') {
@@ -858,17 +599,7 @@ export const submitAttempt = catchAsync(async (req, res, next) => {
       attempt.analytics = buildAttemptAnalytics({ attempt, questions });
       await attempt.save();
     }
-    if (attempt.isModified('sharedSessionId')) {
-      await attempt.save();
-    }
-    await upsertRecentQuiz({
-      req,
-      quizId: attempt.quizId,
-      attempt,
-      sessionId: recentSessionId,
-      lastVisitedQuestionId: attempt.lastActiveQuestionId,
-    });
-    await syncQuestionAnalyticsForQuiz(attempt.quizId);
+    
 
     return res.json({
       success: true,
@@ -906,33 +637,22 @@ export const submitAttempt = catchAsync(async (req, res, next) => {
   }
 
   await attempt.save();
-  await Promise.all([
-    recordAnswerChanges({ req, attempt, changes: answerChanges, source: 'submit' }),
-    upsertRecentQuiz({
-      req,
-      quizId: attempt.quizId,
-      attempt,
-      sessionId: recentSessionId,
-      lastVisitedQuestionId: attempt.lastActiveQuestionId,
-    }),
-    recordEvent({
-      req,
-      eventType: 'ATTEMPT_SUBMITTED',
-      category: 'attempt',
-      quizId: attempt.quizId,
-      attemptId: attempt._id,
-      sessionId: recentSessionId,
-      metadata: {
-        score: attempt.score,
-        percentage: attempt.percentage,
-        totalQuestions: attempt.totalQuestions,
-        sharedSessionId: recentSessionId || null,
-        suspiciousFlagCount: flags.length + (isLateSubmission ? 1 : 0),
-      },
-    }),
-  ]);
+  
   await syncQuizAggregateFields(attempt.quizId);
-  await syncQuestionAnalyticsForQuiz(attempt.quizId);
+  const quiz = await Quiz.findById(attempt.quizId).select('uploader title visibility isPublic');
+  if (req.user?._id && quiz && (quiz.visibility === 'public' || quiz.isPublic === true)) {
+    await recordActivity({
+      actorId: req.user._id,
+      verb: 'quiz_attempted',
+      quizId: quiz._id,
+      notifyRecipientId: quiz.uploader,
+      visibility: 'public',
+      metadata: {
+        percentage: attempt.percentage,
+        score: attempt.score,
+      },
+    });
+  }
 
   res.json({
     success: true,
@@ -950,14 +670,6 @@ const getAttemptResultPayload = async ({ attemptId, req }) => {
     .populate({
       path: 'quizId',
       select: 'title uploader questionCount settings',
-    })
-    .populate({
-      path: 'sharedSessionId',
-      select: 'shareCode participantCount creatorId settings',
-      populate: {
-        path: 'creatorId',
-        select: 'name avatar',
-      },
     });
 
   if (!attempt) {
@@ -976,10 +688,7 @@ const getAttemptResultPayload = async ({ attemptId, req }) => {
   if (!attempt.analytics?.responseSpeed) {
     attempt.analytics = buildAttemptAnalytics({ attempt, questions });
   }
-
-  const sharedSession = attempt.sharedSessionId;
-  const resultsOnly = sharedSession?.settings?.postSubmissionAccess === 'results_only';
-  const canReviewAnswers = !resultsOnly || isSessionCreator(sharedSession, req.user);
+  const canReviewAnswers = true;
 
   return {
     attempt,
@@ -1084,28 +793,13 @@ export const listQuizzes = catchAsync(async (req, res) => {
 
   const [quizzes, total] = await Promise.all([
     Quiz.find(filter)
-      .populate('uploader', 'name username avatar followersCount')
       .sort(sort)
       .skip(skip)
       .limit(limit)
+      .populate('uploader', 'name username avatar')
       .lean(),
     Quiz.countDocuments(filter),
   ]);
-
-  if (search) {
-    await recordSearch({
-      req,
-      query: search,
-      context: 'quiz_search',
-      filters: {
-        category: req.query.category || null,
-        difficulty: req.query.difficulty || null,
-        publicOnly,
-        sort: req.query.sort || 'recent',
-      },
-      resultCount: total,
-    });
-  }
 
   res.json({
     success: true,
@@ -1136,7 +830,6 @@ export const createQuiz = catchAsync(async (req, res) => {
     questionCount: questions.length,
     totalMarks: getQuizTotalMarks(questions),
     isPublic: quizInput.visibility === 'public',
-    shareCode: generateShareCode(),
   });
 
   const createdQuestions = await Question.insertMany(
@@ -1146,17 +839,9 @@ export const createQuiz = catchAsync(async (req, res) => {
     }))
   );
   await syncUserPublicQuizCount(quiz.uploader);
+  await createQuizPublishedActivity({ quiz, actorId: quiz.uploader });
 
-  await recordEvent({
-    req,
-    eventType: 'QUIZ_CREATED',
-    category: 'quiz',
-    quizId: quiz._id,
-    metadata: {
-      questionCount: questions.length,
-      createdManually: true,
-    },
-  });
+  
 
   res.status(201).json({
     success: true,
@@ -1164,6 +849,127 @@ export const createQuiz = catchAsync(async (req, res) => {
       quiz,
       questions: createdQuestions,
     },
+  });
+});
+
+export const saveManualDraft = catchAsync(async (req, res, next) => {
+  const { title, description, questions, isDraft, builderMode = 'exam', contentKind = 'quiz', metadata = {} } = req.body;
+  const allowedContentKinds = ['quiz', 'form', 'coding', 'upload', 'rating', 'survey', 'universal'];
+  const normalizedContentKind = allowedContentKinds.includes(contentKind) ? contentKind : 'quiz';
+  const effectiveDraft = normalizedContentKind === 'quiz' ? Boolean(isDraft) : true;
+
+  if (!title) {
+    return next(new AppError('title is required', 400));
+  }
+  
+  if (!Array.isArray(questions)) {
+    return next(new AppError('questions array is required', 400));
+  }
+
+  if (!effectiveDraft) {
+    const unsupportedQuestion = questions.find((q) => {
+      const questionType = q.questionType || q.type || 'multiple_choice';
+      return !['multiple_choice', 'dropdown'].includes(questionType);
+    });
+
+    if (unsupportedQuestion) {
+      return next(new AppError('Only multiple choice and dropdown questions can be published in quiz mode right now.', 400));
+    }
+
+    const questionMissingAnswer = questions.find((q) => {
+      const options = Array.isArray(q.options) ? q.options : [];
+      const hasMarkedAnswer = options.some((option) => option.isCorrect === true);
+      return !q.correctAnswer && !hasMarkedAnswer;
+    });
+
+    if (questionMissingAnswer) {
+      return next(new AppError('Every published question needs a correct answer.', 400));
+    }
+  }
+
+  const visibility = effectiveDraft ? 'private' : 'public';
+  const uploader = req.user._id;
+  const normalizeManualQuestion = (q, index) => {
+    const questionType = q.questionType || q.type || 'multiple_choice';
+    const optionTypes = ['multiple_choice', 'checkboxes', 'dropdown'];
+    const rawOptions = Array.isArray(q.options) ? q.options : [];
+    const options = optionTypes.includes(questionType)
+      ? rawOptions.map((option, optionIndex) => {
+          const label = String(option.label || String.fromCharCode(65 + optionIndex)).trim().toUpperCase();
+          return {
+            label,
+            text: String(option.text || option.optionText || `Option ${optionIndex + 1}`).trim(),
+            isCorrect: option.isCorrect === true,
+          };
+        }).filter((option) => option.text)
+      : [];
+
+    let correctAnswer = q.correctAnswer ?? q.correctAnswers ?? null;
+    if (optionTypes.includes(questionType)) {
+      const correctLabels = options.filter((option) => option.isCorrect).map((option) => option.label);
+      if (questionType === 'checkboxes') {
+        correctAnswer = Array.isArray(correctAnswer) && correctAnswer.length ? correctAnswer : correctLabels;
+      } else {
+        correctAnswer = Array.isArray(correctAnswer) ? correctAnswer[0] || correctLabels[0] || null : correctAnswer || correctLabels[0] || null;
+      }
+    }
+
+    return {
+      questionNumber: q.questionNumber || index + 1,
+      questionText: String(q.questionText || q.question || `Question ${index + 1}`).trim(),
+      questionType,
+      options,
+      correctAnswer,
+      explanation: String(q.explanation || '').trim(),
+      difficulty: normalizeDifficulty(q.difficulty),
+      category: String(q.category || 'General').trim() || 'General',
+      marks: Number.isFinite(Number(q.marks)) ? Math.max(Number(q.marks), 0) : 1,
+      negativeMarks: Number.isFinite(Number(q.negativeMarks)) ? Math.max(Number(q.negativeMarks), 0) : 0,
+      orderIndex: Number.isFinite(Number(q.orderIndex)) ? Number(q.orderIndex) : index,
+      grid: q.grid
+        ? {
+            rows: q.grid.rows || [],
+            columns: q.grid.columns || q.grid.cols || [],
+          }
+        : undefined,
+      settings: q.settings || {},
+      metadata: q.metadata || {},
+    };
+  };
+
+  const quiz = await Quiz.create({
+    title: String(title).trim(),
+    description: description || '',
+    visibility,
+    isPublic: visibility === 'public',
+    contentKind: effectiveDraft ? normalizedContentKind : 'quiz',
+    builderMode: String(builderMode || 'exam').trim() || 'exam',
+    metadata: {
+      ...metadata,
+      createdWith: 'universal_builder',
+      savedAsDraft: effectiveDraft,
+    },
+    uploader,
+    questionCount: questions.length,
+  });
+
+  if (questions.length > 0) {
+    const questionDocs = questions.map((q, index) => ({
+      ...normalizeManualQuestion(q, index),
+      quizId: quiz._id,
+    }));
+
+    await Question.insertMany(questionDocs);
+  }
+
+  await syncUserPublicQuizCount(uploader);
+  await createQuizPublishedActivity({ quiz, actorId: uploader });
+
+  res.status(201).json({
+    success: true,
+    data: {
+      quizId: quiz._id
+    }
   });
 });
 
@@ -1176,6 +982,7 @@ export const updateQuiz = catchAsync(async (req, res) => {
 
   assertQuizManageAccess(quiz, req);
   const originalUploaderId = quiz.uploader;
+  const wasPublic = quiz.visibility === 'public' || quiz.isPublic === true;
 
   const quizInput = normalizeQuizInput({
     ...quiz.toObject(),
@@ -1204,16 +1011,11 @@ export const updateQuiz = catchAsync(async (req, res) => {
 
   await quiz.save();
   await syncUserPublicQuizCount(originalUploaderId);
-
-  await recordEvent({
-    req,
-    eventType: 'QUIZ_UPDATED',
-    category: 'quiz',
-    quizId: quiz._id,
-    metadata: {
-      fields: Object.keys(req.body || {}),
-    },
-  });
+  const isNowPublic = quiz.visibility === 'public' || quiz.isPublic === true;
+  if (!wasPublic && isNowPublic) {
+    await createQuizPublishedActivity({ quiz, actorId: quiz.uploader });
+  }
+  
 
   res.json({
     success: true,
@@ -1232,30 +1034,12 @@ export const deleteQuiz = catchAsync(async (req, res) => {
 
   assertQuizManageAccess(quiz, req);
 
-  const quizSessions = await QuizSession.find({ quizId: quiz._id }, '_id');
-  const sessionIds = quizSessions.map(s => s._id);
-
-  await Promise.all([
-    Quiz.deleteOne({ _id: quiz._id }),
-    Question.deleteMany({ quizId: quiz._id }),
-    Attempt.deleteMany({ quizId: quiz._id }),
-    QuestionAnalytics.deleteMany({ quizId: quiz._id }),
-    QuizSession.deleteMany({ quizId: quiz._id }),
-    SessionMessage.deleteMany({ sessionId: { $in: sessionIds } }),
-    JoinedSession.deleteMany({ sessionId: { $in: sessionIds } }),
-    Upload.deleteMany({ quizId: quiz._id })
-  ]);
+  await Question.deleteMany({ quizId: quiz._id });
+  await Attempt.deleteMany({ quizId: quiz._id });
+  await deleteQuizSocialData(quiz._id);
+  await quiz.deleteOne();
+  
   await syncUserPublicQuizCount(quiz.uploader);
-
-  await recordEvent({
-    req,
-    eventType: 'QUIZ_DELETED',
-    category: 'quiz',
-    quizId: quiz._id,
-    metadata: {
-      title: quiz.title,
-    },
-  });
 
   res.json({
     success: true,
@@ -1319,7 +1103,7 @@ export const answerAttempt = catchAsync(async (req, res) => {
         visitTimestamps: req.body.visitTimestamps,
         submittedAt: req.body.answeredAt || req.body.answered_at || new Date().toISOString(),
         submissionTimestamps: req.body.submissionTimestamps,
-        isLocked: attempt.isQuickMode || req.body.locked === true,
+        isLocked: attempt.isQuickMode || attempt.instantFeedback || req.body.locked === true,
         lockedAt: req.body.lockedAt || req.body.locked_at,
         lastClientUpdatedAt: req.body.clientTimestamp || new Date().toISOString(),
       }],
@@ -1329,27 +1113,7 @@ export const answerAttempt = catchAsync(async (req, res) => {
 
   attempt.syncStatus = 'synced';
   await attempt.save();
-  await Promise.all([
-    recordAnswerChanges({ req, attempt, changes: answerChanges, source: 'answer' }),
-    upsertRecentQuiz({
-      req,
-      quizId: attempt.quizId,
-      attempt,
-      lastVisitedQuestionId: attempt.lastActiveQuestionId,
-    }),
-    recordEvent({
-      req,
-      eventType: 'ANSWER_SELECTED',
-      category: 'answer',
-      quizId: attempt.quizId,
-      attemptId: attempt._id,
-      questionId,
-      metadata: {
-        selectedAnswer: req.body.selectedAnswer || null,
-        suspiciousFlagCount: flags.length,
-      },
-    }),
-  ]);
+  
 
   res.json({
     success: true,
@@ -1394,28 +1158,7 @@ export const syncAttemptTime = catchAsync(async (req, res) => {
 
   attempt.syncStatus = 'synced';
   await attempt.save();
-  await Promise.all([
-    recordAnswerChanges({ req, attempt, changes: answerChanges, source: 'sync' }),
-    upsertRecentQuiz({
-      req,
-      quizId: attempt.quizId,
-      attempt,
-      lastVisitedQuestionId: attempt.lastActiveQuestionId,
-    }),
-    recordEvent({
-      req,
-      eventType: 'ATTEMPT_TIME_SYNCED',
-      category: 'attempt',
-      quizId: attempt.quizId,
-      attemptId: attempt._id,
-      questionId: attempt.lastActiveQuestionId,
-      metadata: {
-        totalTimeMs: attempt.totalTimeMs,
-        progress: attempt.progress,
-        suspiciousFlagCount: flags.length,
-      },
-    }),
-  ]);
+  
 
   res.json({
     success: true,
@@ -1444,7 +1187,6 @@ export const getInProgressAttempts = catchAsync(async (req, res) => {
     .sort({ updatedAt: -1 })
     .limit(Math.min(limit, 50))
     .populate('quizId', 'title questionCount settings')
-    .populate('sharedSessionId', 'shareCode participantCount creatorId')
     .lean();
 
   res.status(200).json({
@@ -1463,9 +1205,6 @@ export const submitAttemptById = catchAsync(async (req, res) => {
   }
 
   assertAttemptWriteAccess(attempt, req);
-
-  const sharedSession = await resolveSharedSessionContext(req, attempt.quizId);
-  const recentSessionId = applySharedSessionContext(attempt, sharedSession) || attempt.sharedSessionId;
   const questions = await getQuizQuestionsSorted(attempt.quizId);
 
   if (attempt.status !== 'completed') {
@@ -1477,32 +1216,22 @@ export const submitAttemptById = catchAsync(async (req, res) => {
     });
 
     await attempt.save();
-    await Promise.all([
-      recordAnswerChanges({ req, attempt, changes: answerChanges, source: 'submit' }),
-      upsertRecentQuiz({
-        req,
-        quizId: attempt.quizId,
-        attempt,
-        sessionId: recentSessionId,
-        lastVisitedQuestionId: attempt.lastActiveQuestionId,
-      }),
-      recordEvent({
-        req,
-        eventType: 'ATTEMPT_SUBMITTED',
-        category: 'attempt',
-        quizId: attempt.quizId,
-        attemptId: attempt._id,
-        sessionId: recentSessionId,
-        metadata: {
-          score: attempt.score,
-          percentage: attempt.percentage,
-          totalQuestions: attempt.totalQuestions,
-          sharedSessionId: recentSessionId || null,
-        },
-      }),
-    ]);
+    
     await syncQuizAggregateFields(attempt.quizId);
-    await syncQuestionAnalyticsForQuiz(attempt.quizId);
+    const quiz = await Quiz.findById(attempt.quizId).select('uploader visibility isPublic');
+    if (req.user?._id && quiz && (quiz.visibility === 'public' || quiz.isPublic === true)) {
+      await recordActivity({
+        actorId: req.user._id,
+        verb: 'quiz_attempted',
+        quizId: quiz._id,
+        notifyRecipientId: quiz.uploader,
+        visibility: 'public',
+        metadata: {
+          percentage: attempt.percentage,
+          score: attempt.score,
+        },
+      });
+    }
   }
 
   res.json({
@@ -1521,8 +1250,7 @@ export const getAttemptById = catchAsync(async (req, res) => {
     .populate({
       path: 'quizId',
       select: 'title uploader questionCount totalMarks settings',
-    })
-    .populate('sharedSessionId', 'shareCode participantCount creatorId');
+    });
 
   if (!attempt) {
     throw new AppError('Attempt not found', 404);
@@ -1566,7 +1294,6 @@ export const getQuizAnalytics = catchAsync(async (req, res, next) => {
     getQuizQuestionsSorted(quiz._id).then((docs) => docs.map((doc) => doc.toObject())),
     Attempt.find({ quizId: quiz._id, status: 'completed' }).lean(),
   ]);
-
   const analytics = buildQuizAnalytics({
     quiz,
     questions,
@@ -1621,8 +1348,7 @@ export const getQuizAttempts = catchAsync(async (req, res, next) => {
   const attempts = await Attempt.find(matchCondition)
     .sort(sortOption)
     .skip(skip)
-    .limit(limit)
-    .populate('sharedSessionId', 'shareCode participantCount creatorId');
+    .limit(limit);
 
   const total = await Attempt.countDocuments(matchCondition);
 
@@ -1640,46 +1366,7 @@ export const getQuizAttempts = catchAsync(async (req, res, next) => {
   });
 });
 
-export const getQuestionAnalytics = catchAsync(async (req, res) => {
-  const question = await Question.findById(req.params.id);
 
-  if (!question) {
-    throw new AppError('Question not found', 404);
-  }
-
-  const quiz = await Quiz.findById(question.quizId);
-
-  if (!quiz) {
-    throw new AppError('Quiz not found', 404);
-  }
-
-  await assertQuizReadAccess(quiz, req);
-
-  let analytics = await QuestionAnalytics.findOne({ questionId: question._id }).lean();
-
-  if (!analytics) {
-    await syncQuestionAnalyticsForQuiz(question.quizId);
-    analytics = await QuestionAnalytics.findOne({ questionId: question._id }).lean();
-  }
-
-  res.json({
-    success: true,
-    data: {
-      question,
-      analytics: analytics || {
-        questionId: question._id,
-        quizId: question.quizId,
-        totalAttempts: 0,
-        correctAttempts: 0,
-        wrongAttempts: 0,
-        skippedAttempts: 0,
-        avgTimeTaken: 0,
-        accuracyPercentage: 0,
-        wrongAnswerFrequency: {},
-      },
-    },
-  });
-});
 
 export const getUserAnalytics = catchAsync(async (req, res) => {
   const userId = req.params.id;

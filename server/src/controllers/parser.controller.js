@@ -9,11 +9,6 @@ import { parseCsv } from '../services/parser/csvParser.js';
 import { parseJson } from '../services/parser/jsonParser.js';
 import { smartMapColumns } from '../services/parser/smartColumnMapper.js';
 import { logger } from '../utils/logger.js';
-import {
-  recordEvent,
-  recordMappingConfig,
-} from '../services/activity/activity.service.js';
-
 /**
  * Get the right parser for a file type.
  */
@@ -40,6 +35,11 @@ export const parseFile = catchAsync(async (req, res, next) => {
 
   if (!upload) {
     return next(new AppError('Upload not found', 404));
+  }
+
+  // Only owner can parse, unless it's a guest upload
+  if (upload.userId && req.user && upload.userId.toString() !== req.user._id.toString()) {
+    return next(new AppError('Not authorized to parse this upload', 403));
   }
 
   upload.status = 'parsing';
@@ -82,20 +82,6 @@ export const parseFile = catchAsync(async (req, res, next) => {
     ];
     await upload.save();
 
-    await recordEvent({
-      req,
-      eventType: 'FILE_PARSED',
-      category: 'parser',
-      uploadId: upload._id,
-      metadata: {
-        originalName: upload.originalName,
-        headerCount: headers.length,
-        rowCount: rows.length,
-        sheetNames: sheetNames || [],
-        confidence: autoMapping.overallConfidence,
-      },
-    });
-
     logger.info(`File parsed: ${upload.originalName} → ${headers.length} cols, ${rows.length} rows`);
 
     res.json({
@@ -124,16 +110,6 @@ export const parseFile = catchAsync(async (req, res, next) => {
       },
     ];
     await upload.save();
-    await recordEvent({
-      req,
-      eventType: 'FILE_PARSE_FAILED',
-      category: 'parser',
-      uploadId: upload._id,
-      metadata: {
-        originalName: upload.originalName,
-        error: error.message,
-      },
-    });
     return next(new AppError(`Parsing failed: ${error.message}`, 422));
   }
 });
@@ -147,6 +123,11 @@ export const applyMapping = catchAsync(async (req, res, next) => {
 
   if (!upload) {
     return next(new AppError('Upload not found', 404));
+  }
+
+  // Only owner can apply mapping, unless it's a guest upload
+  if (upload.userId && req.user && upload.userId.toString() !== req.user._id.toString()) {
+    return next(new AppError('Not authorized to modify this upload', 403));
   }
 
   if (!upload.parsedData || !upload.parsedData.headers) {
@@ -183,13 +164,6 @@ export const applyMapping = catchAsync(async (req, res, next) => {
     },
   ];
   await upload.save();
-  await recordMappingConfig({
-    req,
-    upload,
-    mappedColumns: upload.columnMapping,
-    source: 'manual',
-  });
-
   res.json({
     success: true,
     message: 'Column mapping applied successfully',
@@ -209,6 +183,11 @@ export const getPreview = catchAsync(async (req, res, next) => {
 
   if (!upload) {
     return next(new AppError('Upload not found', 404));
+  }
+
+  // Only owner can view preview, unless it's a guest upload
+  if (upload.userId && req.user && upload.userId.toString() !== req.user._id.toString()) {
+    return next(new AppError('Not authorized to view this upload', 403));
   }
 
   if (!upload.parsedData) {

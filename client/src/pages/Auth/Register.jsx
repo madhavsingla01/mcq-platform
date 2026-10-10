@@ -40,9 +40,9 @@ export default function Register() {
           <p className="qf-auth-subtitle">Get started with QuizFocus for free</p>
           {error && <div className="qf-auth-error">{error}</div>}
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <Input label="Full Name" type="text" value={name} onChange={e => setName(e.target.value)} required />
-            <Input label="Email Address" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
-            <Input label="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+            <Input label="Full Name" type="text" autoComplete="name" value={name} onChange={e => setName(e.target.value)} required />
+            <Input label="Email Address" type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required />
+            <Input label="Password" type="password" autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} required />
             <Button type="submit" disabled={loading} style={{ marginTop: 8, width: '100%' }}>
               {loading ? 'Creating account...' : 'Sign Up'}
             </Button>

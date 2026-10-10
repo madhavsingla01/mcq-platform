@@ -1,5 +1,4 @@
 import { Badge, Button, Card } from '../ui';
-import { getSelectedShareSettings } from '../../utils/shareSettings';
 
 export default function QuizEntryScreen({
   quiz,
@@ -7,7 +6,6 @@ export default function QuizEntryScreen({
   isStarted,
   isSubmitted,
   recoveryNotice = '',
-  collaboration = null,
   actionsExtra = null,
   onStart,
   onResume,
@@ -15,16 +13,6 @@ export default function QuizEntryScreen({
 }) {
   const questionCount = questions.length || quiz?.questionCount || 0;
   const timeLimit = quiz?.settings?.timeLimit;
-  const participantCount = Number(collaboration?.participantCount || 0);
-  const creatorName = collaboration?.creatorName || '';
-  const shareSettings = collaboration?.settings || null;
-  const selectedShareSettings = shareSettings ? getSelectedShareSettings(shareSettings) : [];
-  const showParticipantCount = shareSettings?.participantVisibility !== 'hidden';
-  const chatLabel = shareSettings?.chatSettings === 'disabled'
-    ? 'Chat Disabled'
-    : shareSettings?.chatSettings === 'read_only'
-      ? 'Announcements'
-      : 'Live Chat';
 
   return (
     <>
@@ -37,17 +25,6 @@ export default function QuizEntryScreen({
                 <Badge variant="warning">
                   {timeLimit ? `${timeLimit} min limit` : 'No time limit'}
                 </Badge>
-                {collaboration ? (
-                  <>
-                    {showParticipantCount ? (
-                      <Badge>
-                        <span className="material-symbols-outlined quiz-entry-badge-icon">group</span>
-                        {participantCount} participant{participantCount === 1 ? '' : 's'}
-                      </Badge>
-                    ) : null}
-                    {creatorName ? <Badge>Created by {creatorName}</Badge> : null}
-                  </>
-                ) : null}
               </div>
               <h1 className="quiz-entry-title">{quiz?.title}</h1>
               <p className="quiz-entry-description">
@@ -80,24 +57,9 @@ export default function QuizEntryScreen({
                     <span>Recovery</span>
                     <strong>Auto Resume</strong>
                   </div>
-                  {collaboration ? (
-                    <div className="quiz-entry-stat">
-                      <span>Workspace</span>
-                      <strong>{chatLabel}</strong>
-                    </div>
-                  ) : null}
                 </div>
 
-                {selectedShareSettings.length ? (
-                  <div className="quiz-entry-share-settings">
-                    {selectedShareSettings.map(({ label, option }) => (
-                      <div key={label} className="quiz-entry-share-row">
-                        <span>{label}</span>
-                        <strong>{option.title}</strong>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
+
 
                 {recoveryNotice ? (
                   <div className="quiz-status-banner info">{recoveryNotice}</div>
@@ -341,9 +303,21 @@ const quizEntryScreenStyles = `
   }
 
   @media (max-width: 768px) {
+    .quiz-entry-shell {
+      padding: 16px 8px;
+    }
+
     .quiz-entry-hero,
     .quiz-entry-body {
-      padding: 24px 20px;
+      padding: 20px 16px;
+    }
+
+    .quiz-entry-title {
+      font-size: 22px !important;
+    }
+
+    .quiz-entry-description {
+      font-size: 14px;
     }
 
     .quiz-entry-grid,
@@ -351,8 +325,40 @@ const quizEntryScreenStyles = `
       grid-template-columns: 1fr;
     }
 
+    .quiz-entry-share-settings {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .quiz-entry-stat {
+      padding: 12px;
+    }
+
+    .quiz-entry-stat strong {
+      font-size: 15px;
+    }
+
+    .quiz-entry-badges {
+      flex-wrap: wrap;
+    }
+
     .entry-actions {
       border-left: none;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .quiz-entry-hero,
+    .quiz-entry-body {
+      padding: 16px 12px;
+    }
+
+    .quiz-entry-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .quiz-entry-share-settings {
+      grid-template-columns: 1fr;
     }
   }
 `;

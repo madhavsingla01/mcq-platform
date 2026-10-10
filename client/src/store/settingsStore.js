@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import api from '../api/axios';
 
 const SETTINGS_PREFS_KEY = 'mcq.settings.preferences.v1';
+const AUTH_SESSION_HINT_KEY = 'mcq.auth.has-session.v2';
 
 const isBrowser = typeof window !== 'undefined';
 
@@ -24,13 +25,17 @@ const savePrefs = (prefs) => {
   }
 };
 
+const shouldPersistToServer = () => {
+  if (!isBrowser) return false;
+  return localStorage.getItem(AUTH_SESSION_HINT_KEY) === 'true';
+};
+
 const savedPrefs = loadPrefs();
 
 const persistState = (state) => {
   savePrefs({
     fontSize: state.fontSize,
     density: state.density,
-    timerVisibility: state.timerVisibility,
     timerVisibility: state.timerVisibility,
     isNavigatorCollapsed: state.isNavigatorCollapsed,
     isAICollapsed: state.isAICollapsed,
@@ -47,7 +52,6 @@ const persistState = (state) => {
       fontSize: state.fontSize,
       density: state.density,
       timerVisibility: state.timerVisibility,
-      timerVisibility: state.timerVisibility,
       isNavigatorCollapsed: state.isNavigatorCollapsed,
       isAICollapsed: state.isAICollapsed,
       panelWidths: state.panelWidths,
@@ -57,8 +61,9 @@ const persistState = (state) => {
       aiExplanations: state.aiExplanations,
       aiPersonality: state.aiPersonality,
     };
-    // fire-and-forget; server will reject if unauthenticated
-    api.patch('/auth/me', { preferences: prefs }).catch(() => {});
+    if (shouldPersistToServer()) {
+      api.patch('/auth/me', { preferences: prefs }).catch(() => {});
+    }
   } catch (e) {
     // ignore errors
   }
@@ -73,7 +78,6 @@ const hydrateServerPreferences = (prefs) => {
   const updates = {};
   if (prefs.fontSize !== undefined) updates.fontSize = prefs.fontSize;
   if (prefs.density !== undefined) updates.density = prefs.density;
-  if (prefs.timerVisibility !== undefined) updates.timerVisibility = prefs.timerVisibility;
   if (prefs.timerVisibility !== undefined) updates.timerVisibility = prefs.timerVisibility;
   if (prefs.isNavigatorCollapsed !== undefined) updates.isNavigatorCollapsed = prefs.isNavigatorCollapsed;
   if (prefs.isAICollapsed !== undefined) updates.isAICollapsed = prefs.isAICollapsed;
@@ -99,7 +103,6 @@ export const useSettingsStore = create((set, get) => ({
   fontSize: savedPrefs.fontSize ?? 'md', // 'sm' | 'md' | 'lg'
   density: savedPrefs.density ?? 'comfortable', // 'comfortable' | 'compact'
   timerVisibility: savedPrefs.timerVisibility ?? 'visible', // 'visible' | 'hidden'
-  timerVisibility: savedPrefs.timerVisibility ?? 'visible', // 'visible' | 'hidden'
   // Collapsed panel states
   isNavigatorCollapsed: savedPrefs.isNavigatorCollapsed ?? false,
   isAICollapsed: savedPrefs.isAICollapsed ?? false,
@@ -122,17 +125,10 @@ export const useSettingsStore = create((set, get) => ({
   setFontSize: (size) => {
     set({ fontSize: size });
     persistState(get());
-    api.post('/activity/events', { eventType: 'FONT_SIZE_CHANGED', category: 'settings', metadata: { fontSize: size } }).catch(() => {});
   },
 
   setDensity: (density) => {
     set({ density });
-    persistState(get());
-    api.post('/activity/events', { eventType: 'DENSITY_CHANGED', category: 'settings', metadata: { density } }).catch(() => {});
-  },
-
-  setTimerVisibility: (visibility) => {
-    set({ timerVisibility: visibility });
     persistState(get());
   },
 
@@ -181,7 +177,6 @@ export const useSettingsStore = create((set, get) => ({
       // We want to collapse when not bothCollapsed, expand when bothCollapsed
       const collapse = !bothCollapsed;
       persistState({ ...get(), isNavigatorCollapsed: collapse, isAICollapsed: collapse });
-      api.post('/activity/events', { eventType: 'PANELS_TOGGLED', category: 'settings', metadata: { collapsed: collapse } }).catch(() => {});
       return { isNavigatorCollapsed: collapse, isAICollapsed: collapse };
     });
   },
@@ -189,7 +184,6 @@ export const useSettingsStore = create((set, get) => ({
   setKeyboardShortcutsEnabled: (enabled) => {
     set({ keyboardShortcutsEnabled: enabled });
     persistState(get());
-    api.post('/activity/events', { eventType: 'KEYBOARD_SHORTCUTS_TOGGLED', category: 'settings', metadata: { enabled } }).catch(() => {});
   },
 
   setShowCorrectAnswerInstantly: (enabled) => {

@@ -7,15 +7,12 @@ import User from '../models/User.model.js';
 import Quiz from '../models/Quiz.model.js';
 import Question from '../models/Question.model.js';
 import Attempt from '../models/Attempt.model.js';
-import QuestionAnalytics from '../models/QuestionAnalytics.model.js';
-import QuizSession from '../models/QuizSession.model.js';
-import SessionMessage from '../models/SessionMessage.model.js';
-import JoinedSession from '../models/JoinedSession.model.js';
 import Upload from '../models/Upload.model.js';
 import Follow from '../models/Follow.model.js';
 import env from '../config/env.js';
 import { AppError, catchAsync } from '../middleware/error.middleware.js';
-import { recordEvent } from '../services/activity/activity.service.js';
+import { clearCsrfCookie, setCsrfCookie } from '../middleware/csrf.middleware.js';
+import { deleteQuizSocialData, deleteUserSocialData } from '../services/social/activity.service.js';
 
 const authCookieOptions = {
   httpOnly: true,
@@ -27,6 +24,7 @@ const authCookieOptions = {
 const clearAuthCookies = (res) => {
   res.clearCookie('accessToken', authCookieOptions);
   res.clearCookie('refreshToken', authCookieOptions);
+  clearCsrfCookie(res);
 };
 
 /**
@@ -49,6 +47,8 @@ const generateTokens = (user, res) => {
     ...authCookieOptions,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
+
+  setCsrfCookie(res);
 
   return { accessToken, refreshToken };
 };
@@ -81,6 +81,62 @@ const generateUniqueUsername = async (name) => {
 };
 
 /**
+ * GET /api/auth/bootstrap
+ * Returns the current session state without using 401 for anonymous users.
+ */
+export const bootstrapSession = catchAsync(async (req, res) => {
+  const accessToken = req.cookies?.accessToken;
+
+  if (accessToken) {
+    try {
+      const decoded = jwt.verify(accessToken, env.JWT_SECRET);
+      const user = await User.findById(decoded.id).select('-password -refreshToken');
+
+      if (user) {
+        setCsrfCookie(res);
+        return res.json({
+          success: true,
+          data: { authenticated: true, user },
+        });
+      }
+    } catch {
+      // Fall through to refresh-token bootstrap.
+    }
+  }
+
+  const token = req.cookies?.refreshToken;
+
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, env.JWT_REFRESH_SECRET);
+      const user = await User.findById(decoded.id).select('+refreshToken');
+
+      if (user && user.refreshToken === token) {
+        const { refreshToken } = generateTokens(user, res);
+        user.refreshToken = refreshToken;
+        await user.save({ validateBeforeSave: false });
+
+        user.password = undefined;
+        user.refreshToken = undefined;
+
+        return res.json({
+          success: true,
+          data: { authenticated: true, user },
+        });
+      }
+    } catch {
+      // Anonymous response below is intentional for expired sessions.
+    }
+  }
+
+  clearAuthCookies(res);
+  return res.json({
+    success: true,
+    data: { authenticated: false, user: null },
+  });
+});
+
+/**
  * POST /api/auth/register
  */
 export const register = catchAsync(async (req, res, next) => {
@@ -101,12 +157,7 @@ export const register = catchAsync(async (req, res, next) => {
   // Store refresh token
   user.refreshToken = refreshToken;
   await user.save({ validateBeforeSave: false });
-  await recordEvent({
-    req,
-    eventType: 'USER_REGISTERED',
-    category: 'auth',
-    userId: user._id,
-  });
+
 
   res.status(201).json({
     success: true,
@@ -139,12 +190,7 @@ export const login = catchAsync(async (req, res, next) => {
 
   user.refreshToken = refreshToken;
   await user.save({ validateBeforeSave: false });
-  await recordEvent({
-    req,
-    eventType: 'USER_LOGGED_IN',
-    category: 'auth',
-    userId: user._id,
-  });
+
 
   // Remove password from response
   user.password = undefined;
@@ -174,12 +220,7 @@ export const logout = catchAsync(async (req, res) => {
   }
 
   clearAuthCookies(res);
-  await recordEvent({
-    req,
-    eventType: 'USER_LOGGED_OUT',
-    category: 'auth',
-    userId: req.user?._id || null,
-  });
+
 
   res.json({
     success: true,
@@ -286,8 +327,14 @@ export const updateMe = catchAsync(async (req, res, next) => {
   if (updates.address !== undefined && typeof updates.address === 'object') user.address = updates.address;
   if (updates.bio !== undefined) user.bio = updates.bio;
   if (updates.isProfilePublic !== undefined) user.isProfilePublic = updates.isProfilePublic;
-  if (updates.socialLinks !== undefined && typeof updates.socialLinks === 'object') {
-    user.socialLinks = { ...(user.socialLinks || {}), ...updates.socialLinks };
+  if (updates.socialLinks !== undefined && Array.isArray(updates.socialLinks)) {
+    user.socialLinks = updates.socialLinks
+      .map((link) => ({
+        platform: String(link.platform || 'Website').trim().slice(0, 40),
+        url: String(link.url || '').trim().slice(0, 500),
+      }))
+      .filter((link) => link.url)
+      .slice(0, 12);
   }
 
   if (updates.preferences !== undefined && typeof updates.preferences === 'object') {
@@ -299,16 +346,6 @@ export const updateMe = catchAsync(async (req, res, next) => {
   }
 
   await user.save({ validateBeforeSave: true });
-  await recordEvent({
-    req,
-    eventType: updates.preferences ? 'USER_PREFERENCES_UPDATED' : 'USER_PROFILE_UPDATED',
-    category: updates.preferences ? 'settings' : 'auth',
-    userId: req.user._id,
-    metadata: {
-      fields: Object.keys(updates),
-      preferences: updates.preferences || undefined,
-    },
-  });
   // Ensure sensitive fields are not returned
   user.password = undefined;
   user.refreshToken = undefined;
@@ -322,42 +359,30 @@ export const deleteAccount = catchAsync(async (req, res, next) => {
   // 1. Find all quizzes created by the user
   const quizzes = await Quiz.find({ uploader: userId }, '_id');
   const quizIds = quizzes.map(q => q._id);
-
-  // 2. Find all sessions created for these quizzes
-  const quizSessions = await QuizSession.find({ quizId: { $in: quizIds } }, '_id');
-  const sessionIds = quizSessions.map(s => s._id);
-  const followDocs = await Follow.find({
-    $or: [{ follower: userId }, { following: userId }],
-  }, 'follower following').lean();
-  const affectedFollowUserIds = [
-    ...new Set(
-      followDocs
-        .flatMap((follow) => [follow.follower?.toString(), follow.following?.toString()])
-        .filter((id) => id && id !== userId.toString())
-    ),
-  ];
+  const [followingEdges, followerEdges] = await Promise.all([
+    Follow.find({ follower: userId }).select('following').lean(),
+    Follow.find({ following: userId }).select('follower').lean(),
+  ]);
+  const followingIds = followingEdges.map((edge) => edge.following);
+  const followerIds = followerEdges.map((edge) => edge.follower);
 
   // 3. Delete everything cascaded
   await Promise.all([
+    ...quizIds.map((quizId) => deleteQuizSocialData(quizId)),
+    deleteUserSocialData(userId),
+    Follow.deleteMany({ $or: [{ follower: userId }, { following: userId }] }),
+    followingIds.length
+      ? User.updateMany({ _id: { $in: followingIds } }, { $inc: { followersCount: -1 } })
+      : Promise.resolve(),
+    followerIds.length
+      ? User.updateMany({ _id: { $in: followerIds } }, { $inc: { followingCount: -1 } })
+      : Promise.resolve(),
     Quiz.deleteMany({ uploader: userId }),
     Question.deleteMany({ quizId: { $in: quizIds } }),
     Attempt.deleteMany({ userId: userId }),
-    QuestionAnalytics.deleteMany({ quizId: { $in: quizIds } }),
-    QuizSession.deleteMany({ quizId: { $in: quizIds } }),
-    SessionMessage.deleteMany({ $or: [{ sessionId: { $in: sessionIds } }, { senderId: userId }] }),
-    JoinedSession.deleteMany({ $or: [{ sessionId: { $in: sessionIds } }, { userId: userId }] }),
     Upload.deleteMany({ userId: userId }),
-    Follow.deleteMany({ $or: [{ follower: userId }, { following: userId }] }),
     User.deleteOne({ _id: userId })
   ]);
-
-  await Promise.all(affectedFollowUserIds.map(async (affectedUserId) => {
-    const [followersCount, followingCount] = await Promise.all([
-      Follow.countDocuments({ following: affectedUserId }),
-      Follow.countDocuments({ follower: affectedUserId }),
-    ]);
-    return User.findByIdAndUpdate(affectedUserId, { followersCount, followingCount });
-  }));
 
   clearAuthCookies(res);
 
@@ -426,4 +451,15 @@ export const searchUsers = async (req, res, next) => {
   }
 };
 
-export default { register, login, logout, refresh, getMe, updateMe, deleteAccount, checkUsername, searchUsers };
+export default {
+  bootstrapSession,
+  register,
+  login,
+  logout,
+  refresh,
+  getMe,
+  updateMe,
+  deleteAccount,
+  checkUsername,
+  searchUsers,
+};

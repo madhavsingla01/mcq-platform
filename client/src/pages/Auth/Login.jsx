@@ -40,8 +40,8 @@ export default function Login() {
           <p className="qf-auth-subtitle">Sign in to access your quizzes and results</p>
           {error && <div className="qf-auth-error">{error}</div>}
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <Input label="Email Address" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
-            <Input label="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+            <Input label="Email Address" type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required />
+            <Input label="Password" type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} required />
             <Button type="submit" disabled={loading} style={{ marginTop: 8, width: '100%' }}>
               {loading ? 'Logging in...' : 'Login'}
             </Button>

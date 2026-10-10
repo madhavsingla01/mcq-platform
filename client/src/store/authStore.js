@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import api, { AUTH_SESSION_EXPIRED_EVENT } from '../api/axios';
 import { hydrateServerPreferences } from './settingsStore';
 
-const SESSION_HINT_KEY = 'mcq.auth.has-session.v1';
-const SESSION_CHECKED_KEY = 'mcq.auth.session-checked.v1';
+const SESSION_HINT_KEY = 'mcq.auth.has-session.v2';
+const SESSION_CHECKED_KEY = 'mcq.auth.session-checked.v2';
 
 let checkAuthPromise = null;
 
@@ -62,27 +62,20 @@ export const useAuthStore = create((set) => ({
       set({ isLoading: true });
 
       try {
-        const { data } = await api.get('/auth/me', { skipAuthRefresh: true });
-        setSessionHint();
-        set({ user: data.data.user, isAuthenticated: true, isLoading: false });
-        hydrateServerPreferences(data.data.user?.preferences);
-        return data;
-      } catch (error) {
-        if (error.response?.status === 401) {
-          try {
-            await api.post('/auth/refresh', {}, { skipAuthRefresh: true });
-            const { data } = await api.get('/auth/me', { skipAuthRefresh: true });
-            setSessionHint();
-            set({ user: data.data.user, isAuthenticated: true, isLoading: false });
-            hydrateServerPreferences(data.data.user?.preferences);
-            return data;
-          } catch {
-            clearSessionHint();
-            set(unauthenticatedState);
-            return null;
-          }
+        const { data } = await api.get('/auth/bootstrap', { skipAuthRefresh: true });
+        const user = data.data?.authenticated ? data.data.user : null;
+
+        if (!user) {
+          clearSessionHint();
+          set(unauthenticatedState);
+          return null;
         }
 
+        setSessionHint();
+        set({ user, isAuthenticated: true, isLoading: false });
+        hydrateServerPreferences(user?.preferences);
+        return data;
+      } catch (error) {
         clearSessionHint();
         set(unauthenticatedState);
         return null;
