@@ -1,0 +1,180 @@
+import { useMemo, useState } from 'react';
+import SubmitConfirmationModal from '../../quiz/SubmitConfirmationModal';
+import QuizTimer from '../../quiz/QuizTimer';
+import { CheckCircle, Settings } from 'lucide-react';
+import { useQuizStore } from '../../../store/quizStore';
+import { useSettingsStore } from '../../../store/settingsStore';
+import { getGuestSessionId } from '../../../utils/quizSession';
+import api from '../../../api/axios';
+import { showCustomDialog, toast } from '../../ui';
+
+export default function TopNavbar() {
+  const { questions, answers, submitAttempt, submitting, isSubmitted } = useQuizStore();
+  const { toggleDrawer } = useSettingsStore();
+
+  const answeredCount = useMemo(
+    () => questions.filter((q) => Boolean(answers[q._id]?.selectedAnswer)).length,
+    [answers, questions]
+  );
+
+  const [localSubmitting, setLocalSubmitting] = useState(false);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+
+  const handleSubmitClick = () => {
+    if (localSubmitting || submitting || isSubmitted) return;
+    setShowSubmitModal(true);
+  };
+
+  const handleConfirmSubmit = async () => {
+    setShowSubmitModal(false);
+    if (typeof submitAttempt === 'function') {
+      try { submitAttempt(); } catch {}
+      return;
+    }
+    const attemptId = useQuizStore.getState().attemptId;
+    const currentQuiz = useQuizStore.getState().quiz;
+    if (!attemptId || !currentQuiz?._id) return;
+    try {
+      setLocalSubmitting(true);
+      await useQuizStore.getState().syncWithBackend({ force: true });
+      const sharedSessionId = useQuizStore.getState().sharedSessionId;
+      const payload = {
+        ...useQuizStore.getState().getSubmitPayload(),
+        ...(sharedSessionId ? { sharedSessionId } : {}),
+      };
+      const sessionId = useQuizStore.getState().sessionId || getGuestSessionId();
+      const response = await api.put(
+        `/quiz/${currentQuiz._id}/attempt/${attemptId}`,
+        payload,
+        { headers: { 'x-quiz-session-id': sessionId, ...(sharedSessionId ? { 'x-shared-session-id': sharedSessionId } : {}) } }
+      );
+      useQuizStore.getState().setResult(response.data.data);
+      window.location.href = `/result/${attemptId}`;
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || 'Failed to submit quiz. Please check your network connection.';
+      toast.error('Submission Error', { description: errorMsg });
+      setLocalSubmitting(false);
+    }
+  };
+
+  return (
+    <>
+      <header className="ws-navbar-minimal">
+        <div className="ws-nav-meta-minimal">
+          Question {(useQuizStore.getState().currentIndex || 0) + 1} of {questions.length}
+        </div>
+
+        <div className="ws-nav-actions-minimal">
+          <QuizTimer compact onExpired={handleConfirmSubmit} />
+
+          <button className="ws-settings-btn" onClick={toggleDrawer} title="Settings" type="button">
+            <Settings className="w-5 h-5" />
+          </button>
+          
+          <button
+            onClick={handleSubmitClick}
+            disabled={submitting || localSubmitting || isSubmitted}
+            className="ws-submit-btn-minimal"
+            type="button"
+          >
+            {submitting || localSubmitting ? 'Submitting...' : 'Submit'}
+            {!submitting && !localSubmitting && <CheckCircle className="w-4 h-4 opacity-70" />}
+          </button>
+        </div>
+      </header>
+
+      <SubmitConfirmationModal
+        isOpen={showSubmitModal}
+        answeredCount={answeredCount}
+        totalQuestions={questions.length}
+        onConfirm={handleConfirmSubmit}
+        onCancel={() => setShowSubmitModal(false)}
+      />
+
+      <style>{`
+        .ws-navbar-minimal {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: max(14px, env(safe-area-inset-top, 14px)) 24px 14px;
+          background: transparent;
+          border-bottom: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+          z-index: 50;
+        }
+
+        .ws-nav-meta-minimal {
+          font-size: 15px;
+          font-weight: 700;
+          color: var(--color-text, #EDEFF1);
+          letter-spacing: -0.01em;
+        }
+
+        .ws-nav-actions-minimal {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .ws-settings-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 38px;
+          height: 38px;
+          border-radius: var(--radius-control, 8px);
+          corner-shape: squircle;
+          border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+          background: var(--color-surface, rgba(255, 255, 255, 0.04));
+          color: var(--color-text-secondary, #94a3b8);
+          cursor: pointer;
+          touch-action: manipulation;
+          transition: background-color var(--duration-tap) var(--ease-out), color var(--duration-tap) var(--ease-out), transform var(--duration-tap) var(--ease-out);
+        }
+
+        .ws-settings-btn:active {
+          transform: scale(0.96);
+        }
+
+        @media (hover: hover) and (pointer: fine) {
+          .ws-settings-btn:hover {
+            background: var(--color-surface-hover, rgba(255, 255, 255, 0.08));
+            color: var(--color-text, #ffffff);
+          }
+        }
+
+        .ws-submit-btn-minimal {
+          height: 38px;
+          padding: 0 20px;
+          border-radius: var(--radius-control, 8px);
+          corner-shape: squircle;
+          border: none;
+          background: var(--color-primary, #FF4500);
+          color: #fff;
+          font-size: 14px;
+          font-weight: 700;
+          cursor: pointer;
+          touch-action: manipulation;
+          transition: background-color var(--duration-tap) var(--ease-out), opacity var(--duration-tap) var(--ease-out), transform var(--duration-tap) var(--ease-out);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .ws-submit-btn-minimal:active:not(:disabled) {
+          transform: scale(0.97);
+        }
+
+        @media (hover: hover) and (pointer: fine) {
+          .ws-submit-btn-minimal:hover:not(:disabled) {
+            background: var(--color-primary-hover, #FF5714);
+          }
+        }
+        
+        .ws-submit-btn-minimal:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      `}</style>
+    </>
+  );
+}

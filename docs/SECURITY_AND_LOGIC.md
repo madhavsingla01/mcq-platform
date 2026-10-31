@@ -6,10 +6,11 @@ This document records the main application logic, current security controls, and
 
 | Component | Local default | Notes |
 | --- | --- | --- |
-| Client | `http://127.0.0.1:5173` | Vite dev server |
-| API | `http://127.0.0.1:5000` | Express and Socket.IO |
-| MongoDB | `mongodb://127.0.0.1:27018/mcq-platform` | Host port `27018` maps to Mongo container port `27017` |
-| Redis | `redis://127.0.0.1:6380` | Reserved for future Redis-backed rate limiting/cache |
+| Desktop web app | `http://localhost:5173` | Vite app in `apps/desktop-web`; API calls use the `/api` dev proxy |
+| API Gateway | `http://localhost:5000` | Express reverse proxy for the domain services |
+| Domain services | `http://localhost:5001`–`:5007` | Auth, quiz, parser, attempt, social, messaging, and media |
+| MongoDB | `mongodb://localhost:27017/mcq-platform` | Shared local database used by the domain services |
+| Redis | — | Not required by the current local runtime |
 
 ## Domain Logic
 
@@ -38,13 +39,9 @@ The attempt flow stores selected answers, answer changes, timing, visit history,
 - speed classification
 - suspicious activity signals
 
-### Live Sessions
+### Social And Messaging
 
-Live sessions use Socket.IO for session chat and presence. Socket auth reads JWT cookies from the handshake. Messages are sanitized before broadcast/storage, and session routes enforce ownership for destructive actions such as destroying a session.
-
-### Workspace
-
-Workspace routes are protected by authentication. They organize quizzes and related items into user-owned collections with parent-child relationships.
+Social routes serve discovery feeds, reactions, bookmarks, comments, notifications, and shares. Direct messages use the message service over HTTP, with Socket.IO events for live conversation updates, presence, and typing indicators. Message routes check authentication and conversation membership before returning or changing conversation data.
 
 ## Current Security Controls
 

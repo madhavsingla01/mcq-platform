@@ -1,0 +1,124 @@
+/* ==========================================================================
+   QuizFocus Design System v1.0 — Hashtag Chip Input Component
+   ========================================================================== */
+
+.qf-hashtag-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background-color: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-control, 8px);
+  corner-shape: squircle;
+  padding: 10px 12px;
+  cursor: text;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.qf-hashtag-input-container:focus-within {
+  border-color: var(--color-primary, #FF4500);
+  box-shadow: 0 0 0 1px rgba(255, 69, 0, 0.25);
+}
+
+.qf-hashtag-chips-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+}
+
+.qf-hashtag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 69, 0, 0.10);
+  border: 1px solid rgba(255, 69, 0, 0.35);
+  border-radius: var(--radius-sm, 6px);
+  corner-shape: squircle;
+  padding: 3px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary, #FF4500);
+  animation: chipAppear 0.12s ease-out;
+}
+
+@keyframes chipAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.qf-chip-prefix {
+  font-weight: 700;
+  opacity: 0.8;
+}
+
+.qf-chip-text {
+  color: #FFFFFF;
+}
+
+.qf-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--color-primary, #FF4500);
+  cursor: pointer;
+  padding: 1px;
+  margin-left: 2px;
+  border-radius: var(--radius-xs, 4px);
+  corner-shape: squircle;
+  transition: all 0.12s ease;
+}
+
+.qf-chip-remove:hover {
+  background: rgba(255, 69, 0, 0.25);
+  color: #FFFFFF;
+}
+
+.qf-hashtag-input-field-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.qf-hashtag-field-icon {
+  color: #6B7280;
+  flex-shrink: 0;
+}
+
+.qf-hashtag-field-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: 13.5px;
+  padding: 0;
+}
+
+.qf-hashtag-field-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 13px;
+}
+
+.qf-hashtag-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #6B7280;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  user-select: none;
+}

@@ -38,6 +38,16 @@ This file records concrete setup, documentation, and verification progress. Keep
 - Added CSRF middleware unit tests.
 - Server test suite now passes with 23 tests.
 
+## 2026-10-31
+
+### Desktop App And Gateway Maintenance
+
+- Updated the desktop production build command to use `apps/desktop-web` through the root `desktop:build` script.
+- Updated the project structure and startup instructions to reflect the current `apps/` and `services/` layout.
+- Fixed gateway health aggregation so downstream error responses cannot be reported as healthy, and health-check timers are cleared on every request outcome.
+- Desktop production build completed successfully (2,528 modules transformed).
+- JavaScript syntax checks passed for the gateway and dependency installer.
+
 ## Next Documentation Targets
 
 - Add endpoint-level examples for upload, mapping, quiz generation, and attempts.

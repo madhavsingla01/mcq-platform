@@ -1,0 +1,28 @@
+{
+  "name": "mcq-platform-root",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "QuizFocus Microservices Platform",
+  "scripts": {
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "install:all": "node scripts/install-all.js",
+    "desktop:dev": "npm --prefix apps/desktop-web run dev",
+    "desktop:build": "npm --prefix apps/desktop-web run build",
+    "desktop:preview": "npm --prefix apps/desktop-web run preview",
+    "mobile:dev": "npm --prefix apps/mobile-web run dev",
+    "client:dev": "npm --prefix apps/desktop-web run dev",
+    "services:all": "node scripts/start-all-services.js",
+    "gateway:dev": "npm --prefix services/api-gateway run dev",
+    "auth:dev": "npm --prefix services/auth-service run dev",
+    "quiz:dev": "npm --prefix services/quiz-service run dev",
+    "parser:dev": "npm --prefix services/parser-service run dev",
+    "attempt:dev": "npm --prefix services/attempt-service run dev",
+    "social:dev": "npm --prefix services/social-service run dev",
+    "message:dev": "npm --prefix services/message-service run dev",
+    "media:dev": "npm --prefix services/media-service run dev",
+    "admin:dev": "npm --prefix services/admin-service run dev"
+  }
+}

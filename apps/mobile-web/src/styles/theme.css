@@ -1,0 +1,176 @@
+/* QuizFocus Mobile Design System & Polish Tokens */
+
+:root {
+  /* Color System */
+  --bg-base: #000000;
+  --bg-surface: #101012;
+  --bg-elevated: #18181b;
+  --bg-card: #121214;
+  --bg-subtle: #1c1c1f;
+  --bg-highlight: #26262b;
+  
+  --color-accent: #ff4500;
+  --color-accent-subtle: rgba(255, 69, 0, 0.12);
+  --color-accent-hover: #ff571a;
+  
+  --color-success: #30d158;
+  --color-success-subtle: rgba(48, 209, 88, 0.12);
+  --color-warning: #ffd60a;
+  --color-warning-subtle: rgba(255, 214, 10, 0.12);
+  --color-danger: #ff453a;
+  --color-danger-subtle: rgba(255, 69, 58, 0.12);
+  --color-info: #0a84ff;
+  --color-info-subtle: rgba(10, 132, 255, 0.12);
+
+  --color-text: #f4f4f5;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #71717a;
+  --color-text-dim: #52525b;
+
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-subtle: rgba(255, 255, 255, 0.05);
+  --color-border-active: rgba(255, 69, 0, 0.5);
+
+  /* Apple G2 Continuous Curvature */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-control: 14px;
+  --radius-card: 20px;
+  --radius-sheet: 28px;
+  --radius-pill: 9999px;
+
+  /* Emil Kowalski Motion Tokens (<=300ms) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.15);
+
+  --duration-fast: 150ms;
+  --duration-normal: 240ms;
+  --duration-sheet: 280ms;
+
+  /* Typography */
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Safe Area Units */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  
+  --header-height: 54px;
+  --tabbar-height: 64px;
+}
+
+/* Global Mobile Resets */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  background-color: var(--bg-base);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: contain;
+  overflow-x: hidden;
+  width: 100%;
+  min-height: 100dvh;
+}
+
+/* iOS Safari Zoom Prevention: Always 16px minimum */
+input, textarea, select, button {
+  font-family: inherit;
+  font-size: 16px;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Emil Kowalski Tactile Active Press */
+button:active, 
+.interactive-tap:active {
+  transform: scale(0.97);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  touch-action: manipulation;
+}
+
+/* Mobile Scrollbar Hide */
+::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+* {
+  scrollbar-width: none;
+}
+
+/* Responsive Container */
+.mobile-app-root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-base);
+  position: relative;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* Safe Area Utility Containers */
+.safe-padding-top {
+  padding-top: var(--safe-top);
+}
+
+.safe-padding-bottom {
+  padding-bottom: var(--safe-bottom);
+}
+
+/* Apple Squircle Card Base */
+.mobile-card {
+  background: var(--bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 16px;
+  position: relative;
+  transition: border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+}
+
+/* Non-glowing matte accent pill/button */
+.matte-accent-btn {
+  background: var(--color-accent);
+  color: #000000;
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  box-shadow: none; /* STRICT NO GLOW */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.matte-accent-btn:active {
+  transform: scale(0.96);
+}

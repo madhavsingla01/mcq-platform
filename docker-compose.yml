@@ -1,14 +1,227 @@
 services:
-  mongodb:
+  # ── Dedicated Database Engine ──
+  mongo:
     image: mongo:7
-    container_name: mcq-mongodb
+    container_name: mcq-mongo
     ports:
-      - "37017:27017"
+      - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── API Gateway (Single Entry Point) ──
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: mcq-api-gateway
+    ports:
+      - "5000:5000"
     environment:
-      MONGO_INITDB_DATABASE: mcq-platform
+      - PORT=5000
+      - NODE_ENV=production
+      - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
+      - AUTH_SERVICE_URL=http://auth-service:5001
+      - QUIZ_SERVICE_URL=http://quiz-service:5002
+      - PARSER_SERVICE_URL=http://parser-service:5003
+      - ATTEMPT_SERVICE_URL=http://attempt-service:5004
+      - SOCIAL_SERVICE_URL=http://social-service:5005
+      - MESSAGE_SERVICE_URL=http://message-service:5006
+      - MEDIA_SERVICE_URL=http://media-service:5007
+      - ADMIN_SERVICE_URL=http://admin-service:5008
+    depends_on:
+      - auth-service
+      - quiz-service
+      - parser-service
+      - attempt-service
+      - social-service
+      - message-service
+      - media-service
+      - admin-service
+    restart: unless-stopped
+
+  # ── Service 1: Auth & User Profiles ──
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: mcq-auth-service
+    expose:
+      - "5001"
+    volumes:
+      - uploads-data:/app/src/uploads
+    environment:
+      - PORT=5001
+      - NODE_ENV=production
+      - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
+      - MONGO_URI=mongodb://mongo:27017/mcq-platform
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in the root .env file}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in the root .env file}
+      - JWT_EXPIRES_IN=15m
+      - JWT_REFRESH_EXPIRES_IN=7d
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Service 2: Quiz & Question Core ──
+  quiz-service:
+    build:
+      context: ./services/quiz-service
+      dockerfile: Dockerfile
+    container_name: mcq-quiz-service
+    expose:
+      - "5002"
+    volumes:
+      - uploads-data:/app/src/uploads
+    environment:
+      - PORT=5002
+      - NODE_ENV=production
+      - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
+      - MONGO_URI=mongodb://mongo:27017/mcq-platform
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in the root .env file}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in the root .env file}
+      - PARSER_SERVICE_URL=http://parser-service:5003
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Service 3: Ingestion & Smart Parser ──
+  parser-service:
+    build:
+      context: ./services/parser-service
+      dockerfile: Dockerfile
+    container_name: mcq-parser-service
+    expose:
+      - "5003"
+    volumes:
+      - uploads-data:/app/src/uploads
+    environment:
+      - PORT=5003
+      - NODE_ENV=production
+      - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
+      - MONGO_URI=mongodb://mongo:27017/mcq-platform
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in the root .env file}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in the root .env file}
+      - MAX_FILE_SIZE_GUEST=20480
+      - MAX_FILE_SIZE_AUTH=10485760
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Service 4: Attempts & Scoring ──
+  attempt-service:
+    build:
+      context: ./services/attempt-service
+      dockerfile: Dockerfile
+    container_name: mcq-attempt-service
+    expose:
+      - "5004"
+    environment:
+      - PORT=5004
+      - NODE_ENV=production
+      - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
+      - MONGO_URI=mongodb://mongo:27017/mcq-platform
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in the root .env file}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in the root .env file}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Service 5: Social & Community ──
+  social-service:
+    build:
+      context: ./services/social-service
+      dockerfile: Dockerfile
+    container_name: mcq-social-service
+    expose:
+      - "5005"
+    environment:
+      - PORT=5005
+      - NODE_ENV=production
+      - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
+      - MONGO_URI=mongodb://mongo:27017/mcq-platform
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in the root .env file}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in the root .env file}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Service 6: Direct Messaging ──
+  message-service:
+    build:
+      context: ./services/message-service
+      dockerfile: Dockerfile
+    container_name: mcq-message-service
+    expose:
+      - "5006"
+    environment:
+      - PORT=5006
+      - NODE_ENV=production
+      - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
+      - MONGO_URI=mongodb://mongo:27017/mcq-platform
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in the root .env file}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in the root .env file}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Service 7: Image Processing & Delivery ──
+  media-service:
+    build:
+      context: ./services/media-service
+      dockerfile: Dockerfile
+    container_name: mcq-media-service
+    expose:
+      - "5007"
+    volumes:
+      - uploads-data:/app/media-storage
+    environment:
+      - PORT=5007
+      - NODE_ENV=production
+      - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
+      - MONGO_URI=mongodb://mongo:27017/mcq_media
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in the root .env file}
+      - MEDIA_STORAGE_PATH=/app/media-storage/media-assets
+      - MEDIA_MAX_FILE_SIZE=12582912
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Service 8: Administrative Control Center ──
+  admin-service:
+    build:
+      context: ./services/admin-service
+      dockerfile: Dockerfile
+    container_name: mcq-admin-service
+    expose:
+      - "5008"
+    environment:
+      - PORT=5008
+      - NODE_ENV=production
+      - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
+      - MONGO_URI=mongodb://mongo:27017/mcq-platform
+      - AUTH_MONGO_URI=mongodb://mongo:27017/mcq-platform
+      - QUIZ_MONGO_URI=mongodb://mongo:27017/mcq-platform
+      - ATTEMPT_MONGO_URI=mongodb://mongo:27017/mcq-platform
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in the root .env file}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@quizfocus.com}
+    depends_on:
+      mongo:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
   mongo-data:
+  uploads-data:
