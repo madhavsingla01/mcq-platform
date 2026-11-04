@@ -34,6 +34,7 @@ services:
       - MESSAGE_SERVICE_URL=http://message-service:5006
       - MEDIA_SERVICE_URL=http://media-service:5007
       - ADMIN_SERVICE_URL=http://admin-service:5008
+      - CHALLENGE_SERVICE_URL=http://challenge-service:5009
     depends_on:
       - auth-service
       - quiz-service
@@ -43,6 +44,7 @@ services:
       - message-service
       - media-service
       - admin-service
+      - challenge-service
     restart: unless-stopped
 
   # ── Service 1: Auth & User Profiles ──
@@ -87,6 +89,10 @@ services:
       - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in the root .env file}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in the root .env file}
       - PARSER_SERVICE_URL=http://parser-service:5003
+      - MAX_IMPORT_ROWS=${MAX_IMPORT_ROWS:?Set MAX_IMPORT_ROWS in the root .env file}
+      - CACHE_DEFAULT_TTL_MS=${CACHE_DEFAULT_TTL_MS:?Set CACHE_DEFAULT_TTL_MS in the root .env file}
+      - CACHE_SHORT_TTL_MS=${CACHE_SHORT_TTL_MS:?Set CACHE_SHORT_TTL_MS in the root .env file}
+      - CACHE_SEARCH_TTL_MS=${CACHE_SEARCH_TTL_MS:?Set CACHE_SEARCH_TTL_MS in the root .env file}
     depends_on:
       mongo:
         condition: service_healthy
@@ -111,6 +117,8 @@ services:
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in the root .env file}
       - MAX_FILE_SIZE_GUEST=20480
       - MAX_FILE_SIZE_AUTH=10485760
+      - MAX_IMPORT_ROWS=${MAX_IMPORT_ROWS:?Set MAX_IMPORT_ROWS in the root .env file}
+      - CACHE_DEFAULT_TTL_MS=${CACHE_DEFAULT_TTL_MS:?Set CACHE_DEFAULT_TTL_MS in the root .env file}
     depends_on:
       mongo:
         condition: service_healthy
@@ -131,6 +139,11 @@ services:
       - MONGO_URI=mongodb://mongo:27017/mcq-platform
       - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in the root .env file}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in the root .env file}
+      - MAX_FILE_SIZE_GUEST=20480
+      - MAX_FILE_SIZE_AUTH=10485760
+      - MAX_IMPORT_ROWS=${MAX_IMPORT_ROWS:?Set MAX_IMPORT_ROWS in the root .env file}
+      - CACHE_DEFAULT_TTL_MS=${CACHE_DEFAULT_TTL_MS:?Set CACHE_DEFAULT_TTL_MS in the root .env file}
+      - CACHE_SHORT_TTL_MS=${CACHE_SHORT_TTL_MS:?Set CACHE_SHORT_TTL_MS in the root .env file}
     depends_on:
       mongo:
         condition: service_healthy
@@ -151,6 +164,10 @@ services:
       - MONGO_URI=mongodb://mongo:27017/mcq-platform
       - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in the root .env file}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in the root .env file}
+      - MAX_FILE_SIZE_GUEST=20480
+      - MAX_FILE_SIZE_AUTH=10485760
+      - MAX_IMPORT_ROWS=${MAX_IMPORT_ROWS:?Set MAX_IMPORT_ROWS in the root .env file}
+      - CACHE_DEFAULT_TTL_MS=${CACHE_DEFAULT_TTL_MS:?Set CACHE_DEFAULT_TTL_MS in the root .env file}
     depends_on:
       mongo:
         condition: service_healthy
@@ -216,7 +233,39 @@ services:
       - QUIZ_MONGO_URI=mongodb://mongo:27017/mcq-platform
       - ATTEMPT_MONGO_URI=mongodb://mongo:27017/mcq-platform
       - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in the root .env file}
-      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@quizfocus.com}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:?Set ADMIN_EMAIL in the root .env file}
+      - HEALTH_CHECK_TIMEOUT_MS=2500
+      - GATEWAY_URL=http://api-gateway:5000
+      - AUTH_SERVICE_URL=http://auth-service:5001
+      - QUIZ_SERVICE_URL=http://quiz-service:5002
+      - PARSER_SERVICE_URL=http://parser-service:5003
+      - ATTEMPT_SERVICE_URL=http://attempt-service:5004
+      - SOCIAL_SERVICE_URL=http://social-service:5005
+      - MESSAGE_SERVICE_URL=http://message-service:5006
+      - MEDIA_SERVICE_URL=http://media-service:5007
+      - CHALLENGE_SERVICE_URL=http://challenge-service:5009
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Service 9: Competitive Challenges ──
+  challenge-service:
+    build:
+      context: ./services/challenge-service
+      dockerfile: Dockerfile
+    container_name: mcq-challenge-service
+    expose:
+      - "5009"
+    environment:
+      - PORT=5009
+      - NODE_ENV=production
+      - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
+      - MONGO_URI=mongodb://mongo:27017/mcq-platform
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in the root .env file}
+      - CHALLENGE_LIST_DEFAULT_PAGE_SIZE=12
+      - CHALLENGE_LIST_MAX_PAGE_SIZE=50
+      - LEADERBOARD_CACHE_TTL_SECONDS=15
     depends_on:
       mongo:
         condition: service_healthy

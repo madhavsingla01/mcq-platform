@@ -16,13 +16,13 @@ import AdminRole, { DEFAULT_ROLES } from './models/AdminRole.model.js';
 import { csrfProtection } from './middleware/csrf.middleware.js';
 
 const app = express();
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? (process.env.CLIENT_URL || '').split(',').map((origin) => origin.trim()).filter(Boolean)
-  : ['http://localhost:5173', 'http://127.0.0.1:5173'];
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin || env.CLIENT_URL.includes(origin)) return callback(null, true);
+      return callback(new Error('Origin is not allowed by CORS'));
+    },
     credentials: true,
   })
 );
@@ -81,6 +81,13 @@ const start = async () => {
     process.exit(1);
   }
 };
+
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Promise Rejection in Admin Service:', err);
+});
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception in Admin Service:', err);
+});
 
 start();
 

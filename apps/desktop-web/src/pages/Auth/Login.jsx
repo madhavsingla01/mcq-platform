@@ -4,6 +4,7 @@ import { Sun, Moon } from 'lucide-react';
 import { Button, Input } from '../../components/ui';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
+import './Login.css';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -105,128 +106,6 @@ export default function Login() {
         </div>
       </div>
 
-      <style>{standaloneAuthStyles}</style>
     </div>
   );
 }
-
-const standaloneAuthStyles = `
-  .auth-standalone-wrapper {
-    min-height: 100vh;
-    width: 100%;
-    background: var(--color-bg);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 32px 16px;
-    position: relative;
-    box-sizing: border-box;
-  }
-
-  .auth-corner-controls {
-    position: absolute;
-    top: 24px;
-    right: 24px;
-  }
-
-  .auth-theme-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-control, 8px);
-    corner-shape: squircle;
-    border: 1px solid var(--color-border);
-    background: var(--color-surface);
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .auth-theme-btn:hover {
-    color: var(--color-text);
-    border-color: var(--color-primary);
-  }
-
-  .auth-card-container {
-    width: 100%;
-    max-width: 430px;
-  }
-
-  .auth-standalone-card {
-    background: rgba(20, 20, 22, 0.78);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 24px;
-    corner-shape: squircle;
-    padding: 40px 36px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-    box-sizing: border-box;
-  }
-
-  .auth-card-title {
-    font-size: 28px;
-    font-weight: 650;
-    text-align: center;
-    margin: 0 0 28px;
-    color: var(--color-text);
-    letter-spacing: -0.03em;
-  }
-
-  .auth-standalone-card .auth-input {
-    border-radius: 12px !important;
-    corner-shape: squircle;
-    background: rgba(255, 255, 255, 0.04) !important;
-    box-shadow: none !important;
-  }
-
-  .auth-standalone-card .auth-input:focus {
-    border-color: rgba(255, 255, 255, 0.28) !important;
-    box-shadow: none !important;
-  }
-
-  .auth-card-error {
-    background: var(--color-danger-light, rgba(239, 68, 68, 0.12));
-    border: 1px solid var(--color-danger, #ef4444);
-    color: var(--color-danger, #ef4444);
-    padding: 10px 14px;
-    border-radius: var(--radius-control, 8px);
-    corner-shape: squircle;
-    font-size: 13.5px;
-    font-weight: 550;
-    margin-bottom: 18px;
-    text-align: center;
-  }
-
-  .auth-card-form {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .auth-card-footer {
-    margin-top: 20px;
-    text-align: center;
-    font-size: 14px;
-    color: var(--color-text-secondary);
-  }
-
-  .auth-action-link {
-    color: var(--color-text);
-    text-decoration: none;
-    font-weight: 600;
-  }
-
-  .auth-action-link:hover {
-    color: var(--color-text-secondary);
-  }
-
-  @media (max-width: 480px) {
-    .auth-standalone-card {
-      padding: 32px 22px;
-    }
-  }
-`;

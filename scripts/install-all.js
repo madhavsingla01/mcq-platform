@@ -23,6 +23,7 @@ const packages = [
   'services/message-service',
   'services/media-service',
   'services/admin-service',
+  'services/challenge-service',
 ];
 
 console.log('📦 Installing dependencies across all web apps and microservices...\n');

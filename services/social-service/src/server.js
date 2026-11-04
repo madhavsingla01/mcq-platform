@@ -13,9 +13,7 @@ import { errorHandler, notFoundHandler } from './middleware/error.middleware.js'
 import { csrfProtection } from './middleware/csrf.middleware.js';
 import socialRoutes from './routes/social.routes.js';
 
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? (process.env.CLIENT_URL || '').split(',').map((origin) => origin.trim()).filter(Boolean)
-  : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174'];
+const allowedOrigins = env.CLIENT_URL;
 
 const app = express();
 

@@ -61,7 +61,7 @@ const generateTokens = (user, res) => {
 const generateUniqueUsername = async (name) => {
   // Convert name to lowercase, replace non-alphanumeric with empty, spaces with underscore
   let baseName = name.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim().replace(/\s+/g, '_');
-  if (!baseName || baseName.length < 3) baseName = 'user' + Math.floor(Math.random() * 1000);
+  if (!baseName || baseName.length < 3) baseName = `user${crypto.randomInt(1000)}`;
   if (baseName.length > 25) baseName = baseName.substring(0, 25);
   
   let username = baseName;
@@ -74,7 +74,7 @@ const generateUniqueUsername = async (name) => {
       isUnique = true;
     } else {
       // Append random numbers
-      username = `${baseName}_${Math.floor(Math.random() * 10000)}`;
+      username = `${baseName}_${crypto.randomInt(10000)}`;
       attempts++;
     }
   }

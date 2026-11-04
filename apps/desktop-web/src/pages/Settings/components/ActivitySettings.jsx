@@ -427,7 +427,7 @@ export function ActivitySettings() {
             <div className="settings-activity-stat-top">
               <span className="settings-activity-stat-label">Comments</span>
               <div className="settings-activity-stat-icon comment">
-                <MessageSquare size={14} color="#38bdf8" />
+                <MessageSquare size={14} color="#FF4500" />
               </div>
             </div>
             <span className="settings-activity-stat-num">{stats.comments}</span>
@@ -447,7 +447,7 @@ export function ActivitySettings() {
             <div className="settings-activity-stat-top">
               <span className="settings-activity-stat-label">Bookmarks</span>
               <div className="settings-activity-stat-icon bookmark">
-                <Bookmark size={14} color="#c084fc" />
+                <Bookmark size={14} color="#FF4500" />
               </div>
             </div>
             <span className="settings-activity-stat-num">{stats.bmarks}</span>

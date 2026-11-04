@@ -1,5 +1,7 @@
-import React, { useState, useRef, useEffect, useId } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useId } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Check } from 'lucide-react';
+import './CustomSelect.css';
 
 /**
  * CustomSelect Component
@@ -24,12 +26,17 @@ export function CustomSelect({
   disabled = false,
   className = '',
   style = {},
+  portal = false,
+  dropdownClassName = '',
+  ariaLabel,
   id,
   name,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [dropdownPosition, setDropdownPosition] = useState(null);
   const containerRef = useRef(null);
+  const triggerRef = useRef(null);
   const listRef = useRef(null);
   const generatedId = useId();
   const selectId = id || generatedId;
@@ -61,7 +68,11 @@ export function CustomSelect({
     if (!isOpen) return;
 
     const handleClickOutside = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target) &&
+        !listRef.current?.contains(e.target)
+      ) {
         setIsOpen(false);
       }
     };
@@ -74,6 +85,58 @@ export function CustomSelect({
       document.removeEventListener('touchstart', handleClickOutside);
     };
   }, [isOpen]);
+
+  useLayoutEffect(() => {
+    if (!isOpen || !portal || !triggerRef.current) return undefined;
+
+    const updateDropdownPosition = () => {
+      const triggerRect = triggerRef.current.getBoundingClientRect();
+      let scrollBoundary = containerRef.current?.parentElement;
+      while (scrollBoundary && scrollBoundary !== document.body) {
+        const overflowY = window.getComputedStyle(scrollBoundary).overflowY;
+        if (overflowY === 'auto' || overflowY === 'scroll') break;
+        scrollBoundary = scrollBoundary.parentElement;
+      }
+
+      const boundaryRect = scrollBoundary && scrollBoundary !== document.body
+        ? scrollBoundary.getBoundingClientRect()
+        : { top: 0, bottom: window.innerHeight };
+      const desiredHeight = Math.min(240, Math.max(48, normalizedOptions.length * 36 + 12));
+      const spaceBelow = Math.max(0, boundaryRect.bottom - triggerRect.bottom - 14);
+      const spaceAbove = Math.max(0, triggerRect.top - boundaryRect.top - 14);
+      const openAbove = spaceBelow < desiredHeight && spaceAbove > spaceBelow;
+      const availableHeight = openAbove ? spaceAbove : spaceBelow;
+      const maxHeight = Math.max(48, Math.min(desiredHeight, availableHeight));
+      const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+      const width = Math.min(triggerRect.width, viewportWidth - 16);
+      const left = Math.max(8, Math.min(triggerRect.left, viewportWidth - width - 8));
+      const top = openAbove
+        ? triggerRect.top - maxHeight - 6
+        : triggerRect.bottom + 6;
+
+      setDropdownPosition((previous) => {
+        const next = { top, left, width, maxHeight };
+        if (
+          previous &&
+          previous.top === next.top &&
+          previous.left === next.left &&
+          previous.width === next.width &&
+          previous.maxHeight === next.maxHeight
+        ) {
+          return previous;
+        }
+        return next;
+      });
+    };
+
+    updateDropdownPosition();
+    window.addEventListener('resize', updateDropdownPosition);
+    window.addEventListener('scroll', updateDropdownPosition, true);
+    return () => {
+      window.removeEventListener('resize', updateDropdownPosition);
+      window.removeEventListener('scroll', updateDropdownPosition, true);
+    };
+  }, [isOpen, portal, normalizedOptions.length]);
 
   // Handle keyboard navigation
   const handleKeyDown = (e) => {
@@ -132,6 +195,61 @@ export function CustomSelect({
     setIsOpen(false);
   };
 
+  const dropdownMenu = (
+    <div
+      ref={listRef}
+      id={`${selectId}-options`}
+      className={`g2-select-dropdown animate-scale-fade ${dropdownClassName}`}
+      role="listbox"
+      tabIndex={-1}
+      style={portal ? {
+        position: 'fixed',
+        top: dropdownPosition?.top ?? -1000,
+        left: dropdownPosition?.left ?? -1000,
+        width: dropdownPosition?.width,
+        minWidth: 0,
+        maxHeight: dropdownPosition?.maxHeight,
+        zIndex: 1100,
+      } : undefined}
+    >
+      <div className="g2-select-options-list">
+        {normalizedOptions.length === 0 ? (
+          <div className="g2-select-empty">No options available</div>
+        ) : (
+          normalizedOptions.map((opt, idx) => {
+            const isSelected = opt.value === value;
+            const isHighlighted = idx === activeIndex;
+
+            return (
+              <div
+                key={opt.value || idx}
+                role="option"
+                aria-selected={isSelected}
+                aria-disabled={opt.disabled}
+                className={`g2-select-option ${isSelected ? 'selected' : ''} ${
+                  isHighlighted ? 'highlighted' : ''
+                } ${opt.disabled ? 'disabled' : ''}`}
+                onClick={() => handleSelect(opt)}
+                onMouseEnter={() => !opt.disabled && setActiveIndex(idx)}
+              >
+                <div className="g2-select-option-content">
+                  {opt.icon && <span className="g2-select-icon">{opt.icon}</span>}
+                  <span className="g2-select-option-label">{opt.label}</span>
+                  {opt.badge && (
+                    <span className="g2-select-badge">{opt.badge}</span>
+                  )}
+                </div>
+                {isSelected && (
+                  <Check size={14} className="g2-select-check" />
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div
       ref={containerRef}
@@ -142,12 +260,15 @@ export function CustomSelect({
       {/* Trigger Button */}
       <button
         type="button"
+        ref={triggerRef}
         id={selectId}
         className={`g2-select-trigger ${isOpen ? 'open' : ''}`}
         onClick={() => !disabled && setIsOpen((prev) => !prev)}
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        aria-controls={`${selectId}-options`}
+        aria-label={ariaLabel}
       >
         <span className="g2-select-trigger-content">
           {selectedOption?.icon && (
@@ -167,275 +288,8 @@ export function CustomSelect({
       </button>
 
       {/* Floating Menu Popover */}
-      {isOpen && (
-        <div
-          ref={listRef}
-          className="g2-select-dropdown animate-scale-fade"
-          role="listbox"
-          tabIndex={-1}
-        >
-          <div className="g2-select-options-list">
-            {normalizedOptions.length === 0 ? (
-              <div className="g2-select-empty">No options available</div>
-            ) : (
-              normalizedOptions.map((opt, idx) => {
-                const isSelected = opt.value === value;
-                const isHighlighted = idx === activeIndex;
+      {isOpen && (portal ? createPortal(dropdownMenu, document.body) : dropdownMenu)}
 
-                return (
-                  <div
-                    key={opt.value || idx}
-                    role="option"
-                    aria-selected={isSelected}
-                    aria-disabled={opt.disabled}
-                    className={`g2-select-option ${isSelected ? 'selected' : ''} ${
-                      isHighlighted ? 'highlighted' : ''
-                    } ${opt.disabled ? 'disabled' : ''}`}
-                    onClick={() => handleSelect(opt)}
-                    onMouseEnter={() => !opt.disabled && setActiveIndex(idx)}
-                  >
-                    <div className="g2-select-option-content">
-                      {opt.icon && <span className="g2-select-icon">{opt.icon}</span>}
-                      <span className="g2-select-option-label">{opt.label}</span>
-                      {opt.badge && (
-                        <span className="g2-select-badge">{opt.badge}</span>
-                      )}
-                    </div>
-                    {isSelected && (
-                      <Check size={14} className="g2-select-check" />
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Scoped CSS for G2 Squircle Curves and Styling */}
-      <style>{`
-        .g2-select-container {
-          position: relative;
-          display: inline-block;
-          width: 100%;
-          min-width: 140px;
-          user-select: none;
-          box-sizing: border-box;
-          font-family: inherit;
-        }
-
-        .g2-select-trigger {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 10px;
-          background-color: var(--color-surface, #0A0A0C);
-          border: 1px solid var(--color-border, rgba(255, 255, 255, 0.12));
-          border-radius: var(--radius-control, 8px);
-          corner-shape: squircle;
-          -webkit-corner-shape: squircle;
-          color: var(--color-text, #FFFFFF);
-          cursor: pointer;
-          font-family: inherit;
-          font-weight: 550;
-          text-align: left;
-          transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
-          box-sizing: border-box;
-        }
-
-        /* Sizes */
-        .g2-select-container.sm .g2-select-trigger {
-          height: 32px;
-          padding: 0 10px;
-          font-size: 12.5px;
-        }
-
-        .g2-select-container.md .g2-select-trigger {
-          height: 40px;
-          padding: 0 14px;
-          font-size: 13.5px;
-        }
-
-        .g2-select-container.lg .g2-select-trigger {
-          height: 44px;
-          padding: 0 16px;
-          font-size: 14.5px;
-        }
-
-        .g2-select-trigger:hover:not(:disabled) {
-          border-color: rgba(255, 255, 255, 0.22);
-          background-color: #121215;
-        }
-
-        .g2-select-trigger.open {
-          border-color: var(--color-primary, #FF4500);
-          box-shadow: 0 0 0 2px rgba(255, 69, 0, 0.2);
-          background-color: #121215;
-        }
-
-        .g2-select-trigger:focus-visible {
-          outline: none;
-          border-color: var(--color-primary, #FF4500);
-          box-shadow: 0 0 0 2px rgba(255, 69, 0, 0.25);
-        }
-
-        .g2-select-trigger.disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .g2-select-trigger-content {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          flex: 1;
-          min-width: 0;
-        }
-
-        .g2-select-label {
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .g2-select-label.placeholder {
-          color: var(--color-text-muted, rgba(255, 255, 255, 0.4));
-        }
-
-        .g2-select-chevron {
-          color: var(--color-text-secondary, rgba(255, 255, 255, 0.65));
-          flex-shrink: 0;
-          transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.15s ease;
-        }
-
-        .g2-select-trigger:hover .g2-select-chevron {
-          color: var(--color-text, #FFFFFF);
-        }
-
-        .g2-select-chevron.rotated {
-          transform: rotate(180deg);
-          color: var(--color-primary, #FF4500);
-        }
-
-        /* Dropdown Popover */
-        .g2-select-dropdown {
-          position: absolute;
-          top: calc(100% + 6px);
-          left: 0;
-          z-index: 999;
-          background: #0B0B0E;
-          border: 1px solid rgba(255, 255, 255, 0.14);
-          border-radius: var(--radius-container, 14px);
-          corner-shape: squircle;
-          -webkit-corner-shape: squircle;
-          box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.06);
-          backdrop-filter: blur(14px);
-          -webkit-backdrop-filter: blur(14px);
-          padding: 6px;
-          min-width: 100%;
-          width: max-content;
-          max-width: 320px;
-          animation: g2SelectSlideDown 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes g2SelectSlideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-8px) scale(0.98);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-
-        .g2-select-options-list {
-          max-height: 240px;
-          overflow-y: auto;
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-        }
-
-        .g2-select-option {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 8px 10px;
-          border-radius: var(--radius-control, 8px);
-          corner-shape: squircle;
-          -webkit-corner-shape: squircle;
-          color: var(--color-text-secondary, rgba(255, 255, 255, 0.8));
-          font-size: 13px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: background-color 0.12s ease, color 0.12s ease;
-          box-sizing: border-box;
-        }
-
-        .g2-select-option:hover,
-        .g2-select-option.highlighted {
-          background-color: rgba(255, 255, 255, 0.08);
-          color: #FFFFFF;
-        }
-
-        .g2-select-option.selected {
-          background-color: rgba(255, 69, 0, 0.12);
-          color: var(--color-primary, #FF4500);
-          font-weight: 650;
-        }
-
-        .g2-select-option.disabled {
-          opacity: 0.35;
-          cursor: not-allowed;
-        }
-
-        .g2-select-option-content {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          min-width: 0;
-          flex: 1;
-        }
-
-        .g2-select-option-label {
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .g2-select-icon {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .g2-select-badge {
-          font-size: 10px;
-          font-weight: 700;
-          padding: 2px 6px;
-          border-radius: var(--radius-xs, 4px);
-          corner-shape: squircle;
-          background: rgba(255, 255, 255, 0.08);
-          color: var(--color-text-muted, #A1A1AA);
-          text-transform: uppercase;
-        }
-
-        .g2-select-check {
-          color: var(--color-primary, #FF4500);
-          flex-shrink: 0;
-          margin-left: 8px;
-        }
-
-        .g2-select-empty {
-          padding: 12px;
-          text-align: center;
-          color: var(--color-text-muted, rgba(255, 255, 255, 0.4));
-          font-size: 12.5px;
-        }
-      `}</style>
     </div>
   );
 }

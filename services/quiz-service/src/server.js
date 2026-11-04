@@ -21,9 +21,7 @@ import { startCleanupWorker } from './jobs/cleanup.worker.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? (process.env.CLIENT_URL || '').split(',').map((origin) => origin.trim()).filter(Boolean)
-  : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174'];
+const allowedOrigins = env.CLIENT_URL;
 
 const app = express();
 

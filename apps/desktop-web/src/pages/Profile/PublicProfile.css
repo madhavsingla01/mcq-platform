@@ -1,0 +1,1558 @@
+﻿  /* YouTube Profile Aesthetic - Pure Black & Electric Orange (#000000, #121214, #18181B, #FF4500) */
+  .creator-profile-container.yt-profile-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    background: transparent;
+    padding-bottom: 48px;
+  }
+
+  .profile-state-box {
+    padding: 60px 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    background: #121214;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    color: #8E8E93;
+  }
+
+  .btn-back {
+    padding: 8px 18px;
+    border-radius: 9999px;
+    background: #FF4500;
+    color: #FFFFFF;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease;
+  }
+
+  .btn-back:hover {
+    background: #ff5714;
+  }
+
+  /* 1. YouTube Panoramic Channel Banner */
+  .yt-banner-container {
+    position: relative;
+    width: 100%;
+    height: 210px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #121214;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+  }
+
+  .yt-banner-media {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+
+  .yt-banner-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    opacity: 0.92;
+    transition: transform 0.28s var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)), opacity 0.25s ease;
+  }
+
+  .yt-banner-media:hover .yt-banner-img {
+    transform: scale(1.015);
+    opacity: 1;
+  }
+
+  .yt-banner-owner-actions {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 5;
+  }
+
+  .yt-banner-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 9999px;
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: all 0.2s ease;
+  }
+
+  .yt-banner-action-btn:hover:not(:disabled) {
+    background: #FF4500;
+    border-color: #FF4500;
+    box-shadow: 0 4px 14px rgba(255, 69, 0, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .yt-banner-action-btn.yt-banner-delete-btn:hover:not(:disabled) {
+    background: #EF4444;
+    border-color: #EF4444;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+  }
+
+  .yt-banner-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 50% 30%, #18181B 0%, #121214 100%);
+  }
+
+  .yt-banner-gradient-strip {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(255, 69, 0, 0.08) 0%, transparent 60%);
+  }
+
+  .yt-banner-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 20px;
+    border-radius: 9999px;
+    background: rgba(255, 69, 0, 0.12);
+    border: 1px dashed rgba(255, 69, 0, 0.45);
+    color: #FF4500;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .yt-banner-add-btn:hover:not(:disabled) {
+    background: #FF4500;
+    color: #FFFFFF;
+    border-style: solid;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(255, 69, 0, 0.35);
+  }
+
+  /* 2. YouTube Channel Header (Identity Row) */
+  .yt-channel-header {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    padding: 6px 4px 12px;
+  }
+
+  .yt-avatar-wrapper {
+    flex-shrink: 0;
+  }
+
+  .yt-avatar-img {
+    width: 128px;
+    height: 128px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #18181B;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    background: #000000;
+    transition: transform 0.25s ease;
+  }
+
+  .yt-avatar-img:hover {
+    transform: scale(1.025);
+  }
+
+  .yt-avatar-placeholder {
+    width: 128px;
+    height: 128px;
+    border-radius: 50%;
+    background: #121214;
+    border: 3px solid #18181B;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #71717A;
+  }
+
+  .yt-channel-info-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .yt-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .yt-channel-name {
+    font-size: 28px;
+    font-weight: 800;
+    color: #FFFFFF;
+    letter-spacing: -0.02em;
+    margin: 0;
+    line-height: 1.15;
+  }
+
+  .yt-verified-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #FF4500;
+    filter: drop-shadow(0 0 8px rgba(255, 69, 0, 0.5));
+  }
+
+  .yt-private-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 9999px;
+    background: rgba(239, 68, 68, 0.14);
+    color: #EF4444;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+  }
+
+  /* YouTube Single-Line Metadata Row */
+  .yt-metadata-line {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    font-size: 13.5px;
+    color: #8E8E93;
+    font-weight: 500;
+  }
+
+  .yt-handle {
+    color: #A1A1AA;
+    font-weight: 600;
+  }
+
+  .yt-meta-dot {
+    color: #4A4D57;
+    font-size: 12px;
+  }
+
+  .yt-meta-link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #A1A1AA;
+    cursor: pointer;
+    transition: color 0.15s ease;
+  }
+
+  .yt-meta-link-btn:hover {
+    color: #FFFFFF;
+    text-decoration: underline;
+  }
+
+  .yt-meta-stat {
+    color: #8E8E93;
+  }
+
+  /* YouTube Bio Snippet */
+  .yt-bio-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 13.5px;
+    color: #C4C4C8;
+    line-height: 1.45;
+  }
+
+  .yt-bio-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .yt-more-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #FFFFFF;
+    font-weight: 700;
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+
+  .yt-more-btn:hover {
+    color: #FF4500;
+    text-decoration: underline;
+  }
+
+  /* YouTube Links Summary Pill */
+  .yt-links-pill-row {
+    display: flex;
+    align-items: center;
+  }
+
+  .yt-links-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 9999px;
+    padding: 4px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #E5E5E7;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .yt-links-pill:hover {
+    background: rgba(255, 69, 0, 0.12);
+    border-color: rgba(255, 69, 0, 0.4);
+    color: #FF4500;
+    transform: translateY(-1px);
+  }
+
+  .yt-pill-icon {
+    color: #FF4500;
+  }
+
+  .yt-pill-primary {
+    font-weight: 700;
+  }
+
+  .yt-pill-more {
+    color: #8E8E93;
+  }
+
+  .yt-pill-arrow {
+    opacity: 0.6;
+  }
+
+  /* YouTube Action Buttons */
+  .yt-actions-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+
+  .yt-btn {
+    height: 38px;
+    border-radius: 9999px;
+    padding: 0 18px;
+    font-size: 13.5px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+  }
+
+  .yt-btn-primary {
+    background: #FF4500;
+    color: #FFFFFF;
+    border: none;
+    box-shadow: 0 4px 14px rgba(255, 69, 0, 0.3);
+  }
+
+  .yt-btn-primary:hover {
+    background: #ff5714;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(255, 69, 0, 0.45);
+  }
+
+  .yt-btn-subscribe {
+    background: #FFFFFF;
+    color: #000000;
+    border: none;
+    font-weight: 800;
+  }
+
+  .yt-btn-subscribe:hover {
+    background: #FF4500;
+    color: #FFFFFF;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(255, 69, 0, 0.35);
+  }
+
+  .yt-btn-subscribed {
+    background: #181B22;
+    color: #FFFFFF;
+    border: 1px solid #282C37;
+  }
+
+  .yt-btn-subscribed:hover {
+    background: #232834;
+    border-color: #383E4E;
+  }
+
+  .yt-btn-secondary {
+    background: #12141A;
+    color: #E5E5E7;
+    border: 1px solid #20242E;
+  }
+
+  .yt-btn-secondary:hover {
+    background: #1C202A;
+    border-color: #2F3543;
+    color: #FFFFFF;
+    transform: translateY(-1px);
+  }
+
+  /* 3. YouTube Tabs Bar & In-Channel Search */
+  .creator-quizzes-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 6px;
+  }
+
+  .yt-nav-tabs-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .yt-nav-tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .yt-nav-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .yt-nav-tab {
+    position: relative;
+    background: none;
+    border: none;
+    padding: 13px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #8E8E93;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .yt-nav-tab:hover {
+    color: #FFFFFF;
+  }
+
+  .yt-nav-tab.active {
+    color: #FFFFFF;
+    font-weight: 750;
+  }
+
+  /* Signature 3px solid electric orange bottom indicator */
+  .yt-nav-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #FF4500;
+    border-radius: 3px 3px 0 0;
+    box-shadow: 0 0 10px rgba(255, 69, 0, 0.6);
+  }
+
+  .yt-tab-badge {
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #8E8E93;
+    font-weight: 700;
+  }
+
+  .yt-nav-tab.active .yt-tab-badge {
+    background: rgba(255, 69, 0, 0.2);
+    color: #FF4500;
+  }
+
+  /* In-Channel Search */
+  .yt-channel-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #121214;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 9999px;
+    padding: 6px 14px;
+    width: 230px;
+    transition: all 0.2s ease;
+  }
+
+  .yt-channel-search:focus-within {
+    border-color: #FF4500;
+    width: 280px;
+    box-shadow: 0 0 0 2px rgba(255, 69, 0, 0.15);
+  }
+
+  .yt-search-icon {
+    color: #71717A;
+    flex-shrink: 0;
+  }
+
+  .yt-search-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #FFFFFF;
+    font-size: 13px;
+    width: 100%;
+  }
+
+  .yt-search-input::placeholder {
+    color: #555861;
+  }
+
+  .yt-search-clear {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #71717A;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: color 0.15s;
+  }
+
+  .yt-search-clear:hover {
+    color: #FFFFFF;
+  }
+
+  .creator-quizzes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    gap: 20px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Floating Modal Window for Followers & Following */
+  .floating-network-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: floatFadeIn 0.15s ease-out;
+  }
+
+  .floating-network-modal {
+    width: 100%;
+    max-width: 460px;
+    max-height: 80vh;
+    background: #000000;
+    border: 1px solid #27272a;
+    border-radius: 20px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.95), 0 0 1px rgba(255, 255, 255, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: floatScaleIn 0.16s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .floating-network-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #1c1c1f;
+    background: #000000;
+  }
+
+  .floating-network-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .floating-network-tab-btn {
+    background: transparent;
+    border: none;
+    font-size: 14px;
+    font-weight: 650;
+    color: #888888;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .floating-network-tab-btn.active {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .network-pill-badge {
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #cccccc;
+  }
+
+  .floating-network-tab-btn.active .network-pill-badge {
+    background: rgba(255, 69, 0, 0.2);
+    color: #FF4500;
+  }
+
+  .btn-floating-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-floating-close:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .floating-network-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 14px;
+    min-height: 220px;
+    max-height: 60vh;
+  }
+
+  .floating-user-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .floating-user-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: transparent;
+    transition: background 0.15s ease;
+  }
+
+  .floating-user-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .floating-user-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .floating-user-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #222224;
+    flex-shrink: 0;
+  }
+
+  .floating-user-avatar.placeholder {
+    background: #FF4500;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    border: none;
+  }
+
+  .floating-user-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .floating-user-name {
+    font-size: 14px;
+    font-weight: 650;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .floating-user-handle {
+    font-size: 12.5px;
+    color: #888888;
+  }
+
+  .floating-user-bio {
+    font-size: 12px;
+    color: #a1a1aa;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 2px 0 0;
+  }
+
+  .btn-floating-follow {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 650;
+    cursor: pointer;
+    background: #FF4500;
+    border: 1px solid #FF4500;
+    color: #ffffff;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+  }
+
+  .btn-floating-follow:hover {
+    background: #ff5714;
+    border-color: #ff5714;
+  }
+
+  .btn-floating-follow.following {
+    background: #000000;
+    border: 1px solid #27272a;
+    color: #ffffff;
+  }
+
+  .btn-floating-follow.following:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.08);
+  }
+
+  .floating-state-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 44px 20px;
+    gap: 10px;
+    color: #888888;
+  }
+
+  .floating-state-card h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+  }
+
+  .floating-state-card p {
+    font-size: 13px;
+    color: #888888;
+    margin: 0;
+  }
+
+  /* Empty States & Lock Cards */
+  .no-items-card {
+    padding: 56px 20px;
+    text-align: center;
+    background: #121214;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    color: #888888;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .no-items-card h3 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: #FFFFFF;
+  }
+
+  .no-items-card p {
+    margin: 0;
+    font-size: 13.5px;
+    color: #8E8E93;
+    max-width: 420px;
+  }
+
+  .private-lock-card {
+    padding: 60px 24px;
+  }
+
+  .private-lock-icon {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: #121214;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #888888;
+    margin-bottom: 4px;
+  }
+
+  .private-lock-card h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #FFFFFF;
+  }
+
+  .private-lock-card p {
+    margin: 0;
+    font-size: 14px;
+    color: #888888;
+    max-width: 380px;
+  }
+
+  .profile-pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 24px;
+    padding: 12px 16px;
+  }
+
+  .profile-page-btn {
+    padding: 8px 18px;
+    border-radius: 9999px;
+    background: #121214;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #FFFFFF;
+    font-size: 13px;
+    font-weight: 650;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .profile-page-btn:hover:not(:disabled) {
+    background: rgba(255, 69, 0, 0.1);
+    border-color: #FF4500;
+    color: #FF4500;
+  }
+
+  .profile-page-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .profile-page-info {
+    font-size: 13px;
+    font-weight: 600;
+    color: #888888;
+  }
+
+  /* 4. YouTube "About / Channel Info" Modal (Matches YouTube Fireship Screenshots 3 & 4) */
+  .yt-about-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.15s ease-out;
+  }
+
+  .yt-about-modal {
+    width: 100%;
+    max-width: 520px;
+    max-height: 85vh;
+    background: #121214;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.95);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: modalPop 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .yt-about-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: #121214;
+  }
+
+  .yt-about-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #FFFFFF;
+    margin: 0;
+  }
+
+  .yt-about-close-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .yt-about-close-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .yt-about-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .yt-about-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .yt-about-section-heading {
+    font-size: 15px;
+    font-weight: 750;
+    color: #FFFFFF;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .yt-about-description {
+    font-size: 13.5px;
+    color: #D1D1D6;
+    line-height: 1.6;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .yt-about-links-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .yt-about-link-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: #121214;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.15s ease;
+  }
+
+  .yt-about-link-item:hover {
+    background: rgba(255, 69, 0, 0.08);
+    border-color: rgba(255, 69, 0, 0.35);
+    transform: translateX(2px);
+  }
+
+  .yt-about-link-icon-wrap {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #18181B;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FF4500;
+    flex-shrink: 0;
+  }
+
+  .yt-about-link-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .yt-about-link-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #FFFFFF;
+    text-transform: capitalize;
+  }
+
+  .yt-about-link-url {
+    font-size: 12px;
+    color: #8E8E93;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .yt-about-link-ext {
+    color: #71717A;
+    flex-shrink: 0;
+  }
+
+  .yt-about-details-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .yt-about-detail-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13.5px;
+    color: #D1D1D6;
+  }
+
+  .yt-about-detail-icon {
+    color: #8E8E93;
+    flex-shrink: 0;
+  }
+
+  .yt-about-detail-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .yt-about-detail-label {
+    color: #D1D1D6;
+    font-weight: 500;
+    word-break: break-all;
+  }
+
+  .yt-about-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: #18181B;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .yt-about-copy-btn:hover {
+    background: #FF4500;
+    border-color: #FF4500;
+  }
+
+  .yt-about-footer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 18px;
+    margin-top: 6px;
+  }
+
+  .yt-about-footer-btn {
+    flex: 1;
+    height: 38px;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .yt-about-share-btn {
+    background: #FF4500;
+    color: #FFFFFF;
+    border: none;
+  }
+
+  .yt-about-share-btn:hover {
+    background: #ff5714;
+    box-shadow: 0 4px 14px rgba(255, 69, 0, 0.35);
+  }
+
+  .yt-about-report-btn {
+    background: transparent;
+    color: #A1A1AA;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .yt-about-report-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #EF4444;
+    color: #EF4444;
+  }
+
+  /* Recent Activity Styles */
+  .profile-activity-container {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    width: 100%;
+  }
+
+  .profile-activity-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+
+  .activity-filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    background: #121214;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #9ca3af;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .activity-filter-pill:hover {
+    background: #18181B;
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+
+  .activity-filter-pill.active {
+    background: rgba(255, 69, 0, 0.14);
+    color: #FF4500;
+    border-color: rgba(255, 69, 0, 0.45);
+    font-weight: 700;
+  }
+
+  .filter-pill-num {
+    font-size: 11px;
+    opacity: 0.85;
+  }
+
+  .profile-activity-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .profile-activity-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    background: #07080a;
+    border: 1px solid #181b22;
+    transition: all 0.2s ease;
+  }
+
+  .profile-activity-card:hover {
+    background: #0e1015;
+    border-color: rgba(255, 69, 0, 0.35);
+    transform: translateX(2px);
+  }
+
+  .activity-card-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .activity-type-icon-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+
+  .activity-type-icon-circle.icon-attempt {
+    background: rgba(255, 69, 0, 0.14);
+    color: #FF4500;
+    border: 1px solid rgba(255, 69, 0, 0.32);
+  }
+
+  .activity-type-icon-circle.icon-published {
+    background: rgba(255, 69, 0, 0.14);
+    color: #FF4500;
+    border: 1px solid rgba(255, 69, 0, 0.3);
+  }
+
+  .activity-type-icon-circle.icon-liked {
+    background: rgba(239, 68, 68, 0.14);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+
+  .activity-type-icon-circle.icon-bookmarked {
+    background: rgba(245, 158, 11, 0.14);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+
+  .activity-type-icon-circle.icon-followed {
+    background: rgba(255, 255, 255, 0.08);
+    color: #FFFFFF;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .activity-type-icon-circle.icon-commented {
+    background: rgba(16, 185, 129, 0.14);
+    color: #10B981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+
+  .activity-card-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .activity-card-title-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+    font-size: 13.5px;
+    color: #ffffff;
+  }
+
+  .activity-actor-name {
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .activity-verb-label {
+    color: #9ca3af;
+    font-weight: 500;
+  }
+
+  .activity-quiz-link {
+    color: #FF5500;
+    font-weight: 650;
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .activity-quiz-link:hover {
+    color: #FF7733;
+    text-decoration: underline;
+  }
+
+  .activity-user-link {
+    color: #FFFFFF;
+    font-weight: 650;
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .activity-user-link:hover {
+    color: #FF4500;
+    text-decoration: underline;
+  }
+
+  .activity-fallback-text {
+    color: #d1d5db;
+  }
+
+  .activity-card-tags {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  .activity-tag-pill {
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-weight: 600;
+    background: #121214;
+    color: #9ca3af;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .activity-tag-pill.category {
+    color: #d1d5db;
+  }
+
+  .activity-tag-pill.difficulty.easy {
+    color: #34d399;
+    border-color: rgba(52, 211, 153, 0.25);
+  }
+
+  .activity-tag-pill.difficulty.medium {
+    color: #fbbf24;
+    border-color: rgba(251, 191, 36, 0.25);
+  }
+
+  .activity-tag-pill.difficulty.hard {
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.25);
+  }
+
+  .activity-card-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+  }
+
+  .activity-card-badge {
+    font-size: 11.5px;
+    font-weight: 750;
+    padding: 3px 9px;
+    border-radius: 6px;
+  }
+
+  .activity-card-badge.score {
+    background: rgba(255, 69, 0, 0.16);
+    color: #FF4500;
+    border: 1px solid rgba(255, 69, 0, 0.35);
+  }
+
+  .activity-card-badge.published {
+    background: rgba(255, 69, 0, 0.14);
+    color: #FF4500;
+    border: 1px solid rgba(255, 69, 0, 0.3);
+  }
+
+  .activity-card-badge.social,
+  .activity-card-badge.status {
+    background: #121214;
+    color: #9ca3af;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .activity-card-timestamp {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .profile-activity-load-more-wrap {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .btn-load-more-activity {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 11px;
+    border-radius: 10px;
+    background: #121214;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #d1d5db;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-load-more-activity:hover:not(:disabled) {
+    background: #18181B;
+    border-color: #FF4500;
+    color: #FF4500;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 69, 0, 0.2);
+  }
+
+  .btn-load-more-activity:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* Keyframes */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes modalPop {
+    from { opacity: 0; transform: scale(0.96) translateY(6px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  /* Responsive Breakpoints */
+  @media (max-width: 900px) {
+    .yt-channel-header {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 16px;
+    }
+
+    .yt-title-row,
+    .yt-metadata-line,
+    .yt-bio-row,
+    .yt-links-pill-row,
+    .yt-actions-row {
+      justify-content: center;
+    }
+
+    .yt-banner-container {
+      height: 160px;
+    }
+
+    .yt-avatar-img,
+    .yt-avatar-placeholder {
+      width: 104px;
+      height: 104px;
+      margin-top: -48px;
+    }
+
+    .creator-quizzes-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 600px) {
+    .yt-banner-container {
+      height: 120px;
+      border-radius: 12px;
+    }
+
+    .yt-avatar-img,
+    .yt-avatar-placeholder {
+      width: 88px;
+      height: 88px;
+      margin-top: -40px;
+    }
+
+    .yt-channel-name {
+      font-size: 22px;
+    }
+
+    .yt-nav-tabs-wrapper {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .yt-channel-search {
+      width: 100%;
+    }
+
+    .yt-channel-search:focus-within {
+      width: 100%;
+    }
+
+    .creator-quizzes-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .profile-activity-card {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+    }
+
+    .activity-card-right {
+      width: 100%;
+      justify-content: space-between;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 8px;
+    }
+
+    .yt-about-footer {
+      flex-direction: column;
+    }
+
+    .yt-about-footer-btn {
+      width: 100%;
+    }
+  }

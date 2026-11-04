@@ -42,10 +42,10 @@ const NavigatorCell = memo(function NavigatorCell({
         title={`Question ${index + 1}`}
         className={`relative ${buttonSize} rounded-full flex items-center justify-center font-medium transition-all duration-150 outline-none ${
           isCurrent
-            ? 'bg-indigo-600 text-white shadow-md ring-2 ring-indigo-600 z-10'
+            ? 'bg-[#FF4500] text-black font-bold shadow-md shadow-[#FF4500]/25 ring-2 ring-[#FF4500] z-10'
             : isAnswered
-              ? 'bg-white text-zinc-900 border border-zinc-200'
-              : 'bg-white text-zinc-500 border border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900'
+              ? 'bg-[#18181B] text-white border border-white/20'
+              : 'bg-[#121214] text-zinc-400 border border-white/10 hover:bg-[#18181B] hover:text-white'
         }`}
       >
         <span>{index + 1}</span>
@@ -53,7 +53,7 @@ const NavigatorCell = memo(function NavigatorCell({
         {isFlagged && !collapsed && (
           <span
             className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center shadow-sm ${
-              isCurrent ? 'bg-white text-amber-500' : 'bg-amber-100 text-amber-600'
+              isCurrent ? 'bg-black text-[#FF4500]' : 'bg-[#FF4500]/20 text-[#FF4500] border border-[#FF4500]/30'
             }`}
           >
             <Flag className="w-2 h-2 fill-current" />
@@ -61,8 +61,8 @@ const NavigatorCell = memo(function NavigatorCell({
         )}
 
         {!isFlagged && isAnswered && !isCurrent && !collapsed && (
-          <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-zinc-800 rounded-full flex items-center justify-center ring-2 ring-[#fcfcfc]">
-            <Check className="w-2 h-2 text-white stroke-[3]" />
+          <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-zinc-800 rounded-full flex items-center justify-center ring-2 ring-[#121214] border border-white/20">
+            <Check className="w-2 h-2 text-[#FF4500] stroke-[3]" />
           </span>
         )}
       </button>
@@ -134,7 +134,7 @@ function NavigatorSidebar({ collapsed = false }) {
 
   if (collapsed) {
     return (
-      <div className="h-full bg-[#fcfcfc] border-r border-zinc-200 flex flex-col items-center py-2">
+      <div className="h-full bg-[#121214] border-r border-white/10 flex flex-col items-center py-2">
         <div className="flex-1 w-full overflow-hidden">
           <AutoSizer renderProp={renderGrid} />
         </div>
@@ -143,8 +143,8 @@ function NavigatorSidebar({ collapsed = false }) {
   }
 
   return (
-    <div className="h-full bg-[#fcfcfc] border-r border-zinc-200 flex flex-col">
-      <div className="p-4 border-b border-zinc-100 flex items-center justify-between shrink-0">
+    <div className="h-full bg-[#121214] border-r border-white/10 flex flex-col">
+      <div className="p-4 border-b border-white/10 flex items-center justify-between shrink-0">
         <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Navigator</h2>
       </div>
 

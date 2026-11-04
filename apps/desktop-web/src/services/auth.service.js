@@ -26,7 +26,7 @@ export const AuthService = {
   },
 
   updateProfile: async (profileData) => {
-    const { data } = await api.put('/auth/me', profileData);
+    const { data } = await api.patch('/auth/me', profileData);
     return data?.data?.user;
   },
 };

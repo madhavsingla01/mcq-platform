@@ -27,6 +27,7 @@ import {
   PlusCircle,
 } from 'lucide-react';
 import { Card, Badge, Button } from '../../components/ui';
+import './Guide.css';
 
 const navItems = [
   { id: 'rules', label: 'Quiz rules', icon: SlidersHorizontal, desc: 'Modes, timers & feedback' },
@@ -277,7 +278,7 @@ export default function Guide() {
                 {/* 4. Explanation Reveal */}
                 <Card className="guide-rule-card">
                   <div className="guide-rule-header">
-                    <div className="guide-rule-icon" style={{ background: 'var(--color-action-blue-light)', color: 'var(--color-action-blue)' }}>
+                    <div className="guide-rule-icon" style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}>
                       <HelpCircle size={20} />
                     </div>
                     <div>
@@ -548,7 +549,7 @@ export default function Guide() {
 
                 <Card className="guide-rule-card">
                   <div className="guide-rule-header">
-                    <div className="guide-rule-icon" style={{ background: 'var(--color-action-blue-light)', color: 'var(--color-action-blue)' }}>
+                    <div className="guide-rule-icon" style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}>
                       <Share2 size={20} />
                     </div>
                     <div>
@@ -578,7 +579,7 @@ export default function Guide() {
 
                 <Card className="guide-rule-card">
                   <div className="guide-rule-header">
-                    <div className="guide-rule-icon" style={{ background: 'var(--color-action-blue-light)', color: 'var(--color-action-blue)' }}>
+                    <div className="guide-rule-icon" style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}>
                       <MessageSquare size={20} />
                     </div>
                     <div>
@@ -689,79 +690,6 @@ export default function Guide() {
           <Link to="/settings/help">Help & About</Link>
         </div>
       </footer>
-
-      <style>{guideStyles}</style>
     </div>
   );
 }
-
-const guideStyles = `
-  .guide-page { padding: 8px 0 0; display: flex; flex-direction: column; gap: 28px; }
-  .guide-search button { display: grid; place-items: center; width: 28px; height: 28px; color: var(--color-text-secondary); background: transparent; border-radius: 7px; cursor: pointer; }
-  .guide-search button:hover { color: var(--color-text); background: var(--color-surface-hover); }
-  .guide-search-count { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
-  .guide-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); align-items: start; gap: 28px; }
-  .guide-nav-col { position: sticky; top: 24px; display: flex; flex-direction: column; gap: 16px; }
-  .guide-nav-menu { display: flex; flex-direction: column; gap: 4px; }
-  .guide-nav-item { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 9px; color: var(--color-text-secondary); text-align: left; background: transparent; border: 0; border-radius: 9px; cursor: pointer; }
-  .guide-nav-item:hover { color: var(--color-text); background: var(--color-surface); }
-  .guide-nav-item.active { color: var(--color-primary); background: var(--color-primary-light); }
-  .guide-nav-icon { display: grid; place-items: center; width: 30px; height: 30px; flex: 0 0 auto; }
-  .guide-nav-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .guide-nav-text strong { font-size: 12.5px; font-weight: 650; }
-  .guide-nav-text span { overflow: hidden; color: var(--color-text-secondary); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-  .guide-quick-create { padding: 16px; border-radius: 12px; }
-  .guide-quick-create h4 { margin: 0 0 6px; color: var(--color-text); font-size: 15px; }
-  .guide-quick-create p { margin: 0 0 14px; color: var(--color-text-secondary); font-size: 12.5px; line-height: 1.5; }
-  .guide-content-col { display: flex; flex-direction: column; gap: 34px; min-width: 0; }
-  .guide-section { display: flex; flex-direction: column; gap: 16px; padding-bottom: 28px; border-bottom: 1px solid var(--color-border); scroll-margin-top: 20px; }
-  .guide-section[hidden], .guide-rule-card[hidden] { display: none; }
-  .guide-section-intro h2 { margin: 0 0 5px; color: var(--color-text); font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
-  .guide-section-intro p { margin: 0; color: var(--color-text-secondary); font-size: 13px; line-height: 1.5; }
-  .guide-cards-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-  .guide-rule-card { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 18px; border-radius: 12px; }
-  .guide-rule-header { display: flex; align-items: flex-start; gap: 11px; }
-  .guide-rule-icon { display: grid; place-items: center; width: 36px; height: 36px; flex: 0 0 auto; color: var(--color-primary); background: var(--color-surface-alt); border-radius: 9px; }
-  .guide-rule-header h3 { margin: 0; color: var(--color-text); font-size: 14px; font-weight: 650; line-height: 1.35; }
-  .guide-rule-target { color: var(--color-text-muted); font-size: 11px; }
-  .guide-scenarios-list { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px solid var(--color-border); }
-  .guide-scenario { display: flex; flex-direction: column; gap: 6px; padding: 10px 11px; background: var(--color-surface-alt); border: 1px solid var(--color-border-light); border-radius: 8px; }
-  .scenario-label { display: flex; align-items: center; gap: 8px; }
-  .scenario-label strong { color: var(--color-text); font-size: 13px; }
-  .guide-scenario p { margin: 0; color: var(--color-text-secondary); font-size: 12px; line-height: 1.5; }
-  .guide-feature-list { display: flex; flex-direction: column; gap: 7px; padding-left: 18px; color: var(--color-text-secondary); font-size: 12.5px; line-height: 1.5; }
-  .guide-feature-list li::marker { color: var(--color-primary); }
-  .guide-feature-list code { padding: 2px 6px; color: var(--color-primary); background: var(--color-surface-alt); border: 1px solid var(--color-border); border-radius: 4px; font-size: 12px; }
-  .guide-empty-state { display: flex; align-items: center; flex-direction: column; gap: 9px; padding: 40px 20px; color: var(--color-text-secondary); text-align: center; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; }
-  .guide-empty-state h2 { margin: 0; color: var(--color-text); font-size: 16px; }
-  .guide-empty-state p { margin: 0; font-size: 13px; }
-  .guide-empty-state button { padding: 8px 12px; color: var(--color-text); background: var(--color-surface-hover); border: 0; border-radius: 8px; cursor: pointer; }
-  .guide-footer { margin-top: 4px; padding-top: 24px; border-top: 1px solid var(--color-border); }
-  .guide-footer-top, .guide-footer-brand { display: flex; align-items: center; }
-  .guide-footer-top { justify-content: space-between; gap: 18px; padding-bottom: 20px; }
-  .guide-footer-brand { flex-wrap: wrap; gap: 9px; color: var(--color-text-secondary); font-size: 12px; }
-  .guide-footer-brand svg { color: var(--color-primary); }
-  .guide-footer-brand strong { color: var(--color-text); font-size: 13px; }
-  .guide-footer-cta { display: inline-flex; align-items: center; gap: 7px; padding: 9px 12px; color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 9px; text-decoration: none; font-size: 12px; font-weight: 600; }
-  .guide-footer-links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; padding: 18px 0; border-top: 1px solid var(--color-border); }
-  .guide-footer-links > div { display: flex; flex-direction: column; align-items: flex-start; gap: 9px; }
-  .guide-footer-links h3 { margin: 0 0 3px; color: var(--color-text); font-size: 11px; }
-  .guide-footer-links a, .guide-footer-bottom a { color: var(--color-text-secondary); text-decoration: none; font-size: 11.5px; }
-  .guide-footer-links a:hover, .guide-footer-bottom a:hover { color: var(--color-text); }
-  .guide-footer-bottom { display: flex; justify-content: space-between; gap: 12px; padding: 14px 0 4px; color: var(--color-text-muted); border-top: 1px solid var(--color-border); font-size: 11px; }
-  @media (max-width: 860px) {
-    .guide-layout { grid-template-columns: 1fr; gap: 18px; }
-    .guide-nav-col { position: static; }
-    .guide-nav-menu { flex-direction: row; overflow-x: auto; }
-    .guide-nav-item { flex: 0 0 auto; }
-    .guide-nav-text span, .guide-quick-create { display: none; }
-  }
-  @media (max-width: 600px) {
-    .guide-page { padding: 8px 0 0; gap: 20px; }
-    .guide-layout { margin: 0 -14px; }
-    .guide-nav-menu { padding: 0 8px; }
-    .guide-cards-grid { grid-template-columns: 1fr; }
-    .guide-footer-links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .guide-footer-bottom { flex-direction: column; }
-  }
-`;

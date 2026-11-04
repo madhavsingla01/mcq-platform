@@ -23,6 +23,7 @@
     "social:dev": "npm --prefix services/social-service run dev",
     "message:dev": "npm --prefix services/message-service run dev",
     "media:dev": "npm --prefix services/media-service run dev",
-    "admin:dev": "npm --prefix services/admin-service run dev"
+    "admin:dev": "npm --prefix services/admin-service run dev",
+    "challenge:dev": "npm --prefix services/challenge-service run dev"
   }
 }

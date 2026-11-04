@@ -4,6 +4,7 @@
  */
 
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { AppError } from './error.middleware.js';
 import env from '../config/env.js';
 import User from '../models/User.model.js';
@@ -35,7 +36,7 @@ export const protect = async (req, res, next) => {
 
     // Auto-backfill userCode for existing accounts if missing
     if (!user.userCode) {
-      user.userCode = 'USR-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+      user.userCode = `USR-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
       user.save({ validateBeforeSave: false }).catch(() => {});
     }
 

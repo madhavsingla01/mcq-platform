@@ -1,8 +1,9 @@
-import React, { memo, useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { memo, useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSettingsStore } from '../../../store/settingsStore';
 import { useUIStore } from '../../../store/uiStore';
 import { useQuizStore } from '../../../store/quizStore';
+import './SettingsDrawer.css';
 import {
   showCustomDialog,
   SettingsSection,
@@ -23,9 +24,25 @@ import {
   Moon,
   Zap,
   Sliders,
-  Clock,
-  Volume2,
 } from 'lucide-react';
+
+const getMenuPosition = () => {
+  const trigger = document.querySelector('[data-settings-trigger]');
+  if (!trigger) return { top: 84, right: 16 };
+
+  const bounds = trigger.getBoundingClientRect();
+  const panelWidth =
+    document.querySelector('.settings-drawer-panel')?.getBoundingClientRect().width ??
+    Math.min(420, document.documentElement.clientWidth - 24);
+  const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+  const preferredRight = viewportWidth - bounds.right;
+  const maxRight = viewportWidth - panelWidth - 8;
+
+  return {
+    top: Math.max(8, Math.min(bounds.bottom + 10, window.innerHeight - 180)),
+    right: Math.max(8, Math.min(preferredRight, maxRight)),
+  };
+};
 
 // Tiny Web Audio synthesizer click feedback
 const playAudioFeedback = (type = 'click') => {
@@ -61,12 +78,9 @@ function SettingsDrawer({ collaboration }) {
   const navigate = useNavigate();
   const { theme, setTheme } = useUIStore();
   const {
-    isDrawerOpen,
-    toggleDrawer,
+    setDrawerOpen,
     fontSize,
     setFontSize,
-    density,
-    setDensity,
     timerVisibility,
     setTimerVisibility,
     keyboardShortcutsEnabled,
@@ -77,6 +91,8 @@ function SettingsDrawer({ collaboration }) {
 
   const setInstantFeedback = useQuizStore((s) => s.setInstantFeedback);
 
+  const menuRef = useRef(null);
+  const [menuPosition, setMenuPosition] = useState(getMenuPosition);
   const [copied, setCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
   const [soundEnabled, setSoundEnabled] = useState(() => {
@@ -92,7 +108,40 @@ function SettingsDrawer({ collaboration }) {
     return () => document.removeEventListener('fullscreenchange', handleFsChange);
   }, []);
 
-  if (!isDrawerOpen) return null;
+  useLayoutEffect(() => {
+    const updatePosition = () => setMenuPosition(getMenuPosition());
+    updatePosition();
+    menuRef.current?.focus({ preventScroll: true });
+
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, []);
+
+  useEffect(() => {
+    const closeOnOutsidePointer = (event) => {
+      if (!(event.target instanceof Element)) return;
+      if (event.target.closest('.settings-drawer-panel, [data-settings-trigger]')) return;
+      setDrawerOpen(false);
+    };
+
+    const closeOnEscape = (event) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      setDrawerOpen(false);
+      document.querySelector('[data-settings-trigger]')?.focus();
+    };
+
+    document.addEventListener('pointerdown', closeOnOutsidePointer);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsidePointer);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [setDrawerOpen]);
 
   const copyShareLink = async () => {
     playAudioFeedback('click');
@@ -158,26 +207,44 @@ function SettingsDrawer({ collaboration }) {
     });
 
     if (confirmed) {
-      toggleDrawer();
+      setDrawerOpen(false);
       navigate('/dashboard');
     }
   };
 
-  return (
-    <>
-      <div className="settings-drawer-backdrop" onClick={toggleDrawer} />
+  const closeMenu = () => {
+    setDrawerOpen(false);
+    document.querySelector('[data-settings-trigger]')?.focus();
+  };
 
-      <aside className="settings-drawer-panel" role="dialog" aria-modal="true" aria-label="Practice Controls">
-        {/* Drawer Header */}
+  return (
+      <aside
+        ref={menuRef}
+        className="settings-drawer-panel"
+        role="dialog"
+        aria-modal="false"
+        aria-labelledby="settings-drawer-title"
+        tabIndex={-1}
+        id="settings-drawer"
+        style={{
+          '--settings-menu-top': `${menuPosition.top}px`,
+          '--settings-menu-right': `${menuPosition.right}px`,
+        }}
+      >
         <div className="settings-drawer-header">
           <div className="settings-drawer-title-wrap">
-            <Sliders size={18} className="text-orange-500" />
-            <span>Practice Controls &amp; Settings</span>
+            <div className="settings-drawer-title-icon">
+              <Sliders size={18} />
+            </div>
+            <div className="settings-drawer-title-copy">
+              <span className="settings-drawer-kicker">Practice Controls</span>
+              <span className="settings-drawer-heading" id="settings-drawer-title">Session Settings</span>
+            </div>
           </div>
 
           <button
             type="button"
-            onClick={toggleDrawer}
+            onClick={closeMenu}
             className="settings-drawer-close"
             title="Close Settings (Esc)"
             aria-label="Close Settings"
@@ -186,16 +253,15 @@ function SettingsDrawer({ collaboration }) {
           </button>
         </div>
 
-        {/* Drawer Scrollable Body */}
         <div className="settings-drawer-body">
-          {/* Section 1: Visual Theme & Font */}
           <SettingsSection
+            className="settings-drawer-section"
             title="Visual Appearance"
             description="Adjust display contrast, text sizing, and full-screen immersion."
             icon={Palette}
           >
-            <SettingsRow title="Theme Mode">
-              <div className="flex items-center gap-1 bg-[#121215] border border-white/10 rounded-lg p-1">
+            <SettingsRow className="settings-drawer-row settings-drawer-row--stacked" title="Theme Mode">
+              <div className="settings-drawer-segmented" role="group" aria-label="Theme mode">
                 {[
                   { id: 'dark', label: 'Dark', icon: Moon },
                   { id: 'oled', label: 'OLED', icon: Moon },
@@ -208,11 +274,8 @@ function SettingsDrawer({ collaboration }) {
                       playAudioFeedback('click');
                       setTheme(id);
                     }}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
-                      theme === id
-                        ? 'bg-orange-500 text-white font-bold shadow-sm'
-                        : 'text-gray-400 hover:text-white'
-                    }`}
+                    className={`settings-drawer-segmented-button ${theme === id ? 'active' : ''}`}
+                    aria-pressed={theme === id}
                   >
                     <Icon size={11} />
                     <span>{label}</span>
@@ -221,8 +284,8 @@ function SettingsDrawer({ collaboration }) {
               </div>
             </SettingsRow>
 
-            <SettingsRow title="Font Size">
-              <div className="flex items-center gap-1 bg-[#121215] border border-white/10 rounded-lg p-1">
+            <SettingsRow className="settings-drawer-row settings-drawer-row--stacked" title="Font Size">
+              <div className="settings-drawer-segmented settings-drawer-segmented-small" role="group" aria-label="Font size">
                 {[
                   ['sm', 'Small'],
                   ['md', 'Medium'],
@@ -235,11 +298,8 @@ function SettingsDrawer({ collaboration }) {
                       playAudioFeedback('click');
                       setFontSize(val);
                     }}
-                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
-                      fontSize === val
-                        ? 'bg-orange-500 text-white font-bold shadow-sm'
-                        : 'text-gray-400 hover:text-white'
-                    }`}
+                    className={`settings-drawer-segmented-button settings-drawer-segmented-button-small ${fontSize === val ? 'active' : ''}`}
+                    aria-pressed={fontSize === val}
                   >
                     {label}
                   </button>
@@ -247,77 +307,87 @@ function SettingsDrawer({ collaboration }) {
               </div>
             </SettingsRow>
 
-            <SettingsRow title="Fullscreen Immersion" description="Distraction-free exam viewport">
-              <Button variant="ghost" size="sm" onClick={toggleFullscreen}>
+            <SettingsRow className="settings-drawer-row" title="Fullscreen Immersion" description="Distraction-free exam viewport">
+              <Button className="settings-drawer-inline-button" variant="secondary" size="sm" onClick={toggleFullscreen}>
                 {isFullscreen ? <Minimize size={13} /> : <Maximize size={13} />}
                 <span>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
               </Button>
             </SettingsRow>
           </SettingsSection>
 
-          {/* Section 2: Quiz Taking Mechanics */}
           <SettingsSection
+            className="settings-drawer-section"
             title="Solving Experience"
             description="Manage countdown display, audio feedback, and question advance."
             icon={Zap}
           >
             <SettingsRow
+              className="settings-drawer-row"
               title="Sound Cues"
               description="Subtle click audio on selection & answer toggles"
             >
               <SettingsToggle
                 id="drawer-sound"
+                ariaLabel="Sound cues"
                 checked={soundEnabled}
                 onChange={handleToggleSound}
               />
             </SettingsRow>
 
             <SettingsRow
+              className="settings-drawer-row"
               title="Timer Display"
               description="Show remaining countdown in the top bar"
             >
               <SettingsToggle
                 id="drawer-timer"
+                ariaLabel="Timer display"
                 checked={timerVisibility === 'visible'}
                 onChange={handleToggleTimer}
               />
             </SettingsRow>
 
             <SettingsRow
+              className="settings-drawer-row"
               title="Instant Explanations"
               description="Reveal answers immediately upon answering"
             >
               <SettingsToggle
                 id="drawer-instant"
+                ariaLabel="Instant explanations"
                 checked={Boolean(showCorrectAnswerInstantly)}
                 onChange={handleToggleInstantFeedback}
               />
             </SettingsRow>
 
             <SettingsRow
+              className="settings-drawer-row"
               title="Auto-Advance"
               description="Jump to next question automatically on answer"
             >
               <SettingsToggle
                 id="drawer-autoadvance"
+                ariaLabel="Auto-advance"
                 checked={autoAdvance}
                 onChange={handleToggleAutoAdvance}
               />
             </SettingsRow>
           </SettingsSection>
 
-          {/* Section 3: Keyboard Shortcuts */}
           <SettingsSection
+            className="settings-drawer-section"
             title="Keyboard Navigation"
             description="Rapid question answering via keys"
             icon={Keyboard}
           >
             <SettingsRow
+              className="settings-drawer-row"
               title="Enable Keyboard Shortcuts"
               description="A-D or 1-4 for options, arrows for navigation"
             >
               <SettingsToggle
                 id="drawer-shortcuts"
+                ariaLabel="Enable keyboard shortcuts"
                 checked={keyboardShortcutsEnabled}
                 onChange={(checked) => {
                   playAudioFeedback('toggle');
@@ -327,35 +397,35 @@ function SettingsDrawer({ collaboration }) {
             </SettingsRow>
 
             {keyboardShortcutsEnabled && (
-              <div className="grid grid-cols-2 gap-2 pt-2">
-                <div className="flex items-center justify-between p-2 rounded-lg bg-white/[0.03] border border-white/5 text-xs text-gray-300">
+              <div className="settings-drawer-shortcut-grid">
+                <div className="settings-drawer-shortcut-item">
                   <span>Select Option</span>
-                  <kbd className="px-1.5 py-0.5 rounded bg-black/50 border border-white/10 text-[11px] font-mono font-bold text-orange-400">1-4 / A-D</kbd>
+                  <kbd className="settings-drawer-keycap">1-4 / A-D</kbd>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded-lg bg-white/[0.03] border border-white/5 text-xs text-gray-300">
+                <div className="settings-drawer-shortcut-item">
                   <span>Next / Prev</span>
-                  <kbd className="px-1.5 py-0.5 rounded bg-black/50 border border-white/10 text-[11px] font-mono font-bold text-orange-400">← / →</kbd>
+                  <kbd className="settings-drawer-keycap">← / →</kbd>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded-lg bg-white/[0.03] border border-white/5 text-xs text-gray-300">
+                <div className="settings-drawer-shortcut-item">
                   <span>Flag Question</span>
-                  <kbd className="px-1.5 py-0.5 rounded bg-black/50 border border-white/10 text-[11px] font-mono font-bold text-orange-400">F</kbd>
+                  <kbd className="settings-drawer-keycap">F</kbd>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded-lg bg-white/[0.03] border border-white/5 text-xs text-gray-300">
+                <div className="settings-drawer-shortcut-item">
                   <span>Submit Quiz</span>
-                  <kbd className="px-1.5 py-0.5 rounded bg-black/50 border border-white/10 text-[11px] font-mono font-bold text-orange-400">Ctrl+Enter</kbd>
+                  <kbd className="settings-drawer-keycap">Ctrl+Enter</kbd>
                 </div>
               </div>
             )}
           </SettingsSection>
 
-          {/* Section 4: Share & Collaboration */}
           <SettingsSection
+            className="settings-drawer-section"
             title="Session Actions"
             description="Share this practice challenge or link with others."
             icon={Share2}
           >
-            <SettingsRow title="Share Quiz Link">
-              <Button variant="secondary" size="sm" onClick={copyShareLink}>
+            <SettingsRow className="settings-drawer-row" title="Share Quiz Link">
+              <Button className="settings-drawer-inline-button" variant="secondary" size="sm" onClick={copyShareLink}>
                 {copied ? <Check size={13} className="text-emerald-400" /> : <Share2 size={13} />}
                 <span>{copied ? 'Copied!' : 'Copy Link'}</span>
               </Button>
@@ -363,24 +433,13 @@ function SettingsDrawer({ collaboration }) {
           </SettingsSection>
         </div>
 
-        {/* Drawer Footer with Link to Full Settings */}
         <div className="settings-drawer-footer">
-          <Link
-            to="/settings"
-            onClick={toggleDrawer}
-            className="settings-link-pill text-xs flex items-center gap-1.5"
-          >
-            <Sliders size={13} />
-            <span>Open All Platform Settings &rarr;</span>
-          </Link>
-
-          <Button variant="danger" size="sm" onClick={handleQuitQuiz}>
+          <Button className="settings-drawer-quit-btn" variant="danger" size="sm" onClick={handleQuitQuiz}>
             <LogOut size={13} />
             <span>Quit Attempt</span>
           </Button>
         </div>
       </aside>
-    </>
   );
 }
 

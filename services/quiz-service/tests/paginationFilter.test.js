@@ -232,8 +232,8 @@ describe('Pagination & Server-Side Filtering Architecture', () => {
     });
 
     it('Conversation and Message schemas should include indexes for chat history and cursor ordering', async () => {
-      const Conversation = (await import('../src/models/Conversation.model.js')).default;
-      const Message = (await import('../src/models/Message.model.js')).default;
+      const Conversation = (await import('../../message-service/src/models/Conversation.model.js')).default;
+      const Message = (await import('../../message-service/src/models/Message.model.js')).default;
 
       const convIndexes = Conversation.schema.indexes();
       const msgIndexes = Message.schema.indexes();

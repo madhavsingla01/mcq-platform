@@ -113,9 +113,25 @@ export function useQuizAttemptController({
           const [quizResponse, questionResponse] = await Promise.all([
             api.get(`/quiz/${quizId}`, {
               headers: getAttemptHeaders(clientSessionId, sharedSessionId),
+            }).catch(async (err) => {
+              if (err.response?.status === 404) {
+                const chRes = await api.get(`/challenges/${quizId}`, {
+                  headers: getAttemptHeaders(clientSessionId, sharedSessionId),
+                });
+                return { data: { data: { quiz: chRes.data?.data?.challenge || chRes.data?.data?.quiz } } };
+              }
+              throw err;
             }),
             api.get(`/quiz/${quizId}/questions`, {
               headers: getAttemptHeaders(clientSessionId, sharedSessionId),
+            }).catch(async (err) => {
+              if (err.response?.status === 404) {
+                const chRes = await api.get(`/challenges/${quizId}`, {
+                  headers: getAttemptHeaders(clientSessionId, sharedSessionId),
+                });
+                return { data: { data: { questions: chRes.data?.data?.challenge?.questions || [] } } };
+              }
+              throw err;
             }),
           ]);
 

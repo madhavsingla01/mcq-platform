@@ -7,10 +7,11 @@ import { useSettingsStore } from '../../../store/settingsStore';
 import { getGuestSessionId } from '../../../utils/quizSession';
 import api from '../../../api/axios';
 import { showCustomDialog, toast } from '../../ui';
+import './TopNavbar.css';
 
 export default function TopNavbar() {
   const { questions, answers, submitAttempt, submitting, isSubmitted } = useQuizStore();
-  const { toggleDrawer } = useSettingsStore();
+  const { isDrawerOpen, toggleDrawer } = useSettingsStore();
 
   const answeredCount = useMemo(
     () => questions.filter((q) => Boolean(answers[q._id]?.selectedAnswer)).length,
@@ -67,7 +68,16 @@ export default function TopNavbar() {
         <div className="ws-nav-actions-minimal">
           <QuizTimer compact onExpired={handleConfirmSubmit} />
 
-          <button className="ws-settings-btn" onClick={toggleDrawer} title="Settings" type="button">
+          <button
+            className="ws-settings-btn"
+            onClick={toggleDrawer}
+            title="Settings"
+            type="button"
+            data-settings-trigger
+            aria-haspopup="dialog"
+            aria-controls="settings-drawer"
+            aria-expanded={isDrawerOpen}
+          >
             <Settings className="w-5 h-5" />
           </button>
           
@@ -90,91 +100,6 @@ export default function TopNavbar() {
         onConfirm={handleConfirmSubmit}
         onCancel={() => setShowSubmitModal(false)}
       />
-
-      <style>{`
-        .ws-navbar-minimal {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: max(14px, env(safe-area-inset-top, 14px)) 24px 14px;
-          background: transparent;
-          border-bottom: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
-          z-index: 50;
-        }
-
-        .ws-nav-meta-minimal {
-          font-size: 15px;
-          font-weight: 700;
-          color: var(--color-text, #EDEFF1);
-          letter-spacing: -0.01em;
-        }
-
-        .ws-nav-actions-minimal {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .ws-settings-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 38px;
-          height: 38px;
-          border-radius: var(--radius-control, 8px);
-          corner-shape: squircle;
-          border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
-          background: var(--color-surface, rgba(255, 255, 255, 0.04));
-          color: var(--color-text-secondary, #94a3b8);
-          cursor: pointer;
-          touch-action: manipulation;
-          transition: background-color var(--duration-tap) var(--ease-out), color var(--duration-tap) var(--ease-out), transform var(--duration-tap) var(--ease-out);
-        }
-
-        .ws-settings-btn:active {
-          transform: scale(0.96);
-        }
-
-        @media (hover: hover) and (pointer: fine) {
-          .ws-settings-btn:hover {
-            background: var(--color-surface-hover, rgba(255, 255, 255, 0.08));
-            color: var(--color-text, #ffffff);
-          }
-        }
-
-        .ws-submit-btn-minimal {
-          height: 38px;
-          padding: 0 20px;
-          border-radius: var(--radius-control, 8px);
-          corner-shape: squircle;
-          border: none;
-          background: var(--color-primary, #FF4500);
-          color: #fff;
-          font-size: 14px;
-          font-weight: 700;
-          cursor: pointer;
-          touch-action: manipulation;
-          transition: background-color var(--duration-tap) var(--ease-out), opacity var(--duration-tap) var(--ease-out), transform var(--duration-tap) var(--ease-out);
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .ws-submit-btn-minimal:active:not(:disabled) {
-          transform: scale(0.97);
-        }
-
-        @media (hover: hover) and (pointer: fine) {
-          .ws-submit-btn-minimal:hover:not(:disabled) {
-            background: var(--color-primary-hover, #FF5714);
-          }
-        }
-        
-        .ws-submit-btn-minimal:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-      `}</style>
     </>
   );
 }

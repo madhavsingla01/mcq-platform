@@ -46,8 +46,10 @@ const normalizeUrl = (url = '') => {
   if (!url) return '';
 
   try {
-    const origin = typeof window === 'undefined' ? 'http://localhost' : window.location.origin;
-    return new URL(url, origin).pathname.replace(/^\/api\/v1/, '');
+    const path = typeof window === 'undefined'
+      ? String(url).replace(/^https?:\/\/[^/]+/i, '')
+      : new URL(url, window.location.origin).pathname;
+    return path.split(/[?#]/, 1)[0].replace(/^\/api\/v1/, '');
   } catch {
     return url.replace(/^\/api\/v1/, '');
   }

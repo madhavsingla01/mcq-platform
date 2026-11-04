@@ -29,6 +29,7 @@ import {
   recordActivity,
 } from '../services/social/activity.service.js';
 import memoryCache from '../services/cache/cache.service.js';
+import env from '../config/env.js';
 import { RankingService } from '../domain/services/RankingService.js';
 import { UpdateQuizUseCase } from '../application/use-cases/UpdateQuizUseCase.js';
 import { DeleteQuizUseCase } from '../application/use-cases/DeleteQuizUseCase.js';
@@ -218,7 +219,11 @@ const assertQuizManageAccess = (quiz, req) => {
 };
 
 const assertQuizReadAccess = async (quiz, req) => {
-  const isExplicitlyPrivate = quiz.visibility === 'private' || quiz.metadata?.savedAsDraft === true;
+  const isExplicitlyPrivate = quiz.visibility === 'private' ||
+    quiz.accessType === 'invite_only' ||
+    quiz.isRestricted === true ||
+    (quiz.isChallenge && ['draft', 'publishing'].includes(quiz.challengeStatus)) ||
+    quiz.metadata?.savedAsDraft === true;
   const isPubliclyAccessible = !isExplicitlyPrivate && (quiz.visibility === 'public' || quiz.visibility === 'unlisted' || quiz.isPublic === true);
 
   if (isPubliclyAccessible) {
@@ -495,6 +500,7 @@ export const generateQuiz = catchAsync(async (req, res, next) => {
       category: req.body.category || 'General',
       difficulty: normalizeDifficulty(req.body.difficulty),
       thumbnail: req.body.thumbnail || '',
+      tags: Array.isArray(req.body.tags) ? req.body.tags.map((t) => String(t).trim()).filter(Boolean) : [],
       visibility: normalizeVisibility(req.body.visibility, req.body.isPublic ? 'public' : 'private'),
       uploader: upload.userId || req.user?._id || null,
       questionCount: questions.length,
@@ -645,9 +651,9 @@ export const getQuiz = catchAsync(async (req, res, next) => {
   const finalQuiz = decorated || quiz;
 
   if (isAnonymous && (quiz.visibility === 'public' || quiz.isPublic)) {
-    memoryCache.set(cacheKey, finalQuiz, 30000);
+    memoryCache.set(cacheKey, finalQuiz, env.CACHE_DEFAULT_TTL_MS);
     if (quiz.quizCode) {
-      memoryCache.set(`quiz:public:${quiz.quizCode}`, finalQuiz, 30000);
+      memoryCache.set(`quiz:public:${quiz.quizCode}`, finalQuiz, env.CACHE_DEFAULT_TTL_MS);
     }
   }
 
@@ -2281,7 +2287,7 @@ export const getQuizAnalytics = catchAsync(async (req, res, next) => {
     return next(new AppError('Quiz not found', 404));
   }
 
-  assertQuizManageAccess(quiz, req);
+  await assertQuizReadAccess(quiz, req);
 
   const [questions, attempts] = await Promise.all([
     getQuizQuestionsSorted(quiz._id).then((docs) => docs.map((doc) => doc.toObject())),
@@ -2536,7 +2542,7 @@ export const getChallengeLeaderboard = catchAsync(async (req, res, next) => {
   };
 
   // Cache leaderboard for 15s to withstand heavy concurrent contest traffic
-  memoryCache.set(cacheKey, payload, 15000);
+  memoryCache.set(cacheKey, payload, env.CACHE_SHORT_TTL_MS);
 
   res.json({
     success: true,

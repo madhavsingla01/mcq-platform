@@ -16,9 +16,7 @@ import messageRoutes from './routes/message.routes.js';
 import http from 'http';
 import { initSocketServer } from './socket/socketHandler.js';
 
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? (process.env.CLIENT_URL || '').split(',').map((origin) => origin.trim()).filter(Boolean)
-  : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174'];
+const allowedOrigins = env.CLIENT_URL;
 
 const app = express();
 const server = http.createServer(app);

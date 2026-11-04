@@ -6,6 +6,7 @@
 import XLSX from 'xlsx';
 import { cleanCellValue, isEmptyRow } from '../../utils/parserHelpers.js';
 import { logger } from '../../utils/logger.js';
+import env from '../../config/env.js';
 
 /**
  * Parse an Excel file.
@@ -14,7 +15,7 @@ import { logger } from '../../utils/logger.js';
  * @returns {{ headers: string[], rows: Object[], sheetNames: string[] }}
  */
 export const parseExcel = (filePath, options = {}) => {
-  const { sheetIndex = 0, maxRows = 10000 } = options;
+  const { sheetIndex = 0, maxRows = env.MAX_IMPORT_ROWS } = options;
 
   try {
     const workbook = XLSX.readFile(filePath, {

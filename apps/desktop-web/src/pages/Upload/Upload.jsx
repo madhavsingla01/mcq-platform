@@ -7,6 +7,7 @@ import { useUploadStore } from '../../store/uploadStore';
 import { useAuthStore } from '../../store/authStore';
 import { runWithUploadPanel } from '../../store/uploadPanelStore';
 import api from '../../api/axios';
+import './Upload.css';
 
 export default function Upload() {
   const navigate = useNavigate();
@@ -112,8 +113,7 @@ export default function Upload() {
   };
 
   return (
-    <>
-      <div className="qf-upload-shell">
+    <div className="qf-upload-shell">
         <div className="qf-upload-header">
           <h1>Upload Dataset</h1>
           {!isAuthenticated && <p className="qf-upload-guest-note">Guest limit: 20KB. Log in for 10MB limit.</p>}
@@ -197,41 +197,5 @@ export default function Upload() {
           </Card>
         )}
       </div>
-
-      <style>{uploadStyles}</style>
-    </>
   );
 }
-
-const uploadStyles = `
-  .qf-upload-shell {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 40px 0;
-  }
-
-  .qf-upload-header {
-    text-align: center;
-    margin-bottom: 40px;
-  }
-
-  .qf-upload-header h1 {
-    font-size: 32px;
-    font-weight: 700;
-    margin-bottom: 12px;
-    letter-spacing: -0.03em;
-  }
-
-  .qf-upload-header p {
-    color: var(--color-text-secondary);
-    font-size: 15px;
-    line-height: 1.5;
-  }
-
-  .qf-upload-guest-note {
-    display: block;
-    margin-top: 6px;
-    color: var(--color-warning);
-    font-size: 13px;
-  }
-`;

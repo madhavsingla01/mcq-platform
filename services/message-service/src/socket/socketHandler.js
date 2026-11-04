@@ -6,9 +6,7 @@ import Conversation from '../models/Conversation.model.js';
 import Message from '../models/Message.model.js';
 import { logger } from '../utils/logger.js';
 
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? (process.env.CLIENT_URL || '').split(',').map((origin) => origin.trim()).filter(Boolean)
-  : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174'];
+const allowedOrigins = env.CLIENT_URL;
 
 let io = null;
 

@@ -1,9 +1,11 @@
+import env from '../../config/env.js';
+
 /**
  * Lightweight, high-throughput in-memory TTL cache with pattern invalidation.
  * Optimized for hot public read endpoints (quizzes, leaderboards, feeds).
  */
 export class MemoryCache {
-  constructor(defaultTtlMs = 30000) {
+  constructor(defaultTtlMs = env.CACHE_DEFAULT_TTL_MS) {
     this.cache = new Map();
     this.defaultTtlMs = defaultTtlMs;
   }
@@ -67,5 +69,5 @@ export class MemoryCache {
   }
 }
 
-export const memoryCache = new MemoryCache(30000);
+export const memoryCache = new MemoryCache(env.CACHE_DEFAULT_TTL_MS);
 export default memoryCache;

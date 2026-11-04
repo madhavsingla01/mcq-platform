@@ -1,14 +1,16 @@
 import mongoose from 'mongoose';
+import { randomInt } from 'crypto';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/mcq_quiz';
+const MONGO_URI = process.env.MONGO_URI;
+if (!MONGO_URI) throw new Error('MONGO_URI is required');
 const CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 
 const generateQuizCode = () => {
   let code = '!QZ-';
   for (let i = 0; i < 6; i++) {
-    code += CODE_ALPHABET.charAt(Math.floor(Math.random() * CODE_ALPHABET.length));
+    code += CODE_ALPHABET.charAt(randomInt(CODE_ALPHABET.length));
   }
   return code;
 };

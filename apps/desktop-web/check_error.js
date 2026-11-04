@@ -14,7 +14,9 @@ import puppeteer from 'puppeteer';
   page.on('pageerror', error => console.log('PAGE ERROR:', error.message));
 
   console.log('Navigating to login...');
-  await page.goto('http://localhost:5173/login', { waitUntil: 'networkidle0' });
+  const appUrl = process.env.DESKTOP_APP_URL;
+  if (!appUrl) throw new Error('DESKTOP_APP_URL is required');
+  await page.goto(new URL('/login', appUrl), { waitUntil: 'networkidle0' });
   
   console.log('Logging in...');
   await page.type('input[type="email"]', 'test@test.com');

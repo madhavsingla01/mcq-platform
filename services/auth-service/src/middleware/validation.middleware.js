@@ -13,6 +13,16 @@ import { AppError } from './error.middleware.js';
 export const validateBody = (schema) => {
   return (req, res, next) => {
     const errors = [];
+    const body = req.body;
+
+    // Express leaves req.body undefined when the request has no parsed body.
+    // Treat that as an empty object so missing required fields return 400s
+    // instead of throwing a TypeError and becoming a 500.
+    if (body === undefined || body === null) {
+      req.body = {};
+    } else if (typeof body !== 'object' || Array.isArray(body)) {
+      return next(new AppError('Request body must be a JSON object', 400));
+    }
 
     for (const [field, rules] of Object.entries(schema)) {
       const value = req.body[field];

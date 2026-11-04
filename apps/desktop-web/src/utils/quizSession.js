@@ -7,11 +7,13 @@ const QUIZ_CHANNEL_NAME = 'mcq-quiz-attempts-v2';
 const isBrowser = typeof window !== 'undefined';
 
 const generateId = () => {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
+  const secureCrypto = globalThis.crypto;
+  if (typeof secureCrypto?.randomUUID === 'function') return secureCrypto.randomUUID();
+  if (typeof secureCrypto?.getRandomValues === 'function') {
+    const bytes = secureCrypto.getRandomValues(new Uint8Array(16));
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
   }
-
-  return `mcq-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  throw new Error('Secure random generation is unavailable in this browser');
 };
 
 const safeParse = (value) => {

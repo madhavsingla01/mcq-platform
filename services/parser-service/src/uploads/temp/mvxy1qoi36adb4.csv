@@ -1,0 +1,1296 @@
+﻿id,subject,topic,subtopic,difficulty_level,exam_tags,question_number,question_text,question_image_url,option_a,option_b,option_c,option_d,option_e,options_json,correct_option,correct_answer_text,explanation,explanation_image_url,source_platform,source_url,raw_html,extracted_at
+1cbff287e980eb3c,Physics,Electromagnetic Waves MCQs with Answers PDF – Download Test 1,,,,MCQ 1:,"Among the four, the highest wavelength is of:",,radio waves,infrared,ultraviolet,gamma rays,,"[""radio waves"", ""infrared"", ""ultraviolet"", ""gamma rays""]",A,radio waves,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/electromagnetic-waves.php,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 1:</span> Among the four, the highest wavelength is of:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">radio waves</li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">infrared</li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">ultraviolet</li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">gamma rays</li>
+</ol>
+<div hidden="""" id=""answer-1"">a</div>
+</div>
+</div>",2026-10-31T17:42:50.835502+00:00
+4ac1d26e68699ab7,Physics,Electromagnetic Waves MCQs with Answers PDF – Download Test 1,,,,MCQ 2:,Electromagnetic waves carry:,,positive charge,negative charge,no charge,both positive and negative charge,,"[""positive charge"", ""negative charge"", ""no charge"", ""both positive and negative charge""]",C,no charge,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/electromagnetic-waves.php,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 2:</span> Electromagnetic waves carry:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">positive charge</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">negative charge</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">no charge</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">both positive and negative charge</li>
+</ol>
+<div hidden="""" id=""answer-2"">c</div>
+</div>
+</div>",2026-10-31T17:42:50.836502+00:00
+f18d1ef29c547757,Physics,Electromagnetic Waves MCQs with Answers PDF – Download Test 1,,,,MCQ 3:,Electromagnetic wave with lowest frequency is:,,radio waves,infrared,ultraviolet,gamma rays,,"[""radio waves"", ""infrared"", ""ultraviolet"", ""gamma rays""]",A,radio waves,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/electromagnetic-waves.php,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 3:</span> Electromagnetic wave with lowest frequency is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-3 option-3-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-3"" onclick=""checkAttempt(this,3)"">radio waves</li>
+<li class=""option-3 option-3-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-3"" onclick=""checkAttempt(this,3)"">infrared</li>
+<li class=""option-3 option-3-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-3"" onclick=""checkAttempt(this,3)"">ultraviolet</li>
+<li class=""option-3 option-3-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-3"" onclick=""checkAttempt(this,3)"">gamma rays</li>
+</ol>
+<div hidden="""" id=""answer-3"">a</div>
+</div>
+</div>",2026-10-31T17:42:50.837502+00:00
+b1b27840b562e61d,Physics,Electromagnetic Waves MCQs with Answers PDF – Download Test 1,,,,MCQ 4:,Electromagnetic waves travel:,,without medium,with medium,with medium and without medium,in a disturbed path,,"[""without medium"", ""with medium"", ""with medium and without medium"", ""in a disturbed path""]",C,with medium and without medium,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/electromagnetic-waves.php,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 4:</span> Electromagnetic waves travel:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-4 option-4-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-4"" onclick=""checkAttempt(this,4)"">without medium</li>
+<li class=""option-4 option-4-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-4"" onclick=""checkAttempt(this,4)"">with medium</li>
+<li class=""option-4 option-4-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-4"" onclick=""checkAttempt(this,4)"">with medium and without medium</li>
+<li class=""option-4 option-4-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-4"" onclick=""checkAttempt(this,4)"">in a disturbed path</li>
+</ol>
+<div hidden="""" id=""answer-4"">c</div>
+</div>
+</div>",2026-10-31T17:42:50.837502+00:00
+c0a24f80934fce3e,Physics,Electromagnetic Waves MCQs with Answers PDF – Download Test 1,,,,MCQ 5:,Electromagnetic spectrum comprises:,,transverse waves,longitudinal waves,transverse and longitudinal both,latitudinal waves,,"[""transverse waves"", ""longitudinal waves"", ""transverse and longitudinal both"", ""latitudinal waves""]",A,transverse waves,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/electromagnetic-waves.php,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 5:</span> Electromagnetic spectrum comprises:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-5 option-5-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-5"" onclick=""checkAttempt(this,5)"">transverse waves</li>
+<li class=""option-5 option-5-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-5"" onclick=""checkAttempt(this,5)"">longitudinal waves</li>
+<li class=""option-5 option-5-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-5"" onclick=""checkAttempt(this,5)"">transverse and longitudinal both</li>
+<li class=""option-5 option-5-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-5"" onclick=""checkAttempt(this,5)"">latitudinal waves</li>
+</ol>
+<div hidden="""" id=""answer-5"">a</div>
+</div>
+</div>",2026-10-31T17:42:50.838502+00:00
+221bc2fe41d45651,Physics,Electromagnetic Waves MCQ with Answers PDF – Download Test 2,,,,MCQ 6:,Which one of the waves tans our skin and causes some substances to become fluorescent?,,infrared waves,ultraviolet waves,gamma rays,infrared and ultraviolet waves both,,"[""infrared waves"", ""ultraviolet waves"", ""gamma rays"", ""infrared and ultraviolet waves both""]",B,ultraviolet waves,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/electromagnetic-waves.php?page=2,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 6:</span> Which one of the waves tans our skin and causes some substances to become fluorescent?</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">infrared waves</li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">ultraviolet waves</li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">gamma rays</li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">infrared and ultraviolet waves both</li>
+</ol>
+<div hidden="""" id=""answer-1"">b</div>
+</div>
+</div>",2026-10-31T17:42:51.972521+00:00
+9092658df0e98d79,Physics,Electromagnetic Waves MCQ with Answers PDF – Download Test 2,,,,MCQ 7:,Wave that cannot be seen through electromagnetic spectrum is:,,radio waves,micro waves,infrared waves,ultraviolet waves,,"[""radio waves"", ""micro waves"", ""infrared waves"", ""ultraviolet waves""]",D,ultraviolet waves,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/electromagnetic-waves.php?page=2,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 7:</span> Wave that cannot be seen through electromagnetic spectrum is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">radio waves</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">micro waves</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">infrared waves</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">ultraviolet waves</li>
+</ol>
+<div hidden="""" id=""answer-2"">d</div>
+</div>
+</div>",2026-10-31T17:42:51.973534+00:00
+8491df9c92212901,Physics,Electromagnetic Waves MCQ with Answers PDF – Download Test 2,,,,MCQ 8:,Wave with highest frequency is:,,radio waves,infrared,ultraviolet,gamma rays,,"[""radio waves"", ""infrared"", ""ultraviolet"", ""gamma rays""]",D,gamma rays,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/electromagnetic-waves.php?page=2,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 8:</span> Wave with highest frequency is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-3 option-3-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-3"" onclick=""checkAttempt(this,3)"">radio waves</li>
+<li class=""option-3 option-3-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-3"" onclick=""checkAttempt(this,3)"">infrared</li>
+<li class=""option-3 option-3-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-3"" onclick=""checkAttempt(this,3)"">ultraviolet</li>
+<li class=""option-3 option-3-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-3"" onclick=""checkAttempt(this,3)"">gamma rays</li>
+</ol>
+<div hidden="""" id=""answer-3"">d</div>
+</div>
+</div>",2026-10-31T17:42:51.973534+00:00
+6f60856a1775f3de,Physics,Electromagnetic Waves MCQ with Answers PDF – Download Test 2,,,,MCQ 9:,Waves having lowest wavelength is:,,radio waves,infrared,ultraviolet,gamma rays,,"[""radio waves"", ""infrared"", ""ultraviolet"", ""gamma rays""]",D,gamma rays,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/electromagnetic-waves.php?page=2,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 9:</span> Waves having lowest wavelength is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-4 option-4-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-4"" onclick=""checkAttempt(this,4)"">radio waves</li>
+<li class=""option-4 option-4-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-4"" onclick=""checkAttempt(this,4)"">infrared</li>
+<li class=""option-4 option-4-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-4"" onclick=""checkAttempt(this,4)"">ultraviolet</li>
+<li class=""option-4 option-4-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-4"" onclick=""checkAttempt(this,4)"">gamma rays</li>
+</ol>
+<div hidden="""" id=""answer-4"">d</div>
+</div>
+</div>",2026-10-31T17:42:51.974551+00:00
+486b5792e0f2f8ad,Physics,Electromagnetic Waves MCQ with Answers PDF – Download Test 2,,,,MCQ 10:,Electromagnetic waves are:,,transverse waves,longitudinal waves,latitudinal waves,reversal waves,,"[""transverse waves"", ""longitudinal waves"", ""latitudinal waves"", ""reversal waves""]",A,transverse waves,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/electromagnetic-waves.php?page=2,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 10:</span> Electromagnetic waves are:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-5 option-5-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-5"" onclick=""checkAttempt(this,5)"">transverse waves</li>
+<li class=""option-5 option-5-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-5"" onclick=""checkAttempt(this,5)"">longitudinal waves</li>
+<li class=""option-5 option-5-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-5"" onclick=""checkAttempt(this,5)"">latitudinal waves</li>
+<li class=""option-5 option-5-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-5"" onclick=""checkAttempt(this,5)"">reversal waves</li>
+</ol>
+<div hidden="""" id=""answer-5"">a</div>
+</div>
+</div>",2026-10-31T17:42:51.975534+00:00
+1afea323f890a4cf,Physics,Electromagnetic Waves Quiz with Answers PDF – Download Test 3,,,,MCQ 11:,"When the medium of electromagnetic waves changes from air to water, their speed:",,increases,remains same,decreases,may increase or decrease,,"[""increases"", ""remains same"", ""decreases"", ""may increase or decrease""]",C,decreases,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/electromagnetic-waves.php?page=3,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 11:</span> When the medium of electromagnetic waves changes from air to water, their speed:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">increases</li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">remains same</li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">decreases</li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">may increase or decrease</li>
+</ol>
+<div hidden="""" id=""answer-1"">c</div>
+</div>
+</div>",2026-10-31T17:42:53.233456+00:00
+c36006f175b4a003,Physics,Electromagnetic Waves Quiz with Answers PDF – Download Test 3,,,,MCQ 12:,Faster among the waves and rays is:,,waves,both have no speed,rays,both have equal speed,,"[""waves"", ""both have no speed"", ""rays"", ""both have equal speed""]",C,rays,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/electromagnetic-waves.php?page=3,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 12:</span> Faster among the waves and rays is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">waves</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">both have no speed</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">rays</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">both have equal speed</li>
+</ol>
+<div hidden="""" id=""answer-2"">c</div>
+</div>
+</div>",2026-10-31T17:42:53.234510+00:00
+e1647eef9be173fc,Physics,Electromagnetic Waves Quiz with Answers PDF – Download Test 3,,,,MCQ 13:,Electromagnetic waves obey the law of:,,refraction only,reflection and refraction both,reflection only,momentum,,"[""refraction only"", ""reflection and refraction both"", ""reflection only"", ""momentum""]",B,reflection and refraction both,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/electromagnetic-waves.php?page=3,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 13:</span> Electromagnetic waves obey the law of:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-3 option-3-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-3"" onclick=""checkAttempt(this,3)"">refraction only</li>
+<li class=""option-3 option-3-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-3"" onclick=""checkAttempt(this,3)"">reflection and refraction both</li>
+<li class=""option-3 option-3-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-3"" onclick=""checkAttempt(this,3)"">reflection only</li>
+<li class=""option-3 option-3-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-3"" onclick=""checkAttempt(this,3)"">momentum</li>
+</ol>
+<div hidden="""" id=""answer-3"">b</div>
+</div>
+</div>",2026-10-31T17:42:53.234510+00:00
+6450da94d514bcaa,Physics,Electromagnetic Waves Quiz with Answers PDF – Download Test 3,,,,MCQ 14:,Speed of electromagnetic waves in vacuum is:,,30 × 108 m s-1,4 × 108 m s-1,0 × 108 m s-1,6.0 × 108 m s-1,,"[""30 \u00d7 108 m s-1"", ""4 \u00d7 108 m s-1"", ""0 \u00d7 108 m s-1"", ""6.0 \u00d7 108 m s-1""]",C,0 × 108 m s-1,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/electromagnetic-waves.php?page=3,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 14:</span> Speed of electromagnetic waves in vacuum is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-4 option-4-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-4"" onclick=""checkAttempt(this,4)"">30 × 10<sup>8</sup> m s<sup>-1</sup></li>
+<li class=""option-4 option-4-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-4"" onclick=""checkAttempt(this,4)"">4 × 10<sup>8</sup> m s<sup>-1</sup></li>
+<li class=""option-4 option-4-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-4"" onclick=""checkAttempt(this,4)"">3.0 × 10<sup>8</sup> m s<sup>-1</sup></li>
+<li class=""option-4 option-4-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-4"" onclick=""checkAttempt(this,4)"">6.0 × 10<sup>8</sup> m s<sup>-1</sup></li>
+</ol>
+<div hidden="""" id=""answer-4"">c</div>
+</div>
+</div>",2026-10-31T17:42:53.235518+00:00
+3db73caf92ec2fcd,Physics,Electromagnetic Waves Quiz with Answers PDF – Download Test 3,,,,MCQ 15:,"As the speed decreases if we change the medium of electromagnetic waves from air to water, the frequency:",,also decreases,also increases,remains same,may increase or decrease,,"[""also decreases"", ""also increases"", ""remains same"", ""may increase or decrease""]",C,remains same,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/electromagnetic-waves.php?page=3,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 15:</span> As the speed decreases if we change the medium of electromagnetic waves from air to water, the frequency:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-5 option-5-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-5"" onclick=""checkAttempt(this,5)"">also decreases</li>
+<li class=""option-5 option-5-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-5"" onclick=""checkAttempt(this,5)"">also increases</li>
+<li class=""option-5 option-5-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-5"" onclick=""checkAttempt(this,5)"">remains same</li>
+<li class=""option-5 option-5-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-5"" onclick=""checkAttempt(this,5)"">may increase or decrease</li>
+</ol>
+<div hidden="""" id=""answer-5"">c</div>
+</div>
+</div>",2026-10-31T17:42:53.236513+00:00
+4ea210f7a486d048,Physics,Electromagnetic Waves Notes Questions with Answers PDF – Test 4,,,,MCQ 16:,Electromagnetic waves that include light belong to:,,light spectrum,electronic spectrum,electromagnet group,electromagnetic spectrum,,"[""light spectrum"", ""electronic spectrum"", ""electromagnet group"", ""electromagnetic spectrum""]",D,electromagnetic spectrum,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/electromagnetic-waves.php?page=4,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 16:</span> Electromagnetic waves that include light belong to:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">light spectrum</li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">electronic spectrum</li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">electromagnet group</li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">electromagnetic spectrum</li>
+</ol>
+<div hidden="""" id=""answer-1"">d</div>
+</div>
+</div>",2026-10-31T17:42:54.464439+00:00
+227f8f66fc203bbe,Physics,Electromagnetic Waves Notes Questions with Answers PDF – Test 4,,,,MCQ 17:,Electromagnetic waves:,,transfer energy,cannot transfer energy,may transfer energy,are longitudinal,,"[""transfer energy"", ""cannot transfer energy"", ""may transfer energy"", ""are longitudinal""]",A,transfer energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/electromagnetic-waves.php?page=4,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 17:</span> Electromagnetic waves:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">transfer energy</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">cannot transfer energy</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">may transfer energy</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">are longitudinal</li>
+</ol>
+<div hidden="""" id=""answer-2"">a</div>
+</div>
+</div>",2026-10-31T17:42:54.464439+00:00
+3407a8a74e018c9b,Physics,"Energy, Work and Power MCQs with Answers PDF – Download Test 1",,,,MCQ 1:,"Output of a truck is 4500 J and its efficiency is 50%, the input energy provided to the truck is:",,5000 J,900 J,9000 J,500 J,,"[""5000 J"", ""900 J"", ""9000 J"", ""500 J""]",C,9000 J,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 1:</span> Output of a truck is 4500 J and its efficiency is 50%, the input energy provided to the truck is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">5000 J</li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">900 J</li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">9000 J</li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">500 J</li>
+</ol>
+<div hidden="""" id=""answer-1"">c</div>
+</div>
+</div>",2026-10-31T17:42:55.693077+00:00
+4fedbcf928cb1b5d,Physics,"Energy, Work and Power MCQs with Answers PDF – Download Test 1",,,,MCQ 2:,Potential energy and kinetic energy are types of:,,Electrical energy,Magnetic energy,Thermal energy,Mechanical energy,,"[""Electrical energy"", ""Magnetic energy"", ""Thermal energy"", ""Mechanical energy""]",D,Mechanical energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 2:</span> Potential energy and kinetic energy are types of:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">Electrical energy</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">Magnetic energy</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">Thermal energy</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">Mechanical energy</li>
+</ol>
+<div hidden="""" id=""answer-2"">d</div>
+</div>
+</div>",2026-10-31T17:42:55.693988+00:00
+aa673dfe6969d0d4,Physics,"Energy, Work and Power MCQs with Answers PDF – Download Test 1",,,,MCQ 3:,"In a typical power station, amid a series of energy transfers and conversions, about 70% of the energy input gets wasted in the form of thermal energy, the efficiency of such a power station is about:",,0.3,0.4,0.7,1,,"[""0.3"", ""0.4"", ""0.7"", ""1""]",A,0.3,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 3:</span> In a typical power station, amid a series of energy transfers and conversions, about 70% of the energy input gets wasted in the form of thermal energy, the efficiency of such a power station is about:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-3 option-3-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-3"" onclick=""checkAttempt(this,3)"">0.3</li>
+<li class=""option-3 option-3-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-3"" onclick=""checkAttempt(this,3)"">0.4</li>
+<li class=""option-3 option-3-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-3"" onclick=""checkAttempt(this,3)"">0.7</li>
+<li class=""option-3 option-3-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-3"" onclick=""checkAttempt(this,3)"">1</li>
+</ol>
+<div hidden="""" id=""answer-3"">a</div>
+</div>
+</div>",2026-10-31T17:42:55.694992+00:00
+b655fe18cca08e42,Physics,"Energy, Work and Power MCQs with Answers PDF – Download Test 1",,,,MCQ 4:,A car uses total energy of 2500 J and the output is 750 J. The efficiency of the car is:,,50%,30%,25%,80%,,"[""50%"", ""30%"", ""25%"", ""80%""]",B,30%,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 4:</span> A car uses total energy of 2500 J and the output is 750 J. The efficiency of the car is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-4 option-4-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-4"" onclick=""checkAttempt(this,4)"">50%</li>
+<li class=""option-4 option-4-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-4"" onclick=""checkAttempt(this,4)"">30%</li>
+<li class=""option-4 option-4-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-4"" onclick=""checkAttempt(this,4)"">25%</li>
+<li class=""option-4 option-4-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-4"" onclick=""checkAttempt(this,4)"">80%</li>
+</ol>
+<div hidden="""" id=""answer-4"">b</div>
+</div>
+</div>",2026-10-31T17:51:18.892200+00:00
+fc4f5f75620685ba,Physics,"Energy, Work and Power MCQs with Answers PDF – Download Test 1",,,,MCQ 5:,"In order to do work, energy is:",,transferred or converted,used up,lost,lost or transferred,,"[""transferred or converted"", ""used up"", ""lost"", ""lost or transferred""]",A,transferred or converted,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 5:</span> In order to do work, energy is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-5 option-5-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-5"" onclick=""checkAttempt(this,5)"">transferred or converted</li>
+<li class=""option-5 option-5-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-5"" onclick=""checkAttempt(this,5)"">used up</li>
+<li class=""option-5 option-5-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-5"" onclick=""checkAttempt(this,5)"">lost</li>
+<li class=""option-5 option-5-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-5"" onclick=""checkAttempt(this,5)"">lost or transferred</li>
+</ol>
+<div hidden="""" id=""answer-5"">a</div>
+</div>
+</div>",2026-10-31T17:51:18.892200+00:00
+bacc697809173dda,Physics,"Energy, Work and Power MCQ with Answers PDF – Download Test 2",,,,MCQ 6:,Pendulum bob stops moving when all its original gain in gravitational potential energy has been converted to:,,Sound Energy,Thermal Energy,Light Energy,Kinetic Energy,,"[""Sound Energy"", ""Thermal Energy"", ""Light Energy"", ""Kinetic Energy""]",B,Thermal Energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=2,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 6:</span> Pendulum bob stops moving when all its original gain in gravitational potential energy has been converted to:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">Sound Energy</li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">Thermal Energy</li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">Light Energy</li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">Kinetic Energy</li>
+</ol>
+<div hidden="""" id=""answer-1"">b</div>
+</div>
+</div>",2026-10-31T17:51:20.254073+00:00
+8df2bf63537bcb9d,Physics,"Energy, Work and Power MCQ with Answers PDF – Download Test 2",,,,MCQ 7:,Solar energy is converted by plants in the process of photosynthesis into:,,Chemical Potential Energy,Elastic Potential Energy,Gravitational Potential Energy,Kinetic energy,,"[""Chemical Potential Energy"", ""Elastic Potential Energy"", ""Gravitational Potential Energy"", ""Kinetic energy""]",A,Chemical Potential Energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=2,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 7:</span> Solar energy is converted by plants in the process of photosynthesis into:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">Chemical Potential Energy</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">Elastic Potential Energy</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">Gravitational Potential Energy</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">Kinetic energy</li>
+</ol>
+<div hidden="""" id=""answer-2"">a</div>
+</div>
+</div>",2026-10-31T17:51:20.255166+00:00
+fcb9dfe0ef6d1c02,Physics,"Energy, Work and Power MCQ with Answers PDF – Download Test 2",,,,MCQ 8:,"A car travels a distance of 15 km with a constant force of 500 N, its work done is:",,7500000 J,30 J,15500 J,14500 J,,"[""7500000 J"", ""30 J"", ""15500 J"", ""14500 J""]",A,7500000 J,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=2,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 8:</span> A car travels a distance of 15 km with a constant force of 500 N, its work done is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-3 option-3-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-3"" onclick=""checkAttempt(this,3)"">7500000 J</li>
+<li class=""option-3 option-3-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-3"" onclick=""checkAttempt(this,3)"">30 J</li>
+<li class=""option-3 option-3-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-3"" onclick=""checkAttempt(this,3)"">15500 J</li>
+<li class=""option-3 option-3-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-3"" onclick=""checkAttempt(this,3)"">14500 J</li>
+</ol>
+<div hidden="""" id=""answer-3"">a</div>
+</div>
+</div>",2026-10-31T17:51:20.256150+00:00
+b9acc74cab64dc2b,Physics,"Energy, Work and Power MCQ with Answers PDF – Download Test 2",,,,MCQ 9:,SI unit for work done is:,,Pascal,Joules,Newton,Ohms,,"[""Pascal"", ""Joules"", ""Newton"", ""Ohms""]",B,Joules,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=2,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 9:</span> SI unit for work done is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-4 option-4-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-4"" onclick=""checkAttempt(this,4)"">Pascal</li>
+<li class=""option-4 option-4-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-4"" onclick=""checkAttempt(this,4)"">Joules</li>
+<li class=""option-4 option-4-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-4"" onclick=""checkAttempt(this,4)"">Newton</li>
+<li class=""option-4 option-4-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-4"" onclick=""checkAttempt(this,4)"">Ohms</li>
+</ol>
+<div hidden="""" id=""answer-4"">b</div>
+</div>
+</div>",2026-10-31T17:51:20.257166+00:00
+d1d96f029836e981,Physics,"Energy, Work and Power MCQ with Answers PDF – Download Test 2",,,,MCQ 10:,"An object is lifted 5 m above the levelled ground, the mass of the object is 20 kg and the gravitational pull is 10 N kg-2, the Ep of the object is:",,40 J,1000 J,5 J,0.4 J,,"[""40 J"", ""1000 J"", ""5 J"", ""0.4 J""]",B,1000 J,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=2,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 10:</span> An object is lifted 5 m above the levelled ground, the mass of the object is 20 kg and the gravitational pull is 10 N kg<sup>-2</sup>, the E<sub>p</sub> of the object is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-5 option-5-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-5"" onclick=""checkAttempt(this,5)"">40 J</li>
+<li class=""option-5 option-5-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-5"" onclick=""checkAttempt(this,5)"">1000 J</li>
+<li class=""option-5 option-5-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-5"" onclick=""checkAttempt(this,5)"">2.5 J</li>
+<li class=""option-5 option-5-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-5"" onclick=""checkAttempt(this,5)"">0.4 J</li>
+</ol>
+<div hidden="""" id=""answer-5"">b</div>
+</div>
+</div>",2026-10-31T17:51:20.258156+00:00
+11b177d8f1ca0579,Physics,"Energy, Work and Power Quiz with Answers PDF – Download Test 3",,,,MCQ 11:,Energy is the:,,ability to do work,capacity of power,efficiency,input,,"[""ability to do work"", ""capacity of power"", ""efficiency"", ""input""]",A,ability to do work,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=3,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 11:</span> Energy is the:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">ability to do work</li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">capacity of power</li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">efficiency</li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">input</li>
+</ol>
+<div hidden="""" id=""answer-1"">a</div>
+</div>
+</div>",2026-10-31T17:51:21.560229+00:00
+f1ac383a96531485,Physics,"Energy, Work and Power Quiz with Answers PDF – Download Test 3",,,,MCQ 12:,"A bus travels with a constant force of 5000 N and the work done by the bus is 2500 J, the distance travelled by the bus is:",,2 m,0.5 m,7500 m,2500 m,,"[""2 m"", ""0.5 m"", ""7500 m"", ""2500 m""]",B,0.5 m,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=3,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 12:</span> A bus travels with a constant force of 5000 N and the work done by the bus is 2500 J, the distance travelled by the bus is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">2 m</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">0.5 m</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">7500 m</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">2500 m</li>
+</ol>
+<div hidden="""" id=""answer-2"">b</div>
+</div>
+</div>",2026-10-31T17:51:21.561231+00:00
+317399cfe8013fb7,Physics,"Energy, Work and Power Quiz with Answers PDF – Download Test 3",,,,MCQ 13:,The formula for the gravitational potential energy is:,,"Ep = mg/h, where m is mass, g is gravitational pull and is height","Ep = m/gh, where m is mass, g is gravitational pull and is height","Ep = mgh, where m is mass, g is gravitational pull and is height","Ep = gh/m, where m is mass, g is gravitational pull and is height",,"[""Ep = mg/h, where m is mass, g is gravitational pull and is height"", ""Ep = m/gh, where m is mass, g is gravitational pull and is height"", ""Ep = mgh, where m is mass, g is gravitational pull and is height"", ""Ep = gh/m, where m is mass, g is gravitational pull and is height""]",C,"Ep = mgh, where m is mass, g is gravitational pull and is height",,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=3,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 13:</span> The formula for the gravitational potential energy is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-3 option-3-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-3"" onclick=""checkAttempt(this,3)"">E<sub>p</sub> = mg/h, where m is mass, g is gravitational pull and is height</li>
+<li class=""option-3 option-3-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-3"" onclick=""checkAttempt(this,3)"">E<sub>p</sub> = m/gh, where m is mass, g is gravitational pull and is height</li>
+<li class=""option-3 option-3-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-3"" onclick=""checkAttempt(this,3)"">E<sub>p</sub> = mgh, where m is mass, g is gravitational pull and is height</li>
+<li class=""option-3 option-3-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-3"" onclick=""checkAttempt(this,3)"">E<sub>p</sub> = gh/m, where m is mass, g is gravitational pull and is height</li>
+</ol>
+<div hidden="""" id=""answer-3"">c</div>
+</div>
+</div>",2026-10-31T17:51:21.562229+00:00
+5b542b62dc14e48e,Physics,"Energy, Work and Power Quiz with Answers PDF – Download Test 3",,,,MCQ 14:,"When the force is applied on an object but the object does not move, it means that:",,no power is used,no work is done,work is done,power is used,,"[""no power is used"", ""no work is done"", ""work is done"", ""power is used""]",B,no work is done,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=3,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 14:</span> When the force is applied on an object but the object does not move, it means that:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-4 option-4-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-4"" onclick=""checkAttempt(this,4)"">no power is used</li>
+<li class=""option-4 option-4-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-4"" onclick=""checkAttempt(this,4)"">no work is done</li>
+<li class=""option-4 option-4-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-4"" onclick=""checkAttempt(this,4)"">work is done</li>
+<li class=""option-4 option-4-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-4"" onclick=""checkAttempt(this,4)"">power is used</li>
+</ol>
+<div hidden="""" id=""answer-4"">b</div>
+</div>
+</div>",2026-10-31T17:51:21.563222+00:00
+3260b54be3955a08,Physics,"Energy, Work and Power Quiz with Answers PDF – Download Test 3",,,,MCQ 15:,Power is defined as:,,"p = W/t, where W is work and t is time","p = t/W, where t is time and W is work","p = W/d, where W is work and d is distance","p = d/W, where d is distance and W is work",,"[""p = W/t, where W is work and t is time"", ""p = t/W, where t is time and W is work"", ""p = W/d, where W is work and d is distance"", ""p = d/W, where d is distance and W is work""]",A,"p = W/t, where W is work and t is time",,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=3,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 15:</span> Power is defined as:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-5 option-5-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-5"" onclick=""checkAttempt(this,5)"">p = W/t, where W is work and t is time</li>
+<li class=""option-5 option-5-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-5"" onclick=""checkAttempt(this,5)"">p = t/W, where t is time and W is work</li>
+<li class=""option-5 option-5-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-5"" onclick=""checkAttempt(this,5)"">p = W/d, where W is work and d is distance</li>
+<li class=""option-5 option-5-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-5"" onclick=""checkAttempt(this,5)"">p = d/W, where d is distance and W is work</li>
+</ol>
+<div hidden="""" id=""answer-5"">a</div>
+</div>
+</div>",2026-10-31T17:51:21.564225+00:00
+8ccdbf58014654d5,Physics,"Energy, Work and Power Notes Questions with Answers PDF – Test 4",,,,MCQ 16:,An object of mass 'm' raised to a height '2h' above the ground level possesses a gravitational potential energy of:,,1 ⁄ 2 × mgh,mgh,2mgh,m × g ⁄ 2h,,"[""1 \u2044 2 \u00d7 mgh"", ""mgh"", ""2mgh"", ""m \u00d7 g \u2044 2h""]",C,2mgh,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=4,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 16:</span> An object of mass 'm' raised to a height '2h' above the ground level possesses a gravitational potential energy of:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">1 ⁄ 2 × mgh</li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">mgh</li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">2mgh</li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">m × g ⁄ 2h</li>
+</ol>
+<div hidden="""" id=""answer-1"">c</div>
+</div>
+</div>",2026-10-31T17:51:22.909107+00:00
+338f342fdb78ab7b,Physics,"Energy, Work and Power Notes Questions with Answers PDF – Test 4",,,,MCQ 17:,"A pendulum bob moves at a speed of 2 m s-1 and mass of 0.5 kg, its Ek would be:",,1 J,0.25 J,0.5 J,2 J,,"[""1 J"", ""0.25 J"", ""0.5 J"", ""2 J""]",A,1 J,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=4,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 17:</span> A pendulum bob moves at a speed of 2 m s<sup>-1</sup> and mass of 0.5 kg, its E<sub>k</sub> would be:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">1 J</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">0.25 J</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">0.5 J</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">2 J</li>
+</ol>
+<div hidden="""" id=""answer-2"">a</div>
+</div>
+</div>",2026-10-31T17:51:22.910108+00:00
+4bf0cc1619f66107,Physics,"Energy, Work and Power Notes Questions with Answers PDF – Test 4",,,,MCQ 18:,"Mass of a car is 500 kg, which is lifted up by a crane at a height of 200 m, the gravity is 10 N kg-1. The Ep of the car will be:",,1000000 J,10000 J,4 J,25 J,,"[""1000000 J"", ""10000 J"", ""4 J"", ""25 J""]",A,1000000 J,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=4,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 18:</span> Mass of a car is 500 kg, which is lifted up by a crane at a height of 200 m, the gravity is 10 N kg<sup>-1</sup>. The E<sub>p</sub> of the car will be:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-3 option-3-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-3"" onclick=""checkAttempt(this,3)"">1000000 J</li>
+<li class=""option-3 option-3-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-3"" onclick=""checkAttempt(this,3)"">10000 J</li>
+<li class=""option-3 option-3-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-3"" onclick=""checkAttempt(this,3)"">4 J</li>
+<li class=""option-3 option-3-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-3"" onclick=""checkAttempt(this,3)"">25 J</li>
+</ol>
+<div hidden="""" id=""answer-3"">a</div>
+</div>
+</div>",2026-10-31T17:51:22.911108+00:00
+f8eb20a027fd9bc6,Physics,"Energy, Work and Power Notes Questions with Answers PDF – Test 4",,,,MCQ 19:,Work is defined as:,,"W = F/s, where F is force and s is displacement","W = F + s, where F is force and s is displacement","W = F - s, where F is force and s is displacement","W = F × s, where F is force and s is displacement",,"[""W = F/s, where F is force and s is displacement"", ""W = F + s, where F is force and s is displacement"", ""W = F - s, where F is force and s is displacement"", ""W = F \u00d7 s, where F is force and s is displacement""]",D,"W = F × s, where F is force and s is displacement",,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=4,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 19:</span> Work is defined as:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-4 option-4-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-4"" onclick=""checkAttempt(this,4)"">W = F/s, where F is force and s is displacement</li>
+<li class=""option-4 option-4-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-4"" onclick=""checkAttempt(this,4)"">W = F + s, where F is force and s is displacement</li>
+<li class=""option-4 option-4-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-4"" onclick=""checkAttempt(this,4)"">W = F - s, where F is force and s is displacement</li>
+<li class=""option-4 option-4-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-4"" onclick=""checkAttempt(this,4)"">W = F × s, where F is force and s is displacement</li>
+</ol>
+<div hidden="""" id=""answer-4"">d</div>
+</div>
+</div>",2026-10-31T17:51:22.912108+00:00
+bb6930d0f512add4,Physics,"Energy, Work and Power Notes Questions with Answers PDF – Test 4",,,,MCQ 20:,"A girl accidentally dropped her mobile phone from the balcony. If the mass of the mobile phone is 0.6 kg and the height from where the mobile phone was dropped is 120 m, keeping in front the gravitational pull of earth, the Ep of the mobile phone is:",,7.2 J,200 J,72 J,720 J,,"[""7.2 J"", ""200 J"", ""72 J"", ""720 J""]",D,720 J,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=4,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 20:</span> A girl accidentally dropped her mobile phone from the balcony. If the mass of the mobile phone is 0.6 kg and the height from where the mobile phone was dropped is 120 m, keeping in front the gravitational pull of earth, the E<sub>p</sub> of the mobile phone is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-5 option-5-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-5"" onclick=""checkAttempt(this,5)"">7.2 J</li>
+<li class=""option-5 option-5-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-5"" onclick=""checkAttempt(this,5)"">200 J</li>
+<li class=""option-5 option-5-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-5"" onclick=""checkAttempt(this,5)"">72 J</li>
+<li class=""option-5 option-5-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-5"" onclick=""checkAttempt(this,5)"">720 J</li>
+</ol>
+<div hidden="""" id=""answer-5"">d</div>
+</div>
+</div>",2026-10-31T17:51:22.913108+00:00
+72cba6cbbf5dd7be,Physics,"Energy, Work and Power Multiple Choice Questions and Answers PDF – Test 5",,,,MCQ 21:,A moving object always possesses:,,Potential Energy,Kinetic Energy,Thermal energy,Magnetic energy,,"[""Potential Energy"", ""Kinetic Energy"", ""Thermal energy"", ""Magnetic energy""]",B,Kinetic Energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=5,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 21:</span> A moving object always possesses:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">Potential Energy</li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">Kinetic Energy</li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">Thermal energy</li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">Magnetic energy</li>
+</ol>
+<div hidden="""" id=""answer-1"">b</div>
+</div>
+</div>",2026-10-31T17:51:24.050922+00:00
+32dec241d6fda8bd,Physics,"Energy, Work and Power Multiple Choice Questions and Answers PDF – Test 5",,,,MCQ 22:,Work can only be done when there is:,,Force,Power,Energy,Efficiency,,"[""Force"", ""Power"", ""Energy"", ""Efficiency""]",C,Energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=5,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 22:</span> Work can only be done when there is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">Force</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">Power</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">Energy</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">Efficiency</li>
+</ol>
+<div hidden="""" id=""answer-2"">c</div>
+</div>
+</div>",2026-10-31T17:51:24.051923+00:00
+872ccb1c17c37169,Physics,"Energy, Work and Power Multiple Choice Questions and Answers PDF – Test 5",,,,MCQ 23:,Work done must have the same unit as:,,Force,Power,Energy,Efficiency,,"[""Force"", ""Power"", ""Energy"", ""Efficiency""]",C,Energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=5,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 23:</span> Work done must have the same unit as:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-3 option-3-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-3"" onclick=""checkAttempt(this,3)"">Force</li>
+<li class=""option-3 option-3-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-3"" onclick=""checkAttempt(this,3)"">Power</li>
+<li class=""option-3 option-3-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-3"" onclick=""checkAttempt(this,3)"">Energy</li>
+<li class=""option-3 option-3-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-3"" onclick=""checkAttempt(this,3)"">Efficiency</li>
+</ol>
+<div hidden="""" id=""answer-3"">c</div>
+</div>
+</div>",2026-10-31T17:51:24.052923+00:00
+6f810a2d103c5015,Physics,"Energy, Work and Power Multiple Choice Questions and Answers PDF – Test 5",,,,MCQ 24:,"Knocking a nail into a wooden block with a hammer involves conversion between different forms of energy, which of the following choices present this conversion in correct order.:",,chemical energy → gravitational potential energy → kinetic energy → (sound energy + heat energy),chemical energy → kinetic energy → gravitational potential energy → (sound energy + heat energy),chemical energy → (sound energy + heat energy) → kinetic energy → gravitational potential energy,(sound energy + heat energy) → chemical energy → kinetic energy → gravitational potential energy,,"[""chemical energy \u2192 gravitational potential energy \u2192 kinetic energy \u2192 (sound energy + heat energy)"", ""chemical energy \u2192 kinetic energy \u2192 gravitational potential energy \u2192 (sound energy + heat energy)"", ""chemical energy \u2192 (sound energy + heat energy) \u2192 kinetic energy \u2192 gravitational potential energy"", ""(sound energy + heat energy) \u2192 chemical energy \u2192 kinetic energy \u2192 gravitational potential energy""]",A,chemical energy → gravitational potential energy → kinetic energy → (sound energy + heat energy),,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=5,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 24:</span> Knocking a nail into a wooden block with a hammer involves conversion between different forms of energy, which of the following choices present this conversion in correct order.:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-4 option-4-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-4"" onclick=""checkAttempt(this,4)"">chemical energy → gravitational potential energy → kinetic energy → (sound energy + heat energy)</li>
+<li class=""option-4 option-4-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-4"" onclick=""checkAttempt(this,4)"">chemical energy → kinetic energy → gravitational potential energy → (sound energy + heat energy)</li>
+<li class=""option-4 option-4-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-4"" onclick=""checkAttempt(this,4)"">chemical energy → (sound energy + heat energy) → kinetic energy → gravitational potential energy</li>
+<li class=""option-4 option-4-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-4"" onclick=""checkAttempt(this,4)"">(sound energy + heat energy) → chemical energy → kinetic energy → gravitational potential energy</li>
+</ol>
+<div hidden="""" id=""answer-4"">a</div>
+</div>
+</div>",2026-10-31T17:51:24.053924+00:00
+5d08218028cb36fc,Physics,"Energy, Work and Power Multiple Choice Questions and Answers PDF – Test 5",,,,MCQ 25:,We can say that one watt is defined as:,,rate of work done or energy conversion of one joule per second,rate of time of one second per joule,rate of distance of one meter per joule,rate of work done or energy conversion of one joule per meter,,"[""rate of work done or energy conversion of one joule per second"", ""rate of time of one second per joule"", ""rate of distance of one meter per joule"", ""rate of work done or energy conversion of one joule per meter""]",A,rate of work done or energy conversion of one joule per second,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=5,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 25:</span> We can say that one watt is defined as:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-5 option-5-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-5"" onclick=""checkAttempt(this,5)"">rate of work done or energy conversion of one joule per second</li>
+<li class=""option-5 option-5-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-5"" onclick=""checkAttempt(this,5)"">rate of time of one second per joule</li>
+<li class=""option-5 option-5-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-5"" onclick=""checkAttempt(this,5)"">rate of distance of one meter per joule</li>
+<li class=""option-5 option-5-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-5"" onclick=""checkAttempt(this,5)"">rate of work done or energy conversion of one joule per meter</li>
+</ol>
+<div hidden="""" id=""answer-5"">a</div>
+</div>
+</div>",2026-10-31T17:51:24.054924+00:00
+a452ff53c6898e2a,Physics,"Energy, Work and Power Multiple Choice Questions with Answers PDF – Test 6",,,,MCQ 26:,Wind and waves are used by the turbines to convert:,,Mechanical Energy into Electrical Energy,Kinetic Energy into Electrical Energy,Potential energy into Kinetic Energy,Potential Energy into Electrical Energy,,"[""Mechanical Energy into Electrical Energy"", ""Kinetic Energy into Electrical Energy"", ""Potential energy into Kinetic Energy"", ""Potential Energy into Electrical Energy""]",B,Kinetic Energy into Electrical Energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=6,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 26:</span> Wind and waves are used by the turbines to convert:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">Mechanical Energy into Electrical Energy</li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">Kinetic Energy into Electrical Energy</li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">Potential energy into Kinetic Energy</li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">Potential Energy into Electrical Energy</li>
+</ol>
+<div hidden="""" id=""answer-1"">b</div>
+</div>
+</div>",2026-10-31T17:51:25.335692+00:00
+db6b18e69040606f,Physics,"Energy, Work and Power Multiple Choice Questions with Answers PDF – Test 6",,,,MCQ 27:,"If a bulb uses energy of 100 J and remains on for 25 s, the power consumed by the bulb will be:",,125 W,4 W,2500 W,75 W,,"[""125 W"", ""4 W"", ""2500 W"", ""75 W""]",B,4 W,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=6,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 27:</span> If a bulb uses energy of 100 J and remains on for 25 s, the power consumed by the bulb will be:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">125 W</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">4 W</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">2500 W</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">75 W</li>
+</ol>
+<div hidden="""" id=""answer-2"">b</div>
+</div>
+</div>",2026-10-31T17:51:25.336696+00:00
+87c0237931ca0ad4,Physics,"Energy, Work and Power Multiple Choice Questions with Answers PDF – Test 6",,,,MCQ 28:,"As the pendulum bob swings, some of its energy is converted into:",,Sound Energy,Thermal Energy,Light Energy,Kinetic Energy,,"[""Sound Energy"", ""Thermal Energy"", ""Light Energy"", ""Kinetic Energy""]",B,Thermal Energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=6,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 28:</span> As the pendulum bob swings, some of its energy is converted into:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-3 option-3-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-3"" onclick=""checkAttempt(this,3)"">Sound Energy</li>
+<li class=""option-3 option-3-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-3"" onclick=""checkAttempt(this,3)"">Thermal Energy</li>
+<li class=""option-3 option-3-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-3"" onclick=""checkAttempt(this,3)"">Light Energy</li>
+<li class=""option-3 option-3-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-3"" onclick=""checkAttempt(this,3)"">Kinetic Energy</li>
+</ol>
+<div hidden="""" id=""answer-3"">b</div>
+</div>
+</div>",2026-10-31T17:51:25.337698+00:00
+7cc76a63ef7bee22,Physics,"Energy, Work and Power Multiple Choice Questions with Answers PDF – Test 6",,,,MCQ 29:,"A ball of an unknown mass is thrown upward at a speed of 10 m s-1, calculate the maximum height reached by the ball if the acceleration due to gravity is assumed to be 10 m s-1².:",,5 m,10 m,0.5 m,1 m,,"[""5 m"", ""10 m"", ""0.5 m"", ""1 m""]",A,5 m,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=6,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 29:</span> A ball of an unknown mass is thrown upward at a speed of 10 m s<sup>-1</sup>, calculate the maximum height reached by the ball if the acceleration due to gravity is assumed to be 10 m s<sup>-1</sup>².:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-4 option-4-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-4"" onclick=""checkAttempt(this,4)"">5 m</li>
+<li class=""option-4 option-4-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-4"" onclick=""checkAttempt(this,4)"">10 m</li>
+<li class=""option-4 option-4-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-4"" onclick=""checkAttempt(this,4)"">0.5 m</li>
+<li class=""option-4 option-4-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-4"" onclick=""checkAttempt(this,4)"">1 m</li>
+</ol>
+<div hidden="""" id=""answer-4"">a</div>
+</div>
+</div>",2026-10-31T17:51:25.338698+00:00
+f06fd01690855486,Physics,"Energy, Work and Power Multiple Choice Questions with Answers PDF – Test 6",,,,MCQ 30:,Energy cannot be:,,converted or transferred,destroyed or transferred,created or transferred,created or destroyed,,"[""converted or transferred"", ""destroyed or transferred"", ""created or transferred"", ""created or destroyed""]",D,created or destroyed,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=6,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 30:</span> Energy cannot be:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-5 option-5-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-5"" onclick=""checkAttempt(this,5)"">converted or transferred</li>
+<li class=""option-5 option-5-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-5"" onclick=""checkAttempt(this,5)"">destroyed or transferred</li>
+<li class=""option-5 option-5-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-5"" onclick=""checkAttempt(this,5)"">created or transferred</li>
+<li class=""option-5 option-5-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-5"" onclick=""checkAttempt(this,5)"">created or destroyed</li>
+</ol>
+<div hidden="""" id=""answer-5"">d</div>
+</div>
+</div>",2026-10-31T17:51:25.339698+00:00
+f1000d41f5af5085,Physics,"Energy, Work and Power Quiz Questions and Answers PDF – Download Test 7",,,,MCQ 31:,Formula for efficiency is:,,(energy input / energy output) × 100,(energy input / energy output) × 100,(useful energy input / energy output) × 100,(useful energy output / total energy input) × 100,,"[""(energy input / energy output) \u00d7 100"", ""(energy input / energy output) \u00d7 100"", ""(useful energy input / energy output) \u00d7 100"", ""(useful energy output / total energy input) \u00d7 100""]",D,(useful energy output / total energy input) × 100,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=7,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 31:</span> Formula for efficiency is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">(energy input / energy output) × 100</li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">(energy input / energy output) × 100</li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">(useful energy input / energy output) × 100</li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">(useful energy output / total energy input) × 100</li>
+</ol>
+<div hidden="""" id=""answer-1"">d</div>
+</div>
+</div>",2026-10-31T17:51:26.539982+00:00
+adc055553abfa786,Physics,"Energy, Work and Power Quiz Questions and Answers PDF – Download Test 7",,,,MCQ 32:,"A plane flies a distance of 5000 m with the work done of 25000 J, the force applied is:",,20000 N,30000 N,125000 N,5 N,,"[""20000 N"", ""30000 N"", ""125000 N"", ""5 N""]",D,5 N,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=7,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 32:</span> A plane flies a distance of 5000 m with the work done of 25000 J, the force applied is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">20000 N</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">30000 N</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">125000 N</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">5 N</li>
+</ol>
+<div hidden="""" id=""answer-2"">d</div>
+</div>
+</div>",2026-10-31T17:51:26.540982+00:00
+6f560673e7deab0b,Physics,"Energy, Work and Power Quiz Questions and Answers PDF – Download Test 7",,,,MCQ 33:,"An object has Ep of 500 J with a mass of 25 kg and gravity of 10 N kg-1, height of object is:",,20 m,1250 m,2 m,125000 m,,"[""20 m"", ""1250 m"", ""2 m"", ""125000 m""]",C,2 m,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=7,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 33:</span> An object has E<sub>p</sub> of 500 J with a mass of 25 kg and gravity of 10 N kg<sup>-1</sup>, height of object is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-3 option-3-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-3"" onclick=""checkAttempt(this,3)"">20 m</li>
+<li class=""option-3 option-3-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-3"" onclick=""checkAttempt(this,3)"">1250 m</li>
+<li class=""option-3 option-3-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-3"" onclick=""checkAttempt(this,3)"">2 m</li>
+<li class=""option-3 option-3-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-3"" onclick=""checkAttempt(this,3)"">125000 m</li>
+</ol>
+<div hidden="""" id=""answer-3"">c</div>
+</div>
+</div>",2026-10-31T17:51:26.541981+00:00
+aa0e709d1da37085,Physics,"Energy, Work and Power Quiz Questions and Answers PDF – Download Test 7",,,,MCQ 34:,Food we eat contains:,,Chemical Potential Energy,Elastic Potential Energy,Gravitational Potential Energy,Kinetic energy,,"[""Chemical Potential Energy"", ""Elastic Potential Energy"", ""Gravitational Potential Energy"", ""Kinetic energy""]",A,Chemical Potential Energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=7,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 34:</span> Food we eat contains:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-4 option-4-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-4"" onclick=""checkAttempt(this,4)"">Chemical Potential Energy</li>
+<li class=""option-4 option-4-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-4"" onclick=""checkAttempt(this,4)"">Elastic Potential Energy</li>
+<li class=""option-4 option-4-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-4"" onclick=""checkAttempt(this,4)"">Gravitational Potential Energy</li>
+<li class=""option-4 option-4-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-4"" onclick=""checkAttempt(this,4)"">Kinetic energy</li>
+</ol>
+<div hidden="""" id=""answer-4"">a</div>
+</div>
+</div>",2026-10-31T17:51:26.542981+00:00
+0a036429253fa791,Physics,"Energy, Work and Power Quiz Questions and Answers PDF – Download Test 7",,,,MCQ 35:,SI unit for power is:,,Joules,Watts,Ohms,Newton,,"[""Joules"", ""Watts"", ""Ohms"", ""Newton""]",B,Watts,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=7,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 35:</span> SI unit for power is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-5 option-5-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-5"" onclick=""checkAttempt(this,5)"">Joules</li>
+<li class=""option-5 option-5-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-5"" onclick=""checkAttempt(this,5)"">Watts</li>
+<li class=""option-5 option-5-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-5"" onclick=""checkAttempt(this,5)"">Ohms</li>
+<li class=""option-5 option-5-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-5"" onclick=""checkAttempt(this,5)"">Newton</li>
+</ol>
+<div hidden="""" id=""answer-5"">b</div>
+</div>
+</div>",2026-10-31T17:51:26.542981+00:00
+eca060c832c5616a,Physics,"Energy, Work and Power Notes Questions and Answers PDF – Test 8",,,,MCQ 36:,Formula for work done is:,,"F × s, where F is force and s is displacement","F/s, where F is force and s is displacement","F + s, where F is force and s is displacement","F -s, where F is force and s is displacement",,"[""F \u00d7 s, where F is force and s is displacement"", ""F/s, where F is force and s is displacement"", ""F + s, where F is force and s is displacement"", ""F -s, where F is force and s is displacement""]",A,"F × s, where F is force and s is displacement",,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=8,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 36:</span> Formula for work done is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">F × s, where F is force and s is displacement</li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">F/s, where F is force and s is displacement</li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">F + s, where F is force and s is displacement</li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">F -s, where F is force and s is displacement</li>
+</ol>
+<div hidden="""" id=""answer-1"">a</div>
+</div>
+</div>",2026-10-31T17:51:27.691662+00:00
+ed7e2ba0782accc0,Physics,"Energy, Work and Power Notes Questions and Answers PDF – Test 8",,,,MCQ 37:,A constant force on an object given by the product of the force and the distance moved by the object in the direction of the force is termed as:,,Work done,Efficiency,Power,Energy,,"[""Work done"", ""Efficiency"", ""Power"", ""Energy""]",A,Work done,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=8,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 37:</span> A constant force on an object given by the product of the force and the distance moved by the object in the direction of the force is termed as:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">Work done</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">Efficiency</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">Power</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">Energy</li>
+</ol>
+<div hidden="""" id=""answer-2"">a</div>
+</div>
+</div>",2026-10-31T17:51:27.692669+00:00
+6fd395d54adba9ac,Physics,"Energy, Work and Power Notes Questions and Answers PDF – Test 8",,,,MCQ 38:,"When a pendulum bob is displaced to one side, it gains:",,Chemical Potential Energy,Elastic Potential Energy,Gravitational Potential Energy,Kinetic energy,,"[""Chemical Potential Energy"", ""Elastic Potential Energy"", ""Gravitational Potential Energy"", ""Kinetic energy""]",C,Gravitational Potential Energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=8,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 38:</span> When a pendulum bob is displaced to one side, it gains:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-3 option-3-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-3"" onclick=""checkAttempt(this,3)"">Chemical Potential Energy</li>
+<li class=""option-3 option-3-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-3"" onclick=""checkAttempt(this,3)"">Elastic Potential Energy</li>
+<li class=""option-3 option-3-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-3"" onclick=""checkAttempt(this,3)"">Gravitational Potential Energy</li>
+<li class=""option-3 option-3-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-3"" onclick=""checkAttempt(this,3)"">Kinetic energy</li>
+</ol>
+<div hidden="""" id=""answer-3"">c</div>
+</div>
+</div>",2026-10-31T17:51:27.693665+00:00
+8dbde48c21edf0d2,Physics,"Energy, Work and Power Notes Questions and Answers PDF – Test 8",,,,MCQ 39:,Pendulum bob cannot attain its initial height because:,,it continues to lose energy in thermal form,it continues to lose energy in sound form,it continues to lose energy in light form,it continues to lose energy in potential form,,"[""it continues to lose energy in thermal form"", ""it continues to lose energy in sound form"", ""it continues to lose energy in light form"", ""it continues to lose energy in potential form""]",A,it continues to lose energy in thermal form,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=8,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 39:</span> Pendulum bob cannot attain its initial height because:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-4 option-4-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-4"" onclick=""checkAttempt(this,4)"">it continues to lose energy in thermal form</li>
+<li class=""option-4 option-4-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-4"" onclick=""checkAttempt(this,4)"">it continues to lose energy in sound form</li>
+<li class=""option-4 option-4-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-4"" onclick=""checkAttempt(this,4)"">it continues to lose energy in light form</li>
+<li class=""option-4 option-4-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-4"" onclick=""checkAttempt(this,4)"">it continues to lose energy in potential form</li>
+</ol>
+<div hidden="""" id=""answer-4"">a</div>
+</div>
+</div>",2026-10-31T17:51:27.694675+00:00
+8d18bdf723bf1635,Physics,"Energy, Work and Power Notes Questions and Answers PDF – Test 8",,,,MCQ 40:,"Work done by an elevator is 1500 J with a constant force of 150 N, distance covered by elevator is:",,1350 m,1650 m,225000 m,10 m,,"[""1350 m"", ""1650 m"", ""225000 m"", ""10 m""]",D,10 m,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=8,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 40:</span> Work done by an elevator is 1500 J with a constant force of 150 N, distance covered by elevator is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-5 option-5-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-5"" onclick=""checkAttempt(this,5)"">1350 m</li>
+<li class=""option-5 option-5-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-5"" onclick=""checkAttempt(this,5)"">1650 m</li>
+<li class=""option-5 option-5-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-5"" onclick=""checkAttempt(this,5)"">225000 m</li>
+<li class=""option-5 option-5-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-5"" onclick=""checkAttempt(this,5)"">10 m</li>
+</ol>
+<div hidden="""" id=""answer-5"">d</div>
+</div>
+</div>",2026-10-31T17:51:27.695670+00:00
+da7e70f18a63f956,Physics,"Energy, Work and Power MCQs with Answers PDF – Download Test 9",,,,MCQ 41:,SI unit of energy is:,,Newton-meter,joule,watt,None of the above,,"[""Newton-meter"", ""joule"", ""watt"", ""None of the above""]",B,joule,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=9,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 41:</span> SI unit of energy is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">Newton-meter</li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">joule</li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">watt</li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">None of the above</li>
+</ol>
+<div hidden="""" id=""answer-1"">b</div>
+</div>
+</div>",2026-10-31T17:51:29.075110+00:00
+72947cd64a7c0902,Physics,"Energy, Work and Power MCQs with Answers PDF – Download Test 9",,,,MCQ 42:,"A filament bulb of 100 W consumes energy of 1000 J, the time taken by the bulb is:",,900 s,10 s,1100 s,100000 s,,"[""900 s"", ""10 s"", ""1100 s"", ""100000 s""]",B,10 s,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=9,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 42:</span> A filament bulb of 100 W consumes energy of 1000 J, the time taken by the bulb is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">900 s</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">10 s</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">1100 s</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">100000 s</li>
+</ol>
+<div hidden="""" id=""answer-2"">b</div>
+</div>
+</div>",2026-10-31T17:51:29.076122+00:00
+1c89163955510faf,Physics,"Energy, Work and Power MCQs with Answers PDF – Download Test 9",,,,MCQ 43:,"A car stopped screeching to avoid the crash with a van, change is involved in the process is:",,Kinetic energy is converted into sound energy,Kinetic Energy is converted into sound and thermal energy,"Potential energy is converted into sound, heat and kinetic energy",Kinetic and potential energy is converted into thermal and sound energy,,"[""Kinetic energy is converted into sound energy"", ""Kinetic Energy is converted into sound and thermal energy"", ""Potential energy is converted into sound, heat and kinetic energy"", ""Kinetic and potential energy is converted into thermal and sound energy""]",B,Kinetic Energy is converted into sound and thermal energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=9,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 43:</span> A car stopped screeching to avoid the crash with a van, change is involved in the process is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-3 option-3-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-3"" onclick=""checkAttempt(this,3)"">Kinetic energy is converted into sound energy</li>
+<li class=""option-3 option-3-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-3"" onclick=""checkAttempt(this,3)"">Kinetic Energy is converted into sound and thermal energy</li>
+<li class=""option-3 option-3-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-3"" onclick=""checkAttempt(this,3)"">Potential energy is converted into sound, heat and kinetic energy</li>
+<li class=""option-3 option-3-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-3"" onclick=""checkAttempt(this,3)"">Kinetic and potential energy is converted into thermal and sound energy</li>
+</ol>
+<div hidden="""" id=""answer-3"">b</div>
+</div>
+</div>",2026-10-31T17:51:29.077124+00:00
+7f7657291a2a446d,Physics,"Energy, Work and Power MCQs with Answers PDF – Download Test 9",,,,MCQ 44:,Formula for Kinetic energy is:,,1/2mv²,1/2m²v,mv²,mv-2,,"[""1/2mv\u00b2"", ""1/2m\u00b2v"", ""mv\u00b2"", ""mv-2""]",A,1/2mv²,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=9,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 44:</span> Formula for Kinetic energy is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-4 option-4-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-4"" onclick=""checkAttempt(this,4)"">1/2mv²</li>
+<li class=""option-4 option-4-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-4"" onclick=""checkAttempt(this,4)"">1/2m²v</li>
+<li class=""option-4 option-4-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-4"" onclick=""checkAttempt(this,4)"">mv²</li>
+<li class=""option-4 option-4-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-4"" onclick=""checkAttempt(this,4)"">mv<sup>-2</sup></li>
+</ol>
+<div hidden="""" id=""answer-4"">a</div>
+</div>
+</div>",2026-10-31T17:51:29.078110+00:00
+c2f717bdbafcfe4a,Physics,"Energy, Work and Power MCQs with Answers PDF – Download Test 9",,,,MCQ 45:,"If a person in the mall moves a trolley with a force of 60 N and the trolley moves the distance of 20 m, the work done will be:",,30 J,40 J,1200 J,80 J,,"[""30 J"", ""40 J"", ""1200 J"", ""80 J""]",C,1200 J,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=9,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 45:</span> If a person in the mall moves a trolley with a force of 60 N and the trolley moves the distance of 20 m, the work done will be:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-5 option-5-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-5"" onclick=""checkAttempt(this,5)"">30 J</li>
+<li class=""option-5 option-5-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-5"" onclick=""checkAttempt(this,5)"">40 J</li>
+<li class=""option-5 option-5-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-5"" onclick=""checkAttempt(this,5)"">1200 J</li>
+<li class=""option-5 option-5-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-5"" onclick=""checkAttempt(this,5)"">80 J</li>
+</ol>
+<div hidden="""" id=""answer-5"">c</div>
+</div>
+</div>",2026-10-31T17:51:29.078110+00:00
+b0bd91f1499cee60,Physics,"Energy, Work and Power MCQ with Answers PDF – Download Test 10",,,,MCQ 46:,"If a bicycle of mass 15 kg moves at a speed of 50 m s-1, the Ek of the bicycle is:",,18750 J,5625 J,37500 J,6 × 10-3,,"[""18750 J"", ""5625 J"", ""37500 J"", ""6 \u00d7 10-3""]",A,18750 J,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=10,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 46:</span> If a bicycle of mass 15 kg moves at a speed of 50 m s<sup>-1</sup>, the E<sub>k</sub> of the bicycle is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">18750 J</li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">5625 J</li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">37500 J</li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">6 × 10<sup>-3</sup></li>
+</ol>
+<div hidden="""" id=""answer-1"">a</div>
+</div>
+</div>",2026-10-31T17:51:30.346704+00:00
+67ce1da39eef1048,Physics,"Energy, Work and Power MCQ with Answers PDF – Download Test 10",,,,MCQ 47:,SI unit for energy is:,,Newton,Joules,Ohms,Watts,,"[""Newton"", ""Joules"", ""Ohms"", ""Watts""]",B,Joules,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=10,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 47:</span> SI unit for energy is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">Newton</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">Joules</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">Ohms</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">Watts</li>
+</ol>
+<div hidden="""" id=""answer-2"">b</div>
+</div>
+</div>",2026-10-31T17:51:30.347692+00:00
+7c8507b459cabc7d,Physics,"Energy, Work and Power MCQ with Answers PDF – Download Test 10",,,,MCQ 48:,Efficiency of a machine is measured by:,,(Wasted Energy Output ⁄ Energy Input) × 100 %,(Energy Input ⁄ Wasted Energy Output) × 100 %,(Useful Energy Output ⁄ Energy Input) × 100 %,(Energy Input ⁄ Useful Energy Output) × 100 %,,"[""(Wasted Energy Output \u2044 Energy Input) \u00d7 100 %"", ""(Energy Input \u2044 Wasted Energy Output) \u00d7 100 %"", ""(Useful Energy Output \u2044 Energy Input) \u00d7 100 %"", ""(Energy Input \u2044 Useful Energy Output) \u00d7 100 %""]",C,(Useful Energy Output ⁄ Energy Input) × 100 %,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=10,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 48:</span> Efficiency of a machine is measured by:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-3 option-3-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-3"" onclick=""checkAttempt(this,3)"">(Wasted Energy Output ⁄ Energy Input) × 100 %</li>
+<li class=""option-3 option-3-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-3"" onclick=""checkAttempt(this,3)"">(Energy Input ⁄ Wasted Energy Output) × 100 %</li>
+<li class=""option-3 option-3-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-3"" onclick=""checkAttempt(this,3)"">(Useful Energy Output ⁄ Energy Input) × 100 %</li>
+<li class=""option-3 option-3-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-3"" onclick=""checkAttempt(this,3)"">(Energy Input ⁄ Useful Energy Output) × 100 %</li>
+</ol>
+<div hidden="""" id=""answer-3"">c</div>
+</div>
+</div>",2026-10-31T17:51:30.348697+00:00
+c15f668216b362f2,Physics,"Energy, Work and Power MCQ with Answers PDF – Download Test 10",,,,MCQ 49:,"An iron of 2000 W uses energy of 240000 J, the time taken by the iron in hours is:",,1 hour,3 hours,1/2 hour,2 hour,,"[""1 hour"", ""3 hours"", ""1/2 hour"", ""2 hour""]",D,2 hour,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=10,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 49:</span> An iron of 2000 W uses energy of 240000 J, the time taken by the iron in hours is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-4 option-4-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-4"" onclick=""checkAttempt(this,4)"">1 hour</li>
+<li class=""option-4 option-4-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-4"" onclick=""checkAttempt(this,4)"">3 hours</li>
+<li class=""option-4 option-4-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-4"" onclick=""checkAttempt(this,4)"">1/2 hour</li>
+<li class=""option-4 option-4-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-4"" onclick=""checkAttempt(this,4)"">2 hour</li>
+</ol>
+<div hidden="""" id=""answer-4"">d</div>
+</div>
+</div>",2026-10-31T17:51:30.349697+00:00
+b8cae4aa64eee7bb,Physics,"Energy, Work and Power MCQ with Answers PDF – Download Test 10",,,,MCQ 50:,"When direction of applied force and direction in which object moves are perpendicular to each other, then:",,no power is used,no work is done,work is done,power is used,,"[""no power is used"", ""no work is done"", ""work is done"", ""power is used""]",B,no work is done,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=10,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 50:</span> When direction of applied force and direction in which object moves are perpendicular to each other, then:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-5 option-5-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-5"" onclick=""checkAttempt(this,5)"">no power is used</li>
+<li class=""option-5 option-5-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-5"" onclick=""checkAttempt(this,5)"">no work is done</li>
+<li class=""option-5 option-5-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-5"" onclick=""checkAttempt(this,5)"">work is done</li>
+<li class=""option-5 option-5-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-5"" onclick=""checkAttempt(this,5)"">power is used</li>
+</ol>
+<div hidden="""" id=""answer-5"">b</div>
+</div>
+</div>",2026-10-31T17:51:30.350700+00:00
+bfd11176f6513cd1,Physics,"Energy, Work and Power Quiz with Answers PDF – Download Test 11",,,,MCQ 51:,"With reference to the equation of W = F.s, where 'W' is work done, 'F' is force and 's' is displacement, we can conclude that 1 Joule is equal to:",,"1 N m-1, where N is Newton and m is meter","1 N m, where N is Newtons and m is meter","1 W m, where W is watts and m is meter","1 W m-1, where W is watt and m is meter",,"[""1 N m-1, where N is Newton and m is meter"", ""1 N m, where N is Newtons and m is meter"", ""1 W m, where W is watts and m is meter"", ""1 W m-1, where W is watt and m is meter""]",B,"1 N m, where N is Newtons and m is meter",,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=11,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 51:</span> With reference to the equation of W = F.s, where 'W' is work done, 'F' is force and 's' is displacement, we can conclude that 1 Joule is equal to:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">1 N m<sup>-1</sup>, where N is Newton and m is meter</li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">1 N m, where N is Newtons and m is meter</li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">1 W m, where W is watts and m is meter</li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">1 W m<sup>-1</sup>, where W is watt and m is meter</li>
+</ol>
+<div hidden="""" id=""answer-1"">b</div>
+</div>
+</div>",2026-10-31T17:51:31.694398+00:00
+f038b2a872edd06b,Physics,"Energy, Work and Power Quiz with Answers PDF – Download Test 11",,,,MCQ 52:,A compressed spring possesses:,,Kinetic Energy,Elastic Potential Energy,Gravitational Potential Energy,Sound Energy,,"[""Kinetic Energy"", ""Elastic Potential Energy"", ""Gravitational Potential Energy"", ""Sound Energy""]",B,Elastic Potential Energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=11,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 52:</span> A compressed spring possesses:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">Kinetic Energy</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">Elastic Potential Energy</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">Gravitational Potential Energy</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">Sound Energy</li>
+</ol>
+<div hidden="""" id=""answer-2"">b</div>
+</div>
+</div>",2026-10-31T17:51:31.695394+00:00
+1187cdcea214e587,Physics,"Energy, Work and Power Quiz with Answers PDF – Download Test 11",,,,MCQ 53:,"For two objects A and B, if mass of A is same as mass of B and speed of A is twice as much as that of B, statement that is correct is:",,"Kinetic energy of A = kinetic energy of B; because, kinetic energy is independent of speed of the object.","since kinetic energy is inversely proportional to speed of the object, the kinetic energy of A < kinetic energy of B",Kinetic energy of A = 1 ⁄ 4 × Kinetic energy of B,Kinetic energy of A = 4 × Kinetic energy of B,,"[""Kinetic energy of A = kinetic energy of B; because, kinetic energy is independent of speed of the object."", ""since kinetic energy is inversely proportional to speed of the object, the kinetic energy of A < kinetic energy of B"", ""Kinetic energy of A = 1 \u2044 4 \u00d7 Kinetic energy of B"", ""Kinetic energy of A = 4 \u00d7 Kinetic energy of B""]",D,Kinetic energy of A = 4 × Kinetic energy of B,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=11,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 53:</span> For two objects A and B, if mass of A is same as mass of B and speed of A is twice as much as that of B, statement that is correct is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-3 option-3-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-3"" onclick=""checkAttempt(this,3)"">Kinetic energy of A = kinetic energy of B; because, kinetic energy is independent of speed of the object.</li>
+<li class=""option-3 option-3-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-3"" onclick=""checkAttempt(this,3)"">since kinetic energy is inversely proportional to speed of the object, the kinetic energy of A &lt; kinetic energy of B</li>
+<li class=""option-3 option-3-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-3"" onclick=""checkAttempt(this,3)"">Kinetic energy of A = 1 ⁄ 4 × Kinetic energy of B</li>
+<li class=""option-3 option-3-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-3"" onclick=""checkAttempt(this,3)"">Kinetic energy of A = 4 × Kinetic energy of B</li>
+</ol>
+<div hidden="""" id=""answer-3"">d</div>
+</div>
+</div>",2026-10-31T17:51:31.696395+00:00
+dfc2a41d557d9af7,Physics,"Energy, Work and Power Quiz with Answers PDF – Download Test 11",,,,MCQ 54:,Capacity or ability to do work is termed as:,,Power,Work,Energy,Efficiency,,"[""Power"", ""Work"", ""Energy"", ""Efficiency""]",C,Energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=11,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 54:</span> Capacity or ability to do work is termed as:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-4 option-4-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-4"" onclick=""checkAttempt(this,4)"">Power</li>
+<li class=""option-4 option-4-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-4"" onclick=""checkAttempt(this,4)"">Work</li>
+<li class=""option-4 option-4-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-4"" onclick=""checkAttempt(this,4)"">Energy</li>
+<li class=""option-4 option-4-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-4"" onclick=""checkAttempt(this,4)"">Efficiency</li>
+</ol>
+<div hidden="""" id=""answer-4"">c</div>
+</div>
+</div>",2026-10-31T17:51:31.697404+00:00
+8504e4e007070c3c,Physics,"Energy, Work and Power Quiz with Answers PDF – Download Test 11",,,,MCQ 55:,Energy used by a moving object is termed as:,,Potential Energy,Mechanical Energy,Kinetic Energy,Thermal Energy,,"[""Potential Energy"", ""Mechanical Energy"", ""Kinetic Energy"", ""Thermal Energy""]",C,Kinetic Energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=11,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 55:</span> Energy used by a moving object is termed as:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-5 option-5-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-5"" onclick=""checkAttempt(this,5)"">Potential Energy</li>
+<li class=""option-5 option-5-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-5"" onclick=""checkAttempt(this,5)"">Mechanical Energy</li>
+<li class=""option-5 option-5-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-5"" onclick=""checkAttempt(this,5)"">Kinetic Energy</li>
+<li class=""option-5 option-5-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-5"" onclick=""checkAttempt(this,5)"">Thermal Energy</li>
+</ol>
+<div hidden="""" id=""answer-5"">c</div>
+</div>
+</div>",2026-10-31T17:51:31.697404+00:00
+d9803398cacccf5e,Physics,"Energy, Work and Power Notes Questions with Answers PDF – Test 12",,,,MCQ 56:,"A concrete pole of mass 50 kg was lifted up at a height of 12 m, taking the gravitational pull of earth, the Ep of the pole is:",,4 J,6000 J,60 J,5 J,,"[""4 J"", ""6000 J"", ""60 J"", ""5 J""]",B,6000 J,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=12,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 56:</span> A concrete pole of mass 50 kg was lifted up at a height of 12 m, taking the gravitational pull of earth, the E<sub>p</sub> of the pole is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">2.4 J</li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">6000 J</li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">60 J</li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">5 J</li>
+</ol>
+<div hidden="""" id=""answer-1"">b</div>
+</div>
+</div>",2026-10-31T17:51:32.814822+00:00
+4f5982f60047c173,Physics,"Energy, Work and Power Notes Questions with Answers PDF – Test 12",,,,MCQ 57:,"Moving wind and waves, flying bird and spinning bowling ball use:",,Potential Energy,Mechanical Energy,Kinetic Energy,Thermal Energy,,"[""Potential Energy"", ""Mechanical Energy"", ""Kinetic Energy"", ""Thermal Energy""]",C,Kinetic Energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=12,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 57:</span> Moving wind and waves, flying bird and spinning bowling ball use:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">Potential Energy</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">Mechanical Energy</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">Kinetic Energy</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">Thermal Energy</li>
+</ol>
+<div hidden="""" id=""answer-2"">c</div>
+</div>
+</div>",2026-10-31T17:51:32.815840+00:00
+88fabd2214f5a19d,Physics,"Energy, Work and Power Notes Questions with Answers PDF – Test 12",,,,MCQ 58:,A machine uses total energy of 5000 J and within the process one-fourth of the energy is lost to the surroundings. The efficiency of the machine is:,,25%,50%,75%,90%,,"[""25%"", ""50%"", ""75%"", ""90%""]",C,75%,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=12,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 58:</span> A machine uses total energy of 5000 J and within the process one-fourth of the energy is lost to the surroundings. The efficiency of the machine is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-3 option-3-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-3"" onclick=""checkAttempt(this,3)"">25%</li>
+<li class=""option-3 option-3-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-3"" onclick=""checkAttempt(this,3)"">50%</li>
+<li class=""option-3 option-3-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-3"" onclick=""checkAttempt(this,3)"">75%</li>
+<li class=""option-3 option-3-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-3"" onclick=""checkAttempt(this,3)"">90%</li>
+</ol>
+<div hidden="""" id=""answer-3"">c</div>
+</div>
+</div>",2026-10-31T17:51:32.815840+00:00
+4dc271a7681f6779,Physics,"Energy, Work and Power Notes Questions with Answers PDF – Test 12",,,,MCQ 59:,One watt is equal to:,,One joule per second,One second per joule,One meter per joule,One joule per meter,,"[""One joule per second"", ""One second per joule"", ""One meter per joule"", ""One joule per meter""]",A,One joule per second,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=12,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 59:</span> One watt is equal to:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-4 option-4-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-4"" onclick=""checkAttempt(this,4)"">One joule per second</li>
+<li class=""option-4 option-4-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-4"" onclick=""checkAttempt(this,4)"">One second per joule</li>
+<li class=""option-4 option-4-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-4"" onclick=""checkAttempt(this,4)"">One meter per joule</li>
+<li class=""option-4 option-4-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-4"" onclick=""checkAttempt(this,4)"">One joule per meter</li>
+</ol>
+<div hidden="""" id=""answer-4"">a</div>
+</div>
+</div>",2026-10-31T17:51:32.816832+00:00
+61b3e9cc0c868d62,Physics,"Energy, Work and Power Notes Questions with Answers PDF – Test 12",,,,MCQ 60:,SI unit for energy and work is:,,Joules,Pascal,Ohms,Newton,,"[""Joules"", ""Pascal"", ""Ohms"", ""Newton""]",A,Joules,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=12,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 60:</span> SI unit for energy and work is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-5 option-5-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-5"" onclick=""checkAttempt(this,5)"">Joules</li>
+<li class=""option-5 option-5-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-5"" onclick=""checkAttempt(this,5)"">Pascal</li>
+<li class=""option-5 option-5-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-5"" onclick=""checkAttempt(this,5)"">Ohms</li>
+<li class=""option-5 option-5-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-5"" onclick=""checkAttempt(this,5)"">Newton</li>
+</ol>
+<div hidden="""" id=""answer-5"">a</div>
+</div>
+</div>",2026-10-31T17:51:32.817831+00:00
+90a35bff1cf35342,Physics,"Energy, Work and Power Multiple Choice Questions and Answers PDF – Test 13",,,,MCQ 61:,Two quantities that have same SI unit are:,,Efficiency and Power,Efficiency and Work,Work and Energy,Energy and Power,,"[""Efficiency and Power"", ""Efficiency and Work"", ""Work and Energy"", ""Energy and Power""]",C,Work and Energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=13,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 61:</span> Two quantities that have same SI unit are:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">Efficiency and Power</li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">Efficiency and Work</li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">Work and Energy</li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">Energy and Power</li>
+</ol>
+<div hidden="""" id=""answer-1"">c</div>
+</div>
+</div>",2026-10-31T17:51:34.028944+00:00
+0293f0c85a031982,Physics,"Energy, Work and Power Multiple Choice Questions and Answers PDF – Test 13",,,,MCQ 62:,A paint bucket of mass 3 kg is lifted at a constant speed to a height of 25 m above the ground. Calculate the gravitational potential energy gained by the bucket if the acceleration due to gravity is assumed to be 10 m s-1².:,,750 J,75 J,7.5 J,0.75 J,,"[""750 J"", ""75 J"", ""7.5 J"", ""0.75 J""]",A,750 J,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=13,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 62:</span> A paint bucket of mass 3 kg is lifted at a constant speed to a height of 25 m above the ground. Calculate the gravitational potential energy gained by the bucket if the acceleration due to gravity is assumed to be 10 m s<sup>-1</sup>².:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">750 J</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">75 J</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">7.5 J</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">0.75 J</li>
+</ol>
+<div hidden="""" id=""answer-2"">a</div>
+</div>
+</div>",2026-10-31T17:51:34.029952+00:00
+3d6c0fd7f76868a0,Physics,"Energy, Work and Power Multiple Choice Questions and Answers PDF – Test 13",,,,MCQ 63:,Work in relevance to time is related to:,,Efficiency,Work,Power,Force,,"[""Efficiency"", ""Work"", ""Power"", ""Force""]",C,Power,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=13,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 63:</span> Work in relevance to time is related to:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-3 option-3-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-3"" onclick=""checkAttempt(this,3)"">Efficiency</li>
+<li class=""option-3 option-3-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-3"" onclick=""checkAttempt(this,3)"">Work</li>
+<li class=""option-3 option-3-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-3"" onclick=""checkAttempt(this,3)"">Power</li>
+<li class=""option-3 option-3-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-3"" onclick=""checkAttempt(this,3)"">Force</li>
+</ol>
+<div hidden="""" id=""answer-3"">c</div>
+</div>
+</div>",2026-10-31T17:51:34.029952+00:00
+be04bb51fbb6feae,Physics,"Energy, Work and Power Multiple Choice Questions and Answers PDF – Test 13",,,,MCQ 64:,When spring or rubber band is released it converts potential energy into:,,Mechanical Energy,Electrical Energy,Thermal energy,Kinetic energy,,"[""Mechanical Energy"", ""Electrical Energy"", ""Thermal energy"", ""Kinetic energy""]",D,Kinetic energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=13,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 64:</span> When spring or rubber band is released it converts potential energy into:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-4 option-4-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-4"" onclick=""checkAttempt(this,4)"">Mechanical Energy</li>
+<li class=""option-4 option-4-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-4"" onclick=""checkAttempt(this,4)"">Electrical Energy</li>
+<li class=""option-4 option-4-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-4"" onclick=""checkAttempt(this,4)"">Thermal energy</li>
+<li class=""option-4 option-4-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-4"" onclick=""checkAttempt(this,4)"">Kinetic energy</li>
+</ol>
+<div hidden="""" id=""answer-4"">d</div>
+</div>
+</div>",2026-10-31T17:51:34.030960+00:00
+4fce48e6affa5ff6,Physics,"Energy, Work and Power Multiple Choice Questions and Answers PDF – Test 13",,,,MCQ 65:,"A fan keeps working for 30 minutes and uses energy of 90000 J, the power consumed by the bulb is:",,3000 W,50 W,500 W,300 W,,"[""3000 W"", ""50 W"", ""500 W"", ""300 W""]",B,50 W,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=13,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 65:</span> A fan keeps working for 30 minutes and uses energy of 90000 J, the power consumed by the bulb is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-5 option-5-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-5"" onclick=""checkAttempt(this,5)"">3000 W</li>
+<li class=""option-5 option-5-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-5"" onclick=""checkAttempt(this,5)"">50 W</li>
+<li class=""option-5 option-5-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-5"" onclick=""checkAttempt(this,5)"">500 W</li>
+<li class=""option-5 option-5-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-5"" onclick=""checkAttempt(this,5)"">300 W</li>
+</ol>
+<div hidden="""" id=""answer-5"">b</div>
+</div>
+</div>",2026-10-31T17:51:34.031943+00:00
+b0bca7705209cb8b,Physics,"Energy, Work and Power Multiple Choice Questions with Answers PDF – Test 14",,,,MCQ 66:,"In symbols, one watt is equal to:",,1 J s-1,1 s J-1,1 m J-1,1 J m-1,,"[""1 J s-1"", ""1 s J-1"", ""1 m J-1"", ""1 J m-1""]",A,1 J s-1,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=14,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 66:</span> In symbols, one watt is equal to:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">1 J s<sup>-1</sup></li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">1 s J<sup>-1</sup></li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">1 m J<sup>-1</sup></li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">1 J m<sup>-1</sup></li>
+</ol>
+<div hidden="""" id=""answer-1"">a</div>
+</div>
+</div>",2026-10-31T17:51:35.389502+00:00
+81070580e5cc57b7,Physics,"Energy, Work and Power Multiple Choice Questions with Answers PDF – Test 14",,,,MCQ 67:,"A boy walks up the staircase of 20 m with a force of 600 N, the time taken by the boy is 8 minutes. The power consumed by the boy is:",,25 W,240 W,16 W,72.5 W,,"[""25 W"", ""240 W"", ""16 W"", ""72.5 W""]",A,25 W,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=14,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 67:</span> A boy walks up the staircase of 20 m with a force of 600 N, the time taken by the boy is 8 minutes. The power consumed by the boy is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">25 W</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">240 W</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">16 W</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">72.5 W</li>
+</ol>
+<div hidden="""" id=""answer-2"">a</div>
+</div>
+</div>",2026-10-31T17:51:35.389502+00:00
+b7fc2f1b61812f07,Physics,"Energy, Work and Power Multiple Choice Questions with Answers PDF – Test 14",,,,MCQ 68:,"When an object is raised to a certain height above the ground, it possesses:",,Chemical Potential Energy,Elastic Potential Energy,Gravitational Potential Energy,Kinetic energy,,"[""Chemical Potential Energy"", ""Elastic Potential Energy"", ""Gravitational Potential Energy"", ""Kinetic energy""]",C,Gravitational Potential Energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=14,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 68:</span> When an object is raised to a certain height above the ground, it possesses:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-3 option-3-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-3"" onclick=""checkAttempt(this,3)"">Chemical Potential Energy</li>
+<li class=""option-3 option-3-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-3"" onclick=""checkAttempt(this,3)"">Elastic Potential Energy</li>
+<li class=""option-3 option-3-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-3"" onclick=""checkAttempt(this,3)"">Gravitational Potential Energy</li>
+<li class=""option-3 option-3-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-3"" onclick=""checkAttempt(this,3)"">Kinetic energy</li>
+</ol>
+<div hidden="""" id=""answer-3"">c</div>
+</div>
+</div>",2026-10-31T17:51:35.390502+00:00
+1ecf627596ff3dbb,Physics,"Energy, Work and Power Multiple Choice Questions with Answers PDF – Test 14",,,,MCQ 69:,"A shopping cart moves at a speed of 3 m s-1 with a mass of 2 kg, the Ek of the shopping cart is:",,6 J,9 J,18 J,12 J,,"[""6 J"", ""9 J"", ""18 J"", ""12 J""]",B,9 J,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=14,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 69:</span> A shopping cart moves at a speed of 3 m s<sup>-1</sup> with a mass of 2 kg, the E<sub>k</sub> of the shopping cart is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-4 option-4-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-4"" onclick=""checkAttempt(this,4)"">6 J</li>
+<li class=""option-4 option-4-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-4"" onclick=""checkAttempt(this,4)"">9 J</li>
+<li class=""option-4 option-4-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-4"" onclick=""checkAttempt(this,4)"">18 J</li>
+<li class=""option-4 option-4-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-4"" onclick=""checkAttempt(this,4)"">12 J</li>
+</ol>
+<div hidden="""" id=""answer-4"">b</div>
+</div>
+</div>",2026-10-31T17:51:35.391508+00:00
+adc80551b8c89c39,Physics,"Energy, Work and Power Multiple Choice Questions with Answers PDF – Test 14",,,,MCQ 70:,A woman walks a distance of 5 m with a constant force of 10 N. The work done by the woman is:,,50 J,2 J,15 J,5 J,,"[""50 J"", ""2 J"", ""15 J"", ""5 J""]",A,50 J,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=14,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 70:</span> A woman walks a distance of 5 m with a constant force of 10 N. The work done by the woman is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-5 option-5-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-5"" onclick=""checkAttempt(this,5)"">50 J</li>
+<li class=""option-5 option-5-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-5"" onclick=""checkAttempt(this,5)"">2 J</li>
+<li class=""option-5 option-5-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-5"" onclick=""checkAttempt(this,5)"">15 J</li>
+<li class=""option-5 option-5-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-5"" onclick=""checkAttempt(this,5)"">5 J</li>
+</ol>
+<div hidden="""" id=""answer-5"">a</div>
+</div>
+</div>",2026-10-31T17:51:35.392496+00:00
+3c37084e23a335ed,Physics,"Energy, Work and Power Quiz Questions and Answers PDF – Download Test 15",,,,MCQ 71:,"A skateboarder is moving at a speed of 5 m s-1 with a mass of 20 kg, its Ek would be:",,250 J,1000 J,2000 J,500 J,,"[""250 J"", ""1000 J"", ""2000 J"", ""500 J""]",A,250 J,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=15,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 71:</span> A skateboarder is moving at a speed of 5 m s<sup>-1</sup> with a mass of 20 kg, its E<sub>k</sub> would be:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">250 J</li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">1000 J</li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">2000 J</li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">500 J</li>
+</ol>
+<div hidden="""" id=""answer-1"">a</div>
+</div>
+</div>",2026-10-31T17:51:36.775367+00:00
+bdc3691b90f2ac7a,Physics,"Energy, Work and Power Quiz Questions and Answers PDF – Download Test 15",,,,MCQ 72:,Thermal energy can be re-converted into potential or kinetic energy'. statement is:,,TRUE,FALSE,Neutral,Both A and B,,"[""TRUE"", ""FALSE"", ""Neutral"", ""Both A and B""]",B,FALSE,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=15,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 72:</span> Thermal energy can be re-converted into potential or kinetic energy'. statement is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">TRUE</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">FALSE</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">Neutral</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">Both A and B</li>
+</ol>
+<div hidden="""" id=""answer-2"">b</div>
+</div>
+</div>",2026-10-31T17:51:36.776379+00:00
+194506874be1a67c,Physics,"Energy, Work and Power Quiz Questions and Answers PDF – Download Test 15",,,,MCQ 73:,SI unit of Power is:,,joule ⁄ second,Newton-meter,watt,None of the above,,"[""joule \u2044 second"", ""Newton-meter"", ""watt"", ""None of the above""]",C,watt,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=15,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 73:</span> SI unit of Power is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-3 option-3-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-3"" onclick=""checkAttempt(this,3)"">joule ⁄ second</li>
+<li class=""option-3 option-3-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-3"" onclick=""checkAttempt(this,3)"">Newton-meter</li>
+<li class=""option-3 option-3-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-3"" onclick=""checkAttempt(this,3)"">watt</li>
+<li class=""option-3 option-3-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-3"" onclick=""checkAttempt(this,3)"">None of the above</li>
+</ol>
+<div hidden="""" id=""answer-3"">c</div>
+</div>
+</div>",2026-10-31T17:51:36.777358+00:00
+25d66d056d9b64f1,Physics,"Energy, Work and Power Quiz Questions and Answers PDF – Download Test 15",,,,MCQ 74:,Energy can be:,,converted or transferred,destroyed or transferred,created or transferred,created or destroyed,,"[""converted or transferred"", ""destroyed or transferred"", ""created or transferred"", ""created or destroyed""]",A,converted or transferred,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=15,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 74:</span> Energy can be:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-4 option-4-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-4"" onclick=""checkAttempt(this,4)"">converted or transferred</li>
+<li class=""option-4 option-4-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-4"" onclick=""checkAttempt(this,4)"">destroyed or transferred</li>
+<li class=""option-4 option-4-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-4"" onclick=""checkAttempt(this,4)"">created or transferred</li>
+<li class=""option-4 option-4-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-4"" onclick=""checkAttempt(this,4)"">created or destroyed</li>
+</ol>
+<div hidden="""" id=""answer-4"">a</div>
+</div>
+</div>",2026-10-31T17:51:36.777358+00:00
+cd41a76209a3cafc,Physics,"Energy, Work and Power Quiz Questions and Answers PDF – Download Test 15",,,,MCQ 75:,Efficiency of a machine is 80% and total energy input is 2000 J. output of machine is:,,2500 J,1600 J,1000 J,2080 J,,"[""2500 J"", ""1600 J"", ""1000 J"", ""2080 J""]",B,1600 J,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=15,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 75:</span> Efficiency of a machine is 80% and total energy input is 2000 J. output of machine is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-5 option-5-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-5"" onclick=""checkAttempt(this,5)"">2500 J</li>
+<li class=""option-5 option-5-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-5"" onclick=""checkAttempt(this,5)"">1600 J</li>
+<li class=""option-5 option-5-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-5"" onclick=""checkAttempt(this,5)"">1000 J</li>
+<li class=""option-5 option-5-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-5"" onclick=""checkAttempt(this,5)"">2080 J</li>
+</ol>
+<div hidden="""" id=""answer-5"">b</div>
+</div>
+</div>",2026-10-31T17:51:36.778370+00:00
+419b32598b5a215b,Physics,"Energy, Work and Power Notes Questions and Answers PDF – Test 16",,,,MCQ 76:,"When pendulum bob is released, potential energy is converted into:",,Mechanical Energy,Electrical Energy,Thermal energy,Kinetic energy,,"[""Mechanical Energy"", ""Electrical Energy"", ""Thermal energy"", ""Kinetic energy""]",D,Kinetic energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=16,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 76:</span> When pendulum bob is released, potential energy is converted into:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">Mechanical Energy</li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">Electrical Energy</li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">Thermal energy</li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">Kinetic energy</li>
+</ol>
+<div hidden="""" id=""answer-1"">d</div>
+</div>
+</div>",2026-10-31T17:51:38.011520+00:00
+42aa3d59eee2ce2b,Physics,"Energy, Work and Power Notes Questions and Answers PDF – Test 16",,,,MCQ 77:,"An elevator motor is used to lift 1000 N load to a height of 0.25 km. If the total amount of energy input is 1MJ, which of the following pairs of values of energy wasted and efficiency are correct?",,"Energy wasted = 750 kJ, Efficiency = 75 %","Energy wasted = 500 kJ, Efficiency = 75 %","Energy wasted = 500 kJ, Efficiency = 25 %","Energy wasted = 750 kJ, Efficiency = 25 %",,"[""Energy wasted = 750 kJ, Efficiency = 75 %"", ""Energy wasted = 500 kJ, Efficiency = 75 %"", ""Energy wasted = 500 kJ, Efficiency = 25 %"", ""Energy wasted = 750 kJ, Efficiency = 25 %""]",D,"Energy wasted = 750 kJ, Efficiency = 25 %",,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=16,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 77:</span> An elevator motor is used to lift 1000 N load to a height of 0.25 km. If the total amount of energy input is 1MJ, which of the following pairs of values of energy wasted and efficiency are correct?</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">Energy wasted = 750 kJ, Efficiency = 75 %</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">Energy wasted = 500 kJ, Efficiency = 75 %</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">Energy wasted = 500 kJ, Efficiency = 25 %</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">Energy wasted = 750 kJ, Efficiency = 25 %</li>
+</ol>
+<div hidden="""" id=""answer-2"">d</div>
+</div>
+</div>",2026-10-31T17:51:38.012513+00:00
+6ed0df3a0903297f,Physics,"Energy, Work and Power Notes Questions and Answers PDF – Test 16",,,,MCQ 78:,"When a rubber band is compressed, type of energy possessed by the rubber is:",,Potential Energy,Thermal Energy,Kinetic Energy,Sound Energy,,"[""Potential Energy"", ""Thermal Energy"", ""Kinetic Energy"", ""Sound Energy""]",A,Potential Energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=16,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 78:</span> When a rubber band is compressed, type of energy possessed by the rubber is:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-3 option-3-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-3"" onclick=""checkAttempt(this,3)"">Potential Energy</li>
+<li class=""option-3 option-3-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-3"" onclick=""checkAttempt(this,3)"">Thermal Energy</li>
+<li class=""option-3 option-3-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-3"" onclick=""checkAttempt(this,3)"">Kinetic Energy</li>
+<li class=""option-3 option-3-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-3"" onclick=""checkAttempt(this,3)"">Sound Energy</li>
+</ol>
+<div hidden="""" id=""answer-3"">a</div>
+</div>
+</div>",2026-10-31T17:51:38.013527+00:00
+d2520b124aedd033,Physics,"Energy, Work and Power Notes Questions and Answers PDF – Test 16",,,,MCQ 79:,"From the physics point of view, work is being done by:",,man carrying a heavy pile of books in a stationary position,boy rote learning for his physics exam,girl working on her Math homework,None of them,,"[""man carrying a heavy pile of books in a stationary position"", ""boy rote learning for his physics exam"", ""girl working on her Math homework"", ""None of them""]",D,None of them,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=16,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 79:</span> From the physics point of view, work is being done by:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-4 option-4-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-4"" onclick=""checkAttempt(this,4)"">A man carrying a heavy pile of books in a stationary position</li>
+<li class=""option-4 option-4-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-4"" onclick=""checkAttempt(this,4)"">A boy rote learning for his physics exam</li>
+<li class=""option-4 option-4-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-4"" onclick=""checkAttempt(this,4)"">A girl working on her Math homework</li>
+<li class=""option-4 option-4-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-4"" onclick=""checkAttempt(this,4)"">None of them</li>
+</ol>
+<div hidden="""" id=""answer-4"">d</div>
+</div>
+</div>",2026-10-31T17:51:38.014542+00:00
+eb8b20278014f401,Physics,"Energy, Work and Power Notes Questions and Answers PDF – Test 16",,,,MCQ 80:,"A car of mass 1.5 tonnes travels at a constant speed of 40 km ⁄ h, calculate its kinetic energy in kJ.:",,9.259 kJ,92.59 kJ,925.9 kJ,None of the above,,"[""9.259 kJ"", ""92.59 kJ"", ""925.9 kJ"", ""None of the above""]",B,92.59 kJ,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=16,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 80:</span> A car of mass 1.5 tonnes travels at a constant speed of 40 km ⁄ h, calculate its kinetic energy in kJ.:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-5 option-5-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-5"" onclick=""checkAttempt(this,5)"">9.259 kJ</li>
+<li class=""option-5 option-5-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-5"" onclick=""checkAttempt(this,5)"">92.59 kJ</li>
+<li class=""option-5 option-5-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-5"" onclick=""checkAttempt(this,5)"">925.9 kJ</li>
+<li class=""option-5 option-5-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-5"" onclick=""checkAttempt(this,5)"">None of the above</li>
+</ol>
+<div hidden="""" id=""answer-5"">b</div>
+</div>
+</div>",2026-10-31T17:51:38.015513+00:00
+d662a7b96ec2eecc,Physics,"Energy, Work and Power MCQs with Answers PDF – Download Test 17",,,,MCQ 81:,Work done by a force of 1 N which moves an object a distance of 1 m in a specified direction is termed as:,,1 Joule,1 Pascal,1 Watt,1 Ohm,,"[""1 Joule"", ""1 Pascal"", ""1 Watt"", ""1 Ohm""]",A,1 Joule,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=17,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 81:</span> Work done by a force of 1 N which moves an object a distance of 1 m in a specified direction is termed as:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-1 option-1-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-1"" onclick=""checkAttempt(this,1)"">1 Joule</li>
+<li class=""option-1 option-1-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-1"" onclick=""checkAttempt(this,1)"">1 Pascal</li>
+<li class=""option-1 option-1-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-1"" onclick=""checkAttempt(this,1)"">1 Watt</li>
+<li class=""option-1 option-1-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-1"" onclick=""checkAttempt(this,1)"">1 Ohm</li>
+</ol>
+<div hidden="""" id=""answer-1"">a</div>
+</div>
+</div>",2026-10-31T17:51:39.141549+00:00
+4030964e458cab47,Physics,"Energy, Work and Power MCQs with Answers PDF – Download Test 17",,,,MCQ 82:,Energy that is stored is termed as:,,Kinetic Energy,Thermal Energy,Electrical Energy,Potential Energy,,"[""Kinetic Energy"", ""Thermal Energy"", ""Electrical Energy"", ""Potential Energy""]",D,Potential Energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=17,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 82:</span> Energy that is stored is termed as:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-2 option-2-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-2"" onclick=""checkAttempt(this,2)"">Kinetic Energy</li>
+<li class=""option-2 option-2-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-2"" onclick=""checkAttempt(this,2)"">Thermal Energy</li>
+<li class=""option-2 option-2-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-2"" onclick=""checkAttempt(this,2)"">Electrical Energy</li>
+<li class=""option-2 option-2-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-2"" onclick=""checkAttempt(this,2)"">Potential Energy</li>
+</ol>
+<div hidden="""" id=""answer-2"">d</div>
+</div>
+</div>",2026-10-31T17:51:39.142540+00:00
+2e5786555754acc6,Physics,"Energy, Work and Power MCQs with Answers PDF – Download Test 17",,,,MCQ 83:,A spring or rubber possess:,,Chemical Potential Energy,Elastic Potential Energy,Gravitational Potential Energy,Kinetic energy,,"[""Chemical Potential Energy"", ""Elastic Potential Energy"", ""Gravitational Potential Energy"", ""Kinetic energy""]",B,Elastic Potential Energy,,,MCQsLearn,https://mcqslearn.com/o-level/physics/mcq/energy-work-power.php?page=17,"<div class=""row mt-3 p-md-3"">
+<div class=""col-12"">
+<p class=""text-dark description""><span class=""mcq-formatting"">MCQ 83:</span> A spring or rubber possess:</p>
+<ol class=""d-flex flex-wrap align-content-center g-2 mb-2 px-3 px-md-0 text-center"">
+<li class=""option-3 option-3-1 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""a-3"" onclick=""checkAttempt(this,3)"">Chemical Potential Energy</li>
+<li class=""option-3 option-3-2 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 mb-2 shadow-sm border-0 small text-start rounded-1"" id=""b-3"" onclick=""checkAttempt(this,3)"">Elastic Potential Energy</li>
+<li class=""option-3 option-3-3 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 me-md-2 mb-2 mb-md-0 shadow-sm border-0 small text-start rounded-1"" id=""c-3"" onclick=""checkAttempt(this,3)"">Gravitational Potential Energy</li>
+<li class=""option-3 option-3-4 bg-white flex-grow-1 col-12 col-md-5 py-2 px-3 ms-md-2 shadow-sm border-0 small text-start rounded-1"" id=""d-3"" onclick=""checkAttempt(this,3)"">Kinetic energy</li>
+</ol>
+<div hidden="""" id=""answer-3"">b</div>
+</div>
+</div>",2026-10-31T17:51:39.143542+00:00
+71781b832f6a3c71,Physics,Force And Pressure Class 8 Quiz | Practice 100 MCQs Free,,,"SSC, CBSE, NCERT",2.,Which of the following is a contact force?,,Gravitational force,Muscular force,Magnetic force,Electrostatic force,,"[""Gravitational force"", ""Muscular force"", ""Magnetic force"", ""Electrostatic force""]",B,Muscular force,Muscular force is exerted by making use of muscles and requires direct contact between the body and the object.,,ToppersPortal,https://toppersportal.com/force-and-pressure-class-8-quiz/,"<div class=""tpq-question"" data-correct=""1"" data-exp=""Muscular force is exerted by making use of muscles and requires direct contact between the body and the object."" data-index=""1""><p class=""tpq-qtext""><span class=""tpq-qnum"">2.</span> Which of the following is a contact force?</p><div class=""tpq-options"">
+<button class=""tpq-option"" data-oi=""0"">A. Gravitational force</button><br/>
+<button class=""tpq-option"" data-oi=""1"">B. Muscular force</button><br/>
+<button class=""tpq-option"" data-oi=""2"">C. Magnetic force</button><br/>
+<button class=""tpq-option"" data-oi=""3"">D. Electrostatic force</button></div></div>",2026-10-31T17:52:00.908562+00:00
+6448034881df57d6,Physics,Force And Pressure Class 8 Quiz | Practice 100 MCQs Free,,,"SSC, CBSE, NCERT",3.,A force can change the:,,Speed of an object only,Direction of motion only,Shape of an object only,"Speed, direction, and shape of an object",,"[""Speed of an object only"", ""Direction of motion only"", ""Shape of an object only"", ""Speed, direction, and shape of an object""]",D,"Speed, direction, and shape of an object","A force can change the speed, direction of motion, and shape or size of an object, depending on how it is applied.",,ToppersPortal,https://toppersportal.com/force-and-pressure-class-8-quiz/,"<div class=""tpq-question"" data-correct=""3"" data-exp=""A force can change the speed, direction of motion, and shape or size of an object, depending on how it is applied."" data-index=""2""><p class=""tpq-qtext""><span class=""tpq-qnum"">3.</span> A force can change the:</p><div class=""tpq-options"">
+<button class=""tpq-option"" data-oi=""0"">A. Speed of an object only</button><br/>
+<button class=""tpq-option"" data-oi=""1"">B. Direction of motion only</button><br/>
+<button class=""tpq-option"" data-oi=""2"">C. Shape of an object only</button><br/>
+<button class=""tpq-option"" data-oi=""3"">D. Speed, direction, and shape of an object</button></div></div>",2026-10-31T17:52:00.908562+00:00
+84273ddfb4a96e3a,Physics,Force And Pressure Class 8 Quiz | Practice 100 MCQs Free,,,"SSC, CBSE, NCERT",4.,The force exerted by a stretched rubber band is an example of:,,Muscular force,Frictional force,Force due to elasticity,Gravitational force,,"[""Muscular force"", ""Frictional force"", ""Force due to elasticity"", ""Gravitational force""]",C,Force due to elasticity,"A stretched rubber band tends to return to its original shape, and this force is due to the elastic property of the rubber.",,ToppersPortal,https://toppersportal.com/force-and-pressure-class-8-quiz/,"<div class=""tpq-question"" data-correct=""2"" data-exp=""A stretched rubber band tends to return to its original shape, and this force is due to the elastic property of the rubber."" data-index=""3""><p class=""tpq-qtext""><span class=""tpq-qnum"">4.</span> The force exerted by a stretched rubber band is an example of:</p><div class=""tpq-options"">
+<button class=""tpq-option"" data-oi=""0"">A. Muscular force</button><br/>
+<button class=""tpq-option"" data-oi=""1"">B. Frictional force</button><br/>
+<button class=""tpq-option"" data-oi=""2"">C. Force due to elasticity</button><br/>
+<button class=""tpq-option"" data-oi=""3"">D. Gravitational force</button></div></div>",2026-10-31T17:52:00.908562+00:00
+ca04680a5cc0e342,Physics,Force And Pressure Class 8 Quiz | Practice 100 MCQs Free,,,"SSC, CBSE, NCERT",5.,Which force is responsible for objects falling towards the Earth?,,Muscular force,Frictional force,Gravitational force,Magnetic force,,"[""Muscular force"", ""Frictional force"", ""Gravitational force"", ""Magnetic force""]",C,Gravitational force,"The Earth attracts every object towards its centre due to gravitational force, which pulls falling objects downward.",,ToppersPortal,https://toppersportal.com/force-and-pressure-class-8-quiz/,"<div class=""tpq-question"" data-correct=""2"" data-exp=""The Earth attracts every object towards its centre due to gravitational force, which pulls falling objects downward."" data-index=""4""><p class=""tpq-qtext""><span class=""tpq-qnum"">5.</span> Which force is responsible for objects falling towards the Earth?</p><div class=""tpq-options"">
+<button class=""tpq-option"" data-oi=""0"">A. Muscular force</button><br/>
+<button class=""tpq-option"" data-oi=""1"">B. Frictional force</button><br/>
+<button class=""tpq-option"" data-oi=""2"">C. Gravitational force</button><br/>
+<button class=""tpq-option"" data-oi=""3"">D. Magnetic force</button></div></div>",2026-10-31T17:52:00.908562+00:00
+d071cc77a0745d6e,Physics,Force And Pressure Class 8 Quiz | Practice 100 MCQs Free,,,"SSC, CBSE, NCERT",6.,A magnet attracting iron pins without touching them is an example of:,,Contact force,Non-contact force,Muscular force,Frictional force,,"[""Contact force"", ""Non-contact force"", ""Muscular force"", ""Frictional force""]",B,Non-contact force,"Magnetic force acts even without physical contact between the magnet and the iron pins, making it a non-contact force.",,ToppersPortal,https://toppersportal.com/force-and-pressure-class-8-quiz/,"<div class=""tpq-question"" data-correct=""1"" data-exp=""Magnetic force acts even without physical contact between the magnet and the iron pins, making it a non-contact force."" data-index=""5""><p class=""tpq-qtext""><span class=""tpq-qnum"">6.</span> A magnet attracting iron pins without touching them is an example of:</p><div class=""tpq-options"">
+<button class=""tpq-option"" data-oi=""0"">A. Contact force</button><br/>
+<button class=""tpq-option"" data-oi=""1"">B. Non-contact force</button><br/>
+<button class=""tpq-option"" data-oi=""2"">C. Muscular force</button><br/>
+<button class=""tpq-option"" data-oi=""3"">D. Frictional force</button></div></div>",2026-10-31T17:52:00.909619+00:00
+3c3b1623e1ef3e60,Physics,Force And Pressure Class 8 Quiz | Practice 100 MCQs Free,,,"SSC, CBSE, NCERT",7.,Friction between two surfaces acts:,,In the direction of motion,Opposite to the direction of motion,Perpendicular to motion,In no fixed direction,,"[""In the direction of motion"", ""Opposite to the direction of motion"", ""Perpendicular to motion"", ""In no fixed direction""]",B,Opposite to the direction of motion,"Friction always opposes the relative motion between two surfaces in contact, acting in a direction opposite to motion.",,ToppersPortal,https://toppersportal.com/force-and-pressure-class-8-quiz/,"<div class=""tpq-question"" data-correct=""1"" data-exp=""Friction always opposes the relative motion between two surfaces in contact, acting in a direction opposite to motion."" data-index=""6""><p class=""tpq-qtext""><span class=""tpq-qnum"">7.</span> Friction between two surfaces acts:</p><div class=""tpq-options"">
+<button class=""tpq-option"" data-oi=""0"">A. In the direction of motion</button><br/>
+<button class=""tpq-option"" data-oi=""1"">B. Opposite to the direction of motion</button><br/>
+<button class=""tpq-option"" data-oi=""2"">C. Perpendicular to motion</button><br/>
+<button class=""tpq-option"" data-oi=""3"">D. In no fixed direction</button></div></div>",2026-10-31T17:52:00.909619+00:00
+8b976f6c7de99ef4,Physics,Force And Pressure Class 8 Quiz | Practice 100 MCQs Free,,,"SSC, CBSE, NCERT",8.,Which of the following is a non-contact force?,,Muscular force,Frictional force,Electrostatic force,Force applied while pushing a door,,"[""Muscular force"", ""Frictional force"", ""Electrostatic force"", ""Force applied while pushing a door""]",C,Electrostatic force,"Electrostatic force acts between charged objects without them touching each other, making it a non-contact force.",,ToppersPortal,https://toppersportal.com/force-and-pressure-class-8-quiz/,"<div class=""tpq-question"" data-correct=""2"" data-exp=""Electrostatic force acts between charged objects without them touching each other, making it a non-contact force."" data-index=""7""><p class=""tpq-qtext""><span class=""tpq-qnum"">8.</span> Which of the following is a non-contact force?</p><div class=""tpq-options"">
+<button class=""tpq-option"" data-oi=""0"">A. Muscular force</button><br/>
+<button class=""tpq-option"" data-oi=""1"">B. Frictional force</button><br/>
+<button class=""tpq-option"" data-oi=""2"">C. Electrostatic force</button><br/>
+<button class=""tpq-option"" data-oi=""3"">D. Force applied while pushing a door</button></div></div>",2026-10-31T17:52:00.909619+00:00
+72a0afd86fb6806c,Physics,Force And Pressure Class 8 Quiz | Practice 100 MCQs Free,,,"SSC, CBSE, NCERT",9.,The SI unit of force is:,,Pascal,Newton,Joule,Watt,,"[""Pascal"", ""Newton"", ""Joule"", ""Watt""]",B,Newton,"Force is measured in newtons (N) in the SI system, named in honour of Sir Isaac Newton.",,ToppersPortal,https://toppersportal.com/force-and-pressure-class-8-quiz/,"<div class=""tpq-question"" data-correct=""1"" data-exp=""Force is measured in newtons (N) in the SI system, named in honour of Sir Isaac Newton."" data-index=""8""><p class=""tpq-qtext""><span class=""tpq-qnum"">9.</span> The SI unit of force is:</p><div class=""tpq-options"">
+<button class=""tpq-option"" data-oi=""0"">A. Pascal</button><br/>
+<button class=""tpq-option"" data-oi=""1"">B. Newton</button><br/>
+<button class=""tpq-option"" data-oi=""2"">C. Joule</button><br/>
+<button class=""tpq-option"" data-oi=""3"">D. Watt</button></div></div>",2026-10-31T17:52:00.909619+00:00
+6e453e20d01b3a06,Physics,Force And Pressure Class 8 Quiz | Practice 100 MCQs Free,,,"SSC, CBSE, NCERT",10.,"When you kick a football, the force applied is an example of:",,Non-contact force,Muscular force,Magnetic force,Gravitational force,,"[""Non-contact force"", ""Muscular force"", ""Magnetic force"", ""Gravitational force""]",B,Muscular force,"Kicking a football involves direct contact and the use of muscles, so it is classified as a muscular force.",,ToppersPortal,https://toppersportal.com/force-and-pressure-class-8-quiz/,"<div class=""tpq-question"" data-correct=""1"" data-exp=""Kicking a football involves direct contact and the use of muscles, so it is classified as a muscular force."" data-index=""9""><p class=""tpq-qtext""><span class=""tpq-qnum"">10.</span> When you kick a football, the force applied is an example of:</p><div class=""tpq-options"">
+<button class=""tpq-option"" data-oi=""0"">A. Non-contact force</button><br/>
+<button class=""tpq-option"" data-oi=""1"">B. Muscular force</button><br/>
+<button class=""tpq-option"" data-oi=""2"">C. Magnetic force</button><br/>
+<button class=""tpq-option"" data-oi=""3"">D. Gravitational force</button></div></div>",2026-10-31T17:52:00.909619+00:00
+d9423996784bb1df,Physics,Force And Pressure Class 8 Quiz | Practice 100 MCQs Free,,,"SSC, CBSE, NCERT",1.,Pressure is defined as:,,Force multiplied by area,Force acting per unit area,Mass multiplied by volume,Weight divided by height,,"[""Force multiplied by area"", ""Force acting per unit area"", ""Mass multiplied by volume"", ""Weight divided by height""]",B,Force acting per unit area,"Pressure is the force acting perpendicularly on a unit area of a surface, expressed as Pressure = Force / Area.",,ToppersPortal,https://toppersportal.com/force-and-pressure-class-8-quiz/,"<div class=""tpq-question"" data-correct=""1"" data-exp=""Pressure is the force acting perpendicularly on a unit area of a surface, expressed as Pressure = Force / Area."" data-index=""0""><p class=""tpq-qtext""><span class=""tpq-qnum"">1.</span> Pressure is defined as:</p><div class=""tpq-options"">
+<button class=""tpq-option"" data-oi=""0"">A. Force multiplied by area</button><br/>
+<button class=""tpq-option"" data-oi=""1"">B. Force acting per unit area</button><br/>
+<button class=""tpq-option"" data-oi=""2"">C. Mass multiplied by volume</button><br/>
+<button class=""tpq-option"" data-oi=""3"">D. Weight divided by height</button></div></div>",2026-10-31T17:52:00.910620+00:00
+e63b61c5358dff14,Physics,Force And Pressure Class 8 Quiz | Practice 100 MCQs Free,,,"SSC, CBSE, NCERT",2.,The SI unit of pressure is:,,Newton,Pascal,Joule,Newton per metre,,"[""Newton"", ""Pascal"", ""Joule"", ""Newton per metre""]",B,Pascal,"The SI unit of pressure is the pascal (Pa), which equals one newton of force acting per square metre of area.",,ToppersPortal,https://toppersportal.com/force-and-pressure-class-8-quiz/,"<div class=""tpq-question"" data-correct=""1"" data-exp=""The SI unit of pressure is the pascal (Pa), which equals one newton of force acting per square metre of area."" data-index=""1""><p class=""tpq-qtext""><span class=""tpq-qnum"">2.</span> The SI unit of pressure is:</p><div class=""tpq-options"">
+<button class=""tpq-option"" data-oi=""0"">A. Newton</button><br/>
+<button class=""tpq-option"" data-oi=""1"">B. Pascal</button><br/>
+<button class=""tpq-option"" data-oi=""2"">C. Joule</button><br/>
+<button class=""tpq-option"" data-oi=""3"">D. Newton per metre</button></div></div>",2026-10-31T17:52:00.910620+00:00
+bd96ec7e09465a41,Physics,Force And Pressure Class 8 Quiz | Practice 100 MCQs Free,,,"SSC, CBSE, NCERT",3.,A sharp knife cuts vegetables more easily than a blunt knife because:,,It has less mass,It exerts less pressure on the surface,It exerts more pressure due to smaller area,It applies more force overall,,"[""It has less mass"", ""It exerts less pressure on the surface"", ""It exerts more pressure due to smaller area"", ""It applies more force overall""]",C,It exerts more pressure due to smaller area,"A sharp knife has a very small edge area, so the same force produces much greater pressure, allowing it to cut easily.",,ToppersPortal,https://toppersportal.com/force-and-pressure-class-8-quiz/,"<div class=""tpq-question"" data-correct=""2"" data-exp=""A sharp knife has a very small edge area, so the same force produces much greater pressure, allowing it to cut easily."" data-index=""2""><p class=""tpq-qtext""><span class=""tpq-qnum"">3.</span> A sharp knife cuts vegetables more easily than a blunt knife because:</p><div class=""tpq-options"">
+<button class=""tpq-option"" data-oi=""0"">A. It has less mass</button><br/>
+<button class=""tpq-option"" data-oi=""1"">B. It exerts less pressure on the surface</button><br/>
+<button class=""tpq-option"" data-oi=""2"">C. It exerts more pressure due to smaller area</button><br/>
+<button class=""tpq-option"" data-oi=""3"">D. It applies more force overall</button></div></div>",2026-10-31T17:52:00.910620+00:00
+7bae71091c4b8df0,Physics,Force And Pressure Class 8 Quiz | Practice 100 MCQs Free,,,"SSC, CBSE, NCERT",4.,Camels can walk easily on sand because:,,They have very sharp feet,Their broad feet reduce pressure on the sand by increasing area,They weigh very little,They apply no force on the sand,,"[""They have very sharp feet"", ""Their broad feet reduce pressure on the sand by increasing area"", ""They weigh very little"", ""They apply no force on the sand""]",B,Their broad feet reduce pressure on the sand by increasing area,"A camel's broad feet spread its weight over a larger area, reducing the pressure exerted on the soft sand, preventing sinking.",,ToppersPortal,https://toppersportal.com/force-and-pressure-class-8-quiz/,"<div class=""tpq-question"" data-correct=""1"" data-exp=""A camel's broad feet spread its weight over a larger area, reducing the pressure exerted on the soft sand, preventing sinking."" data-index=""3""><p class=""tpq-qtext""><span class=""tpq-qnum"">4.</span> Camels can walk easily on sand because:</p><div class=""tpq-options"">
+<button class=""tpq-option"" data-oi=""0"">A. They have very sharp feet</button><br/>
+<button class=""tpq-option"" data-oi=""1"">B. Their broad feet reduce pressure on the sand by increasing area</button><br/>
+<button class=""tpq-option"" data-oi=""2"">C. They weigh very little</button><br/>
+<button class=""tpq-option"" data-oi=""3"">D. They apply no force on the sand</button></div></div>",2026-10-31T17:52:00.910620+00:00
+31e0d9b5ff488c7c,Physics,Force And Pressure Class 8 Quiz | Practice 100 MCQs Free,,,"SSC, CBSE, NCERT",5.,The force exerted by a liquid on the walls of its container is called:,,Gravitational force,Thrust,Frictional force,Magnetic force,,"[""Gravitational force"", ""Thrust"", ""Frictional force"", ""Magnetic force""]",B,Thrust,"The force exerted by a liquid, perpendicular to the surface it touches, is called thrust, and pressure is thrust per unit area.",,ToppersPortal,https://toppersportal.com/force-and-pressure-class-8-quiz/,"<div class=""tpq-question"" data-correct=""1"" data-exp=""The force exerted by a liquid, perpendicular to the surface it touches, is called thrust, and pressure is thrust per unit area."" data-index=""4""><p class=""tpq-qtext""><span class=""tpq-qnum"">5.</span> The force exerted by a liquid on the walls of its container is called:</p><div class=""tpq-options"">
+<button class=""tpq-option"" data-oi=""0"">A. Gravitational force</button><br/>
+<button class=""tpq-option"" data-oi=""1"">B. Thrust</button><br/>
+<button class=""tpq-option"" data-oi=""2"">C. Frictional force</button><br/>
+<button class=""tpq-option"" data-oi=""3"">D. Magnetic force</button></div></div>",2026-10-31T17:52:00.910620+00:00
+7026c0d0ef118a37,Physics,Force And Pressure Class 8 Quiz | Practice 100 MCQs Free,,,"SSC, CBSE, NCERT",6.,Pressure exerted by a liquid at a point depends on:,,The shape of the container only,The depth of the liquid and its density,The colour of the liquid,The temperature of the room only,,"[""The shape of the container only"", ""The depth of the liquid and its density"", ""The colour of the liquid"", ""The temperature of the room only""]",B,The depth of the liquid and its density,Liquid pressure increases with the depth of the liquid and depends on the density of the liquid; it does not depend on container shape.,,ToppersPortal,https://toppersportal.com/force-and-pressure-class-8-quiz/,"<div class=""tpq-question"" data-correct=""1"" data-exp=""Liquid pressure increases with the depth of the liquid and depends on the density of the liquid; it does not depend on container shape."" data-index=""5""><p class=""tpq-qtext""><span class=""tpq-qnum"">6.</span> Pressure exerted by a liquid at a point depends on:</p><div class=""tpq-options"">
+<button class=""tpq-option"" data-oi=""0"">A. The shape of the container only</button><br/>
+<button class=""tpq-option"" data-oi=""1"">B. The depth of the liquid and its density</button><br/>
+<button class=""tpq-option"" data-oi=""2"">C. The colour of the liquid</button><br/>
+<button class=""tpq-option"" data-oi=""3"">D. The temperature of the room only</button></div></div>",2026-10-31T17:52:00.911623+00:00
+2419db62150eef5f,Physics,Force And Pressure Class 8 Quiz | Practice 100 MCQs Free,,,"SSC, CBSE, NCERT",7.,Atmospheric pressure at sea level is approximately:,,1 pascal,76 cm of mercury column,1 newton,76 pascal,,"[""1 pascal"", ""76 cm of mercury column"", ""1 newton"", ""76 pascal""]",B,76 cm of mercury column,"Atmospheric pressure at sea level is about 76 cm of mercury column, also expressed as approximately 101325 pascals.",,ToppersPortal,https://toppersportal.com/force-and-pressure-class-8-quiz/,"<div class=""tpq-question"" data-correct=""1"" data-exp=""Atmospheric pressure at sea level is about 76 cm of mercury column, also expressed as approximately 101325 pascals."" data-index=""6""><p class=""tpq-qtext""><span class=""tpq-qnum"">7.</span> Atmospheric pressure at sea level is approximately:</p><div class=""tpq-options"">
+<button class=""tpq-option"" data-oi=""0"">A. 1 pascal</button><br/>
+<button class=""tpq-option"" data-oi=""1"">B. 76 cm of mercury column</button><br/>
+<button class=""tpq-option"" data-oi=""2"">C. 1 newton</button><br/>
+<button class=""tpq-option"" data-oi=""3"">D. 76 pascal</button></div></div>",2026-10-31T17:52:00.911623+00:00
+39d7f9f869901de5,Physics,Force And Pressure Class 8 Quiz | Practice 100 MCQs Free,,,"SSC, CBSE, NCERT",8.,"As altitude increases, atmospheric pressure:",,Increases,Decreases,Remains the same,First increases then decreases,,"[""Increases"", ""Decreases"", ""Remains the same"", ""First increases then decreases""]",B,Decreases,"As we go higher above sea level, the density and weight of the air column above decreases, so atmospheric pressure decreases.",,ToppersPortal,https://toppersportal.com/force-and-pressure-class-8-quiz/,"<div class=""tpq-question"" data-correct=""1"" data-exp=""As we go higher above sea level, the density and weight of the air column above decreases, so atmospheric pressure decreases."" data-index=""7""><p class=""tpq-qtext""><span class=""tpq-qnum"">8.</span> As altitude increases, atmospheric pressure:</p><div class=""tpq-options"">
+<button class=""tpq-option"" data-oi=""0"">A. Increases</button><br/>
+<button class=""tpq-option"" data-oi=""1"">B. Decreases</button><br/>
+<button class=""tpq-option"" data-oi=""2"">C. Remains the same</button><br/>
+<button class=""tpq-option"" data-oi=""3"">D. First increases then decreases</button></div></div>",2026-10-31T17:52:00.911623+00:00
+ff7d48cef864fd1e,Physics,Force And Pressure Class 8 Quiz | Practice 100 MCQs Free,,,"SSC, CBSE, NCERT",9.,A drinking straw works on the principle that:,,Liquids rise on their own,"Sucking reduces air pressure inside the straw, so atmospheric pressure pushes the liquid up",Atmospheric pressure has no effect on liquids,Liquids are pushed by gravity alone,,"[""Liquids rise on their own"", ""Sucking reduces air pressure inside the straw, so atmospheric pressure pushes the liquid up"", ""Atmospheric pressure has no effect on liquids"", ""Liquids are pushed by gravity alone""]",B,"Sucking reduces air pressure inside the straw, so atmospheric pressure pushes the liquid up","When we suck, the air pressure inside the straw decreases, and the greater outside atmospheric pressure pushes the liquid up into the straw.",,ToppersPortal,https://toppersportal.com/force-and-pressure-class-8-quiz/,"<div class=""tpq-question"" data-correct=""1"" data-exp=""When we suck, the air pressure inside the straw decreases, and the greater outside atmospheric pressure pushes the liquid up into the straw."" data-index=""8""><p class=""tpq-qtext""><span class=""tpq-qnum"">9.</span> A drinking straw works on the principle that:</p><div class=""tpq-options"">
+<button class=""tpq-option"" data-oi=""0"">A. Liquids rise on their own</button><br/>
+<button class=""tpq-option"" data-oi=""1"">B. Sucking reduces air pressure inside the straw, so atmospheric pressure pushes the liquid up</button><br/>
+<button class=""tpq-option"" data-oi=""2"">C. Atmospheric pressure has no effect on liquids</button><br/>
+<button class=""tpq-option"" data-oi=""3"">D. Liquids are pushed by gravity alone</button></div></div>",2026-10-31T17:52:00.911623+00:00
+eb4045611f49325c,Physics,Force And Pressure Class 8 Quiz | Practice 100 MCQs Free,,,"SSC, CBSE, NCERT",10.,Gases exert pressure on the walls of their container:,,Only downward,Only upward,In all directions,Only sideways,,"[""Only downward"", ""Only upward"", ""In all directions"", ""Only sideways""]",C,In all directions,"Gas molecules move randomly and collide with the walls of their container from every direction, exerting pressure equally in all directions.",,ToppersPortal,https://toppersportal.com/force-and-pressure-class-8-quiz/,"<div class=""tpq-question"" data-correct=""2"" data-exp=""Gas molecules move randomly and collide with the walls of their container from every direction, exerting pressure equally in all directions."" data-index=""9""><p class=""tpq-qtext""><span class=""tpq-qnum"">10.</span> Gases exert pressure on the walls of their container:</p><div class=""tpq-options"">
+<button class=""tpq-option"" data-oi=""0"">A. Only downward</button><br/>
+<button class=""tpq-option"" data-oi=""1"">B. Only upward</button><br/>
+<button class=""tpq-option"" data-oi=""2"">C. In all directions</button><br/>
+<button class=""tpq-option"" data-oi=""3"">D. Only sideways</button></div></div>",2026-10-31T17:52:00.912612+00:00

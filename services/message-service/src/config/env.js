@@ -2,20 +2,18 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const env = {
-  PORT: process.env.PORT || 5006,
-  NODE_ENV: process.env.NODE_ENV || 'development',
-  MONGO_URI: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/mcq-platform',
+  PORT: Number(process.env.PORT),
+  NODE_ENV: process.env.NODE_ENV || '',
+  MONGO_URI: process.env.MONGO_URI || '',
   JWT_SECRET: process.env.JWT_SECRET || '',
-  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || '',
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '15m',
-  JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
-  MAX_FILE_SIZE_GUEST: parseInt(process.env.MAX_FILE_SIZE_GUEST) || 20480,
-  MAX_FILE_SIZE_AUTH: parseInt(process.env.MAX_FILE_SIZE_AUTH) || 10485760,
-  OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
-  REDIS_URL: process.env.REDIS_URL || 'redis://127.0.0.1:6380',
+  CLIENT_URL: (process.env.CLIENT_URL || '').split(',').map((origin) => origin.trim()).filter(Boolean),
   isDev: process.env.NODE_ENV === 'development',
   isProd: process.env.NODE_ENV === 'production',
 };
+
+if (!Number.isInteger(env.PORT) || env.PORT < 1 || env.PORT > 65535) throw new Error('PORT must be an integer from 1 to 65535');
+for (const key of ['NODE_ENV', 'MONGO_URI']) if (!env[key]) throw new Error(`${key} is required`);
+if (!env.CLIENT_URL.length) throw new Error('CLIENT_URL must contain at least one allowed origin');
 
 const jwtSecret = env.JWT_SECRET;
 if (!jwtSecret || Buffer.byteLength(jwtSecret) < 32 || /default-jwt-secret|mcq-platform-jwt-secret-change-in-production|quizfocus-local-development-secret|replace-with-/i.test(jwtSecret)) {

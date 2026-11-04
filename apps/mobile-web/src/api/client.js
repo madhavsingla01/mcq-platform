@@ -58,9 +58,16 @@ export const quizApi = {
   getQuestions: (quizId) => api.get(`/quiz/${quizId}/questions`),
 };
 
+export const challengeApi = {
+  getOverview: () => api.get('/challenges/overview'),
+  getAll: (params) => api.get('/challenges', { params }),
+  getById: (id) => api.get(`/challenges/${id}`),
+  getLeaderboard: (id) => api.get(`/challenges/${id}/leaderboard`),
+};
+
 export const socialApi = {
   getExplore: (params) => api.get('/social/explore', { params }),
-  getChallengesOverview: () => api.get('/social/challenges-overview'),
+  getChallengesOverview: () => api.get('/challenges/overview').catch(() => api.get('/social/challenges-overview')),
   getBookmarks: () => api.get('/social/bookmarks'),
   bookmarkQuiz: (quizId) => api.post(`/social/quizzes/${quizId}/bookmark`),
   unbookmarkQuiz: (quizId) => api.delete(`/social/quizzes/${quizId}/bookmark`),

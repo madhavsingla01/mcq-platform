@@ -1,25 +1,26 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { CheckCircle, Percent, Timer, Zap, ChevronDown, EyeOff, RotateCcw, LayoutDashboard } from 'lucide-react';
 import api from '../../api/axios';
 import { Badge, Button, Spinner } from '../../components/ui';
 import { useAuthStore } from '../../store/authStore';
 import { formatDurationMs, getGuestSessionId } from '../../utils/quizSession';
+import './Result.css';
 
 const getAnswerTimeMs = (answer) => Number(answer?.timeTakenMs || 0) || Number(answer?.timeTaken || 0) * 1000;
 
 const SCORE_TIERS = [
-  { min: 90, emoji: '🏆', label: 'Outstanding', color: 'var(--color-primary)' },
-  { min: 75, emoji: '⭐', label: 'Excellent', color: 'var(--color-primary)' },
-  { min: 50, emoji: '👍', label: 'Good Work', color: 'var(--color-primary)' },
-  { min: 0, emoji: '💪', label: 'Keep Practicing', color: 'var(--color-primary)' },
+  { min: 90, emoji: 'ðŸ†', label: 'Outstanding', color: 'var(--color-primary)' },
+  { min: 75, emoji: 'â­', label: 'Excellent', color: 'var(--color-primary)' },
+  { min: 50, emoji: 'ðŸ‘', label: 'Good Work', color: 'var(--color-primary)' },
+  { min: 0, emoji: 'ðŸ’ª', label: 'Keep Practicing', color: 'var(--color-primary)' },
 ];
 
 function getScoreTier(pct) {
   return SCORE_TIERS.find((t) => pct >= t.min) || SCORE_TIERS[SCORE_TIERS.length - 1];
 }
 
-/* ── Animated SVG Score Ring ── */
+/* â”€â”€ Animated SVG Score Ring â”€â”€ */
 function ScoreRing({ percentage, size = 160, strokeWidth = 10 }) {
   const ringRef = useRef(null);
   const radius = (size - strokeWidth) / 2;
@@ -129,9 +130,8 @@ export default function Result() {
   };
 
   return (
-    <>
-      <div className="r-shell">
-        {/* ── Hero Section ── */}
+    <div className="r-shell">
+        {/* â”€â”€ Hero Section â”€â”€ */}
         <div className="r-hero">
           <div className="r-hero-content">
             <ScoreRing percentage={attempt.percentage} />
@@ -139,9 +139,9 @@ export default function Result() {
               <h1 className="r-hero-label">{tier.label}</h1>
               <p className="r-hero-title">{attempt.quizId?.title}</p>
               <div className="r-hero-summary">
-                <span className="r-tag r-tag--success">✓ {correctCount} Correct</span>
-                <span className="r-tag r-tag--danger">✗ {wrongCount} Wrong</span>
-                {skippedCount > 0 && <span className="r-tag r-tag--muted">⏭ {skippedCount} Skipped</span>}
+                <span className="r-tag r-tag--success">âœ“ {correctCount} Correct</span>
+                <span className="r-tag r-tag--danger">âœ— {wrongCount} Wrong</span>
+                {skippedCount > 0 && <span className="r-tag r-tag--muted">â­ {skippedCount} Skipped</span>}
               </div>
               <div className="r-hero-badges">
                 {attempt.instantFeedback && <Badge>Instant Feedback</Badge>}
@@ -151,7 +151,7 @@ export default function Result() {
           </div>
         </div>
 
-        {/* ── Stats Strip ── */}
+        {/* â”€â”€ Stats Strip â”€â”€ */}
         <div className="r-stats-strip">
           <div className="r-stat">
             <span className="r-stat-icon"><CheckCircle size={18} /></span>
@@ -171,7 +171,7 @@ export default function Result() {
           </div>
         </div>
 
-        {/* ── Question Timeline ── */}
+        {/* â”€â”€ Question Timeline â”€â”€ */}
         {isReviewAllowed && reviewItems.length > 0 ? (
           <div className="r-section">
             <h2 className="r-section-title">Question Timeline</h2>
@@ -196,7 +196,7 @@ export default function Result() {
           </div>
         ) : null}
 
-        {/* ── Question Review (Accordion) ── */}
+        {/* â”€â”€ Question Review (Accordion) â”€â”€ */}
         {isReviewAllowed && reviewItems.length > 0 ? (
           <div className="r-section">
             <h2 className="r-section-title">Review Answers</h2>
@@ -209,7 +209,7 @@ export default function Result() {
                     className={`r-review ${isOpen ? 'r-review--open' : ''}`}>
                     <button className="r-review-header" onClick={() => setExpandedQ(isOpen ? null : idx)}>
                       <div className={`r-review-indicator r-review-indicator--${status}`}>
-                        {status === 'correct' ? '✓' : status === 'wrong' ? '✗' : '—'}
+                        {status === 'correct' ? 'âœ“' : status === 'wrong' ? 'âœ—' : 'â€”'}
                       </div>
                       <div className="r-review-info">
                         <span className="r-review-qnum">Q{idx + 1}</span>
@@ -267,7 +267,7 @@ export default function Result() {
           </div>
         ) : null}
 
-        {/* ── Actions ── */}
+        {/* â”€â”€ Actions â”€â”€ */}
         <div className="r-actions">
             <Link to={retakePath} style={{ textDecoration: 'none' }}>
               <Button variant="secondary">
@@ -283,335 +283,5 @@ export default function Result() {
           </Link>
         </div>
       </div>
-
-      <style>{resultStyles}</style>
-    </>
   );
 }
-
-const resultStyles = `
-  .r-shell {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 24px 16px 48px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
-
-  /* ── Hero ── */
-  .r-hero {
-    background:
-      radial-gradient(circle at 20% 30%, var(--color-primary-light), transparent 50%),
-      radial-gradient(circle at 80% 70%, color-mix(in srgb, var(--color-primary) 5%, transparent), transparent 50%),
-      rgba(8, 8, 10, 0.85);
-    backdrop-filter: var(--material-blur);
-    -webkit-backdrop-filter: var(--material-blur);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: var(--material-card-shadow);
-    border-radius: var(--radius-2xl, 24px);
-    corner-shape: squircle;
-    padding: 40px 32px;
-  }
-
-  .r-hero-content {
-    display: flex;
-    align-items: center;
-    gap: 36px;
-  }
-
-  .score-ring-wrap {
-    position: relative;
-    flex-shrink: 0;
-  }
-
-  .score-ring-inner {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .score-ring-pct {
-    font-size: 36px;
-    font-weight: 800;
-    letter-spacing: -0.04em;
-    color: var(--color-text);
-    line-height: 1;
-  }
-
-  .score-ring-emoji {
-    font-size: 22px;
-    margin-top: 4px;
-  }
-
-  .r-hero-text { flex: 1; min-width: 0; }
-
-  .r-hero-label {
-    font-size: clamp(26px, 4vw, 34px);
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    margin: 0 0 6px;
-    color: var(--color-text);
-  }
-
-  .r-hero-title {
-    font-size: 15px;
-    color: var(--color-text-secondary);
-    margin: 0 0 16px;
-  }
-
-  .r-hero-summary {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-  }
-
-  .r-tag {
-    font-size: 13px;
-    font-weight: 600;
-    padding: 4px 12px;
-    border-radius: var(--radius-control, 8px);
-    corner-shape: squircle;
-  }
-
-  .r-tag--success { background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.3); color: #16a34a; }
-  .r-tag--danger { background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #dc2626; }
-  .r-tag--muted { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08); color: var(--color-text-muted); }
-
-  .r-hero-badges { display: flex; gap: 8px; }
-
-  /* ── Stats Strip ── */
-  .r-stats-strip {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-  }
-
-  .r-stat {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px;
-    border-radius: var(--radius-container, 14px);
-    corner-shape: squircle;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-    transition: transform var(--duration-tap) var(--ease-out), border-color 150ms ease;
-  }
-
-  .r-stat-icon {
-    font-size: 22px;
-    color: var(--color-primary);
-    background: var(--color-primary-light);
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-control, 8px);
-    corner-shape: squircle;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .r-stat div { display: flex; flex-direction: column; gap: 2px; }
-  .r-stat strong { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; color: var(--color-text); }
-  .r-stat span { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); }
-
-  /* ── Section ── */
-  .r-section-title {
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    margin: 0 0 14px;
-    color: var(--color-text);
-  }
-
-  /* ── Timeline ── */
-  .r-timeline {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-
-  .r-pill {
-    width: 36px;
-    height: 36px;
-    border-radius: var(--radius-control, 8px);
-    corner-shape: squircle;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.04);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    touch-action: manipulation;
-    transition: transform var(--duration-tap) var(--ease-out), border-color 140ms ease, background-color 140ms ease;
-  }
-
-  .r-pill:active {
-    transform: scale(0.95);
-  }
-
-  @media (hover: hover) and (pointer: fine) {
-    .r-pill:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
-    }
-  }
-
-  .r-pill--correct { background: rgba(34, 197, 94, 0.12); border-color: rgba(34, 197, 94, 0.35); color: #16a34a; }
-  .r-pill--wrong { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.35); color: #dc2626; }
-  .r-pill--skipped { background: var(--color-surface-alt); color: var(--color-text-muted); }
-
-  /* ── Review Accordion ── */
-  .r-review-list { display: flex; flex-direction: column; gap: 6px; }
-
-  .r-review {
-    border: 1px solid var(--color-border);
-    border-radius: 14px;
-    overflow: hidden;
-    background: var(--color-surface);
-    transition: box-shadow 0.2s;
-  }
-
-  .r-review--open { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
-
-  .r-review-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    border: none;
-    background: none;
-    width: 100%;
-    cursor: pointer;
-    text-align: left;
-  }
-
-  .r-review-indicator {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 14px;
-    flex-shrink: 0;
-  }
-
-  .r-review-indicator--correct { background: rgba(34, 197, 94, 0.12); color: #16a34a; }
-  .r-review-indicator--wrong { background: rgba(239, 68, 68, 0.12); color: #dc2626; }
-  .r-review-indicator--skipped { background: var(--color-surface-alt); color: var(--color-text-muted); }
-
-  .r-review-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
-  .r-review-qnum { font-size: 13px; font-weight: 700; color: var(--color-text-muted); flex-shrink: 0; }
-  .r-review-qtext { font-size: 14px; color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-  .r-review-chevron {
-    font-size: 20px;
-    color: var(--color-text-muted);
-    transition: transform 0.2s;
-    flex-shrink: 0;
-  }
-
-  .r-review-chevron--open { transform: rotate(180deg); }
-
-  .r-review-body { padding: 0 16px 16px; }
-
-  .r-review-meta {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 14px;
-  }
-
-  .r-review-time { font-size: 13px; color: var(--color-text-muted); }
-
-  .r-review-options { display: flex; flex-direction: column; gap: 8px; }
-
-  .r-opt {
-    display: grid;
-    grid-template-columns: 36px 1fr auto;
-    gap: 10px;
-    align-items: center;
-    padding: 12px 14px;
-    border-radius: 12px;
-    border: 1px solid var(--color-border);
-    background: var(--color-surface-alt);
-  }
-
-  .r-opt--correct { border-color: rgba(22, 163, 74, 0.3); background: rgba(34, 197, 94, 0.06); }
-  .r-opt--wrong { border-color: rgba(220, 38, 38, 0.3); background: rgba(239, 68, 68, 0.06); }
-
-  .r-opt-label {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--color-border);
-    font-weight: 700;
-    font-size: 12px;
-    background: var(--color-surface);
-  }
-
-  .r-opt-text { font-size: 14px; line-height: 1.5; color: var(--color-text); }
-
-  .r-opt-badge {
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 2px 8px;
-    border-radius: 6px;
-    background: rgba(34, 197, 94, 0.1);
-    color: #16a34a;
-    white-space: nowrap;
-  }
-
-  .r-opt-badge--wrong { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
-
-  .r-explanation {
-    margin-top: 14px;
-    padding: 16px;
-    border-radius: 12px;
-    background: var(--color-primary-light);
-    border: 1px solid color-mix(in srgb, var(--color-primary) 18%, transparent);
-  }
-
-  .r-explanation strong { display: block; margin-bottom: 6px; color: var(--color-primary); font-size: 13px; }
-  .r-explanation p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--color-text-secondary); }
-
-  /* ── Actions ── */
-  .r-actions {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    padding-top: 8px;
-  }
-
-  /* ── Responsive ── */
-  @media (max-width: 768px) {
-    .r-hero-content { flex-direction: column; text-align: center; }
-    .r-hero-summary { justify-content: center; }
-    .r-hero-badges { justify-content: center; }
-    .r-stats-strip { grid-template-columns: repeat(2, 1fr); }
-    .r-opt { grid-template-columns: 36px 1fr; }
-    .r-opt-badge { grid-column: 2 / 3; }
-  }
-
-  @media (max-width: 480px) {
-    .r-stats-strip { grid-template-columns: 1fr; }
-    .r-actions { flex-direction: column; }
-    .r-actions a, .r-actions button { width: 100%; }
-  }
-`;

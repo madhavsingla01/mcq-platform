@@ -28,6 +28,7 @@ import {
   recordActivity,
 } from '../services/social/activity.service.js';
 import memoryCache from '../services/cache/cache.service.js';
+import env from '../config/env.js';
 import { RankingService } from '../domain/services/RankingService.js';
 
 const syncQuizAggregateFields = async (quizId) => {
@@ -187,7 +188,11 @@ const assertQuizManageAccess = (quiz, req) => {
 };
 
 const assertQuizReadAccess = async (quiz, req) => {
-  const isExplicitlyPrivate = quiz.visibility === 'private' || quiz.metadata?.savedAsDraft === true;
+  const isExplicitlyPrivate = quiz.visibility === 'private' ||
+    quiz.accessType === 'invite_only' ||
+    quiz.isRestricted === true ||
+    (quiz.isChallenge && ['draft', 'publishing'].includes(quiz.challengeStatus)) ||
+    quiz.metadata?.savedAsDraft === true;
   const isPubliclyAccessible = !isExplicitlyPrivate && (quiz.visibility === 'public' || quiz.visibility === 'unlisted' || quiz.isPublic === true);
 
   if (isPubliclyAccessible) {
@@ -553,7 +558,7 @@ export const getQuiz = catchAsync(async (req, res, next) => {
   const finalQuiz = decorated || quiz;
 
   if (isAnonymous && (quiz.visibility === 'public' || quiz.isPublic)) {
-    memoryCache.set(cacheKey, finalQuiz, 30000);
+    memoryCache.set(cacheKey, finalQuiz, env.CACHE_DEFAULT_TTL_MS);
   }
 
   res.json({
@@ -665,7 +670,10 @@ export const startAttempt = catchAsync(async (req, res, next) => {
   const isCreator = req.user && toObjectIdString(quiz.uploader?._id || quiz.uploader) === toObjectIdString(req.user._id);
 
   if (isChallenge) {
-    if (deadlinePassed) {
+    if (!req.user) {
+      throw new AppError('Sign in to participate in a competitive challenge.', 401);
+    }
+    if (quiz.challengeStatus !== 'active' || !quiz.deadlineAt || deadlinePassed) {
       throw new AppError('This challenge has concluded and is no longer accepting attempts.', 400);
     }
 
@@ -740,15 +748,18 @@ export const startAttempt = catchAsync(async (req, res, next) => {
 
   const guestSessionId = req.user?._id ? null : (getRequestSessionId(req) || crypto.randomUUID());
 
-  const attempt = await Attempt.create({
+  let attempt;
+  try {
+    attempt = await Attempt.create({
     quizId: quiz._id,
     userId: req.user?._id || null,
     sessionId: guestSessionId,
     answers: buildInitialAnswerStates(questions),
     totalQuestions: quiz.questionCount,
-    totalMarks: isChallenge ? quiz.questionCount : (quiz.totalMarks || getQuizTotalMarks(questions)),
+    totalMarks: quiz.totalMarks || getQuizTotalMarks(questions),
     isQuickMode,
     isPractice: Boolean(isChallenge && isCreator),
+    challengeAttempt: Boolean(isChallenge && !isCreator),
     instantFeedback,
     timerMode,
     allowedDurationMs,
@@ -764,7 +775,13 @@ export const startAttempt = catchAsync(async (req, res, next) => {
       percentage: 0,
       updatedAt: new Date(),
     },
-  });
+    });
+  } catch (error) {
+    if (error?.code === 11000 && isChallenge && !isCreator) {
+      throw new AppError('Only one attempt is permitted per participant for this challenge.', 403);
+    }
+    throw error;
+  }
 
   res.status(201).json({
     success: true,
@@ -1422,7 +1439,7 @@ export const updateQuiz = catchAsync(async (req, res) => {
     await Question.deleteMany({ quizId: quiz._id });
     await Question.insertMany(questions.map((question) => ({ ...question, quizId: quiz._id })));
     quiz.questionCount = questions.length;
-    quiz.totalMarks = quiz.isChallenge ? questions.length : getQuizTotalMarks(questions);
+    quiz.totalMarks = getQuizTotalMarks(questions);
   }
 
   await quiz.save();
@@ -2006,7 +2023,7 @@ export const getChallengeLeaderboard = catchAsync(async (req, res, next) => {
   };
 
   // Cache leaderboard for 15s to withstand heavy concurrent contest traffic
-  memoryCache.set(cacheKey, payload, 15000);
+  memoryCache.set(cacheKey, payload, env.CACHE_SHORT_TTL_MS);
 
   res.json({
     success: true,

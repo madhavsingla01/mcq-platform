@@ -36,7 +36,7 @@ let uploadQueue = Promise.resolve();
 
 export const runWithUploadPanel = (file, { purpose }, uploadTask) => {
   const run = async () => {
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const id = globalThis.crypto.randomUUID();
     const store = useUploadPanelStore.getState();
 
     store.beginUpload({

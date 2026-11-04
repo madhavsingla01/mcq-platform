@@ -2,6 +2,7 @@ import Quiz from '../models/Quiz.model.js';
 import User from '../models/User.model.js';
 import { catchAsync } from '../middleware/error.middleware.js';
 import memoryCache from '../services/cache/cache.service.js';
+import env from '../config/env.js';
 
 /**
  * Normalizes an array or comma-separated string of tags.
@@ -309,7 +310,7 @@ export const getTrendingTags = catchAsync(async (req, res) => {
     })),
   };
 
-  memoryCache.set(cacheKey, payload, 60000); // 60s TTL
+  memoryCache.set(cacheKey, payload, env.CACHE_SEARCH_TTL_MS);
 
   res.json({
     success: true,

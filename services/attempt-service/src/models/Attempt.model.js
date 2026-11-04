@@ -265,6 +265,10 @@ const attemptSchema = new mongoose.Schema(
       default: false,
       index: true,
     },
+    challengeAttempt: {
+      type: Boolean,
+      default: false,
+    },
     instantFeedback: {
       type: Boolean,
       default: false,
@@ -395,6 +399,14 @@ const attemptSchema = new mongoose.Schema(
 attemptSchema.index({ quizId: 1, status: 1, createdAt: -1 });
 attemptSchema.index({ quizId: 1, status: 1, isPractice: 1, score: -1, totalTime: 1 });
 attemptSchema.index({ quizId: 1, userId: 1, status: 1, createdAt: -1 });
+attemptSchema.index(
+  { quizId: 1, userId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { challengeAttempt: true },
+    name: 'one_competitive_challenge_attempt_per_user',
+  }
+);
 attemptSchema.index({ quizId: 1, sessionId: 1, status: 1, createdAt: -1 });
 attemptSchema.index({ quizId: 1, completedAt: -1 });
 attemptSchema.index({ userId: 1, createdAt: -1 });

@@ -9,16 +9,18 @@ This README is the entry point. For implementation logic and the security roadma
 - Frontend URL: `http://localhost:5173`
 - API Gateway Entrypoint: `http://localhost:5000`
 - System Health Check: `http://localhost:5000/api/v1/health`
-- Architecture: 6 domain microservices, a dedicated media-processing microservice, and an API Gateway
+- Architecture: domain microservices, a dedicated Challenge Service, an administrative service, and an API Gateway
 - Microservices:
   - **API Gateway** (`:5000`): Central proxy, route distributor, and security perimeter
   - **Auth Service** (`:5001`): User accounts, JWT cookies, profiles, and follower graphs
   - **Quiz Service** (`:5002`): Quiz authoring, question banks, drafts, search engine & dynamic trending hashtags
+  - **Challenge Service** (`:5009`): Competitive challenge authoring, publication, discovery, and leaderboard reads
   - **Parser Service** (`:5003`): Spreadsheet uploads (.xlsx, .csv), column mapping & validation
   - **Attempt Service** (`:5004`): Quiz attempts, real-time response locking, timer strategies & scoring
   - **Social Service** (`:5005`): Community challenges, activity feeds, bookmarks & social interactions
   - **Message Service** (`:5006`): Direct messaging, inbox conversations & quiz challenge invites
   - **Media Service** (`:5007`): Secure image processing, WebP variants, thumbnails, URL validation & optimized delivery
+  - **Admin Service** (`:5008`): Role-based administration, moderation, user controls, and audit logs
 
 ---
 
@@ -37,9 +39,9 @@ This README is the entry point. For implementation logic and the security roadma
 
 ### Configure Authentication Secrets
 
-All services must use the same `JWT_SECRET` (at least 32 random bytes) to validate access tokens. Set it in each service's `.env` file. Set a separate strong `JWT_REFRESH_SECRET` in `services/auth-service/.env`. The example files leave these values blank so the services fail safely until configured.
+All services that validate access tokens must use the same `JWT_SECRET` (at least 32 random bytes), including Challenge and Admin Services. Set it in each service's `.env` file. Set a separate strong `JWT_REFRESH_SECRET` in `services/auth-service/.env`. The example files leave these values blank so services fail safely until configured.
 
-For Docker Compose, copy the root `.env.example` to `.env` and set both secrets there before running `npm run docker:up`.
+For Docker Compose, copy the root `.env.example` to `.env`, set both secrets and `CLIENT_URL`, then run `npm run docker:up`.
 
 
 ---
@@ -66,6 +68,8 @@ npm run services:all
 > - `[SOCIAL]`  http://localhost:5005
 > - `[MESSAGE]` http://localhost:5006
 > - `[MEDIA]`   http://localhost:5007
+> - `[ADMIN]`   http://localhost:5008 (through the gateway at `/api/v1/admin`)
+> - `[CHALLENGE]` http://localhost:5009 (through the gateway at `/api/v1/challenges`)
 
 #### 3. Start the Desktop Web App
 In a second terminal window, launch the Vite React dev server:
@@ -170,11 +174,13 @@ All API routes are prefixed with `/api/v1`.
 | `/parser/*` | Column detection and mapping |
 | `/quiz/*` | Generated quiz, attempt flows, and challenge leaderboard |
 | `/quizzes/*` | Quiz CRUD and public browsing |
+| `/challenges/*` | Competitive challenge creation, discovery, detail, and leaderboards |
 | `/attempts/*` | Attempt tracking, autosave, and scoring |
 | `/users/*` | Public profiles and creator directories |
 | `/social/*` | Activity feeds, likes, bookmarks, comments, notifications, shares |
 | `/messages/*` | Direct messages and quiz invitation conversations |
 | `/search/*` | Universal search across quizzes, creators, and dynamic trending hashtags |
+| `/admin/*` | Administrative controls, moderation, reports, and audit logs |
 
 Image variants are delivered through the gateway at `/media/assets/:id/:variant` (outside the `/api/v1` prefix). Uploads are limited to 12 MiB by default and accept JPEG, PNG, WebP, GIF, AVIF, TIFF, and SVG source files. The media service decodes and re-encodes accepted uploads as WebP image and thumbnail variants, and stores ownership, source size/type, dimensions, content hash, variant sizes, and processing status in its dedicated `mcq_media` database. Files use the shared `uploads-data` volume.
 

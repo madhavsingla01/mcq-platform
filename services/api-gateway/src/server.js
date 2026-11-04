@@ -16,17 +16,27 @@ import http from 'http';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const requiredSetting = (name) => {
+  const value = process.env[name]?.trim();
+  if (!value) throw new Error(`${name} is required`);
+  return value;
+};
+const NODE_ENV = requiredSetting('NODE_ENV');
+const PORT = Number(requiredSetting('PORT'));
+if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) throw new Error('PORT must be an integer from 1 to 65535');
+const allowedOrigins = requiredSetting('CLIENT_URL').split(',').map((origin) => origin.trim()).filter(Boolean);
+if (allowedOrigins.length === 0) throw new Error('CLIENT_URL must contain at least one allowed origin');
 
 const SERVICES = {
-  auth: process.env.AUTH_SERVICE_URL || 'http://localhost:5001',
-  quiz: process.env.QUIZ_SERVICE_URL || 'http://localhost:5002',
-  parser: process.env.PARSER_SERVICE_URL || 'http://localhost:5003',
-  attempt: process.env.ATTEMPT_SERVICE_URL || 'http://localhost:5004',
-  social: process.env.SOCIAL_SERVICE_URL || 'http://localhost:5005',
-  message: process.env.MESSAGE_SERVICE_URL || 'http://localhost:5006',
-  media: process.env.MEDIA_SERVICE_URL || 'http://localhost:5007',
-  admin: process.env.ADMIN_SERVICE_URL || 'http://localhost:5008',
+  auth: requiredSetting('AUTH_SERVICE_URL'),
+  quiz: requiredSetting('QUIZ_SERVICE_URL'),
+  parser: requiredSetting('PARSER_SERVICE_URL'),
+  attempt: requiredSetting('ATTEMPT_SERVICE_URL'),
+  social: requiredSetting('SOCIAL_SERVICE_URL'),
+  message: requiredSetting('MESSAGE_SERVICE_URL'),
+  media: requiredSetting('MEDIA_SERVICE_URL'),
+  admin: requiredSetting('ADMIN_SERVICE_URL'),
+  challenge: requiredSetting('CHALLENGE_SERVICE_URL'),
 };
 
 // Security headers
@@ -39,15 +49,13 @@ app.use(helmet({
 
 // CORS Configuration
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? (process.env.CLIENT_URL || '').split(',').map((origin) => origin.trim()).filter(Boolean)
-    : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174'],
+  origin: allowedOrigins,
   credentials: true,
 }));
 
 app.use(cookieParser());
 
-if (process.env.NODE_ENV !== 'test') {
+if (NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 
@@ -72,7 +80,7 @@ app.get('/api/v1/health', async (req, res) => {
     }
   };
 
-  const [authHealth, quizHealth, parserHealth, attemptHealth, socialHealth, messageHealth, mediaHealth, adminHealth] = await Promise.all([
+  const [authHealth, quizHealth, parserHealth, attemptHealth, socialHealth, messageHealth, mediaHealth, adminHealth, challengeHealth] = await Promise.all([
     checkService('auth', SERVICES.auth),
     checkService('quiz', SERVICES.quiz),
     checkService('parser', SERVICES.parser),
@@ -81,16 +89,17 @@ app.get('/api/v1/health', async (req, res) => {
     checkService('message', SERVICES.message),
     checkService('media', SERVICES.media),
     checkService('admin', SERVICES.admin),
+    checkService('challenge', SERVICES.challenge),
   ]);
 
-  const allHealthy = [authHealth, quizHealth, parserHealth, attemptHealth, socialHealth, messageHealth, mediaHealth, adminHealth]
+  const allHealthy = [authHealth, quizHealth, parserHealth, attemptHealth, socialHealth, messageHealth, mediaHealth, adminHealth, challengeHealth]
     .every(s => s.status === 'healthy');
 
   res.status(allHealthy ? 200 : 207).json({
     success: true,
     gateway: 'healthy',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
+    environment: NODE_ENV,
     services: {
       auth: authHealth,
       quiz: quizHealth,
@@ -100,6 +109,7 @@ app.get('/api/v1/health', async (req, res) => {
       message: messageHealth,
       media: mediaHealth,
       admin: adminHealth,
+      challenge: challengeHealth,
     },
   });
 });
@@ -108,7 +118,6 @@ app.get('/api/v1/health', async (req, res) => {
 const makeProxy = (target, pathPrefix = '') => createProxyMiddleware({
   target: pathPrefix ? `${target}${pathPrefix}` : target,
   changeOrigin: true,
-  ws: true,
   on: {
     proxyReq: (proxyReq, req) => {
       if (req.headers.cookie) {
@@ -197,11 +206,17 @@ app.use('/api/v1/social', makeProxy(SERVICES.social, '/api/v1/social'));
 
 // 6. Direct Messaging & Real-Time WebSockets
 const socketProxy = makeProxy(SERVICES.message);
-app.use('/socket.io', socketProxy);
+app.use('/socket.io', (req, res, next) => {
+  req.url = `/socket.io${req.url}`;
+  socketProxy(req, res, next);
+});
 app.use('/api/v1/messages', makeProxy(SERVICES.message, '/api/v1/messages'));
 
 // 7. Admin Control Center & Operations
 app.use('/api/v1/admin', makeProxy(SERVICES.admin, '/api/v1/admin'));
+
+// 8. Competitive Challenges Arena
+app.use('/api/v1/challenges', makeProxy(SERVICES.challenge, '/api/v1/challenges'));
 
 // Fallback 404
 app.use('*', (req, res) => {
@@ -234,6 +249,7 @@ server.listen(PORT, () => {
   console.log(`   - Message Service:  ${SERVICES.message}`);
   console.log(`   - Media Service:    ${SERVICES.media}`);
   console.log(`   - Admin Service:    ${SERVICES.admin}`);
+  console.log(`   - Challenge Service:${SERVICES.challenge}`);
   console.log(`   - Real-Time WS:     /socket.io -> ${SERVICES.message}`);
 });
 

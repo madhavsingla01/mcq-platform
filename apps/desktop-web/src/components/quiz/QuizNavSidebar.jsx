@@ -1,5 +1,6 @@
 import { Button, Card } from '../ui';
 import { useQuizStore } from '../../store/quizStore';
+import './QuizNavSidebar.css';
 
 export default function QuizNavSidebar({
   questions,
@@ -68,122 +69,6 @@ export default function QuizNavSidebar({
           </Button>
         </div>
       </Card>
-
-      <style>{sidebarStyles}</style>
     </>
   );
 }
-
-const sidebarStyles = `
-  .quiz-sidebar-shell {
-    width: 100%;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
-
-  .quiz-sidebar-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 18px 20px;
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  .quiz-sidebar-header h3 {
-    margin: 0 0 4px;
-    font-size: 16px;
-    font-weight: 600;
-  }
-
-  .quiz-sidebar-header span {
-    color: var(--color-text-secondary);
-    font-size: 13px;
-  }
-
-  .quiz-sidebar-mode {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 54px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: var(--color-success-light);
-    color: var(--color-success);
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
-  .quiz-sidebar-grid-wrap {
-    padding: 20px;
-    overflow-y: auto;
-    flex: 1;
-  }
-
-  .quiz-sidebar-grid {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .quiz-sidebar-index {
-    aspect-ratio: 1 / 1;
-    border-radius: 10px;
-    border: 1px solid var(--color-border);
-    background: var(--color-surface-alt);
-    color: var(--color-text);
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
-  }
-
-  .quiz-sidebar-index:hover {
-    transform: translateY(-1px);
-    border-color: var(--color-primary);
-  }
-
-  .quiz-sidebar-index.current {
-    border-width: 2px;
-    border-color: var(--color-primary);
-    background: var(--color-primary-light);
-  }
-
-  .quiz-sidebar-index.answered {
-    background: var(--color-primary-light);
-    border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
-  }
-
-  .quiz-sidebar-index.locked {
-    background: var(--color-success-light);
-    border-color: rgba(22, 163, 74, 0.25);
-  }
-
-  .quiz-sidebar-index.review {
-    box-shadow: inset 0 0 0 1px var(--color-warning);
-  }
-
-  .quiz-sidebar-actions {
-    padding: 18px 20px;
-    border-top: 1px solid var(--color-border);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  @media (max-width: 1024px) {
-    .quiz-sidebar-grid {
-      grid-template-columns: repeat(8, minmax(0, 1fr));
-    }
-  }
-
-  @media (max-width: 640px) {
-    .quiz-sidebar-grid {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-    }
-  }
-`;

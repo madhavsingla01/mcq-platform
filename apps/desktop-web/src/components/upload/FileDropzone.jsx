@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { UploadCloud } from 'lucide-react';
+import './FileDropzone.css';
 
 export default function FileDropzone({ onFileDrop, accept = ".xlsx,.xls,.csv,.json", maxSize = 10485760 }) {
   const [isDragActive, setIsDragActive] = useState(false);
@@ -95,71 +96,6 @@ export default function FileDropzone({ onFileDrop, accept = ".xlsx,.xls,.csv,.js
         </div>
         {error && <div className="qf-dropzone-error">{error}</div>}
       </div>
-
-      <style>{dropzoneStyles}</style>
     </>
   );
 }
-
-const dropzoneStyles = `
-  .qf-dropzone-wrapper {
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
-  }
-
-  .qf-dropzone {
-    border: 2px dashed var(--color-border-light);
-    border-radius: var(--radius-lg, 12px);
-    padding: 60px 40px;
-    text-align: center;
-    background: var(--color-surface);
-    transition: all 0.3s ease;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .qf-dropzone:hover {
-    border-color: var(--color-primary);
-    background: var(--color-primary-light);
-  }
-
-  .qf-dropzone.active {
-    border-color: var(--color-primary);
-    background: var(--color-primary-light);
-    box-shadow: 0 0 0 4px rgba(255, 69, 0, 0.08);
-  }
-
-  .qf-dropzone-icon {
-    width: 64px;
-    height: 64px;
-    border-radius: 16px;
-    background: var(--color-surface-alt);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 4px;
-  }
-
-  .qf-dropzone-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--color-text);
-    letter-spacing: -0.01em;
-  }
-
-  .qf-dropzone-subtitle {
-    font-size: 13px;
-    color: var(--color-text-muted);
-  }
-
-  .qf-dropzone-error {
-    color: var(--color-danger);
-    margin-top: 12px;
-    text-align: center;
-    font-size: 14px;
-  }
-`;

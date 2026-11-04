@@ -1,25 +1,8 @@
-import React, { useId } from 'react';
-import { Info } from 'lucide-react';
+import React from 'react';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
 
-export function SettingsInfo({ text }) {
-  const tooltipId = useId();
-
-  return (
-    <span className="settings-info-wrap">
-      <button
-        type="button"
-        className="settings-info-button"
-        aria-label={`More information: ${text}`}
-        aria-describedby={tooltipId}
-      >
-        <Info size={14} aria-hidden="true" />
-      </button>
-      <span className="settings-info-tooltip" id={tooltipId} role="tooltip">
-        {text}
-      </span>
-    </span>
-  );
+export function SettingsInfo() {
+  return null;
 }
 
 /**
@@ -108,6 +91,7 @@ export function SettingsToggle({
   disabled = false,
   id,
   label,
+  ariaLabel,
   size = 'md',
 }) {
   return (
@@ -122,6 +106,7 @@ export function SettingsToggle({
         checked={Boolean(checked)}
         onChange={(e) => onChange?.(e.target.checked)}
         disabled={disabled}
+        aria-label={ariaLabel}
         className="settings-switch-input"
       />
       <span className="settings-switch-slider">

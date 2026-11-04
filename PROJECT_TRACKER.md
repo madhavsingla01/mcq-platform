@@ -60,6 +60,7 @@ QuizFocus is evolving into a clean multi-client microservices architecture:
 | **CP-11** | **Comprehensive UI Edge-Case Stress Testing** | ⏳ Planned | Run `break-ui` audit across desktop and mobile frontends to ensure zero layout overflows on worst-case data. |
 | **CP-12** | **Real-Time Messaging Overhaul (WhatsApp/IG Benchmark)** | ✅ **Completed** | Upgraded `message-service` with Socket.IO bidirectional engine, presence tracking, debounced typing indicators, delivery check ticks (`sent`, `delivered`, `read`), emoji reactions, quoted replies, and built dedicated `MobileMessages.jsx` mobile client on port 5174 with bottom-bar access and unread notification badge. |
 | **CP-13** | **Symbolic Quiz Codes (`!QZ-XXXXXX`) & Prefix-Accelerated Universal Search** | ✅ **Completed** | Assigned every quiz a unique symbolic ID starting with `!` (`!QZ-XXXXXX`) with sparse unique indexing, auto-generation pre-validation hook, dual resolution (by ObjectId or `quizCode`), prefix-accelerated search engine (`!` for quizzes, `@` for creators, `#` for topics) with direct B-tree jumps (< 5ms), and rich UI badges with 1-click/1-tap copy across Desktop and Mobile Web. |
+| **CP-14** | **Dedicated Admin Microservice (`admin-service` :5008) & Control Center (`/admin/*`)** | ✅ **Completed** | Architected and launched dedicated `admin-service` microservice on port 5008 with RBAC roles (`AdminRole`, `AdminMembership`), append-only immutable audit logging (`AdminAuditLog`), user suspension/restoration with mandatory audited reasons, quiz/challenge public discovery restrictions, report triage queue (`ModerationReport`), real-time 9-microservice latency ping matrix, API Gateway proxying (`/api/v1/admin`), and Emil Kowalski pure black `#000000` + orange `#FF4500` desktop control center. |
 
 ---
 
@@ -88,7 +89,8 @@ QuizFocus is evolving into a clean multi-client microservices architecture:
 ## 🛠️ System Services Quick Reference
 
 - **Backend API Gateway:** `http://localhost:5000/api/v1`
-- **Desktop Web URL:** `http://localhost:5173`
+- **Admin Service:** `http://localhost:5008/api/v1/admin`
+- **Desktop Web URL:** `http://localhost:5173` (Admin: `http://localhost:5173/admin`)
 - **Mobile Web URL:** `http://localhost:5174`
 - **MongoDB Connection:** `mongodb://localhost:27018/mcq-platform`
 - **Redis Cache:** `redis://localhost:6380`

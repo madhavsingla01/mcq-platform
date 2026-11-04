@@ -7,6 +7,7 @@ import Papa from 'papaparse';
 import fs from 'fs';
 import { cleanCellValue, isEmptyRow } from '../../utils/parserHelpers.js';
 import { logger } from '../../utils/logger.js';
+import env from '../../config/env.js';
 
 /**
  * Parse a CSV file.
@@ -15,7 +16,7 @@ import { logger } from '../../utils/logger.js';
  * @returns {{ headers: string[], rows: Object[] }}
  */
 export const parseCsv = (filePath, options = {}) => {
-  const { maxRows = 10000 } = options;
+  const { maxRows = env.MAX_IMPORT_ROWS } = options;
 
   try {
     const fileContent = fs.readFileSync(filePath, 'utf-8');

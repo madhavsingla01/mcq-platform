@@ -8,7 +8,6 @@ import {
   Clock,
   Zap,
   CheckCircle2,
-  HelpCircle,
   Sliders,
   ChevronDown,
   ChevronUp,
@@ -44,6 +43,7 @@ import { compressImage } from '../../utils/imageCompressor';
 import { fileFromDataUrl, runWithUploadPanel } from '../../store/uploadPanelStore';
 import { MediaService } from '../../services/media.service';
 import { useAuthStore } from '../../store/authStore';
+import CustomSelect from '../../components/ui/CustomSelect';
 import {
   deleteQuizBuilderCheckpoint,
   loadQuizBuilderCheckpoint,
@@ -104,6 +104,11 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
   const skipDirtyEffectRef = useRef(false);
   const recoveryDisabledRef = useRef(false);
   const recoverySnapshotRef = useRef(null);
+
+  // ── Header Wireframe State & Question Navigation ──
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
+  const [showQuestionJump, setShowQuestionJump] = useState(false);
+  const [showPublishOptions, setShowPublishOptions] = useState(false);
 
   // ── Quiz Basic Metadata ──
   const [title, setTitle] = useState('');
@@ -697,7 +702,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
       return;
     }
     const newQ = {
-      id: `q-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      id: `q-${globalThis.crypto.randomUUID()}`,
       text: '',
       type,
       options: type === 'true_false' ? ['True', 'False'] : ['', '', '', ''],
@@ -713,6 +718,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
       activeTab: 'content',
     };
     setQuestions([...questions, newQ]);
+    setActiveQuestionIndex(questions.length);
   };
 
   const duplicateQuestion = (index) => {
@@ -723,7 +729,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
     const q = questions[index];
     const duplicated = {
       ...q,
-      id: `q-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      id: `q-${globalThis.crypto.randomUUID()}`,
       text: `${q.text} (Copy)`,
       options: [...q.options],
       correctIndexes: [...q.correctIndexes],
@@ -731,6 +737,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
     const updated = [...questions];
     updated.splice(index + 1, 0, duplicated);
     setQuestions(updated);
+    setActiveQuestionIndex(index + 1);
     setFeedback({ type: 'success', text: `Question ${index + 1} duplicated.` });
   };
 
@@ -740,6 +747,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
       return;
     }
     setQuestions(questions.filter((_, i) => i !== index));
+    setActiveQuestionIndex((prev) => Math.max(0, Math.min(prev, questions.length - 2)));
   };
 
   const moveQuestion = (index, direction) => {
@@ -750,6 +758,35 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
     updated[index] = updated[target];
     updated[target] = temp;
     setQuestions(updated);
+    setActiveQuestionIndex(target);
+  };
+
+  useEffect(() => {
+    if (activeQuestionIndex >= questions.length) {
+      setActiveQuestionIndex(Math.max(0, questions.length - 1));
+    }
+  }, [questions.length, activeQuestionIndex]);
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest('.header-counter-wrap')) {
+        setShowQuestionJump(false);
+      }
+      if (!e.target.closest('.header-publish-group')) {
+        setShowPublishOptions(false);
+      }
+    };
+    window.addEventListener('click', handleOutsideClick);
+    return () => window.removeEventListener('click', handleOutsideClick);
+  }, []);
+
+  const jumpToQuestion = (index) => {
+    setActiveQuestionIndex(index);
+    setShowQuestionJump(false);
+    const element = document.getElementById(`q-card-${index}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   };
 
   const updateQuestionField = (index, field, value) => {
@@ -871,6 +908,10 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
     if (!isDraft) {
       for (let i = 0; i < questions.length; i++) {
         const q = questions[i];
+        if (isChallengeBuilder && !['multiple_choice', 'true_false'].includes(q.type)) {
+          setFeedback({ type: 'error', text: `Question ${i + 1}: challenges currently support single-answer multiple choice and true/false questions.` });
+          return;
+        }
         if (!q.text.trim()) {
           setFeedback({ type: 'error', text: `Question ${i + 1} has an empty prompt.` });
           return;
@@ -980,17 +1021,18 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
         }),
       };
 
+      const saveEndpoint = isChallengeBuilder ? '/challenges' : '/quiz/manual';
       const { data } = !auto && payload.thumbnail?.startsWith('data:image/')
         ? await (async () => {
           const imageFile = await fileFromDataUrl(payload.thumbnail, 'quiz-cover.webp');
-          return runWithUploadPanel(imageFile, { purpose: 'Quiz cover and content' }, async (onUploadProgress) => {
-            const asset = await MediaService.uploadImage(imageFile, 'quiz-cover', onUploadProgress);
+          return runWithUploadPanel(imageFile, { purpose: isChallengeBuilder ? 'Challenge cover and content' : 'Quiz cover and content' }, async (onUploadProgress) => {
+            const asset = await MediaService.uploadImage(imageFile, isChallengeBuilder ? 'challenge-cover' : 'quiz-cover', onUploadProgress);
             payload.thumbnail = asset.url;
-            return api.post('/quiz/manual', payload);
+            return api.post(saveEndpoint, payload);
           });
         })()
-        : await api.post('/quiz/manual', payload);
-      const createdQuizId = data.data?.quizId || data.data?.quiz?._id;
+        : await api.post(saveEndpoint, payload);
+      const createdQuizId = data.data?.challengeId || data.data?.quizId || data.data?.challenge?._id || data.data?.quiz?._id;
 
       if (isDraft) {
         if (createdQuizId) {
@@ -1020,9 +1062,9 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
           }
         }
         if (createdQuizId) {
-          navigate(`/quiz/${createdQuizId}`);
+          navigate(isChallengeBuilder ? `/challenges/${createdQuizId}` : `/quiz/${createdQuizId}`);
         } else {
-          navigate('/dashboard');
+          navigate(isChallengeBuilder ? '/challenges' : '/dashboard');
         }
       }
     } catch (err) {
@@ -1048,91 +1090,157 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
 
   return (
     <div className={`builder-viewport ${isChallengeBuilder ? 'challenge-builder' : ''}`}>
-      {/* ── Sticky Top Bar ── */}
-      <header className="top-header">
+      {/* ── Sticky Top Bar (Wireframe Redesign with Squircle Design) ── */}
+      <header className="top-header" role="banner" aria-label="Builder Navigation">
+        {/* Left: Back button & Question Counter Badge [ 1 | 1 ] */}
         <div className="header-left">
-          <button className="nav-back-btn" onClick={() => navigate('/create')} title="Back to Create Hub">
+          <button
+            type="button"
+            className="header-back-btn"
+            onClick={() => navigate('/create')}
+            title="Back to Create Hub"
+            aria-label="Back to Create Hub"
+          >
             <ArrowLeft size={18} />
           </button>
-          <div className="header-breadcrumbs">
-            <span className="crumb-hub" onClick={() => navigate('/create')}>Create</span>
-            <span className="crumb-sep">/</span>
-            <span className="crumb-current">{isChallengeBuilder ? 'Challenge Builder' : 'Quiz Builder'}</span>
+
+          <div className="header-counter-wrap">
+            <button
+              type="button"
+              className={`header-question-counter ${showQuestionJump ? 'active' : ''}`}
+              onClick={() => setShowQuestionJump((prev) => !prev)}
+              title={`Question ${Math.min(activeQuestionIndex + 1, questions.length)} of ${questions.length} (Click to jump)`}
+              aria-label={`Question ${Math.min(activeQuestionIndex + 1, questions.length)} of ${questions.length}`}
+            >
+              <span className="counter-current">{Math.min(activeQuestionIndex + 1, questions.length)}</span>
+              <span className="counter-sep">|</span>
+              <span className="counter-total">{questions.length}</span>
+            </button>
+
+            {/* Quick Question Jump Dropdown */}
+            {showQuestionJump && (
+              <div className="question-jump-menu" onClick={(e) => e.stopPropagation()}>
+                <div className="jump-menu-header">
+                  <span>Questions ({questions.length})</span>
+                  <span className="jump-menu-points">{totalMarks} {totalMarks === 1 ? 'pt' : 'pts'}</span>
+                </div>
+                <div className="jump-menu-list">
+                  {questions.map((q, idx) => (
+                    <button
+                      key={q.id || idx}
+                      type="button"
+                      className={`jump-menu-item ${idx === activeQuestionIndex ? 'selected' : ''}`}
+                      onClick={() => jumpToQuestion(idx)}
+                    >
+                      <span className="jump-item-idx">{idx + 1}</span>
+                      <span className="jump-item-text">
+                        {q.text?.trim() ? q.text.slice(0, 36) + (q.text.length > 36 ? '…' : '') : `Question ${idx + 1}`}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                {(!isChallengeBuilder || questions.length < 10) && (
+                  <button
+                    type="button"
+                    className="jump-menu-add-btn"
+                    onClick={() => {
+                      addQuestion();
+                      setShowQuestionJump(false);
+                    }}
+                  >
+                    + Add New Question
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="header-stats-pill">
-          <span className="stat-item">
-            <strong>{questions.length}</strong> {questions.length === 1 ? 'Question' : 'Questions'}
-          </span>
-          <span className="stat-divider">•</span>
-          <span className="stat-item">
-            <strong>{totalMarks}</strong> {totalMarks === 1 ? 'Point' : 'Points'}
-          </span>
-          {activeDraftId && (
-            <>
-              <span className="stat-divider">•</span>
-              <span className="header-draft-pill" title="This document is an unpublished draft">
-                <Bookmark size={11} className="draft-pill-icon" />
-                <span>Draft</span>
-                {lastSavedAt && (
-                  <span className="draft-saved-hint">
-                    ({lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
-                  </span>
-                )}
-              </span>
-            </>
+        {/* Center: Open clean space / subtle saved hint */}
+        <div className="header-center">
+          {activeDraftId && lastSavedAt && (
+            <span className="header-auto-status" title={`Last saved at ${lastSavedAt.toLocaleTimeString()}`}>
+              Draft saved
+            </span>
           )}
         </div>
-        <span className="recovery-status" role="status" title={recoveryStatus}>
-          {recoveryStatus}
-        </span>
 
-        <div className="header-actions">
-          {/* Main Settings Floating Trigger */}
+        {/* Right: Settings Gear ⚙ and Publish Button */}
+        <div className="header-right">
           <button
             type="button"
-            className={`floating-settings-trigger ${showFloatingSettings ? 'active' : ''}`}
+            className={`header-gear-btn ${showFloatingSettings ? 'active' : ''}`}
             onClick={() => setShowFloatingSettings(!showFloatingSettings)}
+            title={isChallengeBuilder ? 'Challenge Settings & Rules' : 'Quiz Settings & Governance'}
+            aria-label="Settings"
           >
-            <Settings size={16} className="settings-icon-spin" />
-            <span>{isChallengeBuilder ? 'Challenge Settings' : 'Quiz Settings'}</span>
-            <span className="settings-trigger-tag">
-              {isChallengeBuilder
-                ? `${challengeDuration}m`
-                : timerMode === 'none' ? 'Untimed' : `${timeLimit}m`}
-            </span>
+            <Settings size={18} className="gear-icon" />
           </button>
 
-          <button
-            type="button"
-            className="draft-btn"
-            onClick={() => handleSave(true)}
-            disabled={saving}
-            title="Save as draft (Ctrl+S)"
-          >
-            <Bookmark size={15} />
-            <span>{activeDraftId ? 'Update Draft' : 'Save Draft'}</span>
-          </button>
+          <div className="header-publish-group">
+            <button
+              type="button"
+              className="header-publish-btn"
+              onClick={() => handleSave(false)}
+              disabled={saving}
+              title={isChallengeBuilder ? 'Publish Challenge' : 'Publish Quiz'}
+            >
+              {saving ? (
+                <>
+                  <RefreshCw size={14} className="spinner" />
+                  <span>Publishing...</span>
+                </>
+              ) : (
+                <span>Publish</span>
+              )}
+            </button>
+            <button
+              type="button"
+              className={`header-publish-split ${showPublishOptions ? 'active' : ''}`}
+              onClick={() => setShowPublishOptions(!showPublishOptions)}
+              title="More options"
+              aria-label="More save options"
+              disabled={saving}
+            >
+              <ChevronDown size={14} />
+            </button>
 
-          <button
-            type="button"
-            className="publish-btn"
-            onClick={() => handleSave(false)}
-            disabled={saving}
-          >
-            {saving ? (
-              <>
-                <RefreshCw size={15} className="spinner" />
-                <span>Publishing {isChallengeBuilder ? 'Challenge' : 'Quiz'}...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles size={15} />
-                <span>Publish {isChallengeBuilder ? 'Challenge' : 'Quiz'}</span>
-              </>
+            {showPublishOptions && (
+              <div className="publish-options-menu" onClick={(e) => e.stopPropagation()}>
+                <button
+                  type="button"
+                  className="publish-option-item"
+                  onClick={() => {
+                    setShowPublishOptions(false);
+                    handleSave(false);
+                  }}
+                >
+                  <Sparkles size={14} />
+                  <div>
+                    <span className="option-title">Publish Now</span>
+                    {!isChallengeBuilder && (
+                      <span className="option-desc">Make quiz live for students</span>
+                    )}
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  className="publish-option-item"
+                  onClick={() => {
+                    setShowPublishOptions(false);
+                    handleSave(true);
+                  }}
+                >
+                  <Bookmark size={14} />
+                  <div>
+                    <span className="option-title">{activeDraftId ? 'Update Draft' : 'Save as Draft'}</span>
+                    <span className="option-desc">Save progress secretly (Ctrl+S)</span>
+                  </div>
+                </button>
+              </div>
             )}
-          </button>
+          </div>
         </div>
       </header>
 
@@ -1267,7 +1375,13 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
             const TypeIcon = currentTypeObj.icon;
 
             return (
-              <div key={q.id} className="question-card-shell">
+              <div
+                key={q.id}
+                id={`q-card-${qIndex}`}
+                className={`question-card-shell ${activeQuestionIndex === qIndex ? 'active-question' : ''}`}
+                onFocus={() => setActiveQuestionIndex(qIndex)}
+                onClick={() => setActiveQuestionIndex(qIndex)}
+              >
                 {/* Question Card Header */}
                 <div className="q-card-header">
                   <div className="q-header-meta">
@@ -1390,9 +1504,6 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
                             value={q.shortAnswer}
                             onChange={(e) => updateQuestionField(qIndex, 'shortAnswer', e.target.value)}
                           />
-                          <p className="short-answer-hint">
-                            Participant answers will be compared case-insensitively against this keyword.
-                          </p>
                         </div>
                       ) : q.type === 'true_false' ? (
                         <div className="tf-options-grid">
@@ -1417,17 +1528,6 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
                       ) : (
                         /* Multiple Choice, Checkboxes, Dropdown */
                         <div className="options-stack">
-                          <div className="options-legend-row">
-                            <span className="legend-text">
-                              {q.type === 'checkboxes'
-                                ? 'Check the boxes next to all correct answers:'
-                                : 'Select the circle next to the single correct answer:'}
-                            </span>
-                            <span className="legend-hint">
-                              Letters (A, B, C...) are assigned automatically.
-                            </span>
-                          </div>
-
                           {q.options.map((opt, oIndex) => {
                             const letter = String.fromCharCode(65 + oIndex);
                             const isCorrect =
@@ -1657,7 +1757,10 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
       {showFloatingSettings && (
         <div className="floating-settings-backdrop" onClick={() => setShowFloatingSettings(false)}>
           <div
-            className="floating-settings-window"
+            className={`floating-settings-window ${isChallengeBuilder ? 'challenge-settings-window' : ''}`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="floating-settings-title"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Window Titlebar */}
@@ -1667,14 +1770,9 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
                   <Sliders size={18} />
                 </div>
                 <div>
-                  <h3 className="window-title">
-                    {isChallengeBuilder ? 'Challenge Settings & Rules' : 'Quiz Settings & Governance'}
+                  <h3 className="window-title" id="floating-settings-title">
+                    {isChallengeBuilder ? 'Challenge Settings' : 'Quiz Settings & Governance'}
                   </h3>
-                  <p className="window-subtitle">
-                    {isChallengeBuilder
-                      ? 'Set the challenge schedule, access, and question delivery.'
-                      : 'Configure delivery, timer rules, visibility, and cover media.'}
-                  </p>
                 </div>
               </div>
               <button
@@ -1694,7 +1792,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
                 className={`window-tab ${floatingSettingsTab === 'general' ? 'active' : ''}`}
                 onClick={() => setFloatingSettingsTab('general')}
               >
-                <ImageIcon size={15} /> General & Cover
+                <ImageIcon size={15} /> {isChallengeBuilder ? 'General' : 'General & Cover'}
               </button>
               <button
                 type="button"
@@ -1711,7 +1809,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
                 <div className="tab-pane">
                   {/* Cover Upload inside Window */}
                   <div className="pane-section">
-                    <h4 className="section-title">{isChallengeBuilder ? 'Challenge' : 'Quiz'} Cover Artwork</h4>
+                    <h4 className="section-title">{isChallengeBuilder ? 'Cover artwork' : 'Quiz Cover Artwork'}</h4>
                     <div className="cover-dialog-grid">
                       <div className="cover-drop-mini" onClick={() => fileInputRef.current?.click()}>
                         {coverImage ? (
@@ -1755,27 +1853,37 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
 
                   <div className="settings-two-col">
                     <div className="setting-field">
-                      <label>Category</label>
-                      <select value={category} onChange={(e) => setCategory(e.target.value)}>
-                        {CATEGORIES.map((cat) => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
+                      <label htmlFor="builder-category">Category</label>
+                      <CustomSelect
+                        id="builder-category"
+                        value={category}
+                        onChange={setCategory}
+                        options={CATEGORIES}
+                        size="sm"
+                        className="challenge-settings-select"
+                        portal
+                        dropdownClassName="challenge-settings-dropdown"
+                      />
                     </div>
 
                     <div className="setting-field">
-                      <label>Default Difficulty</label>
-                      <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
-                        {DIFFICULTIES.map((diff) => (
-                          <option key={diff} value={diff}>{diff}</option>
-                        ))}
-                      </select>
+                      <label htmlFor="builder-difficulty">{isChallengeBuilder ? 'Difficulty' : 'Default Difficulty'}</label>
+                      <CustomSelect
+                        id="builder-difficulty"
+                        value={difficulty}
+                        onChange={setDifficulty}
+                        options={DIFFICULTIES}
+                        size="sm"
+                        className="challenge-settings-select"
+                        portal
+                        dropdownClassName="challenge-settings-dropdown"
+                      />
                     </div>
 
                     {isChallengeBuilder && (
                       <>
                         <div className="setting-field">
-                          <label>Challenge Duration (Minutes)</label>
+                          <label>Duration (min)</label>
                           <input
                             type="number"
                             min="1"
@@ -1785,33 +1893,45 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
                           />
                         </div>
                         <div className="setting-field">
-                          <label>Challenge Deadline</label>
+                          <label>Deadline</label>
                           <input
                             type="datetime-local"
                             value={challengeDeadline}
                             onChange={(event) => setChallengeDeadline(event.target.value)}
                           />
                         </div>
-                        <div className="setting-field full-width">
-                          <label>Access</label>
-                          <select
+                        <div className="setting-field">
+                          <label htmlFor="challenge-access">Access</label>
+                          <CustomSelect
+                            id="challenge-access"
                             value={challengeAccessType}
-                            onChange={(event) => setChallengeAccessType(event.target.value)}
-                          >
-                            <option value="public">Public challenge</option>
-                            <option value="invite_only">Invite only</option>
-                          </select>
+                            onChange={setChallengeAccessType}
+                            size="sm"
+                            options={[
+                              { value: 'public', label: 'Public challenge' },
+                              { value: 'invite_only', label: 'Invite only' },
+                            ]}
+                            className="challenge-settings-select"
+                            portal
+                            dropdownClassName="challenge-settings-dropdown"
+                            />
                         </div>
                         {challengeAccessType === 'invite_only' && (
-                          <div className="setting-field full-width">
-                            <label>Invite Policy</label>
-                            <select
+                          <div className="setting-field">
+                            <label htmlFor="challenge-invite-policy">Invite Policy</label>
+                            <CustomSelect
+                              id="challenge-invite-policy"
                               value={challengeInviteAccessType}
-                              onChange={(event) => setChallengeInviteAccessType(event.target.value)}
-                            >
-                              <option value="invitation">Invitation required</option>
-                              <option value="approval">Request approval</option>
-                            </select>
+                              onChange={setChallengeInviteAccessType}
+                              size="sm"
+                              options={[
+                                { value: 'invitation', label: 'Invitation required' },
+                                { value: 'approval', label: 'Request approval' },
+                              ]}
+                              className="challenge-settings-select"
+                              portal
+                              dropdownClassName="challenge-settings-dropdown"
+                            />
                           </div>
                         )}
                       </>
@@ -1837,7 +1957,6 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
                               <VIcon size={16} />
                               <div className="vis-card-info">
                                 <span className="vis-card-name">{v.label}</span>
-                                <span className="vis-card-desc">{v.desc}</span>
                               </div>
                             </button>
                           );
@@ -1847,7 +1966,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
 
                     {/* Tags input */}
                     <div className="setting-field full-width">
-                      <label>{isChallengeBuilder ? 'Challenge' : 'Quiz'} Search Tags ({tags.length}/8)</label>
+                      <label>{isChallengeBuilder ? 'Tags' : 'Quiz Search Tags'} ({tags.length}/8)</label>
                       <div className="tags-container">
                         <div className="tags-list">
                           {tags.map((tag) => (
@@ -1886,11 +2005,12 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
               {floatingSettingsTab === 'timer' && (
                 <div className="tab-pane">
                   <div className="pane-section">
-                    <h4 className="section-title">{isChallengeBuilder ? 'Challenge Timer' : 'Timer Rules'}</h4>
+                    <h4 className="section-title">{isChallengeBuilder ? 'Timer' : 'Timer Rules'}</h4>
                     {isChallengeBuilder ? (
-                      <p className="window-subtitle">
-                        Challenges use a strict {challengeDuration}-minute timer. Change the duration in General &amp; Cover.
-                      </p>
+                      <div className="challenge-timer-summary">
+                        <Clock size={16} />
+                        <span>Each attempt has a {challengeDuration}-minute limit.</span>
+                      </div>
                     ) : <div className="timer-mode-selector">
                       {[
                         { id: 'none', label: 'Untimed', desc: 'No time pressure. Practice at your own pace.' },
@@ -1908,7 +2028,6 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
                           </div>
                           <div>
                             <div className="timer-mode-title">{tm.label}</div>
-                            <div className="timer-mode-desc">{tm.desc}</div>
                           </div>
                         </button>
                       ))}
@@ -1936,7 +2055,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
                   </div>
 
                   <div className="pane-section">
-                    <h4 className="section-title">Delivery & Shuffling Experience</h4>
+                    <h4 className="section-title">{isChallengeBuilder ? 'Challenge behavior' : 'Delivery & Shuffling Experience'}</h4>
                     <div className="toggles-list">
                       {!isChallengeBuilder && <label className="toggle-switch-card">
                         <input
@@ -1946,7 +2065,6 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
                         />
                         <div className="toggle-info">
                           <span className="toggle-title">Instant Answer Feedback</span>
-                          <span className="toggle-desc">Reveal whether the selected answer is correct right after clicking.</span>
                         </div>
                       </label>}
 
@@ -1958,7 +2076,6 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
                         />
                         <div className="toggle-info">
                           <span className="toggle-title">Allow Revisiting Questions</span>
-                          <span className="toggle-desc">Students can navigate back and change previous answers before submission.</span>
                         </div>
                       </label>}
 
@@ -1970,7 +2087,6 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
                         />
                         <div className="toggle-info">
                           <span className="toggle-title">Show Explanations</span>
-                          <span className="toggle-desc">Display solution notes and explanations upon quiz completion.</span>
                         </div>
                       </label>
 
@@ -1982,7 +2098,6 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
                         />
                         <div className="toggle-info">
                           <span className="toggle-title">Randomize Question Order</span>
-                          <span className="toggle-desc">Shuffle questions for each participant to prevent cheating.</span>
                         </div>
                       </label>
 
@@ -1994,7 +2109,6 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
                         />
                         <div className="toggle-info">
                           <span className="toggle-title">Randomize Options Order</span>
-                          <span className="toggle-desc">Shuffle A, B, C, D choices randomly for every question.</span>
                         </div>
                       </label>
                     </div>
@@ -2008,13 +2122,25 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
               <span className="footer-summary-text">
                 {questions.length} questions • {totalMarks} total points • {difficulty} • {visibility}
               </span>
-              <button
-                type="button"
-                className="window-done-btn"
-                onClick={() => setShowFloatingSettings(false)}
-              >
-                Apply & Close
-              </button>
+              <div className="window-footer-actions">
+                <button
+                  type="button"
+                  className="window-draft-btn"
+                  onClick={() => handleSave(true)}
+                  disabled={saving}
+                  title="Save progress as draft (Ctrl+S)"
+                >
+                  <Bookmark size={14} />
+                  <span>{activeDraftId ? 'Update Draft' : 'Save Draft'}</span>
+                </button>
+                <button
+                  type="button"
+                  className="window-done-btn"
+                  onClick={() => setShowFloatingSettings(false)}
+                >
+                  Apply & Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

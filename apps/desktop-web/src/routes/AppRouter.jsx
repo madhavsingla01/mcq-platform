@@ -27,6 +27,15 @@ const Notifications = lazy(() => import('../pages/Notifications/Notifications'))
 const Messages = lazy(() => import('../pages/Messages/Messages'));
 const Guide = lazy(() => import('../pages/Guide/Guide'));
 
+// Admin Pages
+const AdminLayout = lazy(() => import('../pages/Admin/AdminLayout'));
+const AdminOverview = lazy(() => import('../pages/Admin/AdminOverview'));
+const AdminUsers = lazy(() => import('../pages/Admin/AdminUsers'));
+const AdminContent = lazy(() => import('../pages/Admin/AdminContent'));
+const AdminReports = lazy(() => import('../pages/Admin/AdminReports'));
+const AdminAuditLogs = lazy(() => import('../pages/Admin/AdminAuditLogs'));
+const AdminSystemHealth = lazy(() => import('../pages/Admin/AdminSystemHealth'));
+
 function ProtectedRoute({ children }) {
   const { isAuthenticated, isLoading } = useAuthStore();
   const location = useLocation();
@@ -62,6 +71,30 @@ function PublicOnlyRoute({ children }) {
   if (isAuthenticated) {
     const redirectTo = new URLSearchParams(location.search).get('redirect') || '/dashboard';
     return <Navigate to={redirectTo} replace />;
+  }
+
+  return children;
+}
+
+function AdminRoute({ children }) {
+  const { user, isAuthenticated, isLoading } = useAuthStore();
+  const location = useLocation();
+
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#000000' }}>
+        <Spinner size={40} />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    const redirect = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/login?redirect=${redirect}`} replace />;
+  }
+
+  if (user?.role !== 'admin') {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;
@@ -133,6 +166,8 @@ export default function AppRouter() {
 
           {/* Challenges */}
           <Route path="challenges" element={<Challenges />} />
+          <Route path="challenges/:quizId" element={<Quiz />} />
+          <Route path="challenge/:quizId" element={<Quiz />} />
           <Route path="challenge" element={<Navigate to="/challenges" replace />} />
 
           {/* Settings */}
@@ -150,6 +185,23 @@ export default function AppRouter() {
           <Route path="profile/:profileId" element={<PublicProfile />} />
           <Route path="users/:profileId" element={<PublicProfile />} />
           <Route path=":profileId" element={<PublicProfile />} />
+        </Route>
+
+        {/* Dedicated Admin Control Center (Separate Layout, Pure Black, RBAC) */}
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          }
+        >
+          <Route index element={<AdminOverview />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="content" element={<AdminContent />} />
+          <Route path="reports" element={<AdminReports />} />
+          <Route path="audit-logs" element={<AdminAuditLogs />} />
+          <Route path="system" element={<AdminSystemHealth />} />
         </Route>
 
         {/* Catch-all route */}

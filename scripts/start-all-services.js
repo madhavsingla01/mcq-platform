@@ -1,18 +1,12 @@
 /**
  * QuizFocus Microservices Orchestrator
- * Spawns and supervises all 8 application services including the API gateway:
- *  - api-gateway (5000)
- *  - auth-service (5001)
- *  - quiz-service (5002)
- *  - parser-service (5003)
- *  - attempt-service (5004)
- *  - social-service (5005)
- *  - message-service (5006)
- *  - media-service (5007)
+ * Spawns and supervises configured application services, including the API gateway.
+ * Service ports are read from each service's local .env file.
  */
 
 import { spawn } from 'child_process';
 import net from 'net';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -20,17 +14,27 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const root = path.join(__dirname, '..');
 
+const readPort = (serviceName) => {
+  const envPath = path.join(root, 'services', serviceName, '.env');
+  if (!fs.existsSync(envPath)) throw new Error(`Missing ${envPath}; copy the service .env.example and configure it first.`);
+  const portLine = fs.readFileSync(envPath, 'utf8').split(/\r?\n/).find((line) => /^\s*PORT\s*=/.test(line));
+  const port = Number(portLine?.split('=', 2)[1]?.trim());
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error(`${serviceName} requires a valid PORT in its .env file.`);
+  return port;
+};
+
 const SERVICES = [
-  { name: 'auth-service', port: 5001, label: 'AUTH', color: '\x1b[36m' },
-  { name: 'quiz-service', port: 5002, label: 'QUIZ', color: '\x1b[32m' },
-  { name: 'parser-service', port: 5003, label: 'PARSER', color: '\x1b[33m' },
-  { name: 'attempt-service', port: 5004, label: 'ATTEMPT', color: '\x1b[35m' },
-  { name: 'social-service', port: 5005, label: 'SOCIAL', color: '\x1b[34m' },
-  { name: 'message-service', port: 5006, label: 'MESSAGE', color: '\x1b[38;5;208m' },
-  { name: 'media-service', port: 5007, label: 'MEDIA', color: '\x1b[38;5;141m' },
-  { name: 'admin-service', port: 5008, label: 'ADMIN', color: '\x1b[38;5;214m' },
-  { name: 'api-gateway', port: 5000, label: 'GATEWAY', color: '\x1b[31m' },
-];
+  { name: 'auth-service', label: 'AUTH', color: '\x1b[36m' },
+  { name: 'quiz-service', label: 'QUIZ', color: '\x1b[32m' },
+  { name: 'parser-service', label: 'PARSER', color: '\x1b[33m' },
+  { name: 'attempt-service', label: 'ATTEMPT', color: '\x1b[35m' },
+  { name: 'social-service', label: 'SOCIAL', color: '\x1b[34m' },
+  { name: 'message-service', label: 'MESSAGE', color: '\x1b[38;5;208m' },
+  { name: 'media-service', label: 'MEDIA', color: '\x1b[38;5;141m' },
+  { name: 'admin-service', label: 'ADMIN', color: '\x1b[38;5;214m' },
+  { name: 'challenge-service', label: 'CHALLENGE', color: '\x1b[38;5;178m' },
+  { name: 'api-gateway', label: 'GATEWAY', color: '\x1b[31m' },
+].map((service) => ({ ...service, port: readPort(service.name) }));
 
 const children = [];
 
