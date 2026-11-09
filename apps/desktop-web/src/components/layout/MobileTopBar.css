@@ -83,7 +83,7 @@
   }
 
   .mobile-top-btn:active {
-    transform: scale(0.92);
+    transform: scale(0.97);
     background: rgba(255, 255, 255, 0.12);
   }
 
@@ -95,7 +95,7 @@
     height: 15px;
     padding: 0 4px;
     border-radius: 9999px;
-    background: #FF3B30;
+    background: #FF4500;
     color: #FFFFFF;
     font-size: 9.5px;
     font-weight: 800;
@@ -115,7 +115,7 @@
   }
 
   .mobile-top-avatar-link:active {
-    transform: scale(0.92);
+    transform: scale(0.97);
   }
 
   .mobile-top-avatar,

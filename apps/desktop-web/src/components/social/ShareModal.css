@@ -34,7 +34,7 @@
   @keyframes scaleInDialog {
     from {
       opacity: 0;
-      transform: scale(0.96) translateY(8px);
+      transform: scale(0.95) translateY(8px);
     }
     to {
       opacity: 1;

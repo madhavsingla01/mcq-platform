@@ -81,9 +81,9 @@ export const startConversation = catchAsync(async (req, res) => {
 
   let targetUser = null;
   if (recipientId && mongoose.isValidObjectId(recipientId)) {
-    targetUser = await User.findById(recipientId).select(USER_CARD_SELECT);
+    targetUser = await User.findById(recipientId).select(USER_CARD_SELECT + ' preferences');
   } else if (username) {
-    targetUser = await User.findOne({ username: username.toLowerCase().replace(/^@/, '').trim() }).select(USER_CARD_SELECT);
+    targetUser = await User.findOne({ username: username.toLowerCase().replace(/^@/, '').trim() }).select(USER_CARD_SELECT + ' preferences');
   }
 
   if (!targetUser) {
@@ -92,6 +92,16 @@ export const startConversation = catchAsync(async (req, res) => {
 
   if (toId(targetUser._id) === toId(currentUserId)) {
     throw new AppError('Cannot start a conversation with yourself', 400);
+  }
+
+  if (targetUser.preferences?.allowMessagesFrom === 'none') {
+    throw new AppError('This user does not accept direct messages', 403);
+  }
+  if (targetUser.preferences?.allowMessagesFrom === 'following') {
+    const isFollowing = await Follow.exists({ follower: targetUser._id, following: currentUserId });
+    if (!isFollowing) {
+      throw new AppError('This user only accepts direct messages from users they follow', 403);
+    }
   }
 
   // Find existing 1-on-1 conversation

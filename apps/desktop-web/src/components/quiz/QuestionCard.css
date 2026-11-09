@@ -99,7 +99,7 @@
 }
 
 .question-option-card:active:not(.locked) {
-  transform: scale(0.985);
+  transform: scale(0.97);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -193,7 +193,7 @@
 @keyframes explanationSlideUp {
   from {
     opacity: 0;
-    transform: translateY(6px) scale(0.98);
+    transform: translateY(6px) scale(0.95);
   }
   to {
     opacity: 1;

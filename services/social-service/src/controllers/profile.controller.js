@@ -22,7 +22,7 @@ const publicQuizFilterFor = (userId, viewerId = null) => {
 export const getProfile = catchAsync(async (req, res, next) => {
   const user = await resolveUserByIdentifier(
     req.params.username,
-    'name username avatar banner bio socialLinks quizCount followersCount followingCount activityCount isProfilePublic isPrivate createdAt'
+    'name username avatar banner bio socialLinks quizCount followersCount followingCount activityCount isProfilePublic isPrivate preferences createdAt'
   );
 
   if (!user) {
@@ -55,6 +55,8 @@ export const getProfile = catchAsync(async (req, res, next) => {
     isOwnProfile,
     isPrivate,
     isProfilePublic: !isPrivate,
+    showRankOnProfile: user.preferences?.showRankOnProfile !== false,
+    preferences: isOwnProfile ? user.preferences : { showRankOnProfile: user.preferences?.showRankOnProfile !== false },
     createdAt: user.createdAt,
   };
 

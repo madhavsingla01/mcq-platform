@@ -15,7 +15,7 @@ const TOKEN_BYTES = 32;
 const csrfCookieOptions = {
   httpOnly: false,
   secure: env.isProd,
-  sameSite: 'strict',
+  sameSite: env.isProd ? 'none' : 'lax',
   path: '/',
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };

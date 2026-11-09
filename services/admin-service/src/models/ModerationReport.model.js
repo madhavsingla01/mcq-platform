@@ -14,7 +14,7 @@ const moderationReportSchema = new mongoose.Schema(
     targetType: {
       type: String,
       required: true,
-      enum: ['quiz', 'challenge', 'user', 'comment', 'question'],
+      enum: ['quiz', 'challenge', 'user', 'comment', 'question', 'feedback'],
       index: true,
     },
     targetId: {
@@ -87,6 +87,9 @@ const moderationReportSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+moderationReportSchema.index({ status: 1, createdAt: -1 });
+moderationReportSchema.index({ targetType: 1, targetId: 1, status: 1 });
 
 const ModerationReport = mongoose.model('ModerationReport', moderationReportSchema);
 export default ModerationReport;

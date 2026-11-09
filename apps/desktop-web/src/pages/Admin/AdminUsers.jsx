@@ -9,6 +9,7 @@ import {
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { showCustomDialog } from '../../components/ui/CustomDialog';
 import api from '../../api/axios';
 import { Spinner } from '../../components/ui';
 
@@ -79,7 +80,14 @@ export default function AdminUsers() {
   };
 
   const handleRestore = async (user) => {
-    if (!window.confirm(`Are you sure you want to restore ${user.username || user.email}?`)) {
+    const confirmed = await showCustomDialog({
+      title: 'Restore User Account',
+      message: `Are you sure you want to restore ${user.username || user.email}?`,
+      type: 'info',
+      confirmText: 'Restore Account',
+      cancelText: 'Cancel',
+    });
+    if (!confirmed) {
       return;
     }
 
@@ -101,7 +109,14 @@ export default function AdminUsers() {
 
   const handleToggleRole = async (user) => {
     const nextRole = user.role === 'admin' ? 'user' : 'admin';
-    if (!window.confirm(`Change role for ${user.username || user.email} to '${nextRole}'?`)) {
+    const confirmed = await showCustomDialog({
+      title: 'Change User Role',
+      message: `Change role for ${user.username || user.email} to '${nextRole}'?`,
+      type: 'warning',
+      confirmText: `Change to ${nextRole}`,
+      cancelText: 'Cancel',
+    });
+    if (!confirmed) {
       return;
     }
 

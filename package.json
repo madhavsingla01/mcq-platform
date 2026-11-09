@@ -5,6 +5,7 @@
   "type": "module",
   "description": "QuizFocus Microservices Platform",
   "scripts": {
+    "test": "node tests/e2e/runner.js",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f",

@@ -15,7 +15,6 @@
   min-height: 100dvh;
   box-sizing: border-box;
   position: relative;
-  transition: margin-left 0.25s var(--ease-out);
 }
 
 .layout-main-area.messages-main-area,

@@ -38,9 +38,9 @@ The platform is organized as a multi-package monorepo containing:
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1 | UI Simplification & Strict Palette Refinement | Refactor `apps/desktop-web` styling, tokens, color palette to strict #FF4500 and dark neutrals, Apple motion standards, sonner toasts | none | PLANNED |
-| M2 | Security Vulnerability Remediation & Performance Optimization | Harden all 10 microservices against vulnerabilities, error crashes, data leaks, and refactor `social-service` memory bottleneck | none | PLANNED |
-| M3 | Wire Disconnected Features & Backend Persistence | Wire all 16 audited UI toggles, feedback forms, and profile/attempt routes to real backend endpoints and MongoDB persistence | M1, M2 | PLANNED |
+| M1 | UI Simplification & Strict Palette Refinement | Refactor `apps/desktop-web` styling, tokens, color palette to strict #FF4500 and dark neutrals, Apple motion standards, sonner toasts | none | DONE |
+| M2 | Security Vulnerability Remediation & Performance Optimization | Harden all 10 microservices against vulnerabilities, error crashes, data leaks, and refactor `social-service` memory bottleneck | none | DONE |
+| M3 | Wire Disconnected Features & Backend Persistence | Wire all 16 audited UI toggles, feedback forms, and profile/attempt routes to real backend endpoints and MongoDB persistence | M1, M2 | IN_PROGRESS |
 | M4 | Production Deployment Readiness (Render & Vercel) | Docker build fixes, CORS_ALLOWED_ORIGINS, sameSite cookie config, vercel.json, dynamic API URLs, root test runner | M2, M3 | PLANNED |
 | M5 | E2E Testing Suite & Adversarial Hardening | Implement E2E test infra (Tiers 1-4), verify 100% pass rate, and perform Tier 5 adversarial coverage hardening | M1, M2, M3, M4 | PLANNED |
 

@@ -3,6 +3,7 @@ import api from '../api/axios';
 import { useQuizStore } from '../store/quizStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useAuthStore } from '../store/authStore';
+import { showCustomDialog } from '../components/ui/CustomDialog';
 import {
   clearAttemptSnapshot,
   getGuestSessionId,
@@ -296,7 +297,14 @@ export function useQuizAttemptController({
   }, []);
 
   const handleStartNew = useCallback(async () => {
-    if (!window.confirm('This will discard your current progress. Are you sure?')) {
+    const confirmed = await showCustomDialog({
+      title: 'Discard Progress?',
+      message: 'This will discard your current progress. Are you sure?',
+      type: 'warning',
+      confirmText: 'Discard & Restart',
+      cancelText: 'Cancel',
+    });
+    if (!confirmed) {
       return false;
     }
 

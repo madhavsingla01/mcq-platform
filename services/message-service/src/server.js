@@ -63,6 +63,13 @@ const start = async () => {
   }
 };
 
+process.on('unhandledRejection', (err) => {
+  logger.error('Unhandled Promise Rejection:', err);
+});
+process.on('uncaughtException', (err) => {
+  logger.error('Uncaught Exception:', err);
+});
+
 start();
 
 export { app, server };

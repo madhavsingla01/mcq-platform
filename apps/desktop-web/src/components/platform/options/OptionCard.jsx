@@ -52,7 +52,7 @@ function OptionCard({
       onClick={onSelect}
       disabled={isLocked}
       whileHover={!isLocked && !shouldRevealFeedback ? { y: -1 } : {}}
-      whileTap={!isLocked && !shouldRevealFeedback ? { scale: 0.98 } : {}}
+      whileTap={!isLocked && !shouldRevealFeedback ? { scale: 0.97 } : {}}
       className={`${containerClass} ${sizeClass}`}
     >
       <div

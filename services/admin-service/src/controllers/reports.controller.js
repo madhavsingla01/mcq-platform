@@ -16,11 +16,39 @@ export const submitReport = catchAsync(async (req, res) => {
     category = 'other',
     reason,
     description = '',
+    details = '',
   } = req.body;
 
-  if (!targetType || !targetId || !reason) {
+  const finalDescription = String(description || details || '').trim();
+
+  if (
+    !targetType ||
+    !targetId ||
+    !String(targetId).trim() ||
+    !reason ||
+    !String(reason).trim()
+  ) {
     throw new AppError('targetType, targetId, and reason are required fields.', 400);
   }
+
+  const validTargetTypes = ['quiz', 'challenge', 'user', 'comment', 'question', 'feedback'];
+  if (!validTargetTypes.includes(String(targetType).toLowerCase())) {
+    throw new AppError('Invalid targetType.', 400);
+  }
+
+  const validCategories = [
+    'spam',
+    'harassment',
+    'inappropriate',
+    'impersonation',
+    'cheating',
+    'copyright',
+    'misinformation',
+    'other',
+  ];
+  const normalizedCategory = validCategories.includes(String(category).toLowerCase())
+    ? String(category).toLowerCase()
+    : 'other';
 
   const reporterId = req.user?._id || req.adminUser?._id || new mongoose.Types.ObjectId();
   const reporterName = req.user?.username || req.adminUser?.username || 'User';
@@ -28,18 +56,19 @@ export const submitReport = catchAsync(async (req, res) => {
   const report = await ModerationReport.create({
     reporterId,
     reporterName,
-    targetType,
-    targetId,
-    targetTitle,
-    category,
+    targetType: String(targetType).toLowerCase(),
+    targetId: String(targetId).trim(),
+    targetTitle: String(targetTitle || '').trim(),
+    category: normalizedCategory,
     reason: String(reason).trim(),
-    description: String(description).trim(),
+    description: finalDescription,
     status: 'pending',
   });
 
   res.status(201).json({
     success: true,
     message: 'Report submitted successfully for administrative review.',
+    reportId: String(report._id),
     data: { report },
   });
 });

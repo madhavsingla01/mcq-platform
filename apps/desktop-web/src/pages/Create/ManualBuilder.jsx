@@ -44,6 +44,7 @@ import { fileFromDataUrl, runWithUploadPanel } from '../../store/uploadPanelStor
 import { MediaService } from '../../services/media.service';
 import { useAuthStore } from '../../store/authStore';
 import CustomSelect from '../../components/ui/CustomSelect';
+import { SettingsMenu } from '../../components/ui';
 import {
   deleteQuizBuilderCheckpoint,
   loadQuizBuilderCheckpoint,
@@ -1752,61 +1753,59 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
       </main>
 
       {/* ────────────────────────────────────────────────────────── */}
-      {/* ── MAIN SETTINGS FLOATING WINDOW / MODAL ── */}
       {/* ────────────────────────────────────────────────────────── */}
-      {showFloatingSettings && (
-        <div className="floating-settings-backdrop" onClick={() => setShowFloatingSettings(false)}>
-          <div
-            className={`floating-settings-window ${isChallengeBuilder ? 'challenge-settings-window' : ''}`}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="floating-settings-title"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Window Titlebar */}
-            <div className="window-header">
-              <div className="window-title-group">
-                <div className="window-icon-badge">
-                  <Sliders size={18} />
-                </div>
-                <div>
-                  <h3 className="window-title" id="floating-settings-title">
-                    {isChallengeBuilder ? 'Challenge Settings' : 'Quiz Settings & Governance'}
-                  </h3>
-                </div>
-              </div>
+      {/* ── MAIN SETTINGS MODAL (USING REUSABLE SettingsMenu) ── */}
+      {/* ────────────────────────────────────────────────────────── */}
+      <SettingsMenu
+        variant="modal"
+        isOpen={showFloatingSettings}
+        onOpenChange={setShowFloatingSettings}
+        title={isChallengeBuilder ? 'Challenge Settings' : 'Quiz Settings & Governance'}
+        icon={Sliders}
+        tabs={[
+          {
+            id: 'general',
+            label: isChallengeBuilder ? 'General' : 'General & Cover',
+            icon: <ImageIcon size={15} />,
+          },
+          {
+            id: 'timer',
+            label: isChallengeBuilder ? 'Rules & Delivery' : 'Timer & Delivery',
+            icon: <Clock size={15} />,
+          },
+        ]}
+        activeTab={floatingSettingsTab}
+        onTabChange={setFloatingSettingsTab}
+        className={isChallengeBuilder ? 'challenge-settings-window' : ''}
+        footer={
+          <div className="window-footer" style={{ width: '100%', padding: 0, background: 'transparent', borderTop: 'none' }}>
+            <span className="footer-summary-text">
+              {questions.length} questions • {totalMarks} total points • {difficulty} • {visibility}
+            </span>
+            <div className="window-footer-actions">
               <button
                 type="button"
-                className="window-close-btn"
+                className="window-draft-btn"
+                onClick={() => handleSave(true)}
+                disabled={saving}
+                title="Save progress as draft (Ctrl+S)"
+              >
+                <Bookmark size={14} />
+                <span>{activeDraftId ? 'Update Draft' : 'Save Draft'}</span>
+              </button>
+              <button
+                type="button"
+                className="window-done-btn"
                 onClick={() => setShowFloatingSettings(false)}
-                title="Close (Esc)"
               >
-                <X size={18} />
+                Apply & Close
               </button>
             </div>
-
-            {/* Window Navigation Tabs */}
-            <div className="window-tabs-bar">
-              <button
-                type="button"
-                className={`window-tab ${floatingSettingsTab === 'general' ? 'active' : ''}`}
-                onClick={() => setFloatingSettingsTab('general')}
-              >
-                <ImageIcon size={15} /> {isChallengeBuilder ? 'General' : 'General & Cover'}
-              </button>
-              <button
-                type="button"
-                className={`window-tab ${floatingSettingsTab === 'timer' ? 'active' : ''}`}
-                onClick={() => setFloatingSettingsTab('timer')}
-              >
-                <Clock size={15} /> {isChallengeBuilder ? 'Rules & Delivery' : 'Timer & Delivery'}
-              </button>
-            </div>
-
-            {/* Window Tab Content */}
-            <div className="window-body">
-              {floatingSettingsTab === 'general' && (
-                <div className="tab-pane">
+          </div>
+        }
+      >
+        {floatingSettingsTab === 'general' && (
+          <div className="tab-pane">
                   {/* Cover Upload inside Window */}
                   <div className="pane-section">
                     <h4 className="section-title">{isChallengeBuilder ? 'Cover artwork' : 'Quiz Cover Artwork'}</h4>
@@ -2114,37 +2113,8 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
-
-            {/* Window Footer Actions */}
-            <div className="window-footer">
-              <span className="footer-summary-text">
-                {questions.length} questions • {totalMarks} total points • {difficulty} • {visibility}
-              </span>
-              <div className="window-footer-actions">
-                <button
-                  type="button"
-                  className="window-draft-btn"
-                  onClick={() => handleSave(true)}
-                  disabled={saving}
-                  title="Save progress as draft (Ctrl+S)"
-                >
-                  <Bookmark size={14} />
-                  <span>{activeDraftId ? 'Update Draft' : 'Save Draft'}</span>
-                </button>
-                <button
-                  type="button"
-                  className="window-done-btn"
-                  onClick={() => setShowFloatingSettings(false)}
-                >
-                  Apply & Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+        )}
+      </SettingsMenu>
 
     </div>
   );

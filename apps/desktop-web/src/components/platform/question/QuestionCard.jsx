@@ -42,6 +42,29 @@ function QuestionCard({ question, questionNumber }) {
   const handleSelect = (label) => {
     if (!isLocked) {
       selectAnswer(question._id, label);
+      if (localStorage.getItem('mcq.sound.enabled') !== 'false') {
+        try {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, ctx.currentTime);
+            gain.gain.setValueAtTime(0.04, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.08);
+          }
+        } catch (_) {}
+      }
+      if (localStorage.getItem('mcq.quiz.autoAdvance') === 'true') {
+        setTimeout(() => {
+          useQuizStore.getState().nextQuestion?.();
+        }, 350);
+      }
     }
   };
 

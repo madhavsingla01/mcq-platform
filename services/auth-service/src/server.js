@@ -17,6 +17,7 @@ import profileRoutes from './routes/profile.routes.js';
 const allowedOrigins = env.CLIENT_URL;
 
 const app = express();
+app.set('trust proxy', true);
 
 app.use(cors({
   origin: allowedOrigins,
@@ -25,6 +26,14 @@ app.use(cors({
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use((req, res, next) => {
+  if (req.body && typeof req.body === 'object') {
+    delete req.body.__proto__;
+    delete req.body.constructor;
+    delete req.body.prototype;
+  }
+  next();
+});
 app.use(cookieParser());
 app.use(csrfProtection);
 
@@ -57,6 +66,9 @@ const start = async () => {
     process.exit(1);
   }
 };
+
+process.on("unhandledRejection", (err) => { logger.error("Unhandled Promise Rejection:", err); });
+process.on("uncaughtException", (err) => { logger.error("Uncaught Exception:", err); });
 
 start();
 

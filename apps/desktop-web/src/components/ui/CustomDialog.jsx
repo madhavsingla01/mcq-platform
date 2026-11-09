@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertCircle, CheckCircle2, AlertTriangle, Info, X } from 'lucide-react';
+import { toast } from 'sonner';
 import './CustomDialog.css';
 
 let showDialogHandler = null;
@@ -20,7 +21,7 @@ export function showCustomDialog(options) {
     return showDialogHandler(options);
   } else {
     // Fallback if component is not mounted yet
-    window.alert(`${options.title || 'Notice'}\n\n${options.message}`);
+    toast(options.title || 'Notice', { description: options.message });
     return Promise.resolve(true);
   }
 }

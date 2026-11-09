@@ -549,6 +549,9 @@ export {
   SettingsSelect,
   SettingsRadioGroup,
 } from '../../pages/Settings/components/SettingsSection';
+export { default as SettingsMenu } from './SettingsMenu/SettingsMenu';
+export { default as QuizCard } from '../quiz/QuizCard';
 export { toast } from 'sonner';
+
 
 

@@ -19,6 +19,7 @@ const QuizSettings = lazy(() => import('../pages/Quiz/QuizSettings'));
 const Result = lazy(() => import('../pages/Result/Result'));
 const Dashboard = lazy(() => import('../pages/Dashboard/Dashboard'));
 const Challenges = lazy(() => import('../pages/Challenges/Challenges'));
+const CompetitionLeaderboardPage = lazy(() => import('../pages/Challenges/CompetitionLeaderboardPage'));
 const Login = lazy(() => import('../pages/Auth/Login'));
 const Register = lazy(() => import('../pages/Auth/Register'));
 const Settings = lazy(() => import('../pages/Settings/Settings'));
@@ -164,11 +165,22 @@ export default function AppRouter() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="attempts" element={<Navigate to="/dashboard" replace />} />
 
-          {/* Challenges */}
+          {/* Challenges & Competitions */}
           <Route path="challenges" element={<Challenges />} />
           <Route path="challenges/:quizId" element={<Quiz />} />
+          <Route path="challenges/:quizId/standings" element={<CompetitionLeaderboardPage />} />
+          <Route path="challenges/:quizId/leaderboard" element={<CompetitionLeaderboardPage />} />
           <Route path="challenge/:quizId" element={<Quiz />} />
+          <Route path="challenge/:quizId/standings" element={<CompetitionLeaderboardPage />} />
+          <Route path="challenge/:quizId/leaderboard" element={<CompetitionLeaderboardPage />} />
           <Route path="challenge" element={<Navigate to="/challenges" replace />} />
+          <Route path="competitions" element={<Navigate to="/challenges" replace />} />
+          <Route path="competitions/:quizId" element={<Quiz />} />
+          <Route path="competitions/:quizId/standings" element={<CompetitionLeaderboardPage />} />
+          <Route path="competitions/:quizId/leaderboard" element={<CompetitionLeaderboardPage />} />
+          <Route path="competition/:quizId" element={<Quiz />} />
+          <Route path="competition/:quizId/standings" element={<CompetitionLeaderboardPage />} />
+          <Route path="competition/:quizId/leaderboard" element={<CompetitionLeaderboardPage />} />
 
           {/* Settings */}
           <Route path="settings" element={<Settings />} />

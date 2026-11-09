@@ -1,4 +1,4 @@
-﻿  /* YouTube Profile Aesthetic - Pure Black & Electric Orange (#000000, #121214, #18181B, #FF4500) */
+  /* YouTube Profile Aesthetic - Pure Black & Electric Orange (#000000, #121214, #18181B, #FF4500) */
   .creator-profile-container.yt-profile-container {
     display: flex;
     flex-direction: column;
@@ -1463,7 +1463,7 @@
   }
 
   @keyframes modalPop {
-    from { opacity: 0; transform: scale(0.96) translateY(6px); }
+    from { opacity: 0; transform: scale(0.95) translateY(6px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
   }
 

@@ -13,6 +13,15 @@ import {
   Lock,
   Globe,
   FileText,
+  Sparkles,
+  Edit3,
+  RefreshCw,
+  Users,
+  ArrowRight,
+  Layers,
+  Code,
+  Brain,
+  Zap,
 } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuthStore } from '../../store/authStore';
@@ -27,7 +36,48 @@ import './QuizCard.css';
 
 const toId = (val) => (val?._id ? String(val._id) : String(val || ''));
 
-function QuizCard({
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now - date;
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHr = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHr / 24);
+
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffHr < 24) return `${diffHr}h ago`;
+  if (diffDay < 7) return `${diffDay}d ago`;
+  return date.toLocaleDateString();
+}
+
+function formatCount(num) {
+  const n = Number(num) || 0;
+  if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+  return String(n);
+}
+
+function getChallengeIcon(category = '', contentKind = '') {
+  const cat = (category || '').toLowerCase();
+  const kind = (contentKind || '').toLowerCase();
+  if (cat.includes('code') || cat.includes('prog') || kind === 'coding') {
+    return <Code size={20} color="#FF4500" />;
+  }
+  if (cat.includes('algo') || cat.includes('data')) {
+    return <Share2 size={20} color="#FF4500" />;
+  }
+  if (cat.includes('logic') || cat.includes('brain') || cat.includes('reason')) {
+    return <Brain size={20} color="#FF4500" />;
+  }
+  if (cat.includes('science') || cat.includes('math') || cat.includes('tech')) {
+    return <Zap size={20} color="#FF4500" />;
+  }
+  return <Layers size={20} color="#FF4500" />;
+}
+
+function StandardQuizCard({
   quiz,
   onUpdate,
   onDelete,
@@ -526,4 +576,315 @@ function QuizCard({
   );
 }
 
+/* ==========================================================================
+   DraftCard Subcomponent (variant="draft")
+   ========================================================================== */
+export function DraftCard({
+  draft,
+  data,
+  quiz,
+  onPublish,
+  onDuplicate,
+  onDiscard,
+  onDelete,
+  onResume,
+  publishing = false,
+  duplicating = false,
+  className = '',
+  style = {},
+}) {
+  const navigate = useNavigate();
+  const item = draft || data || quiz;
+  if (!item) return null;
+
+  const draftId = item._id;
+  const title = item.title || 'Untitled Draft';
+  const isChallenge = Boolean(item.isChallenge);
+  const category = item.category || 'General';
+  const readinessText = item.isReadyToPublish
+    ? 'Ready to publish'
+    : `${item.readiness ?? 25}% complete`;
+  const timeText = timeAgo(item.updatedAt || item.createdAt);
+  const questionCount = item.questionCount || item.questions?.length || 0;
+  const timerText = item.settings?.timerMode === 'strict'
+    ? `${item.settings?.timeLimit || 0} minutes`
+    : 'Untimed';
+
+  const handleResume = () => {
+    if (onResume) {
+      onResume(draftId);
+    } else {
+      navigate(`/create/manual?draftId=${draftId}`);
+    }
+  };
+
+  const details = [
+    { label: 'Status', value: isChallenge ? 'Challenge draft' : 'Quiz draft' },
+    { label: 'Category', value: category },
+    { label: 'Edited', value: timeText },
+    { label: 'Description', value: item.description || null },
+    { label: 'Readiness', value: readinessText },
+    {
+      label: 'Questions',
+      value: `${questionCount} ${questionCount === 1 ? 'question' : 'questions'}`,
+    },
+    { label: 'Time limit', value: timerText },
+  ];
+
+  const actions = [
+    {
+      label: isChallenge ? 'Resume challenge' : 'Resume editing',
+      icon: <Edit3 size={14} />,
+      primary: true,
+      onClick: handleResume,
+    },
+    {
+      label: isChallenge ? 'Publish challenge' : 'Publish quiz',
+      icon: publishing ? (
+        <RefreshCw size={14} className="spin" />
+      ) : (
+        <Sparkles size={14} />
+      ),
+      disabled: publishing,
+      title: questionCount < 1 ? 'Add at least 1 question before publishing' : 'Publish this draft',
+      onClick: () => onPublish?.(item),
+    },
+    {
+      label: duplicating ? 'Duplicating…' : 'Duplicate draft',
+      icon: <Copy size={14} />,
+      disabled: duplicating,
+      onClick: () => onDuplicate?.(draftId),
+    },
+    {
+      label: 'Discard draft',
+      icon: <Trash2 size={14} />,
+      danger: true,
+      onClick: () => (onDiscard ? onDiscard(item) : onDelete ? onDelete(item) : null),
+    },
+  ];
+
+  return (
+    <div className={`mcq-card-wrapper ${className}`} style={style}>
+      <article className="clean-quiz-card variant-draft">
+        <div className="draft-card-header">
+          <h3
+            className="draft-title"
+            onClick={handleResume}
+            title="Click to resume editing draft"
+          >
+            {title}
+          </h3>
+          <QuizCardOverflowMenu
+            label="Draft details and actions"
+            details={details}
+            actions={actions}
+          />
+        </div>
+
+        <div className="draft-pill-row">
+          <span className="draft-category-pill">{category}</span>
+          <span className="draft-readiness-pill">{readinessText}</span>
+          <span className="draft-edited-time">Edited {timeText}</span>
+        </div>
+      </article>
+    </div>
+  );
+}
+
+/* ==========================================================================
+   AttemptCard Subcomponent (variant="attempt")
+   ========================================================================== */
+export function AttemptCard({
+  attempt,
+  data,
+  quiz,
+  onResume,
+  onSelect,
+  className = '',
+  style = {},
+}) {
+  const navigate = useNavigate();
+  const item = attempt || data || quiz;
+  if (!item) return null;
+
+  const quizObj = typeof item.quizId === 'object' && item.quizId !== null ? item.quizId : {};
+  const targetId = quizObj._id || item.quizId || item._id;
+  const title = item.title || quizObj.title || 'Untitled Quiz';
+  const totalQ = item.questionsCount || quizObj.questionCount || quizObj.questions?.length || 1;
+  const answered = typeof item.answeredCount === 'number'
+    ? item.answeredCount
+    : (Array.isArray(item.answers) ? item.answers.length : 0);
+  const pct = typeof item.progressPercent === 'number'
+    ? item.progressPercent
+    : Math.min(100, Math.round((answered / totalQ) * 100));
+  const timeText = item.timeAgoText || (item.createdAt ? `Started ${timeAgo(item.createdAt)}` : '');
+
+  const handleResume = () => {
+    if (onResume) {
+      onResume(targetId);
+    } else if (onSelect) {
+      onSelect(targetId);
+    } else {
+      navigate(`/quiz/${targetId}`);
+    }
+  };
+
+  return (
+    <div className={`mcq-card-wrapper ${className}`} style={style}>
+      <article className="clean-quiz-card variant-attempt">
+        <div className="progress-card-top">
+          <span className="progress-badge">
+            <span className="pulse-dot" />
+            <span>In Progress</span>
+          </span>
+          {timeText && <span className="progress-time">{timeText}</span>}
+        </div>
+
+        <h3 className="progress-title" onClick={handleResume} title={title}>
+          {title}
+        </h3>
+
+        <div className="progress-bar-container">
+          <div
+            className="progress-bar-fill"
+            style={{ width: `${Math.max(5, pct)}%` }}
+          />
+        </div>
+
+        <div className="progress-card-bottom">
+          <span className="progress-stat">
+            {answered > 0
+              ? `${answered} of ${totalQ} questions answered (${pct}%)`
+              : `${totalQ} Questions`}
+          </span>
+          <button
+            type="button"
+            className="progress-resume-btn"
+            onClick={handleResume}
+          >
+            <Play size={12} fill="currentColor" />
+            <span>Resume</span>
+          </button>
+        </div>
+      </article>
+    </div>
+  );
+}
+
+/* ==========================================================================
+   ChallengeCard Subcomponent (variant="challenge")
+   ========================================================================== */
+export function ChallengeCard({
+  challenge,
+  data,
+  quiz,
+  isBookmarked = false,
+  onBookmark,
+  onSelect,
+  className = '',
+  style = {},
+}) {
+  const navigate = useNavigate();
+  const item = challenge || data || quiz;
+  if (!item) return null;
+
+  const id = item._id || item.id;
+  const title = item.title || 'Untitled Challenge';
+  const difficulty = item.difficulty || 'All Levels';
+  const duration = item.duration || 'Untimed';
+  const joinedCount = item.joinedCount || 0;
+
+  const handlePlay = () => {
+    if (onSelect) {
+      onSelect(id);
+    } else {
+      navigate(`/challenges/${id}`);
+    }
+  };
+
+  return (
+    <div className={`mcq-card-wrapper ${className}`} style={style}>
+      <article className="clean-quiz-card variant-challenge">
+        <div className="challenge-card-top">
+          <div className="challenge-icon-box">
+            {getChallengeIcon(item.category, item.contentKind)}
+          </div>
+        </div>
+
+        <h4 className="challenge-card-title" title={title} onClick={handlePlay}>
+          {title}
+        </h4>
+
+        <div className="challenge-pill-row">
+          <span className={`difficulty-tag ${(difficulty || 'intermediate').toLowerCase()}`}>
+            {difficulty}
+          </span>
+          <span className="duration-tag">⏱ {duration}</span>
+        </div>
+
+        <div className="challenge-card-footer">
+          <div className="challenge-participants">
+            <Users size={13} />
+            <span>{formatCount(joinedCount)}</span>
+          </div>
+
+          <div className="challenge-actions">
+            <button
+              type="button"
+              className={`btn-icon-bookmark ${isBookmarked ? 'active' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onBookmark?.(id);
+              }}
+              title={isBookmarked ? 'Bookmarked' : 'Bookmark'}
+            >
+              <Bookmark
+                size={14}
+                fill={isBookmarked ? '#FF4500' : 'none'}
+                color={isBookmarked ? '#FF4500' : 'currentColor'}
+              />
+            </button>
+            <button
+              type="button"
+              className="btn-circle-play"
+              onClick={handlePlay}
+              title="Start challenge"
+            >
+              <ArrowRight size={14} />
+            </button>
+          </div>
+        </div>
+      </article>
+    </div>
+  );
+}
+
+/* ==========================================================================
+   Root Unified QuizCard Component (Polymorphic Dispatcher)
+   ========================================================================== */
+function QuizCard({
+  variant = 'quiz',
+  data,
+  quiz,
+  draft,
+  attempt,
+  challenge,
+  ...rest
+}) {
+  if (variant === 'draft') {
+    return <DraftCard draft={data || draft || quiz} {...rest} />;
+  }
+  if (variant === 'attempt') {
+    return <AttemptCard attempt={data || attempt || quiz} {...rest} />;
+  }
+  if (variant === 'challenge') {
+    return <ChallengeCard challenge={data || challenge || quiz} {...rest} />;
+  }
+
+  // Default: variant === 'quiz'
+  return <StandardQuizCard quiz={data || quiz} {...rest} />;
+}
+
+export { QuizCard, StandardQuizCard };
 export default memo(QuizCard);
+

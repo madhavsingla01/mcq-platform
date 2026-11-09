@@ -909,6 +909,7 @@ export const submitAttempt = catchAsync(async (req, res, next) => {
       notifyRecipientId: quiz.uploader,
       visibility: 'public',
       metadata: {
+        attemptId: attempt._id,
         percentage: attempt.percentage,
         score: attempt.score,
       },
@@ -1652,6 +1653,54 @@ export const getInProgressAttempts = catchAsync(async (req, res) => {
   });
 });
 
+/**
+ * GET /api/v1/attempts
+ * Fetch attempt history for user or session.
+ */
+export const getUserAttempts = catchAsync(async (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
+  const skip = (page - 1) * limit;
+
+  const filter = {};
+  const guestSessionId = req.user?._id
+    ? null
+    : (getRequestSessionId(req) || req.cookies?.guestSessionId);
+
+  if (req.user?._id) {
+    filter.userId = req.user._id;
+  } else if (guestSessionId) {
+    filter.sessionId = guestSessionId;
+  } else {
+    return res.status(200).json({
+      success: true,
+      data: [],
+      pagination: { total: 0, page, pages: 0, limit },
+    });
+  }
+
+  const [total, attempts] = await Promise.all([
+    Attempt.countDocuments(filter),
+    Attempt.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('quizId', 'title questionCount settings isChallenge')
+      .lean(),
+  ]);
+
+  res.status(200).json({
+    success: true,
+    data: attempts,
+    pagination: {
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+      limit,
+    },
+  });
+});
+
 export const submitAttemptById = catchAsync(async (req, res) => {
   const attempt = await Attempt.findById(req.params.id);
 
@@ -1683,6 +1732,7 @@ export const submitAttemptById = catchAsync(async (req, res) => {
         notifyRecipientId: quiz.uploader,
         visibility: 'public',
         metadata: {
+          attemptId: attempt._id,
           percentage: attempt.percentage,
           score: attempt.score,
         },

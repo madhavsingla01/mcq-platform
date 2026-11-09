@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { protectAdmin, requirePermission } from '../middleware/auth.middleware.js';
+import { protectAdmin, requirePermission, optionalAuth } from '../middleware/auth.middleware.js';
 import { getDashboardOverview } from '../controllers/dashboard.controller.js';
 import {
   listUsers,
@@ -34,7 +34,7 @@ router.get('/health', (req, res) => {
 });
 
 // Report submission (can be called by authenticated users or admins)
-router.post('/reports/submit', submitReport);
+router.post('/reports/submit', optionalAuth, submitReport);
 
 // All routes below require Admin authentication
 router.use(protectAdmin);

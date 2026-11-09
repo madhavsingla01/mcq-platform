@@ -76,9 +76,12 @@ export const errorHandler = (err, req, res, next) => {
     err = new AppError('File too large', 413);
   }
 
+  const isProduction = process.env.NODE_ENV === 'production';
+  const isInternal500 = err.statusCode >= 500;
+
   const response = {
     success: false,
-    message: err.message,
+    message: isInternal500 && isProduction ? 'Internal server error' : err.message,
     data: null,
     errors: err.errors || (process.env.NODE_ENV === 'development' ? [err.stack] : []),
   };

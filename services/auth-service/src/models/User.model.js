@@ -187,6 +187,11 @@ userSchema.index({ isProfilePublic: 1, followersCount: -1, quizCount: -1, create
 userSchema.index({ isProfilePublic: 1, quizCount: -1, followersCount: -1 });
 userSchema.index({ isProfilePublic: 1, createdAt: -1 });
 userSchema.index({ isProfilePublic: 1, name: 1 });
+userSchema.index({ isPrivate: 1, createdAt: -1 });
+userSchema.index(
+  { username: 'text', name: 'text', bio: 'text' },
+  { weights: { username: 10, name: 5, bio: 1 }, name: 'UserTextIndex' }
+);
 
 // Pre-save synchronization for privacy status
 userSchema.pre('save', function (next) {

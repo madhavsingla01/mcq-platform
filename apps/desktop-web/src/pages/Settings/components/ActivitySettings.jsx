@@ -59,17 +59,42 @@ export function ActivitySettings() {
 
     try {
       const username = user?.username;
-      const [activityRes, quizzesRes, bookmarksRes] = await Promise.all([
+      const [activityRes, quizzesRes, bookmarksRes, attemptsRes] = await Promise.all([
         username
           ? api.get(`/social/users/${username}/activity`, { params: { limit: 100 } }).catch(() => ({ data: { data: { activities: [] } } }))
           : Promise.resolve({ data: { data: { activities: [] } } }),
         api.get('/quiz/my').catch(() => ({ data: { data: { quizzes: [] } } })),
         api.get('/social/bookmarks').catch(() => ({ data: { data: { quizzes: [] } } })),
+        api.get('/attempts?limit=100').catch(() => ({ data: { data: [] } })),
       ]);
 
       const acts = activityRes.data?.data?.activities || [];
       const fetchedQuizzes = quizzesRes.data?.data?.quizzes || [];
       const fetchedBookmarks = bookmarksRes.data?.data?.quizzes || [];
+      const rawAttempts = attemptsRes.data?.data;
+      const fetchedAttempts = Array.isArray(rawAttempts) ? rawAttempts : (rawAttempts?.attempts || attemptsRes.data?.attempts || []);
+
+      // Merge user attempts if not already in activities
+      const attemptedIds = new Set(
+        acts.filter((a) => a.verb === 'quiz_attempted').map((a) => String(a.metadata?.attemptId || a.targetId || a._id))
+      );
+      const synthAttempts = fetchedAttempts
+        .filter((att) => !attemptedIds.has(String(att._id)))
+        .map((att) => ({
+          _id: att._id,
+          verb: 'quiz_attempted',
+          quiz: typeof att.quizId === 'object' && att.quizId !== null ? att.quizId : { _id: att.quizId, title: att.quizTitle || 'Quiz' },
+          metadata: {
+            attemptId: att._id,
+            score: att.score ?? att.percentage ?? 0,
+            percentage: att.percentage ?? att.score ?? 0,
+          },
+          actionText: `Completed quiz attempt (${att.percentage ?? att.score ?? 0}%)`,
+          badge: `${att.percentage ?? att.score ?? 0}% Score`,
+          badgeType: 'attempt',
+          timeAgo: 'Recently',
+          createdAt: att.createdAt || new Date().toISOString(),
+        }));
 
       // Merge created quizzes if not already in activities
       const publishedQuizIds = new Set(
@@ -106,7 +131,7 @@ export function ActivitySettings() {
           createdAt: q.createdAt || new Date().toISOString(),
         }));
 
-      const allMerged = [...acts, ...synthPublished, ...synthBookmarks].sort(
+      const allMerged = [...acts, ...synthAttempts, ...synthPublished, ...synthBookmarks].sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
       );
 
@@ -273,13 +298,14 @@ export function ActivitySettings() {
         const isPerfect = pct >= 90;
         const isGood = pct >= 50;
         const scoreBadgeClass = isPerfect ? 'score-perfect' : isGood ? 'score-good' : 'score-fail';
+        const attemptId = act.attemptId || act.metadata?.attemptId || act._id;
         return {
           iconClass: 'attempt',
           icon: isPerfect ? <Award size={20} /> : <CheckCircle2 size={20} />,
           title: act.quiz?.title ? `Completed Quiz: ${act.quiz.title}` : act.actionText || 'Completed Quiz Attempt',
           badgeText: pct !== undefined ? `${pct}% Score` : act.badge || 'Completed',
           badgeClass: scoreBadgeClass,
-          primaryLink: `/result/${act._id}`,
+          primaryLink: `/result/${attemptId}`,
           primaryLabel: 'View Results',
           quizId: act.quiz?._id,
         };

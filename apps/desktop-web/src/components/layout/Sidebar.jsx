@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
+import api from '../../api/axios';
+import { messageService } from '../../services/message.service';
 import './Sidebar.css';
 
 export default function Sidebar() {
@@ -47,6 +49,50 @@ export default function Sidebar() {
   useEffect(() => {
     setIsExpanded(false);
   }, [location.pathname, location.search]);
+
+  // Synchronize unread notifications and messages badges
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setUnreadCount(0);
+      setUnreadMessages(0);
+      return;
+    }
+
+    if (location.pathname.startsWith('/notifications')) {
+      setUnreadCount(0);
+    }
+    if (location.pathname.startsWith('/messages')) {
+      setUnreadMessages(0);
+    }
+
+    let isMounted = true;
+    const fetchUnreadCounts = async () => {
+      try {
+        const [notifRes, msgCount] = await Promise.all([
+          api.get('/social/notifications/unread-count').catch(() => null),
+          messageService.getUnreadCount().catch(() => 0),
+        ]);
+        if (!isMounted) return;
+        if (notifRes?.data?.data?.unreadCount !== undefined) {
+          if (!location.pathname.startsWith('/notifications')) {
+            setUnreadCount(notifRes.data.data.unreadCount);
+          }
+        }
+        if (msgCount !== undefined) {
+          if (!location.pathname.startsWith('/messages')) {
+            setUnreadMessages(typeof msgCount === 'number' ? msgCount : (msgCount?.unreadCount || 0));
+          }
+        }
+      } catch {}
+    };
+
+    fetchUnreadCounts();
+    const interval = setInterval(fetchUnreadCounts, 30000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [isAuthenticated, location.pathname]);
 
   // Auto-collapse on Escape key
   useEffect(() => {
@@ -109,7 +155,7 @@ export default function Sidebar() {
             <span className="sidebar-tooltip">Dashboard</span>
           </NavLink>
 
-          {/* 2. Explore */}
+          {/* 2. Explore Quizzes */}
           <NavLink
             to="/explore"
             className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}
@@ -118,11 +164,11 @@ export default function Sidebar() {
             <div className="nav-item-icon-wrap">
               <Compass size={20} strokeWidth={2} />
             </div>
-            <span className="sidebar-nav-label">Explore</span>
-            <span className="sidebar-tooltip">Explore</span>
+            <span className="sidebar-nav-label">Explore Quizzes</span>
+            <span className="sidebar-tooltip">Explore Quizzes</span>
           </NavLink>
 
-          {/* 3. Challenges */}
+          {/* 3. Competitions / Arena */}
           <NavLink
             to="/challenges"
             className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}
@@ -131,8 +177,8 @@ export default function Sidebar() {
             <div className="nav-item-icon-wrap">
               <Trophy size={20} strokeWidth={2} />
             </div>
-            <span className="sidebar-nav-label">Challenges</span>
-            <span className="sidebar-tooltip">Challenges</span>
+            <span className="sidebar-nav-label">Competitions / Arena</span>
+            <span className="sidebar-tooltip">Competitions / Arena</span>
           </NavLink>
 
           {/* 4. Create Quiz */}

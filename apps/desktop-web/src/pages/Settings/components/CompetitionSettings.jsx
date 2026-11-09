@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Clock, Shuffle, Eye, Award, Check } from 'lucide-react';
+import { toast as sonnerToast } from 'sonner';
 import { useAuthStore } from '../../../store/authStore';
 import { useSettingsStore } from '../../../store/settingsStore';
 import { useQuizStore } from '../../../store/quizStore';
@@ -30,8 +31,8 @@ export function CompetitionSettings() {
       instantFeedback: Boolean(prefs.showCorrectAnswerInstantly ?? settingsStore.showCorrectAnswerInstantly),
       shuffleQuestions: Boolean(prefs.shuffleQuestions ?? false),
       timerVisibility: prefs.timerVisibility || settingsStore.timerVisibility || 'visible',
-      showOnLeaderboards: prefs.challenges?.showOnLeaderboards !== false,
-      showRankOnProfile: prefs.challenges?.showRankOnProfile !== false,
+      showOnLeaderboards: (prefs.showOnLeaderboard !== false) && (prefs.challenges?.showOnLeaderboards !== false),
+      showRankOnProfile: (prefs.showRankOnProfile !== false) && (prefs.challenges?.showRankOnProfile !== false),
     });
   }, [user, settingsStore.showCorrectAnswerInstantly, settingsStore.timerVisibility]);
 
@@ -59,6 +60,8 @@ export function CompetitionSettings() {
           showCorrectAnswerInstantly: nextComp.instantFeedback,
           shuffleQuestions: nextComp.shuffleQuestions,
           timerVisibility: nextComp.timerVisibility,
+          showOnLeaderboard: nextComp.showOnLeaderboards,
+          showRankOnProfile: nextComp.showRankOnProfile,
           challenges: {
             accept: nextComp.acceptChallenges,
             timeLimit: nextComp.challengeTimeLimit,
@@ -67,9 +70,11 @@ export function CompetitionSettings() {
           },
         },
       });
+      sonnerToast.success('Competition preferences saved');
       showToast();
     } catch (err) {
-      console.error('Failed to save competition settings:', err);
+      sonnerToast.error('Failed to save competition preferences');
+      console.error('Failed to save competition preferences:', err);
     }
   };
 

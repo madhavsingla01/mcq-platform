@@ -11,6 +11,7 @@ import {
   Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { showCustomDialog } from '../../components/ui/CustomDialog';
 import api from '../../api/axios';
 import { Spinner } from '../../components/ui';
 
@@ -92,7 +93,14 @@ export default function AdminContent() {
   };
 
   const handleRestore = async (item) => {
-    if (!window.confirm(`Restore public visibility for "${item.title}"?`)) {
+    const confirmed = await showCustomDialog({
+      title: 'Restore Visibility',
+      message: `Restore public visibility for "${item.title}"?`,
+      type: 'info',
+      confirmText: 'Restore Visibility',
+      cancelText: 'Cancel',
+    });
+    if (!confirmed) {
       return;
     }
 

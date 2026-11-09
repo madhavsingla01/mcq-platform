@@ -626,7 +626,7 @@
 }
 
 .search-direct-jump-card:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -715,7 +715,7 @@
 }
 
 .quiz-row-code-badge:active {
-  transform: scale(0.96);
+  transform: scale(0.97);
 }
 
 @media (hover: hover) and (pointer: fine) {

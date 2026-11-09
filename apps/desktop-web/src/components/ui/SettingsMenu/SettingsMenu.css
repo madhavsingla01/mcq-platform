@@ -1,0 +1,542 @@
+/* ==========================================================================
+   SettingsMenu — Unified Settings Component (Popover, Drawer, Modal)
+   Adheres to Emil Kowalski motion principles & dark neutral glass styling
+   ========================================================================== */
+
+/* ── Container / Anchor for Popover ── */
+.settings-menu-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+/* ── Trigger Button (Default Gear if no custom trigger) ── */
+.settings-menu-default-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-control, 8px);
+  corner-shape: squircle;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--color-text-secondary, #A1A1AA);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out),
+              background 140ms var(--ease-out),
+              border-color 140ms var(--ease-out),
+              color 140ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-menu-default-trigger:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--color-text, #FFFFFF);
+  }
+}
+
+.settings-menu-default-trigger:active {
+  transform: scale(0.97);
+}
+
+.settings-menu-default-trigger.is-active {
+  background: rgba(255, 69, 0, 0.15);
+  border-color: rgba(255, 69, 0, 0.4);
+  color: var(--color-primary, #FF4500);
+}
+
+/* ── Backdrop (for Modal and Drawer) ── */
+.settings-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: settingsMenuBackdropFadeIn 200ms var(--ease-out) forwards;
+}
+
+@keyframes settingsMenuBackdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Panel Base ── */
+.settings-menu-panel {
+  background: #121214;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: var(--color-text, #FFFFFF);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+/* ── Variant: Popover ── */
+.settings-menu-panel.variant-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  z-index: 1050;
+  width: 320px;
+  max-width: 90vw;
+  max-height: 480px;
+  border-radius: var(--radius-container, 14px);
+  corner-shape: squircle;
+  background: rgba(18, 18, 20, 0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  transform-origin: var(--transform-origin, top right);
+  animation: settingsPopoverEnter 180ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+.settings-menu-panel.variant-popover.align-right {
+  right: 0;
+  --transform-origin: top right;
+}
+
+.settings-menu-panel.variant-popover.align-left {
+  left: 0;
+  --transform-origin: top left;
+}
+
+.settings-menu-panel.variant-popover.align-center {
+  left: 50%;
+  transform: translateX(-50%);
+  --transform-origin: top center;
+}
+
+@keyframes settingsPopoverEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.settings-menu-panel.variant-popover.align-center {
+  animation: settingsPopoverCenterEnter 180ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@keyframes settingsPopoverCenterEnter {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+/* ── Variant: Drawer ── */
+.settings-menu-panel.variant-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 440px;
+  max-width: 100vw;
+  height: 100vh;
+  z-index: 1210;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  border-right: none;
+  border-top: none;
+  border-bottom: none;
+  border-radius: 0;
+  background: #121214;
+  animation: settingsDrawerSlideIn 240ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+@keyframes settingsDrawerSlideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* ── Variant: Modal ── */
+.settings-menu-panel.variant-modal {
+  position: relative;
+  width: 680px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 48px);
+  border-radius: var(--radius-container, 14px);
+  corner-shape: squircle;
+  background: #121214;
+  animation: settingsModalEnter 240ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@keyframes settingsModalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ── Header ── */
+.settings-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.settings-menu-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.settings-menu-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-control, 8px);
+  corner-shape: squircle;
+  background: rgba(255, 69, 0, 0.12);
+  color: var(--color-primary, #FF4500);
+  border: 1px solid rgba(255, 69, 0, 0.25);
+  flex-shrink: 0;
+}
+
+.settings-menu-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text, #FFFFFF);
+  margin: 0;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.settings-menu-subtitle {
+  font-size: 12px;
+  color: var(--color-text-secondary, #A1A1AA);
+  margin: 2px 0 0 0;
+  line-height: 1.35;
+}
+
+.settings-menu-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary, #A1A1AA);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out),
+              background 140ms var(--ease-out),
+              color 140ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-menu-close-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #FFFFFF;
+  }
+}
+
+.settings-menu-close-btn:active {
+  transform: scale(0.97);
+}
+
+/* ── Tabs Bar ── */
+.settings-menu-tabs-bar {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px 0 16px;
+  gap: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+.settings-menu-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary, #A1A1AA);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+  transition: color 140ms var(--ease-out), border-color 140ms var(--ease-out), transform var(--duration-tap, 120ms) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-menu-tab-btn:hover {
+    color: var(--color-text, #FFFFFF);
+  }
+}
+
+.settings-menu-tab-btn:active {
+  transform: scale(0.97);
+}
+
+.settings-menu-tab-btn.is-active {
+  color: var(--color-primary, #FF4500);
+  border-bottom-color: var(--color-primary, #FF4500);
+}
+
+/* ── Body ── */
+.settings-menu-body {
+  padding: 18px 20px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.settings-menu-body::-webkit-scrollbar {
+  width: 6px;
+}
+.settings-menu-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+/* ── Structured Sections & Items ── */
+.settings-menu-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-menu-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settings-menu-section-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.settings-menu-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary, #A1A1AA);
+  margin: 0;
+}
+
+.settings-menu-section-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-control, 8px);
+  corner-shape: squircle;
+  padding: 8px 12px;
+}
+
+/* ── Item Row ── */
+.settings-menu-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  min-height: 36px;
+}
+
+.settings-menu-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.settings-menu-item-label-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.settings-menu-item-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-text, #FFFFFF);
+}
+
+.settings-menu-item-desc {
+  font-size: 12px;
+  color: var(--color-text-secondary, #A1A1AA);
+  line-height: 1.35;
+}
+
+.settings-menu-item-control {
+  flex-shrink: 0;
+}
+
+/* ── Segmented Control Item ── */
+.settings-menu-segmented {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 3px;
+  border-radius: var(--radius-control, 8px);
+  corner-shape: squircle;
+  gap: 2px;
+}
+
+.settings-menu-segmented-btn {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary, #A1A1AA);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 120ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-menu-segmented-btn:hover {
+    color: #FFFFFF;
+  }
+}
+
+.settings-menu-segmented-btn:active {
+  transform: scale(0.97);
+}
+
+.settings-menu-segmented-btn.is-active {
+  background: var(--color-surface, #18181B);
+  color: var(--color-primary, #FF4500);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Action Item ── */
+.settings-menu-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-control, 8px);
+  corner-shape: squircle;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text, #FFFFFF);
+  transition: transform var(--duration-tap, 120ms) var(--ease-out),
+              background 140ms var(--ease-out),
+              border-color 140ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-menu-action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.22);
+  }
+}
+
+.settings-menu-action-btn:active {
+  transform: scale(0.97);
+}
+
+.settings-menu-action-btn.is-primary {
+  background: var(--color-primary, #FF4500);
+  border-color: var(--color-primary, #FF4500);
+  color: #000000;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-menu-action-btn.is-primary:hover {
+    background: var(--color-primary-hover, #FF5714);
+  }
+}
+
+.settings-menu-action-btn.is-danger {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #EF4444;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-menu-action-btn.is-danger:hover {
+    background: rgba(239, 68, 68, 0.2);
+  }
+}
+
+/* ── Divider Item ── */
+.settings-menu-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 4px 0;
+}
+
+/* ── Footer ── */
+.settings-menu-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .settings-menu-panel.variant-modal {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 94vh;
+    border-radius: 14px 14px 0 0;
+    margin-top: auto;
+  }
+
+  .settings-menu-panel.variant-drawer {
+    width: 100vw;
+  }
+}

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { SocialService } from '../../services/social.service';
 import { useUIStore } from '../../store/uiStore';
+import { useAuthStore } from '../../store/authStore';
 import { Spinner, EmptyState } from '../../components/ui';
 import QuizCard from '../../components/quiz/QuizCard';
 import './Explore.css';
@@ -27,9 +28,16 @@ export default function Explore() {
   const cleanUrlTag = urlTag ? urlTag.replace(/^#+/, '').trim() : '';
   const cleanUrlSearch = urlSearch ? urlSearch.trim() : '';
 
+  const user = useAuthStore((s) => s.user);
   const [page, setPage] = useState(1);
   const [feedMode, setFeedMode] = useState('foryou'); // 'foryou' | 'trending' | 'top' | 'newest'
-  const [difficulty, setDifficulty] = useState('all'); // 'all' | 'Beginner' | 'Intermediate' | 'Advanced'
+  const [difficulty, setDifficulty] = useState(() => {
+    return user?.preferences?.defaultDifficulty || user?.preferences?.feed?.defaultDifficulty || 'all';
+  });
+  const [category, setCategory] = useState(() => {
+    const cat = user?.preferences?.primaryCategory || user?.preferences?.feed?.preferredCategory;
+    return cat && cat !== 'All Categories' ? cat : '';
+  });
   const [showFilters, setShowFilters] = useState(false);
   const [selectedTag, setSelectedTag] = useState(cleanUrlTag);
   const [searchQuery, setSearchQuery] = useState(cleanUrlSearch);
@@ -68,6 +76,15 @@ export default function Explore() {
     if (difficulty && difficulty !== 'all') {
       params.difficulty = difficulty;
     }
+    if (category && category !== 'All Categories') {
+      params.category = category;
+    }
+    if (user?.preferences?.hideCompletedQuizzes || user?.preferences?.feed?.hideCompletedQuizzes) {
+      params.hideCompleted = 'true';
+    }
+    if (user?.preferences?.showVerifiedOnly || user?.preferences?.feed?.filterUnverified) {
+      params.showVerifiedOnly = 'true';
+    }
 
     SocialService.getExplore(params)
       .then((data) => {
@@ -86,7 +103,7 @@ export default function Explore() {
       });
 
     return () => controller.abort();
-  }, [page, feedMode, selectedTag, searchQuery, difficulty]);
+  }, [page, feedMode, selectedTag, searchQuery, difficulty, category, user]);
 
   const handlePageChange = (newPage) => {
     if (newPage < 1 || (pagination && newPage > pagination.pages) || newPage === page) return;

@@ -126,7 +126,7 @@
         @keyframes g2SelectSlideDown {
           from {
             opacity: 0;
-            transform: translateY(-8px) scale(0.98);
+            transform: translateY(-8px) scale(0.95);
           }
           to {
             opacity: 1;

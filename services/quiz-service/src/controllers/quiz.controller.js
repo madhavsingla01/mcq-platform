@@ -999,6 +999,7 @@ export const submitAttempt = catchAsync(async (req, res, next) => {
       notifyRecipientId: quiz.uploader,
       visibility: 'public',
       metadata: {
+        attemptId: attempt._id,
         percentage: attempt.percentage,
         score: attempt.score,
       },
@@ -2210,6 +2211,7 @@ export const submitAttemptById = catchAsync(async (req, res) => {
         notifyRecipientId: quiz.uploader,
         visibility: 'public',
         metadata: {
+          attemptId: attempt._id,
           percentage: attempt.percentage,
           score: attempt.score,
         },

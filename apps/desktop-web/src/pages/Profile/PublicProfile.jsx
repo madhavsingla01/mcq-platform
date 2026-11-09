@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   Calendar,
@@ -35,6 +35,7 @@ import {
   ArrowRight,
   ShieldCheck,
   Check,
+  Loader2,
 } from 'lucide-react';
 import {
   FaGithub,
@@ -53,6 +54,7 @@ import { useAuthStore } from '../../store/authStore';
 import { Spinner, EmptyState } from '../../components/ui';
 import QuizCard from '../../components/quiz/QuizCard';
 import { messageService } from '../../services/message.service';
+import { toast } from 'sonner';
 import './PublicProfile.css';
 
 const formatDate = (value) => {
@@ -124,6 +126,7 @@ export default function PublicProfile() {
   const [aboutModalOpen, setAboutModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isReporting, setIsReporting] = useState(false);
 
   // Floating modal state: null | 'followers' | 'following'
   const [networkModalType, setNetworkModalType] = useState(null);
@@ -372,7 +375,7 @@ export default function PublicProfile() {
       }
     } catch (err) {
       console.error('Failed to upload banner:', err);
-      alert(err.response?.data?.message || 'Failed to upload profile banner.');
+      toast.error(err.response?.data?.message || 'Failed to upload profile banner.');
     } finally {
       setIsUploadingBanner(false);
       if (bannerInputRef.current) bannerInputRef.current.value = '';
@@ -396,6 +399,7 @@ export default function PublicProfile() {
   };
 
   const isOwnProfile = profile && user && (user.username === profile.username || user._id === profile._id);
+  const showRank = isOwnProfile || (profile?.preferences?.showRankOnProfile !== false && profile?.showRankOnProfile !== false);
 
   const customProfileUrl = useMemo(() => {
     if (!profile?.username) return '';
@@ -427,6 +431,26 @@ export default function PublicProfile() {
       }
     }
     handleCopyCustomUrl();
+  };
+
+  const handleReportUser = async () => {
+    if (!profile?._id || isReporting) return;
+    setIsReporting(true);
+    try {
+      await api.post('/admin/reports/submit', {
+        targetType: 'user',
+        targetId: String(profile._id),
+        targetTitle: profile.name || profile.username || 'User Profile',
+        category: 'other',
+        reason: 'channel_report',
+        description: 'User profile reported for moderation review from public channel page.',
+      });
+      toast.success('Channel reported for moderation review. Thank you.');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to submit report. Please try again.');
+    } finally {
+      setIsReporting(false);
+    }
   };
 
   const { primaryDomain, additionalLinksCount } = useMemo(() => {
@@ -605,8 +629,12 @@ export default function PublicProfile() {
             </button>
             <span className="yt-meta-dot">â€¢</span>
             <span className="yt-meta-stat">{quizzes.length} public {quizzes.length === 1 ? 'quiz' : 'quizzes'}</span>
-            <span className="yt-meta-dot">â€¢</span>
-            <span className="yt-meta-stat">{totalAttempts.toLocaleString()} {totalAttempts === 1 ? 'attempt' : 'attempts'}</span>
+            {showRank && (
+              <>
+                <span className="yt-meta-dot">•</span>
+                <span className="yt-meta-stat">{profile.rank ? `Rank #${profile.rank} • ` : ''}{totalAttempts.toLocaleString()} {totalAttempts === 1 ? 'attempt' : 'attempts'}</span>
+              </>
+            )}
           </div>
 
           {/* YouTube Bio Snippet with ...more (Opens YouTube About Modal) */}
@@ -1131,15 +1159,17 @@ export default function PublicProfile() {
                     </div>
                   </div>
 
-                  {/* Total Attempts / Views */}
-                  <div className="yt-about-detail-item">
-                    <Trophy size={18} className="yt-about-detail-icon" />
-                    <div className="yt-about-detail-content">
-                      <span className="yt-about-detail-label">
-                        {totalAttempts.toLocaleString()} total attempts
-                      </span>
+                  {/* Total Attempts / Views / Rank */}
+                  {showRank && (
+                    <div className="yt-about-detail-item">
+                      <Trophy size={18} className="yt-about-detail-icon" />
+                      <div className="yt-about-detail-content">
+                        <span className="yt-about-detail-label">
+                          {profile.rank ? `Rank #${profile.rank} • ` : ''}{totalAttempts.toLocaleString()} total attempts
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Joined Date */}
                   {profile.createdAt && (
@@ -1168,10 +1198,11 @@ export default function PublicProfile() {
                 <button
                   type="button"
                   className="yt-about-footer-btn yt-about-report-btn"
-                  onClick={() => alert('Channel reported for moderation review.')}
+                  onClick={handleReportUser}
+                  disabled={isReporting}
                 >
-                  <Flag size={16} />
-                  <span>Report user</span>
+                  {isReporting ? <Loader2 size={16} className="animate-spin" /> : <Flag size={16} />}
+                  <span>{isReporting ? 'Reporting...' : 'Report user'}</span>
                 </button>
               </div>
             </div>

@@ -7,7 +7,7 @@ const env = {
   NODE_ENV: process.env.NODE_ENV || '',
   MONGO_URI: process.env.MONGO_URI || '',
   JWT_SECRET: process.env.JWT_SECRET || '',
-  CLIENT_URL: (process.env.CLIENT_URL || '').split(',').map((origin) => origin.trim()).filter(Boolean),
+  CLIENT_URL: (process.env.CLIENT_URL || process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:5174').split(',').map((origin) => origin.trim()).filter(Boolean),
   MEDIA_STORAGE_PATH: process.env.MEDIA_STORAGE_PATH || '',
   MEDIA_MAX_FILE_SIZE: Number(process.env.MEDIA_MAX_FILE_SIZE),
 };

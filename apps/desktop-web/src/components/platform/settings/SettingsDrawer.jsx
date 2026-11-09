@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSettingsStore } from '../../../store/settingsStore';
 import { useUIStore } from '../../../store/uiStore';
 import { useQuizStore } from '../../../store/quizStore';
+import { useAuthStore } from '../../../store/authStore';
 import './SettingsDrawer.css';
 import {
   showCustomDialog,
@@ -91,16 +92,30 @@ function SettingsDrawer({ collaboration }) {
 
   const setInstantFeedback = useQuizStore((s) => s.setInstantFeedback);
 
+  const user = useAuthStore((s) => s.user);
   const menuRef = useRef(null);
   const [menuPosition, setMenuPosition] = useState(getMenuPosition);
   const [copied, setCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
   const [soundEnabled, setSoundEnabled] = useState(() => {
+    if (user?.preferences?.soundCues !== undefined) return Boolean(user.preferences.soundCues);
     return localStorage.getItem('mcq.sound.enabled') !== 'false';
   });
   const [autoAdvance, setAutoAdvance] = useState(() => {
+    if (user?.preferences?.autoAdvance !== undefined) return Boolean(user.preferences.autoAdvance);
     return localStorage.getItem('mcq.quiz.autoAdvance') === 'true';
   });
+
+  useEffect(() => {
+    if (user?.preferences?.soundCues !== undefined) {
+      setSoundEnabled(Boolean(user.preferences.soundCues));
+      localStorage.setItem('mcq.sound.enabled', String(user.preferences.soundCues));
+    }
+    if (user?.preferences?.autoAdvance !== undefined) {
+      setAutoAdvance(Boolean(user.preferences.autoAdvance));
+      localStorage.setItem('mcq.quiz.autoAdvance', String(user.preferences.autoAdvance));
+    }
+  }, [user?.preferences?.soundCues, user?.preferences?.autoAdvance]);
 
   useEffect(() => {
     const handleFsChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
@@ -176,17 +191,30 @@ function SettingsDrawer({ collaboration }) {
     playAudioFeedback('toggle');
     setSoundEnabled(next);
     localStorage.setItem('mcq.sound.enabled', String(next));
+    const auth = useAuthStore.getState();
+    if (auth.isAuthenticated) {
+      auth.updateProfile({ preferences: { soundCues: next } }).catch(() => {});
+    }
   };
 
   const handleToggleAutoAdvance = (next) => {
     playAudioFeedback('toggle');
     setAutoAdvance(next);
     localStorage.setItem('mcq.quiz.autoAdvance', String(next));
+    const auth = useAuthStore.getState();
+    if (auth.isAuthenticated) {
+      auth.updateProfile({ preferences: { autoAdvance: next } }).catch(() => {});
+    }
   };
 
   const handleToggleTimer = (checked) => {
     playAudioFeedback('toggle');
-    setTimerVisibility(checked ? 'visible' : 'hidden');
+    const mode = checked ? 'visible' : 'hidden';
+    setTimerVisibility(mode);
+    const auth = useAuthStore.getState();
+    if (auth.isAuthenticated) {
+      auth.updateProfile({ preferences: { timerVisibility: mode } }).catch(() => {});
+    }
   };
 
   const handleToggleInstantFeedback = (checked) => {

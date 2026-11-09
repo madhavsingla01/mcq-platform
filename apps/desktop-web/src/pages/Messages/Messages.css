@@ -1,4 +1,4 @@
-﻿  /* ===== ROOT CONTAINER (Borderless Edge-to-Edge) ===== */
+  /* ===== ROOT CONTAINER (Borderless Edge-to-Edge) ===== */
   .messages-layout-container {
     display: grid;
     grid-template-columns: 360px 1fr;
@@ -672,7 +672,7 @@
   }
 
   .btn-quick-emoji:hover {
-    transform: scale(1.3);
+    transform: scale(1.08);
   }
 
   .msg-action-menu-wrap {
@@ -866,7 +866,7 @@
   }
 
   .reaction-badge-pill:hover {
-    transform: scale(1.1);
+    transform: scale(1.04);
   }
 
   .reaction-badge-pill.active-mine {
@@ -1161,7 +1161,7 @@
 
   .btn-send-message:not(:disabled):hover {
     background: var(--accent-hover, #FF571A);
-    transform: scale(1.05);
+    transform: scale(1.02);
   }
 
   /* ===== WHATSAPP DELETE MODAL ===== */

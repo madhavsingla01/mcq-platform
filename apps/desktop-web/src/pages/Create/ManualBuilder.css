@@ -144,7 +144,7 @@
     animation: dropFadeIn 0.18s cubic-bezier(0.23, 1, 0.32, 1);
   }
   @keyframes dropFadeIn {
-    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+    from { opacity: 0; transform: translateY(-6px) scale(0.95); }
     to { opacity: 1; transform: translateY(0) scale(1); }
   }
   .jump-menu-header {
@@ -331,7 +331,7 @@
     -webkit-tap-highlight-color: transparent;
   }
   .header-publish-btn:hover:not(:disabled) {
-    background: #FF571A;
+    background: var(--color-primary-hover, #FF5714);
     transform: translateY(-1px);
     box-shadow: 0 4px 14px rgba(255, 69, 0, 0.45);
   }
@@ -350,7 +350,7 @@
     border-radius: 0 10px 10px 0;
     corner-shape: squircle;
     -webkit-corner-shape: squircle;
-    background: #E03E00;
+    background: var(--color-primary, #FF4500);
     border: none;
     border-left: 1px solid rgba(0, 0, 0, 0.2);
     color: #FFFFFF;
@@ -359,15 +359,15 @@
     justify-content: center;
     cursor: pointer;
     box-shadow: 0 2px 10px rgba(255, 69, 0, 0.35);
-    transition: background-color 150ms ease;
+    transition: background-color 150ms var(--ease-out);
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
   .header-publish-split:hover:not(:disabled) {
-    background: #CC3800;
+    background: var(--color-primary-hover, #FF5714);
   }
   .header-publish-split.active {
-    background: #B33100;
+    background: var(--color-primary, #FF4500);
   }
   .header-publish-split:disabled {
     opacity: 0.5;
@@ -527,7 +527,7 @@
     transition: all 0.15s;
   }
   .publish-btn:hover {
-    background: #FF571A;
+    background: var(--color-primary-hover, #FF5714);
     transform: translateY(-1px);
     box-shadow: 0 4px 14px rgba(255, 69, 0, 0.45);
   }
@@ -767,7 +767,7 @@
     width: 100%;
     background: transparent;
     border: none;
-    font-size: 14px;
+    font-size: 16px;
     color: #D1D5DB;
     outline: none;
     resize: none;
@@ -818,7 +818,7 @@
     transition: color 0.15s;
   }
   .pill-settings-link:hover {
-    color: #FF571A;
+    color: var(--color-primary-hover, #FF5714);
   }
 
   /* ── Questions Stack ── */
@@ -1107,7 +1107,7 @@
     flex: 1;
     background: transparent;
     border: none;
-    font-size: 14px;
+    font-size: 16px;
     color: #FFFFFF;
     outline: none;
   }
@@ -1227,15 +1227,16 @@
     letter-spacing: 0.04em;
   }
   .short-answer-input {
-    background: #141416;
-    border: 1px solid #262628;
-    border-radius: 7px;
+    background: #18181B;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-control, 8px);
+    corner-shape: squircle;
     padding: 9px 12px;
     color: #FFFFFF;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
     outline: none;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s var(--ease-out);
   }
   .short-answer-input:focus {
     border-color: #FF4500;
@@ -1247,9 +1248,10 @@
 
   /* ── Tab 2: Question Settings Panel ── */
   .q-settings-panel {
-    background: #0E0E10;
-    border: 1px solid #262628;
-    border-radius: 10px;
+    background: #121214;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-container, 14px);
+    corner-shape: squircle;
     padding: 18px;
     display: flex;
     flex-direction: column;
@@ -1262,7 +1264,7 @@
     font-size: 13px;
     font-weight: 750;
     color: #FFFFFF;
-    border-bottom: 1px solid #262628;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     padding-bottom: 10px;
   }
 
@@ -1287,14 +1289,15 @@
   .setting-field select,
   .setting-field input,
   .setting-field textarea {
-    background: #141416;
-    border: 1px solid #262628;
-    border-radius: 7px;
+    background: #18181B;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-control, 8px);
+    corner-shape: squircle;
     padding: 8px 12px;
     color: #FFFFFF;
-    font-size: 13px;
+    font-size: 16px;
     outline: none;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s var(--ease-out);
     font-family: inherit;
   }
   .setting-field select:focus,
@@ -1452,7 +1455,7 @@
     animation: windowScaleUp 0.2s var(--ease-out);
   }
   @keyframes windowScaleUp {
-    from { transform: scale(0.96) translateY(10px); opacity: 0; }
+    from { transform: scale(0.95) translateY(8px); opacity: 0; }
     to { transform: scale(1) translateY(0); opacity: 1; }
   }
 
@@ -1620,31 +1623,40 @@
   }
   .input-with-action input {
     flex: 1;
-    background: #0E0E10;
-    border: 1px solid #262628;
-    border-radius: 7px;
+    background: #18181B;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-control, 8px);
+    corner-shape: squircle;
     padding: 7px 10px;
     color: #FFFFFF;
-    font-size: 12px;
+    font-size: 16px;
     outline: none;
   }
   .input-with-action input:focus {
     border-color: #FF4500;
   }
   .apply-url-btn {
-    background: #1A1A1D;
-    border: 1px solid #262628;
+    background: #18181B;
+    border: 1px solid rgba(255, 255, 255, 0.12);
     color: #FFFFFF;
     padding: 0 12px;
-    border-radius: 7px;
+    border-radius: var(--radius-control, 8px);
+    corner-shape: squircle;
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.15s var(--ease-out);
   }
-  .apply-url-btn:hover {
-    border-color: #FF4500;
-    color: #FF4500;
+  @media (hover: hover) and (pointer: fine) {
+    .apply-url-btn:hover {
+      border-color: #FF4500;
+      color: #FF4500;
+    }
+  }
+  .apply-url-btn:active {
+    transform: scale(0.97);
   }
   .clear-cover-btn {
     align-self: flex-start;
@@ -1749,30 +1761,40 @@
   }
   .add-tag-row input {
     flex: 1;
-    background: #0E0E10;
-    border: 1px solid #262628;
-    border-radius: 7px;
+    background: #18181B;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-control, 8px);
+    corner-shape: squircle;
     padding: 6px 10px;
     color: #FFFFFF;
-    font-size: 12px;
+    font-size: 16px;
     outline: none;
   }
   .add-tag-row input:focus {
     border-color: #FF4500;
   }
   .btn-add-tag {
-    background: #1A1A1D;
-    border: 1px solid #262628;
+    background: #18181B;
+    border: 1px solid rgba(255, 255, 255, 0.12);
     color: #FFFFFF;
     font-size: 12px;
     font-weight: 600;
     padding: 0 12px;
-    border-radius: 7px;
+    border-radius: var(--radius-control, 8px);
+    corner-shape: squircle;
     cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.15s var(--ease-out);
   }
-  .btn-add-tag:hover {
-    border-color: #FF4500;
-    color: #FF4500;
+  @media (hover: hover) and (pointer: fine) {
+    .btn-add-tag:hover {
+      border-color: #FF4500;
+      color: #FF4500;
+    }
+  }
+  .btn-add-tag:active {
+    transform: scale(0.97);
   }
 
   /* Timer Mode Selector */
@@ -1933,7 +1955,7 @@
     transition: all 0.15s;
   }
   .window-done-btn:hover {
-    background: #FF571A;
+    background: var(--color-primary-hover, #FF5714);
   }
 
   .challenge-settings-window {
@@ -2012,24 +2034,27 @@
   .challenge-settings-window .challenge-settings-select .g2-select-trigger {
     height: 34px;
     padding: 0 12px;
-    border-color: #262628;
-    border-radius: 7px;
-    background: #141416;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-control, 8px);
+    corner-shape: squircle;
+    background: #18181B;
     color: #FFFFFF;
-    font-size: 13px;
+    font-size: 16px;
   }
   .g2-select-dropdown.challenge-settings-dropdown {
     max-width: 100%;
     min-width: 0;
-    border-color: #343438;
-    border-radius: 12px;
-    background: #141416;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-container, 14px);
+    corner-shape: squircle;
+    background: #18181B;
   }
   .challenge-settings-dropdown .g2-select-options-list {
     max-height: inherit;
   }
   .challenge-settings-window .challenge-settings-select .g2-select-option {
-    border-radius: 7px;
+    border-radius: var(--radius-control, 8px);
+    corner-shape: squircle;
   }
   .challenge-settings-window .window-footer {
     gap: 16px;
@@ -2052,7 +2077,7 @@
   }
   .challenge-timer-summary svg {
     flex: 0 0 auto;
-    color: #FF6A35;
+    color: var(--color-primary, #FF4500);
   }
 
   /* ── Responsive rules ── */

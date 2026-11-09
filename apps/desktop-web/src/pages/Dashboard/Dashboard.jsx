@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Clock,
@@ -32,6 +32,7 @@ import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal';
 import { Spinner, EmptyState } from '../../components/ui';
 import CustomSelect from '../../components/ui/CustomSelect';
 import { useAuthStore } from '../../store/authStore';
+import { toast } from 'sonner';
 import './Dashboard.css';
 
 function timeAgo(dateStr) {
@@ -128,7 +129,7 @@ export default function Dashboard() {
       fetchDashboardData();
     } catch (err) {
       console.error('Failed to delete quiz:', err);
-      alert(err.response?.data?.message || 'Failed to delete quiz');
+      toast.error(err.response?.data?.message || 'Failed to delete quiz');
     } finally {
       setIsDeletingQuiz(false);
     }
@@ -137,7 +138,7 @@ export default function Dashboard() {
   const handlePublishDraft = async (draft) => {
     if (!draft?._id) return;
     if ((draft.questionCount || 0) < 1) {
-      alert('This draft has no questions yet. Please click Resume to add questions before publishing.');
+      toast.error('This draft has no questions yet. Please click Resume to add questions before publishing.');
       return;
     }
     try {
@@ -150,7 +151,7 @@ export default function Dashboard() {
       setTimeout(() => setActionFeedback(null), 4000);
       fetchDashboardData();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to publish draft. Please verify all questions have valid options and answers.');
+      toast.error(err.response?.data?.message || 'Failed to publish draft. Please verify all questions have valid options and answers.');
     } finally {
       setPublishingDraftId(null);
     }
@@ -164,7 +165,7 @@ export default function Dashboard() {
       setTimeout(() => setActionFeedback(null), 4000);
       fetchDashboardData();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to duplicate draft.');
+      toast.error(err.response?.data?.message || 'Failed to duplicate draft.');
     } finally {
       setDuplicatingDraftId(null);
     }
@@ -178,7 +179,7 @@ export default function Dashboard() {
       setDraftToDelete(null);
       fetchDashboardData();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to delete draft');
+      toast.error(err.response?.data?.message || 'Failed to delete draft');
     } finally {
       setIsDeletingDraft(false);
     }
@@ -325,43 +326,14 @@ export default function Dashboard() {
 
 
           <div className="mini-progress-grid">
-            {activeAttempts.map((attempt) => {
-              const quiz = attempt.quizId || {};
-              const totalQ = quiz.questionCount || quiz.questions?.length || 1;
-              const answered = Array.isArray(attempt.answers) ? attempt.answers.length : 0;
-              const pct = Math.min(100, Math.round((answered / totalQ) * 100));
-
-              return (
-                <div key={attempt._id} className="mini-progress-card">
-                  <div className="progress-card-top">
-                    <span className="progress-badge">In Progress</span>
-                    <span className="progress-time">Started {timeAgo(attempt.createdAt)}</span>
-                  </div>
-
-                  <h3 className="progress-title" onClick={() => navigate(`/quiz/${quiz._id}`)}>
-                    {quiz.title || 'Untitled Quiz'}
-                  </h3>
-
-                  <div className="progress-bar-container">
-                    <div className="progress-bar-fill" style={{ width: `${Math.max(5, pct)}%` }} />
-                  </div>
-
-                  <div className="progress-card-bottom">
-                    <span className="progress-stat">
-                      {answered} of {totalQ} questions answered ({pct}%)
-                    </span>
-                    <button
-                      type="button"
-                      className="progress-resume-btn"
-                      onClick={() => navigate(`/quiz/${quiz._id}`)}
-                    >
-                      <Play size={12} fill="currentColor" />
-                      <span>Resume</span>
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+            {activeAttempts.map((attempt) => (
+              <QuizCard
+                key={attempt._id}
+                variant="attempt"
+                attempt={attempt}
+                onResume={(quizId) => navigate(`/quiz/${quizId}`)}
+              />
+            ))}
           </div>
         </section>
       )}
@@ -568,73 +540,16 @@ export default function Dashboard() {
               <>
                 <div className="mini-cards-grid">
                   {pagedDrafts.map((draft) => (
-                    <div key={draft._id} className="mini-draft-card">
-                      <div className="draft-card-header">
-                        <h3
-                          className="draft-title"
-                          onClick={() => navigate(`/create/manual?draftId=${draft._id}`)}
-                          title="Click to resume editing draft"
-                        >
-                          {draft.title || 'Untitled Draft'}
-                        </h3>
-                        <QuizCardOverflowMenu
-                          label="Draft details and actions"
-                          details={[
-                            { label: 'Status', value: draft.isChallenge ? 'Challenge draft' : 'Quiz draft' },
-                            { label: 'Category', value: draft.category || 'General' },
-                            { label: 'Edited', value: timeAgo(draft.updatedAt || draft.createdAt) },
-                            { label: 'Description', value: draft.description || null },
-                            {
-                              label: 'Readiness',
-                              value: draft.isReadyToPublish
-                                ? 'Ready to publish'
-                                : `${draft.readiness ?? 25}% complete`,
-                            },
-                            {
-                              label: 'Questions',
-                              value: `${draft.questionCount || 0} ${draft.questionCount === 1 ? 'question' : 'questions'}`,
-                            },
-                            {
-                              label: 'Time limit',
-                              value: draft.settings?.timerMode === 'strict'
-                                ? `${draft.settings?.timeLimit || 0} minutes`
-                                : 'Untimed',
-                            },
-                          ]}
-                          actions={[
-                            {
-                              label: draft.isChallenge ? 'Resume challenge' : 'Resume editing',
-                              icon: <Edit3 size={14} />,
-                              primary: true,
-                              onClick: () => navigate(`/create/manual?draftId=${draft._id}`),
-                            },
-                            {
-                              label: draft.isChallenge ? 'Publish challenge' : 'Publish quiz',
-                              icon: publishingDraftId === draft._id
-                                ? <RefreshCw size={14} className="spin" />
-                                : <Sparkles size={14} />,
-                              disabled: publishingDraftId === draft._id,
-                              title: draft.questionCount < 1
-                                ? 'Add at least 1 question before publishing'
-                                : 'Publish this draft',
-                              onClick: () => handlePublishDraft(draft),
-                            },
-                            {
-                              label: duplicatingDraftId === draft._id ? 'Duplicatingâ€¦' : 'Duplicate draft',
-                              icon: <Copy size={14} />,
-                              disabled: duplicatingDraftId === draft._id,
-                              onClick: () => handleDuplicateDraft(draft._id),
-                            },
-                            {
-                              label: 'Discard draft',
-                              icon: <Trash2 size={14} />,
-                              danger: true,
-                              onClick: () => setDraftToDelete(draft),
-                            },
-                          ]}
-                        />
-                      </div>
-                    </div>
+                    <QuizCard
+                      key={draft._id}
+                      variant="draft"
+                      draft={draft}
+                      onPublish={handlePublishDraft}
+                      onDuplicate={handleDuplicateDraft}
+                      onDiscard={setDraftToDelete}
+                      publishing={publishingDraftId === draft._id}
+                      duplicating={duplicatingDraftId === draft._id}
+                    />
                   ))}
                 </div>
 

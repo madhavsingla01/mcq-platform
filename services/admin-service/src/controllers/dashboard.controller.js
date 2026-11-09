@@ -24,7 +24,11 @@ export const getDashboardOverview = catchAsync(async (req, res) => {
   ] = await Promise.all([
     usersCollection ? usersCollection.countDocuments({ isDeleted: { $ne: true } }) : 0,
     usersCollection ? usersCollection.countDocuments({ isSuspended: true }) : 0,
-    quizzesCollection ? quizzesCollection.countDocuments({}) : 0,
+    quizzesCollection
+      ? (typeof quizzesCollection.estimatedDocumentCount === 'function'
+          ? quizzesCollection.estimatedDocumentCount()
+          : quizzesCollection.countDocuments({}))
+      : 0,
     quizzesCollection
       ? quizzesCollection.countDocuments({
           isChallenge: true,
@@ -32,7 +36,11 @@ export const getDashboardOverview = catchAsync(async (req, res) => {
           $or: [{ deadlineAt: { $exists: false } }, { deadlineAt: null }, { deadlineAt: { $gt: new Date() } }],
         })
       : 0,
-    attemptsCollection ? attemptsCollection.countDocuments({}) : 0,
+    attemptsCollection
+      ? (typeof attemptsCollection.estimatedDocumentCount === 'function'
+          ? attemptsCollection.estimatedDocumentCount()
+          : attemptsCollection.countDocuments({}))
+      : 0,
     ModerationReport.countDocuments({ status: { $in: ['pending', 'in_review'] } }),
     AdminAuditLog.find({}).sort({ createdAt: -1 }).limit(8).lean(),
   ]);

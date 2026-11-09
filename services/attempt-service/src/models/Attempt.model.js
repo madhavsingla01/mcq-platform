@@ -410,6 +410,9 @@ attemptSchema.index(
 attemptSchema.index({ quizId: 1, sessionId: 1, status: 1, createdAt: -1 });
 attemptSchema.index({ quizId: 1, completedAt: -1 });
 attemptSchema.index({ userId: 1, createdAt: -1 });
+attemptSchema.index({ userId: 1, status: 1, createdAt: -1 });
+attemptSchema.index({ userId: 1, quizId: 1, status: 1, createdAt: -1 });
+attemptSchema.index({ status: 1, userId: 1, score: -1 });
 attemptSchema.index({ userId: 1, completedAt: -1 });
 attemptSchema.index({ sessionId: 1, createdAt: -1 });
 attemptSchema.index({ 'answers.questionId': 1 });

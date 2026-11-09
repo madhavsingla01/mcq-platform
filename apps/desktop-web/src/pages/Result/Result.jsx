@@ -1,6 +1,6 @@
-﻿import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { CheckCircle, Percent, Timer, Zap, ChevronDown, EyeOff, RotateCcw, LayoutDashboard } from 'lucide-react';
+import { CheckCircle, Percent, Timer, Zap, ChevronDown, EyeOff, RotateCcw, LayoutDashboard, Shield, Trophy, Lock } from 'lucide-react';
 import api from '../../api/axios';
 import { Badge, Button, Spinner } from '../../components/ui';
 import { useAuthStore } from '../../store/authStore';
@@ -32,7 +32,7 @@ function ScoreRing({ percentage, size = 160, strokeWidth = 10 }) {
     if (ringRef.current) {
       ringRef.current.style.strokeDashoffset = circumference;
       requestAnimationFrame(() => {
-        ringRef.current.style.transition = 'stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
+        ringRef.current.style.transition = 'stroke-dashoffset 0.3s cubic-bezier(0.23, 1, 0.32, 1)';
         ringRef.current.style.strokeDashoffset = offset;
       });
     }
@@ -109,7 +109,18 @@ export default function Result() {
   const { attempt } = resultData;
   const analytics = attempt.analytics || {};
   const totalTimeMs = Number(attempt.totalTimeMs || 0) || Number(attempt.totalTime || 0) * 1000;
-  const tier = getScoreTier(attempt.percentage);
+  const tier = getScoreTier(attempt.percentage ?? 0);
+
+  const isChallenge = Boolean(
+    resultData?.isChallenge ||
+    attempt?.isChallenge ||
+    attempt?.quizId?.isChallenge
+  );
+  const challengeId = attempt?.quizId?._id || attempt?.quizId;
+  const deadlinePassed = resultData?.deadlinePassed ?? (
+    attempt?.quizId?.deadlineAt ? new Date() >= new Date(attempt.quizId.deadlineAt) : true
+  );
+  const isQuarantined = isChallenge && (!deadlinePassed || attempt.percentage === null || attempt.score === null);
 
   const correctCount = attempt.correctCount ?? analytics.correctCount ?? 0;
   const wrongCount = attempt.wrongCount ?? analytics.wrongCount ?? 0;
@@ -119,8 +130,8 @@ export default function Result() {
 
   const retakePath = `/quiz/${attempt.quizId?._id}`;
 
-  const isReviewAllowed = resultData?.allowReview !== false && resultData?.attempt?.quizId?.settings?.allowReview !== false;
-  const isExplanationAllowed = resultData?.showExplanation !== false && resultData?.attempt?.quizId?.settings?.showExplanation !== false;
+  const isReviewAllowed = !isQuarantined && resultData?.allowReview !== false && resultData?.attempt?.quizId?.settings?.allowReview !== false;
+  const isExplanationAllowed = !isQuarantined && resultData?.showExplanation !== false && resultData?.attempt?.quizId?.settings?.showExplanation !== false;
 
   const scrollToReview = (idx) => {
     setExpandedQ(idx);
@@ -131,35 +142,105 @@ export default function Result() {
 
   return (
     <div className="r-shell">
-        {/* â”€â”€ Hero Section â”€â”€ */}
+        {/* Sealed Submission Quarantine Banner */}
+        {isQuarantined && (
+          <div
+            className="r-quarantine-banner"
+            style={{
+              background: 'rgba(255, 69, 0, 0.08)',
+              border: '1px solid rgba(255, 69, 0, 0.3)',
+              borderRadius: 12,
+              padding: '16px 20px',
+              marginBottom: 20,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+            }}
+          >
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 10,
+                background: 'rgba(255, 69, 0, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                color: '#FF4500',
+              }}
+            >
+              <Shield size={22} />
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#FFFFFF' }}>
+                Contest Submission Sealed
+              </h3>
+              <p style={{ margin: '4px 0 0', fontSize: 13.5, color: '#FBBF24', lineHeight: 1.4 }}>
+                Your answers have been submitted. Scores and correct answers are quarantined until the contest deadline.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Hero Section ── */}
         <div className="r-hero">
           <div className="r-hero-content">
-            <ScoreRing percentage={attempt.percentage} />
-            <div className="r-hero-text">
-              <h1 className="r-hero-label">{tier.label}</h1>
-              <p className="r-hero-title">{attempt.quizId?.title}</p>
-              <div className="r-hero-summary">
-                <span className="r-tag r-tag--success">âœ“ {correctCount} Correct</span>
-                <span className="r-tag r-tag--danger">âœ— {wrongCount} Wrong</span>
-                {skippedCount > 0 && <span className="r-tag r-tag--muted">â­ {skippedCount} Skipped</span>}
+            {isQuarantined ? (
+              <div
+                className="score-ring-wrap"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 160,
+                  height: 160,
+                  borderRadius: '50%',
+                  background: 'rgba(255, 69, 0, 0.08)',
+                  border: '2px dashed rgba(255, 69, 0, 0.4)',
+                }}
+              >
+                <Lock size={36} color="#FF4500" />
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#FF4500', marginTop: 8 }}>
+                  SEALED
+                </span>
               </div>
+            ) : (
+              <ScoreRing percentage={attempt.percentage ?? 0} />
+            )}
+            <div className="r-hero-text">
+              <h1 className="r-hero-label">{isQuarantined ? 'Submission Sealed' : tier.label}</h1>
+              <p className="r-hero-title">{attempt.quizId?.title || (isChallenge ? 'Competitive Contest' : 'Quiz')}</p>
+              {!isQuarantined ? (
+                <div className="r-hero-summary">
+                  <span className="r-tag r-tag--success">✓ {correctCount} Correct</span>
+                  <span className="r-tag r-tag--danger">✗ {wrongCount} Wrong</span>
+                  {skippedCount > 0 && <span className="r-tag r-tag--muted">⭘ {skippedCount} Skipped</span>}
+                </div>
+              ) : (
+                <div className="r-hero-summary">
+                  <span className="r-tag r-tag--muted">Answers Recorded</span>
+                  <span className="r-tag r-tag--muted">Single Attempt Finalized</span>
+                </div>
+              )}
               <div className="r-hero-badges">
+                {isChallenge && <Badge variant="warning">Competitive Contest</Badge>}
                 {attempt.instantFeedback && <Badge>Instant Feedback</Badge>}
-                
               </div>
             </div>
           </div>
         </div>
 
-        {/* â”€â”€ Stats Strip â”€â”€ */}
+        {/* ── Stats Strip ── */}
         <div className="r-stats-strip">
           <div className="r-stat">
-            <span className="r-stat-icon"><CheckCircle size={18} /></span>
-            <div><strong>{correctCount}/{attempt.totalQuestions}</strong><span>Score</span></div>
+            <span className="r-stat-icon">{isQuarantined ? <Lock size={18} /> : <CheckCircle size={18} />}</span>
+            <div><strong>{isQuarantined ? 'Sealed' : `${correctCount}/${attempt.totalQuestions}`}</strong><span>Score</span></div>
           </div>
           <div className="r-stat">
-            <span className="r-stat-icon"><Percent size={18} /></span>
-            <div><strong>{attempt.percentage}%</strong><span>Accuracy</span></div>
+            <span className="r-stat-icon">{isQuarantined ? <Shield size={18} /> : <Percent size={18} />}</span>
+            <div><strong>{isQuarantined ? 'Quarantined' : `${attempt.percentage}%`}</strong><span>Accuracy</span></div>
           </div>
           <div className="r-stat">
             <span className="r-stat-icon"><Timer size={18} /></span>
@@ -267,14 +348,23 @@ export default function Result() {
           </div>
         ) : null}
 
-        {/* â”€â”€ Actions â”€â”€ */}
+        {/* ── Actions ── */}
         <div className="r-actions">
+          {isChallenge ? (
+            <Link to={`/challenges/${challengeId}/leaderboard`} style={{ textDecoration: 'none' }}>
+              <Button variant="primary">
+                <Trophy size={16} />
+                View Contest Standings
+              </Button>
+            </Link>
+          ) : (
             <Link to={retakePath} style={{ textDecoration: 'none' }}>
               <Button variant="secondary">
                 <RotateCcw size={16} />
                 Retake Quiz
               </Button>
             </Link>
+          )}
           <Link to="/dashboard" style={{ textDecoration: 'none' }}>
             <Button variant="secondary">
               <LayoutDashboard size={16} />

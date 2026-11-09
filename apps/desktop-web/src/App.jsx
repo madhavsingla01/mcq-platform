@@ -36,7 +36,15 @@ function App() {
         <GlobalSearchModal />
         <UploadPanel />
         <CustomDialogContainer />
-        <Toaster position="bottom-right" theme="dark" richColors closeButton />
+        <Toaster
+          position="bottom-right"
+          theme="dark"
+          richColors
+          closeButton
+          duration={3500}
+          offset="24px"
+          mobileOffset="16px"
+        />
       </div>
     </ErrorBoundary>
   );

@@ -13,7 +13,7 @@ import { clearCsrfCookie, setCsrfCookie } from '../middleware/csrf.middleware.js
 const authCookieOptions = {
   httpOnly: true,
   secure: env.isProd,
-  sameSite: 'strict',
+  sameSite: env.isProd ? 'none' : 'lax',
   path: '/',
 };
 
@@ -145,10 +145,14 @@ export const bootstrapSession = catchAsync(async (req, res) => {
  * POST /api/auth/register
  */
 export const register = catchAsync(async (req, res, next) => {
-  const { name, email, password } = req.body;
+  const { name, email, password } = req.body || {};
+
+  if (!name || !email || !password || typeof name !== 'string' || typeof email !== 'string' || typeof password !== 'string') {
+    return next(new AppError('Please provide valid name, email, and password strings', 400));
+  }
 
   // Check if user exists
-  const existingUser = await User.findOne({ email });
+  const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
   if (existingUser) {
     return next(new AppError('Email already registered', 400));
   }
@@ -175,13 +179,25 @@ export const register = catchAsync(async (req, res, next) => {
  * POST /api/auth/login
  */
 export const login = catchAsync(async (req, res, next) => {
-  const { email, password } = req.body;
+  const { email, identifier, password } = req.body || {};
+  const idValue = email !== undefined ? email : identifier;
 
-  if (!email || !password) {
-    return next(new AppError('Please provide email and password', 400));
+  if (
+    !idValue ||
+    !password ||
+    typeof idValue !== 'string' ||
+    typeof password !== 'string'
+  ) {
+    return next(new AppError('Please provide valid email and password strings', 400));
   }
 
-  const user = await User.findOne({ email }).select('+password');
+  const queryIdentifier = idValue.trim();
+  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(queryIdentifier);
+  const user = await User.findOne(
+    isEmail
+      ? { email: queryIdentifier.toLowerCase() }
+      : { username: queryIdentifier.toLowerCase() }
+  ).select('+password');
   if (!user) {
     return next(new AppError('Invalid email or password', 401));
   }
@@ -525,6 +541,7 @@ export const searchUsers = async (req, res, next) => {
     const query = {
       isProfilePublic: { $ne: false },
       isPrivate: { $ne: true },
+      'preferences.searchDiscovery': { $ne: false },
     };
 
     if (q) {

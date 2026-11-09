@@ -24,8 +24,9 @@ const requiredSetting = (name) => {
 const NODE_ENV = requiredSetting('NODE_ENV');
 const PORT = Number(requiredSetting('PORT'));
 if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) throw new Error('PORT must be an integer from 1 to 65535');
-const allowedOrigins = requiredSetting('CLIENT_URL').split(',').map((origin) => origin.trim()).filter(Boolean);
-if (allowedOrigins.length === 0) throw new Error('CLIENT_URL must contain at least one allowed origin');
+const configuredOrigins = process.env.CORS_ALLOWED_ORIGINS || process.env.CLIENT_URL || requiredSetting('CLIENT_URL');
+const allowedOrigins = configuredOrigins.split(',').map((origin) => origin.trim()).filter(Boolean);
+if (allowedOrigins.length === 0) throw new Error('CLIENT_URL or CORS_ALLOWED_ORIGINS must contain at least one allowed origin');
 
 const SERVICES = {
   auth: requiredSetting('AUTH_SERVICE_URL'),
@@ -118,6 +119,7 @@ app.get('/api/v1/health', async (req, res) => {
 const makeProxy = (target, pathPrefix = '') => createProxyMiddleware({
   target: pathPrefix ? `${target}${pathPrefix}` : target,
   changeOrigin: true,
+  xfwd: true,
   on: {
     proxyReq: (proxyReq, req) => {
       if (req.headers.cookie) {
@@ -145,7 +147,9 @@ const makeProxy = (target, pathPrefix = '') => createProxyMiddleware({
         if (!res.headersSent) {
           res.status(502).json({
             success: false,
-            message: `Downstream service unavailable: ${err.message}`,
+            message: process.env.NODE_ENV === 'production'
+              ? 'Downstream service unavailable'
+              : `Downstream service unavailable: ${err.message}`,
           });
         }
         return;
@@ -157,7 +161,9 @@ const makeProxy = (target, pathPrefix = '') => createProxyMiddleware({
           res.writeHead(502, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({
             success: false,
-            message: `Downstream service unavailable: ${err.message}`,
+            message: process.env.NODE_ENV === 'production'
+              ? 'Downstream service unavailable'
+              : `Downstream service unavailable: ${err.message}`,
           }));
         }
         return;
@@ -203,6 +209,7 @@ app.use('/uploads', makeProxy(SERVICES.parser, '/uploads'));
 
 // 5. Social & Community
 app.use('/api/v1/social', makeProxy(SERVICES.social, '/api/v1/social'));
+app.use('/api/v1/notifications', makeProxy(SERVICES.social, '/api/v1/social/notifications'));
 
 // 6. Direct Messaging & Real-Time WebSockets
 const socketProxy = makeProxy(SERVICES.message);
@@ -224,6 +231,26 @@ app.use('*', (req, res) => {
     success: false,
     message: `API Gateway route not found: ${req.originalUrl}`,
   });
+});
+
+// Global Gateway Error Handler
+app.use((err, req, res, next) => {
+  console.error('[API Gateway Error]:', err);
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({
+    success: false,
+    message: process.env.NODE_ENV === 'production' && status >= 500
+      ? 'Internal Gateway Error'
+      : (err.message || 'Internal Gateway Error'),
+  });
+});
+
+// Process crash guards
+process.on('unhandledRejection', (err) => {
+  console.error('[API Gateway Unhandled Rejection]:', err);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[API Gateway Uncaught Exception]:', err);
 });
 
 const server = http.createServer(app);

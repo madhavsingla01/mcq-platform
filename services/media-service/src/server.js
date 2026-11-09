@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import fs from 'fs/promises';
@@ -13,6 +14,10 @@ const storageRoot = path.resolve(env.MEDIA_STORAGE_PATH);
 let server;
 
 app.disable('x-powered-by');
+app.use(cors({
+  origin: env.CLIENT_URL,
+  credentials: true,
+}));
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
   contentSecurityPolicy: false,
@@ -63,5 +68,11 @@ const stopServer = (signal) => {
 process.once('SIGUSR2', () => stopServer('SIGUSR2'));
 process.once('SIGINT', () => stopServer('SIGINT'));
 process.once('SIGTERM', () => stopServer('SIGTERM'));
+process.on('unhandledRejection', (err) => {
+  console.error('[Media Service Unhandled Rejection]:', err);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[Media Service Uncaught Exception]:', err);
+});
 
 export default app;

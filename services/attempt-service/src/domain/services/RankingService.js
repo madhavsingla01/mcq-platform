@@ -40,15 +40,27 @@ export class RankingService {
         }
       }
 
+      const isVisibleOnLeaderboard = entry.userId &&
+        entry.userId.preferences?.showOnLeaderboard !== false &&
+        entry.userId.preferences?.challenges?.showOnLeaderboards !== false;
+
       return {
         rank: currentRank,
         attemptId: entry._id || entry.id,
-        user: entry.userId ? {
-          _id: entry.userId._id || entry.userId,
-          name: entry.userId.name || 'Anonymous',
-          username: entry.userId.username || 'user',
-          avatar: entry.userId.avatar || '',
-        } : {
+        user: entry.userId ? (
+          isVisibleOnLeaderboard ? {
+            _id: entry.userId._id || entry.userId,
+            name: entry.userId.name || 'Anonymous',
+            username: entry.userId.username || 'user',
+            avatar: entry.userId.avatar || '',
+          } : {
+            _id: null,
+            name: 'Anonymous Learner',
+            username: 'anonymous',
+            avatar: '',
+            isPseudonymized: true,
+          }
+        ) : {
           _id: null,
           name: 'Guest',
           username: 'guest',

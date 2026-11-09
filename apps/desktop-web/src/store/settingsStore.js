@@ -83,6 +83,12 @@ const hydrateServerPreferences = (prefs) => {
   if (prefs.reducedMotion !== undefined) updates.reducedMotion = prefs.reducedMotion;
   if (prefs.aiExplanations !== undefined) updates.aiExplanations = prefs.aiExplanations;
   if (prefs.aiPersonality !== undefined) updates.aiPersonality = prefs.aiPersonality;
+  if (prefs.soundCues !== undefined) {
+    localStorage.setItem('mcq.sound.enabled', String(prefs.soundCues));
+  }
+  if (prefs.autoAdvance !== undefined) {
+    localStorage.setItem('mcq.quiz.autoAdvance', String(prefs.autoAdvance));
+  }
   if (Object.keys(updates).length > 0) {
     useSettingsStore.setState(updates);
     savePrefs({ ...useSettingsStore.getState(), ...updates });

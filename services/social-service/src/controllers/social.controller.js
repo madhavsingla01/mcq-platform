@@ -152,6 +152,7 @@ const buildQuizQuery = async ({ req, publicOnly = true }) => {
     const regex = new RegExp(escapeRegex(search), 'i');
     const users = await User.find({
       isProfilePublic: { $ne: false },
+      'preferences.searchDiscovery': { $ne: false },
       $or: [{ username: regex }, { name: regex }],
     }).select('_id').limit(100).lean();
 
@@ -187,6 +188,22 @@ const buildQuizQuery = async ({ req, publicOnly = true }) => {
         : 'All Levels';
       filters.push({ difficulty: normalized });
     }
+  }
+
+  if (req.query.showVerifiedOnly === 'true' || req.query.filterUnverified === 'true') {
+    filters.push({ isVerified: true });
+  }
+
+  if ((req.query.hideCompleted === 'true' || req.query.hideCompletedQuizzes === 'true') && req.user?._id) {
+    try {
+      const completedQuizIds = await Attempt.distinct('quizId', {
+        userId: req.user._id,
+        status: 'completed',
+      });
+      if (completedQuizIds.length > 0) {
+        filters.push({ _id: { $nin: completedQuizIds } });
+      }
+    } catch (_) {}
   }
 
 
@@ -284,12 +301,13 @@ export const getExplore = catchAsync(async (req, res) => {
   const mode = String(req.query.mode || req.query.sort || 'foryou').trim().toLowerCase();
   const userId = req.user?._id;
 
-  // 1. Explicit Non-Algorithmic Sorts (Newest, Top Attempts, Oldest)
-  if (mode === 'newest' || mode === 'recent' || mode === 'oldest' || mode === 'questions') {
+  // 1. Explicit Non-Algorithmic Sorts (Newest, Top Attempts, Oldest, Popular, etc.)
+  const explicitModes = ['newest', 'recent', 'oldest', 'questions', 'popular', 'top', 'rating', 'active', 'title', 'alphabetical'];
+  if (explicitModes.includes(mode)) {
     const [quizzes, total] = await Promise.all([
       Quiz.find(filter)
         .select(QUIZ_FEED_SELECT)
-        .sort(sortForQuery(req.query))
+        .sort(sortForQuery({ ...req.query, sort: req.query.sort || mode }))
         .skip(skip)
         .limit(limit)
         .populate('uploader', USER_LIST_SELECT)
@@ -300,12 +318,24 @@ export const getExplore = catchAsync(async (req, res) => {
     const totalPages = Math.ceil(total / limit) || 1;
     const decorated = await decorateQuizzesForViewer(quizzes, userId);
 
+    const reasonMap = {
+      newest: '✨ Newly added',
+      recent: '✨ Newly added',
+      top: '⭐ Top Rated',
+      rating: '⭐ Top Rated',
+      popular: '🔥 Most Popular',
+      active: '⚡ Recently Active',
+      questions: '📝 Comprehensive Exam',
+      title: '🔤 Alphabetical',
+      alphabetical: '🔤 Alphabetical',
+    };
+
     return res.json({
       success: true,
       data: {
         quizzes: decorated.map((q) => ({
           ...q,
-          recommendationReason: mode === 'newest' ? '✨ Newly added' : '⭐ Top Rated',
+          recommendationReason: reasonMap[mode] || '⭐ Recommended',
         })),
         pagination: {
           total,
@@ -377,99 +407,239 @@ export const getExplore = catchAsync(async (req, res) => {
   }
 
 
-  // Retrieve candidate pool
-  const [candidateQuizzes, total] = await Promise.all([
-    Quiz.find(filter)
-      .select(QUIZ_FEED_SELECT)
-      .populate('uploader', USER_LIST_SELECT)
-      .lean(),
-    Quiz.countDocuments(filter),
-  ]);
+  // Signal C: Engagement Momentum
+  const viralityScoreExpr = {
+    $min: [
+      30,
+      {
+        $multiply: [
+          {
+            $log10: {
+              $add: [
+                1,
+                {
+                  $add: [
+                    { $multiply: [{ $ifNull: ['$likeCount', 0] }, 4] },
+                    { $multiply: [{ $ifNull: ['$totalAttempts', 0] }, 2] },
+                    { $multiply: [{ $ifNull: ['$bookmarkCount', 0] }, 3] },
+                  ],
+                },
+              ],
+            },
+          },
+          10,
+        ],
+      },
+    ],
+  };
 
-  const nowMs = Date.now();
+  // Signal E: Freshness & Serendipity (Decay)
+  const freshnessScoreExpr = {
+    $max: [
+      0,
+      {
+        $subtract: [
+          10,
+          {
+            $multiply: [
+              {
+                $divide: [
+                  { $subtract: [new Date(), '$createdAt'] },
+                  86400000,
+                ],
+              },
+              0.7,
+            ],
+          },
+        ],
+      },
+    ],
+  };
 
-  // Score each candidate quiz across 5 dimensions
-  const scoredQuizzes = candidateQuizzes.map((quiz) => {
+  // Signal D: Creator Following Affinity
+  const followedObjectIds = Array.from(followedCreatorIds)
+    .filter((id) => mongoose.isValidObjectId(id))
+    .map((id) => new mongoose.Types.ObjectId(id));
+
+  const followingScoreExpr = followedObjectIds.length > 0
+    ? { $cond: [{ $in: ['$uploader', followedObjectIds] }, 20, 0] }
+    : 0;
+
+  // Signal A: Topic Continuity
+  const topicScoreExpr = lastQuizTags.length > 0
+    ? {
+        $let: {
+          vars: {
+            matchedCount: {
+              $size: {
+                $setIntersection: [
+                  {
+                    $map: {
+                      input: { $ifNull: ['$tags', []] },
+                      as: 't',
+                      in: { $toLower: '$$t' },
+                    },
+                  },
+                  lastQuizTags,
+                ],
+              },
+            },
+          },
+          in: {
+            $switch: {
+              branches: [
+                { case: { $gte: ['$$matchedCount', 2] }, then: 40 },
+                { case: { $gte: ['$$matchedCount', 1] }, then: 25 },
+              ],
+              default: 0,
+            },
+          },
+        },
+      }
+    : 0;
+
+  // Signal B: Historical Tag Affinity
+  const topUserTags = Object.keys(userTagFrequency).slice(0, 8);
+  const historyScoreExpr = topUserTags.length > 0
+    ? {
+        $min: [
+          25,
+          {
+            $multiply: [
+              {
+                $size: {
+                  $setIntersection: [
+                    {
+                      $map: {
+                        input: { $ifNull: ['$tags', []] },
+                        as: 't',
+                        in: { $toLower: '$$t' },
+                      },
+                    },
+                    topUserTags,
+                  ],
+                },
+              },
+              5,
+            ],
+          },
+        ],
+      }
+    : 0;
+
+  // Composite Algo Score
+  const algoScoreExpr = {
+    $round: [
+      {
+        $add: [
+          viralityScoreExpr,
+          freshnessScoreExpr,
+          followingScoreExpr,
+          topicScoreExpr,
+          historyScoreExpr,
+        ],
+      },
+      1,
+    ],
+  };
+
+  const pipeline = [
+    { $match: filter },
+    {
+      $addFields: {
+        rawEngagement: {
+          $add: [
+            { $multiply: [{ $ifNull: ['$likeCount', 0] }, 4] },
+            { $multiply: [{ $ifNull: ['$totalAttempts', 0] }, 2] },
+            { $multiply: [{ $ifNull: ['$bookmarkCount', 0] }, 3] },
+          ],
+        },
+        ageDays: {
+          $max: [
+            0,
+            {
+              $divide: [
+                { $subtract: [new Date(), '$createdAt'] },
+                86400000,
+              ],
+            },
+          ],
+        },
+        algoScore: algoScoreExpr,
+      },
+    },
+    {
+      $sort: {
+        algoScore: -1,
+        likeCount: -1,
+        createdAt: -1,
+      },
+    },
+    {
+      $facet: {
+        metadata: [{ $count: 'total' }],
+        data: [
+          { $skip: skip },
+          { $limit: limit },
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'uploader',
+              foreignField: '_id',
+              as: 'uploader',
+              pipeline: [
+                {
+                  $project: {
+                    name: 1,
+                    username: 1,
+                    avatar: 1,
+                    bio: 1,
+                    quizCount: 1,
+                    followersCount: 1,
+                    followingCount: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $unwind: {
+              path: '$uploader',
+              preserveNullAndEmptyArrays: true,
+            },
+          },
+        ],
+      },
+    },
+  ];
+
+  const aggregationResult = await Quiz.aggregate(pipeline).allowDiskUse(true);
+  const total = aggregationResult[0]?.metadata[0]?.total || 0;
+  const pagedQuizzes = aggregationResult[0]?.data || [];
+
+  for (const quiz of pagedQuizzes) {
     const qTags = (quiz.tags || []).map((t) => String(t).toLowerCase());
     const uploaderId = String(quiz.uploader?._id || '');
-
-    let score = 0;
-    let reason = '';
-
-    // Signal A: Topic Continuity from Last Quiz (Up to +40 pts)
     const matchingLastTags = qTags.filter((t) => lastQuizTags.includes(t));
+
+    let reason = '';
     if (matchingLastTags.length >= 2) {
-      score += 40;
       reason = `🎯 Based on your last quiz #${matchingLastTags[0]}`;
     } else if (matchingLastTags.length === 1) {
-      score += 25;
       reason = `🎯 Similar to last quiz #${matchingLastTags[0]}`;
+    } else if (followedCreatorIds.has(uploaderId)) {
+      reason = `👤 From creator you follow: @${quiz.uploader?.username || 'creator'}`;
+    } else if ((quiz.rawEngagement || 0) >= 6) {
+      reason = '🔥 Trending with community';
+    } else if ((quiz.ageDays || 999) <= 4) {
+      reason = '✨ Freshly added';
+    } else {
+      reason = qTags[0] ? `🏷️ Explore #${qTags[0]}` : '⭐ Popular Pick';
     }
 
-    // Signal B: Historical Tag Overlap Affinity (Up to +25 pts)
-    let historyScore = 0;
-    let topMatchedTag = '';
-    for (const t of qTags) {
-      if (userTagFrequency[t]) {
-        historyScore += userTagFrequency[t] * 5;
-        if (!topMatchedTag) topMatchedTag = t;
-      }
-    }
-    historyScore = Math.min(25, historyScore);
-    score += historyScore;
-    if (!reason && topMatchedTag) {
-      reason = `🏷️ Recommended in #${topMatchedTag}`;
-    }
+    quiz.recommendationReason = reason;
+  }
 
-    // Signal C: Global Virality & Engagement Momentum (Up to +30 pts)
-    const likes = quiz.likeCount || 0;
-    const attempts = quiz.totalAttempts || 0;
-    const bookmarks = quiz.bookmarkCount || 0;
-    const rawEngagement = likes * 4 + attempts * 2 + bookmarks * 3;
-    const viralityScore = Math.min(30, Math.log10(1 + rawEngagement) * 10);
-    score += viralityScore;
-    if (!reason && rawEngagement >= 6) {
-      reason = `🔥 Trending with community`;
-    }
-
-    // Signal D: Creator Following Affinity (+20 pts)
-    if (followedCreatorIds.has(uploaderId)) {
-      score += 20;
-      if (!reason) {
-        reason = `👤 From creator you follow: @${quiz.uploader?.username || 'creator'}`;
-      }
-    }
-
-    // Signal E: Freshness & Serendipity Boost (Decay over days, up to +10 pts)
-    const ageDays = Math.max(0, (nowMs - new Date(quiz.createdAt).getTime()) / (1000 * 60 * 60 * 24));
-    const freshnessScore = Math.max(0, 10 - ageDays * 0.7);
-    score += freshnessScore;
-    if (!reason && ageDays <= 4) {
-      reason = `✨ Freshly added`;
-    }
-
-    // Default fallback reason
-    if (!reason) {
-      reason = qTags[0] ? `🏷️ Explore #${qTags[0]}` : `⭐ Popular Pick`;
-    }
-
-    return {
-      ...quiz,
-      recommendationReason: reason,
-      algoScore: Math.round(score * 10) / 10,
-    };
-  });
-
-  // Sort by algorithmic composite score descending
-  scoredQuizzes.sort((a, b) => {
-    if (b.algoScore !== a.algoScore) {
-      return b.algoScore - a.algoScore;
-    }
-    return (b.likeCount || 0) - (a.likeCount || 0);
-  });
-
-  // Paginate ranked candidate list
-  const pagedQuizzes = scoredQuizzes.slice(skip, skip + limit);
   const totalPages = Math.ceil(total / limit) || 1;
   const decorated = await decorateQuizzesForViewer(pagedQuizzes, userId);
 
@@ -777,6 +947,7 @@ export const getChallengesOverview = catchAsync(async (req, res) => {
   const topUsersDocs = await User.find({
     isDeleted: { $ne: true },
     isProfilePublic: true,
+    'preferences.searchDiscovery': { $ne: false },
   })
     .select('name username avatar bio quizCount followersCount followingCount')
     .sort({ followersCount: -1, quizCount: -1, createdAt: -1 })
@@ -801,6 +972,7 @@ export const getChallengesOverview = catchAsync(async (req, res) => {
     _id: { $nin: excludeUserIds },
     isDeleted: { $ne: true },
     isProfilePublic: true,
+    'preferences.searchDiscovery': { $ne: false },
   })
     .select('name username avatar bio quizCount followersCount followingCount')
     .sort({ quizCount: -1, followersCount: -1, createdAt: -1 })
@@ -1083,6 +1255,7 @@ export const getUserActivity = catchAsync(async (req, res) => {
           comment: null,
           visibility: 'public',
           metadata: {
+            attemptId: attempt._id,
             percentage: attempt.percentage,
             score: attempt.score,
             passed: attempt.passed,

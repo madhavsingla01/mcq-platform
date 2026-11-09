@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { HelpCircle, MessageSquare, ExternalLink, ChevronDown, Check, Send, ShieldCheck, FileText } from 'lucide-react';
+import { HelpCircle, MessageSquare, ExternalLink, ChevronDown, Check, Send, ShieldCheck, FileText, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
+import api from '../../../api/axios';
 import { SettingsInfo, SettingsSection, SettingsRow } from './SettingsSection';
 import { Button } from '../../../components/ui';
 
@@ -27,13 +29,35 @@ export function HelpSettings() {
   const [openFaq, setOpenFaq] = useState(null);
   const [reportText, setReportText] = useState('');
   const [reportSubmitted, setReportSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmitReport = (e) => {
+  const handleSubmitReport = async (e) => {
     e.preventDefault();
-    if (!reportText.trim()) return;
-    setReportSubmitted(true);
-    setReportText('');
-    setTimeout(() => setReportSubmitted(false), 5000);
+    const trimmed = reportText.trim();
+    if (!trimmed || submitting) return;
+
+    setSubmitting(true);
+    try {
+      const subject = trimmed;
+      const message = trimmed;
+      await api.post('/admin/reports/submit', {
+        targetType: 'feedback',
+        targetId: 'general',
+        targetTitle: 'User Platform Feedback',
+        category: 'other',
+        reason: subject || 'General Feedback',
+        details: message || reportText,
+        description: message || reportText,
+      });
+      setReportSubmitted(true);
+      setReportText('');
+      toast.success('Thank you for your feedback! Our team will review it.');
+      setTimeout(() => setReportSubmitted(false), 5000);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to submit feedback. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -98,9 +122,9 @@ export function HelpSettings() {
               required
             />
             <div className="settings-actions-footer">
-              <Button variant="primary" size="sm" type="submit" disabled={!reportText.trim()}>
-                <Send size={14} />
-                <span>Submit Feedback</span>
+              <Button variant="primary" size="sm" type="submit" disabled={!reportText.trim() || submitting}>
+                {submitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                <span>{submitting ? 'Submitting...' : 'Submit Feedback'}</span>
               </Button>
             </div>
           </form>

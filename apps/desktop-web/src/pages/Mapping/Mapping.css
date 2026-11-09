@@ -1,4 +1,4 @@
-﻿  .qf-mapping-shell {
+  .qf-mapping-shell {
     display: flex;
     gap: 24px;
     height: calc(100vh - 140px);
@@ -245,7 +245,7 @@
     color: #FF4500;
   }
   .qf-open-settings-btn:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
   }
   .qf-spin-icon {
     transition: transform 0.3s ease;
@@ -288,7 +288,7 @@
     animation: windowScaleUp 0.2s cubic-bezier(0.23, 1, 0.32, 1);
   }
   @keyframes windowScaleUp {
-    from { transform: scale(0.96) translateY(10px); opacity: 0; }
+    from { transform: scale(0.95) translateY(8px); opacity: 0; }
     to { transform: scale(1) translateY(0); opacity: 1; }
   }
 

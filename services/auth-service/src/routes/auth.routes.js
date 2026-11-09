@@ -70,6 +70,28 @@ router.patch('/me', protect, validateBody({
   preferences: { required: false },
 }), updateMe);
 
+router.put('/me', protect, validateBody({
+  name: { required: false, type: 'string', min: 2, max: 50 },
+  username: { required: false, type: 'string', min: 3, max: 30 },
+  email: { required: false, type: 'string', email: true },
+  avatar: { required: false, type: 'string' },
+  banner: { required: false, type: 'string' },
+  currentPassword: { required: false, type: 'string' },
+  oldPassword: { required: false, type: 'string' },
+  password: { required: false, type: 'string', min: 6 },
+  confirmPassword: { required: false, type: 'string', min: 6 },
+  phone: { required: false, type: 'string' },
+  dateOfBirth: { required: false, type: 'string' },
+  gender: { required: false, type: 'string' },
+  age: { required: false, type: 'number' },
+  address: { required: false, type: 'object' },
+  bio: { required: false, type: 'string' },
+  isProfilePublic: { required: false, type: 'boolean' },
+  isPrivate: { required: false, type: 'boolean' },
+  socialLinks: { required: false },
+  preferences: { required: false },
+}), updateMe);
+
 router.delete('/me', protect, deleteAccount);
 
 export default router;

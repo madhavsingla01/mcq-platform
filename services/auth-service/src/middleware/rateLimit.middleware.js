@@ -22,7 +22,13 @@ const startCleanupWorker = () => {
   }, 60 * 1000).unref?.();
 };
 
-const defaultKeyGenerator = (req) => req.ip || req.connection?.remoteAddress || 'unknown';
+const defaultKeyGenerator = (req) => {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  return req.ip || req.connection?.remoteAddress || 'unknown';
+};
 
 const setRateLimitHeaders = (res, { limit, remaining, resetAt }) => {
   res.set('RateLimit-Limit', String(limit));
@@ -76,7 +82,16 @@ export const rateLimit = (options = {}) => {
 export const authRateLimit = rateLimit({
   keyPrefix: 'auth',
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: process.env.NODE_ENV === 'test' ? 1000 : 50,
+  keyGenerator: (req) => {
+    const forwarded = req.headers['x-forwarded-for'];
+    const ip = forwarded ? forwarded.split(',')[0].trim() : (req.ip || 'unknown');
+    const rawId = req.body?.email || req.body?.identifier || req.body?.username;
+    const identifier = (rawId && typeof rawId === 'string')
+      ? `:${rawId.toLowerCase().trim()}`
+      : '';
+    return `${ip}${identifier}`;
+  },
   message: 'Too many authentication attempts. Please try again in 15 minutes.',
 });
 

@@ -46,7 +46,7 @@
 .quiz-timer.warning {
   border-color: rgba(217, 119, 6, 0.3);
   background: var(--color-warning-light);
-  animation: timer-pulse 1.5s ease-in-out infinite;
+  animation: none;
 }
 
 .quiz-timer.warning .quiz-timer-value {
@@ -67,9 +67,4 @@
   font-size: 11px;
   color: var(--color-text-secondary);
   font-style: italic;
-}
-
-@keyframes timer-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
 }

@@ -50,7 +50,7 @@
   box-shadow: none;
   color: var(--text-primary, #FFFFFF);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 400;
   line-height: normal;
 }
@@ -61,15 +61,15 @@
   height: 40px;
   padding: 0 12px;
   border: 1px solid var(--border-default, rgba(255, 255, 255, 0.1));
-  border-radius: 12px;
+  border-radius: var(--radius-control, 8px);
   corner-shape: squircle;
   -webkit-corner-shape: squircle;
   outline: 0;
-  background: var(--bg-elevated, #08080A);
+  background: var(--bg-elevated, #18181B);
   box-shadow: none;
   color: var(--text-primary, #FFFFFF);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 400;
 }
 

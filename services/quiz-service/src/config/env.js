@@ -8,7 +8,7 @@ const env = {
   JWT_SECRET: process.env.JWT_SECRET || '',
   JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || '',
   CLIENT_URL: (process.env.CLIENT_URL || '').split(',').map((origin) => origin.trim()).filter(Boolean),
-  PARSER_SERVICE_URL: process.env.PARSER_SERVICE_URL || '',
+  PARSER_SERVICE_URL: process.env.PARSER_SERVICE_URL || 'http://localhost:5003',
   MAX_IMPORT_ROWS: Number(process.env.MAX_IMPORT_ROWS),
   CACHE_DEFAULT_TTL_MS: Number(process.env.CACHE_DEFAULT_TTL_MS),
   CACHE_SHORT_TTL_MS: Number(process.env.CACHE_SHORT_TTL_MS),
@@ -18,7 +18,7 @@ const env = {
 };
 
 if (!Number.isInteger(env.PORT) || env.PORT < 1 || env.PORT > 65535) throw new Error('PORT must be an integer from 1 to 65535');
-for (const key of ['NODE_ENV', 'MONGO_URI', 'PARSER_SERVICE_URL']) if (!env[key]) throw new Error(`${key} is required`);
+for (const key of ['NODE_ENV', 'MONGO_URI']) if (!env[key]) throw new Error(`${key} is required`);
 if (!env.CLIENT_URL.length) throw new Error('CLIENT_URL must contain at least one allowed origin');
 for (const key of ['MAX_IMPORT_ROWS', 'CACHE_DEFAULT_TTL_MS', 'CACHE_SHORT_TTL_MS', 'CACHE_SEARCH_TTL_MS']) if (!Number.isInteger(env[key]) || env[key] < 1) throw new Error(`${key} must be a positive integer`);
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sliders, Filter, EyeOff, Check, BookOpen } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuthStore } from '../../../store/authStore';
 import { SettingsInfo, SettingsSection, SettingsRow, SettingsToggle, SettingsSelect } from './SettingsSection';
 
@@ -24,20 +25,23 @@ export function FeedSettings() {
     filterUnverified: false,
   });
 
-  const [toast, setToast] = useState('');
+  const [localBanner, setLocalBanner] = useState('');
 
   useEffect(() => {
-    if (user?.preferences?.feed) {
+    if (user?.preferences) {
       setFeed((prev) => ({
         ...prev,
-        ...user.preferences.feed,
+        defaultDifficulty: user.preferences.defaultDifficulty || user.preferences.feed?.defaultDifficulty || prev.defaultDifficulty,
+        preferredCategory: user.preferences.primaryCategory || user.preferences.feed?.preferredCategory || prev.preferredCategory,
+        hideCompletedQuizzes: user.preferences.hideCompletedQuizzes ?? user.preferences.feed?.hideCompletedQuizzes ?? prev.hideCompletedQuizzes,
+        filterUnverified: user.preferences.filterUnverified ?? user.preferences.feed?.filterUnverified ?? prev.filterUnverified,
       }));
     }
   }, [user]);
 
-  const showToast = (msg = 'Feed preferences updated') => {
-    setToast(msg);
-    setTimeout(() => setToast(''), 3000);
+  const showBanner = (msg = 'Feed preferences updated') => {
+    setLocalBanner(msg);
+    setTimeout(() => setLocalBanner(''), 3000);
   };
 
   const handleUpdate = async (field, val) => {
@@ -47,11 +51,18 @@ export function FeedSettings() {
     try {
       await updateProfile({
         preferences: {
+          ...user?.preferences,
+          defaultDifficulty: nextFeed.defaultDifficulty,
+          primaryCategory: nextFeed.preferredCategory,
+          hideCompletedQuizzes: nextFeed.hideCompletedQuizzes,
+          filterUnverified: nextFeed.filterUnverified,
           feed: nextFeed,
         },
       });
-      showToast();
+      toast.success('Feed preferences updated');
+      showBanner();
     } catch (err) {
+      toast.error('Failed to update feed preferences');
       console.error('Failed to update feed preferences:', err);
     }
   };
@@ -66,10 +77,10 @@ export function FeedSettings() {
         </div>
       </div>
 
-      {toast && (
+      {localBanner && (
         <div className="settings-alert-banner success">
           <Check size={16} />
-          <span>{toast}</span>
+          <span>{localBanner}</span>
         </div>
       )}
 

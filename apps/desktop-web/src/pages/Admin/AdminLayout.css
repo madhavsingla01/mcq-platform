@@ -117,13 +117,7 @@
   height: 8px;
   border-radius: 50%;
   background-color: var(--admin-success);
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
-  animation: pulse-dot 2s infinite ease-in-out;
-}
-
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.9); }
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
 }
 
 .admin-exit-btn {

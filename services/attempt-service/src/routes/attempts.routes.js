@@ -7,6 +7,7 @@ import {
   submitAttemptById,
   syncAttemptTime,
   getInProgressAttempts,
+  getUserAttempts,
   getResultByAttemptId,
   getResult,
   getActiveAttempt,
@@ -19,6 +20,9 @@ import { validateObjectId } from '../middleware/validation.middleware.js';
 const router = Router();
 
 // Standard attempt operations
+router.get('/', optionalAuth, getUserAttempts);
+router.get('/my-attempts', optionalAuth, getUserAttempts);
+router.get('/user', optionalAuth, getUserAttempts);
 router.post('/start', optionalAuth, startAttempt);
 router.get('/in-progress', protect, getInProgressAttempts);
 router.get('/:id/result', validateObjectId('id'), optionalAuth, getResultByAttemptId);

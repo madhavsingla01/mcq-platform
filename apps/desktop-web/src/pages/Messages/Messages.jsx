@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Send,
@@ -35,6 +35,7 @@ import {
   fetchUserPresence,
 } from '../../services/socket.service';
 import { Spinner, Button } from '../../components/ui';
+import { toast } from 'sonner';
 import './Messages.css';
 
 const QUICK_REACTIONS = ['ðŸ‘', 'â¤ï¸', 'ðŸ˜‚', 'ðŸ˜®', 'ðŸ˜¢', 'ðŸ™'];
@@ -409,7 +410,7 @@ export default function Messages() {
         setInputText('');
       } catch (err) {
         console.error('Failed to edit message:', err);
-        alert('Could not edit message. Please try again.');
+        toast.error('Could not edit message. Please try again.');
       } finally {
         setSending(false);
         inputRef.current?.focus();
@@ -480,7 +481,7 @@ export default function Messages() {
       console.error('Failed to send message:', err);
       setMessages((prev) => prev.filter((m) => m._id !== tempId));
       setInputText(text);
-      alert('Failed to send message. Please try again.');
+      toast.error('Failed to send message. Please try again.');
     } finally {
       setSending(false);
       inputRef.current?.focus();
@@ -537,7 +538,7 @@ export default function Messages() {
       setDeleteTarget(null);
     } catch (err) {
       console.error('Failed to delete message:', err);
-      alert('Could not delete message. Please try again.');
+      toast.error('Could not delete message. Please try again.');
     }
   };
 
@@ -629,7 +630,7 @@ export default function Messages() {
       navigate(`/messages/${convId}`);
     } catch (err) {
       console.error('Failed to start conversation:', err);
-      alert('Could not start conversation.');
+      toast.error(err.response?.data?.message || 'Could not start conversation.');
     }
   };
 

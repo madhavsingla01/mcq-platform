@@ -126,6 +126,11 @@ const quizSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     isRestricted: {
       type: Boolean,
       default: false,
@@ -241,6 +246,8 @@ quizSchema.index({ fileHash: 1 });
 quizSchema.index({ uploader: 1, fileHash: 1 });
 quizSchema.index({ uploader: 1, createdAt: -1 });
 quizSchema.index({ isPublic: 1, createdAt: -1 });
+quizSchema.index({ isPublic: 1, category: 1, difficulty: 1, createdAt: -1 });
+quizSchema.index({ isPublic: 1, likeCount: -1, totalAttempts: -1, createdAt: -1 });
 quizSchema.index({ visibility: 1, createdAt: -1 });
 quizSchema.index({ visibility: 1, category: 1, createdAt: -1 });
 quizSchema.index({ visibility: 1, difficulty: 1, createdAt: -1 });

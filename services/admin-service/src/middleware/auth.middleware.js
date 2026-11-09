@@ -109,3 +109,51 @@ export const requirePermission = (permission) => {
     return next(new AppError(`Access forbidden: Missing permission '${permission}'.`, 403));
   };
 };
+
+export const optionalAuth = async (req, res, next) => {
+  try {
+    let token = req.cookies?.accessToken;
+    if (!token && req.headers?.authorization?.startsWith('Bearer ')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (!token) return next();
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, env.JWT_SECRET);
+    } catch {
+      return next();
+    }
+
+    if (!decoded || !decoded.id) return next();
+
+    const authDb = getAuthDb();
+    if (!authDb) return next();
+
+    const user = await authDb.collection('users').findOne({
+      _id: new mongoose.Types.ObjectId(decoded.id),
+    });
+
+    if (
+      user &&
+      !user.isDeleted &&
+      user.isActive !== false &&
+      !user.isSuspended &&
+      (decoded.tokenVersion === undefined || user.tokenVersion === undefined || decoded.tokenVersion === user.tokenVersion)
+    ) {
+      req.user = {
+        _id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      };
+    }
+
+    return next();
+  } catch {
+    return next();
+  }
+};
+

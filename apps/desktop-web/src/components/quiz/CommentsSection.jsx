@@ -20,6 +20,7 @@ import { Spinner } from '../ui';
 import ConfirmDeleteModal from '../ui/ConfirmDeleteModal';
 import ShareModal from '../social/ShareModal';
 import { useAuthStore } from '../../store/authStore';
+import { toast } from 'sonner';
 import './CommentsSection.css';
 
 const timeAgo = (value) => {
@@ -124,7 +125,7 @@ export default function CommentsSection({ quizId, quiz = null, initialCount = 0,
     e.preventDefault();
     if (!replyBody.trim() || submittingReply || !replyingTo) return;
     if (!isAuthenticated) {
-      alert('Please log in to reply.');
+      toast.error('Please log in to reply.');
       return;
     }
 
@@ -161,7 +162,7 @@ export default function CommentsSection({ quizId, quiz = null, initialCount = 0,
         onCommentCountChange(calculateTotalComments(comments) + 1);
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to post reply.');
+      toast.error(err.response?.data?.message || 'Failed to post reply.');
     } finally {
       setSubmittingReply(false);
     }
@@ -270,7 +271,7 @@ export default function CommentsSection({ quizId, quiz = null, initialCount = 0,
       }
       setEditingId(null);
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update comment.');
+      toast.error(err.response?.data?.message || 'Failed to update comment.');
     }
   };
 
@@ -309,7 +310,7 @@ export default function CommentsSection({ quizId, quiz = null, initialCount = 0,
         });
       }, 50);
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to delete comment.');
+      toast.error(err.response?.data?.message || 'Failed to delete comment.');
     } finally {
       setIsDeleting(false);
     }
