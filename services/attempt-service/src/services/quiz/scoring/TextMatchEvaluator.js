@@ -2,7 +2,8 @@ import { BaseQuestionEvaluator } from './BaseQuestionEvaluator.js';
 
 export class TextMatchEvaluator extends BaseQuestionEvaluator {
   supports(question) {
-    return question?.type === 'fill_in_blank' || question?.type === 'short_answer' || question?.type === 'text';
+    const type = question?.questionType || question?.type;
+    return type === 'fill_in_blank' || type === 'short_answer' || type === 'text';
   }
 
   evaluate({ question, userResponse, options = {} }) {

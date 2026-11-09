@@ -1,3 +1,5 @@
+import { usePageSearch } from '../../components/search/PageSearchContext';
+import { createSearchScorer } from '../../components/search/rankSearchResults';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -20,7 +22,6 @@ import {
   Award,
   ArrowRight,
   Search,
-  X,
   LayoutDashboard,
   Compass,
   Settings,
@@ -43,7 +44,7 @@ const navItems = [
 
 export default function Guide() {
   const [activeSection, setActiveSection] = useState('rules');
-  const [query, setQuery] = useState('');
+  const { query, setQuery } = usePageSearch();
   const [matchingTopics, setMatchingTopics] = useState(navItems.map(({ id }) => id));
   const [resultCount, setResultCount] = useState(0);
   const guideContentRef = useRef(null);
@@ -52,30 +53,33 @@ export default function Guide() {
     const sections = guideContentRef.current?.querySelectorAll('.guide-section');
     if (!sections) return;
 
-    const searchTerm = query.trim().toLocaleLowerCase();
+    const score = createSearchScorer(query);
     const nextMatchingTopics = [];
     let nextResultCount = 0;
 
     sections.forEach((section) => {
       const cards = [...section.querySelectorAll('.guide-rule-card')];
-      const intro = section.querySelector('.guide-section-intro')?.textContent?.toLocaleLowerCase() || '';
-      const wholeSectionMatches = !searchTerm || intro.includes(searchTerm);
+      const intro = section.querySelector('.guide-section-intro')?.textContent;
+      let sectionRank = score([intro]);
+      const wholeSectionMatches = sectionRank > 0;
       let sectionMatches = 0;
 
       cards.forEach((card) => {
-        const matches = wholeSectionMatches || card.textContent.toLocaleLowerCase().includes(searchTerm);
+        const cardRank = score([card.querySelector('h3, h4')?.textContent, card.textContent]);
+        const matches = wholeSectionMatches || cardRank > 0;
+        sectionRank = Math.max(sectionRank, cardRank);
         card.hidden = !matches;
         if (matches) sectionMatches += 1;
       });
 
       section.hidden = sectionMatches === 0;
       if (sectionMatches > 0) {
-        nextMatchingTopics.push(section.id);
+        nextMatchingTopics.push({ id: section.id, rank: sectionRank });
         nextResultCount += sectionMatches;
       }
     });
 
-    setMatchingTopics(nextMatchingTopics);
+    setMatchingTopics(nextMatchingTopics.sort((a, b) => b.rank - a.rank).map(topic => topic.id));
     setResultCount(nextResultCount);
   }, [query]);
 
@@ -86,33 +90,14 @@ export default function Guide() {
 
   return (
     <div className="guide-page">
-      <header className="guide-header consistent-page-header">
-        <h1 className="consistent-page-title">Guide</h1>
-        <label className="guide-search consistent-page-search consistent-search-field">
-          <Search size={18} aria-hidden="true" />
-          <input
-            type="search"
-            className="consistent-search-input"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search"
-            aria-label="Search guide"
-          />
-          {query && (
-            <button type="button" onClick={() => setQuery('')} aria-label="Clear search">
-              <X size={16} />
-            </button>
-          )}
-        </label>
         <span className="guide-search-count" aria-live="polite">
           {query ? `${resultCount} matching ${resultCount === 1 ? 'result' : 'results'}` : ''}
         </span>
-      </header>
 
       <div className="guide-layout">
         <aside className="guide-nav-col">
           <nav className="guide-nav-menu" aria-label="Guide topics">
-            {navItems.filter((item) => matchingTopics.includes(item.id)).map((item) => {
+            {matchingTopics.map(id => navItems.find(item => item.id === id)).filter(Boolean).map((item) => {
               const Icon = item.icon;
               const isActive = activeSection === item.id;
               return (

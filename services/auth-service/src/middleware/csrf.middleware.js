@@ -17,7 +17,6 @@ const csrfCookieOptions = {
   secure: env.isProd,
   sameSite: env.isProd ? 'none' : 'lax',
   path: '/',
-  maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
 const timingSafeStringEqual = (left = '', right = '') => {
@@ -34,7 +33,7 @@ const timingSafeStringEqual = (left = '', right = '') => {
 export const createCsrfToken = () => crypto.randomBytes(TOKEN_BYTES).toString('hex');
 
 export const setCsrfCookie = (res, token = createCsrfToken()) => {
-  res.cookie(CSRF_COOKIE_NAME, token, csrfCookieOptions);
+  res.cookie(CSRF_COOKIE_NAME, token, { ...csrfCookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
   return token;
 };
 
@@ -43,6 +42,12 @@ export const clearCsrfCookie = (res) => {
 };
 
 export const csrfProtection = (req, res, next) => {
+  const origin = req.get('origin');
+  const bootstrap = req.path === '/api/v1/auth/bootstrap';
+  if ((!SAFE_METHODS.has(req.method) || bootstrap) &&
+      (origin ? !env.CLIENT_URL.includes(origin) : req.get('sec-fetch-site') === 'cross-site')) {
+    return next(new AppError('Request origin is not allowed', 403));
+  }
   if (SAFE_METHODS.has(req.method)) {
     return next();
   }

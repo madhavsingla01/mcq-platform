@@ -1,3 +1,5 @@
+import { rankSearchResults } from '../../../components/search/rankSearchResults';
+import { usePageSearch } from '../../../components/search/PageSearchContext';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   History,
@@ -14,7 +16,6 @@ import {
   Share2,
   UserCheck,
   RefreshCw,
-  Search,
   ExternalLink,
   Copy,
   CheckCircle2,
@@ -25,13 +26,15 @@ import {
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../../../store/authStore';
+import { clearCachedPreferences } from '../../../store/settingsStore';
 import api from '../../../api/axios';
 import { SettingsInfo, SettingsSection, SettingsRow } from './SettingsSection';
 import { Button, showCustomDialog, CustomSelect } from '../../../components/ui';
 import ConfirmDeleteModal from '../../../components/ui/ConfirmDeleteModal';
+import SubmissionCalendar from './SubmissionCalendar';
 
 export function ActivitySettings() {
-  const { user, logout } = useAuthStore();
+  const { user, deleteAccount } = useAuthStore();
   const navigate = useNavigate();
 
   const [activities, setActivities] = useState([]);
@@ -40,12 +43,13 @@ export function ActivitySettings() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const { query: searchQuery } = usePageSearch();
   const [copiedId, setCopiedId] = useState(null);
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [toast, setToast] = useState('');
 
   const showToast = (msg) => {
@@ -56,16 +60,17 @@ export function ActivitySettings() {
   const fetchData = async (isManualRefresh = false) => {
     if (isManualRefresh) setRefreshing(true);
     else setLoading(true);
+    setLoadError('');
 
     try {
       const username = user?.username;
       const [activityRes, quizzesRes, bookmarksRes, attemptsRes] = await Promise.all([
         username
-          ? api.get(`/social/users/${username}/activity`, { params: { limit: 100 } }).catch(() => ({ data: { data: { activities: [] } } }))
+          ? api.get(`/social/users/${username}/activity`, { params: { limit: 100 } })
           : Promise.resolve({ data: { data: { activities: [] } } }),
-        api.get('/quiz/my').catch(() => ({ data: { data: { quizzes: [] } } })),
-        api.get('/social/bookmarks').catch(() => ({ data: { data: { quizzes: [] } } })),
-        api.get('/attempts?limit=100').catch(() => ({ data: { data: [] } })),
+        api.get('/quiz/my'),
+        api.get('/social/bookmarks'),
+        api.get('/attempts?limit=100'),
       ]);
 
       const acts = activityRes.data?.data?.activities || [];
@@ -79,7 +84,7 @@ export function ActivitySettings() {
         acts.filter((a) => a.verb === 'quiz_attempted').map((a) => String(a.metadata?.attemptId || a.targetId || a._id))
       );
       const synthAttempts = fetchedAttempts
-        .filter((att) => !attemptedIds.has(String(att._id)))
+        .filter((att) => att.status === 'completed' && !attemptedIds.has(String(att._id)))
         .map((att) => ({
           _id: att._id,
           verb: 'quiz_attempted',
@@ -143,7 +148,7 @@ export function ActivitySettings() {
         showToast('Activity log updated with latest events!');
       }
     } catch (err) {
-      console.error('Failed to load user activity:', err);
+      setLoadError(err.response?.data?.message || 'Could not load your activity. Use Refresh to try again.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -183,16 +188,9 @@ export function ActivitySettings() {
     if (filter !== 'all') {
       list = list.filter((a) => a.verb === filter);
     }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      list = list.filter((a) => {
-        const text = (a.actionText || a.action || '').toLowerCase();
-        const title = (a.quiz?.title || a.metadata?.title || '').toLowerCase();
-        const tags = (a.quiz?.tags || []).join(' ').toLowerCase();
-        return text.includes(q) || title.includes(q) || tags.includes(q);
-      });
-    }
-    return list;
+    return rankSearchResults(list, searchQuery, activity => [
+      activity.quiz?.title || activity.metadata?.title, activity.actionText || activity.action, activity.quiz?.tags || [],
+    ]);
   }, [activities, filter, searchQuery]);
 
   // Copy quiz link helper
@@ -242,7 +240,7 @@ export function ActivitySettings() {
       downloadAnchor.click();
       downloadAnchor.remove();
 
-      showToast('Complete account activity & quiz archive exported!');
+      showToast('Your activity snapshot was downloaded.');
     } catch (err) {
       console.error('Failed to export data:', err);
       showCustomDialog({
@@ -265,8 +263,10 @@ export function ActivitySettings() {
       cancelText: 'Cancel',
     });
     if (confirmed) {
-      localStorage.removeItem('mcq.settings.preferences.v1');
-      localStorage.removeItem('mcq.ui.preferences.v1');
+      if (!await clearCachedPreferences()) {
+        showToast('Sync your preferences before clearing the cache.');
+        return;
+      }
       window.location.reload();
     }
   };
@@ -275,9 +275,8 @@ export function ActivitySettings() {
   const handleConfirmDelete = async () => {
     setIsDeleting(true);
     try {
-      await api.delete('/auth/me');
+      await deleteAccount();
       setDeleteModalOpen(false);
-      logout();
       navigate('/login?deleted=true');
     } catch (err) {
       console.error('Failed to delete account:', err);
@@ -480,6 +479,8 @@ export function ActivitySettings() {
           </div>
         </div>
 
+        <SubmissionCalendar refreshSignal={refreshing} />
+
         {/* Filter Toolbar with G2 Squircle CustomSelect */}
         <div className="settings-activity-toolbar">
           <div className="settings-activity-toolbar-left">
@@ -493,16 +494,6 @@ export function ActivitySettings() {
               />
             </div>
 
-            <div className="settings-activity-search-box consistent-search-field">
-              <Search size={14} color="#64748b" />
-              <input
-                type="text"
-                className="settings-activity-search-input consistent-search-input"
-                placeholder="Search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
           </div>
 
           <div className="settings-activity-toolbar-right">
@@ -525,7 +516,9 @@ export function ActivitySettings() {
 
         {/* Activity Stream Feed */}
         <div className="settings-activity-feed">
-          {loading ? (
+          {loadError ? (
+            <p className="settings-supporting-note" role="alert">{loadError}</p>
+          ) : loading ? (
             <div className="settings-activity-empty-state">
               <RefreshCw size={24} className="animate-spin text-gray-500" />
               <p className="settings-activity-empty-desc">Loading your activity history...</p>
@@ -620,14 +613,14 @@ export function ActivitySettings() {
         icon={Database}
       >
         <SettingsRow
-          title="Export Account Data & Logs"
-          description="Generate a downloadable archive containing your profile, questions, attempts, shares, comments, likes, and bookmarks."
+          title="Export current activity"
+          description="Download your profile and the recent quiz, attempt, and interaction records available on this page."
         >
           <Button
             variant="secondary"
             size="sm"
             onClick={handleExportData}
-            disabled={exporting}
+            disabled={exporting || loading || Boolean(loadError)}
           >
             <Download size={14} />
             <span>{exporting ? 'Generating...' : 'Export JSON Data'}</span>

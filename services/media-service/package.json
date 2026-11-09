@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node src/server.js",
+    "dev": "nodemon --watch src --watch .env --ext js,json,env src/server.js",
     "start": "node src/server.js",
     "test": "node --test"
   },

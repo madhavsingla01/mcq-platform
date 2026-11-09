@@ -1,6 +1,8 @@
+import { rankSearchResults } from '../../components/search/rankSearchResults';
+import { usePageSearch } from '../../components/search/PageSearchContext';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, CheckCheck, Heart, MessageCircle, UserPlus, Check, Search, X } from 'lucide-react';
+import { Bell, CheckCheck, Heart, MessageCircle, UserPlus, Check } from 'lucide-react';
 import api from '../../api/axios';
 import { Button, Spinner, EmptyState } from '../../components/ui';
 import './Notifications.css';
@@ -8,6 +10,7 @@ import './Notifications.css';
 const iconFor = (verb) => {
   if (verb === 'commented') return MessageCircle;
   if (verb === 'quiz_liked' || verb === 'comment_liked') return Heart;
+  if (verb === 'followed') return UserPlus;
   return Bell;
 };
 
@@ -17,6 +20,7 @@ const copyFor = (notification) => {
   if (notification.verb === 'commented') return `${actor} commented on your quiz${quizTitle}`;
   if (notification.verb === 'quiz_liked') return `${actor} liked your quiz${quizTitle}`;
   if (notification.verb === 'comment_liked') return `${actor} liked your comment`;
+  if (notification.verb === 'followed') return `${actor} started following you`;
   return `${actor} interacted with your content`;
 };
 
@@ -45,7 +49,7 @@ export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const { query: searchQuery } = usePageSearch();
 
   const fetchNotifications = async () => {
     setLoading(true);
@@ -84,47 +88,20 @@ export default function Notifications() {
     } catch {}
   };
 
-  const filteredNotifications = notifications.filter((notification) => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return true;
-    return [
-      copyFor(notification),
-      notification.actor?.username,
-      notification.quiz?.title,
-      notification.comment?.body,
-    ].some((value) => value?.toLowerCase().includes(query));
-  });
+  const filteredNotifications = rankSearchResults(notifications, searchQuery, notification => [
+    notification.quiz?.title, notification.actor?.username, copyFor(notification), notification.comment?.body,
+  ]);
 
   return (
     <div className="notifications-shell">
-        <header className="notifications-header consistent-page-header">
-          <div className="notifications-title-wrap">
-            <h1 className="consistent-page-title">Notifications</h1>
-            {unread > 0 && <span className="unread-count-pill">{unread} new</span>}
-          </div>
+        <div className="notifications-header app-page-tools">{unread > 0 && <span className="unread-count-pill">{unread} new</span>}
           <div className="notifications-header-actions">
             <Button variant="secondary" onClick={markAllRead} disabled={!unread}>
               <CheckCheck size={16} />
               <span>Mark all read</span>
             </Button>
-            <label className="notifications-search consistent-page-search consistent-search-field">
-              <Search size={15} aria-hidden="true" />
-              <input
-                type="search"
-                className="consistent-search-input"
-                placeholder="Search"
-                aria-label="Search notifications"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-              />
-              {searchQuery && (
-                <button type="button" onClick={() => setSearchQuery('')} aria-label="Clear search">
-                  <X size={14} />
-                </button>
-              )}
-            </label>
           </div>
-        </header>
+        </div>
 
         {loading ? (
           <div className="notifications-state">

@@ -1,151 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { Sliders, Filter, EyeOff, Check, BookOpen } from 'lucide-react';
+import { useState } from 'react';
+import { Filter, Sliders } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuthStore } from '../../../store/authStore';
-import { SettingsInfo, SettingsSection, SettingsRow, SettingsToggle, SettingsSelect } from './SettingsSection';
+import { SettingsSection, SettingsRow, SettingsSelect, SettingsToggle } from './SettingsSection';
 
-const CATEGORIES = [
-  'All Categories',
-  'General',
-  'Computer Science',
-  'Science',
-  'Mathematics',
-  'History',
-  'Languages',
-  'Business',
-];
+const categories = ['All Categories', 'General', 'Computer Science', 'Science', 'Mathematics', 'History', 'Languages', 'Business'];
+const difficulties = ['All Levels', 'Beginner', 'Intermediate', 'Advanced'];
+const options = values => values.map(value => ({ value, label: value }));
 
 export function FeedSettings() {
   const { user, updateProfile } = useAuthStore();
-
-  const [feed, setFeed] = useState({
-    defaultDifficulty: 'All Levels',
-    preferredCategory: 'All Categories',
-    hideCompletedQuizzes: false,
-    filterUnverified: false,
-  });
-
-  const [localBanner, setLocalBanner] = useState('');
-
-  useEffect(() => {
-    if (user?.preferences) {
-      setFeed((prev) => ({
-        ...prev,
-        defaultDifficulty: user.preferences.defaultDifficulty || user.preferences.feed?.defaultDifficulty || prev.defaultDifficulty,
-        preferredCategory: user.preferences.primaryCategory || user.preferences.feed?.preferredCategory || prev.preferredCategory,
-        hideCompletedQuizzes: user.preferences.hideCompletedQuizzes ?? user.preferences.feed?.hideCompletedQuizzes ?? prev.hideCompletedQuizzes,
-        filterUnverified: user.preferences.filterUnverified ?? user.preferences.feed?.filterUnverified ?? prev.filterUnverified,
-      }));
-    }
-  }, [user]);
-
-  const showBanner = (msg = 'Feed preferences updated') => {
-    setLocalBanner(msg);
-    setTimeout(() => setLocalBanner(''), 3000);
-  };
-
-  const handleUpdate = async (field, val) => {
-    const nextFeed = { ...feed, [field]: val };
-    setFeed(nextFeed);
-
-    try {
-      await updateProfile({
-        preferences: {
-          ...user?.preferences,
-          defaultDifficulty: nextFeed.defaultDifficulty,
-          primaryCategory: nextFeed.preferredCategory,
-          hideCompletedQuizzes: nextFeed.hideCompletedQuizzes,
-          filterUnverified: nextFeed.filterUnverified,
-          feed: nextFeed,
-        },
-      });
-      toast.success('Feed preferences updated');
-      showBanner();
-    } catch (err) {
-      toast.error('Failed to update feed preferences');
-      console.error('Failed to update feed preferences:', err);
-    }
+  const [saving, setSaving] = useState(false);
+  const prefs = user?.preferences || {};
+  const feed = prefs.feed || {};
+  const update = async (key, value, accountKey = key) => {
+    setSaving(true);
+    try { await updateProfile({ preferences: { [accountKey]: value, feed: { [key]: value } } }); }
+    catch (error) { toast.error(error.response?.data?.message || 'Could not save feed preferences'); }
+    finally { setSaving(false); }
   };
 
   return (
     <div className="settings-tab-panel">
-      {/* Category Hero */}
-      <div className="settings-panel-hero">
-        <div className="settings-panel-title-row">
-          <h2 className="settings-panel-title">Feed & Content</h2>
-          <SettingsInfo text="Customize your discovery feed, set learning priorities, and filter community content." />
-        </div>
-      </div>
-
-      {localBanner && (
-        <div className="settings-alert-banner success">
-          <Check size={16} />
-          <span>{localBanner}</span>
-        </div>
-      )}
-
-      {/* 1. Explore Feed Preferences */}
-      <SettingsSection
-        title="Explore Recommendations"
-        description="Choose what quizzes are prioritized on your Explore page."
-        icon={Sliders}
-      >
-        <SettingsRow
-          title="Default Difficulty Focus"
-          description="Tailor quiz recommendations to your current skill level."
-        >
-          <SettingsSelect
-            value={feed.defaultDifficulty}
-            onChange={(val) => handleUpdate('defaultDifficulty', val)}
-            options={[
-              { value: 'All Levels', label: 'All Levels (Balanced)' },
-              { value: 'Beginner', label: 'Beginner (Introductory)' },
-              { value: 'Intermediate', label: 'Intermediate (Practical)' },
-              { value: 'Advanced', label: 'Advanced (Mastery)' },
-            ]}
-          />
+      <div className="settings-panel-hero"><h2 className="settings-panel-title">Feed &amp; discovery</h2></div>
+      <SettingsSection title="Explore defaults" icon={Sliders}>
+        <SettingsRow title="Difficulty">
+          <SettingsSelect value={prefs.defaultDifficulty || feed.defaultDifficulty || 'All Levels'} disabled={saving}
+            onChange={value => update('defaultDifficulty', value)} options={options(difficulties)} />
         </SettingsRow>
-
-        <SettingsRow
-          title="Primary Learning Category"
-          description="Quizzes from this subject will appear prominently in your personalized feed."
-        >
-          <SettingsSelect
-            value={feed.preferredCategory}
-            onChange={(val) => handleUpdate('preferredCategory', val)}
-            options={CATEGORIES.map((c) => ({ value: c, label: c }))}
-          />
+        <SettingsRow title="Category">
+          <SettingsSelect value={prefs.primaryCategory || feed.preferredCategory || 'All Categories'} disabled={saving}
+            onChange={value => update('preferredCategory', value, 'primaryCategory')} options={options(categories)} />
         </SettingsRow>
       </SettingsSection>
-
-      {/* 2. Content Filters */}
-      <SettingsSection
-        title="Content Filtering"
-        description="Hide redundant quizzes or unverified community submissions."
-        icon={Filter}
-      >
-        <SettingsRow
-          title="Hide Already Completed Quizzes"
-          description="Don't show quizzes in Explore if you have already achieved a passing score."
-        >
-          <SettingsToggle
-            checked={feed.hideCompletedQuizzes}
-            onChange={(checked) => handleUpdate('hideCompletedQuizzes', checked)}
-          />
+      <SettingsSection title="Explore filters" icon={Filter}>
+        <SettingsRow title="Hide completed quizzes">
+          <SettingsToggle checked={prefs.hideCompletedQuizzes ?? feed.hideCompletedQuizzes ?? false} disabled={saving}
+            onChange={value => update('hideCompletedQuizzes', value)} />
         </SettingsRow>
-
-        <SettingsRow
-          title="Verified Quizzes & Answer Keys"
-          description="Filter explore results to prioritize community-verified question banks and verified answer keys."
-        >
-          <SettingsToggle
-            checked={feed.filterUnverified}
-            onChange={(checked) => handleUpdate('filterUnverified', checked)}
-          />
+        <SettingsRow title="Only show verified quizzes">
+          <SettingsToggle checked={prefs.filterUnverified ?? feed.filterUnverified ?? prefs.showVerifiedOnly ?? false} disabled={saving}
+            onChange={value => update('filterUnverified', value)} />
         </SettingsRow>
       </SettingsSection>
     </div>
   );
 }
-
 export default FeedSettings;

@@ -6,6 +6,7 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import mongoose from 'mongoose';
 import { connectDB } from './config/db.js';
 import env from './config/env.js';
 import { logger } from './utils/logger.js';
@@ -17,7 +18,7 @@ import profileRoutes from './routes/profile.routes.js';
 const allowedOrigins = env.CLIENT_URL;
 
 const app = express();
-app.set('trust proxy', true);
+app.set('trust proxy', env.AUTH_TRUST_PROXY_HOPS);
 
 app.use(cors({
   origin: allowedOrigins,
@@ -39,11 +40,12 @@ app.use(csrfProtection);
 
 // Health check
 app.get('/api/v1/health', (req, res) => {
-  res.json({
+  const connected = mongoose.connection.readyState === 1;
+  res.status(connected ? 200 : 503).json({
     service: 'auth-service',
-    status: 'healthy',
+    status: connected ? 'healthy' : 'degraded',
     timestamp: new Date().toISOString(),
-    database: env.MONGO_URI.split('/').pop(),
+    database: connected ? 'connected' : 'unavailable',
   });
 });
 

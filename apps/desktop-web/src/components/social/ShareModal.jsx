@@ -9,19 +9,19 @@ import {
   Link2,
 } from 'lucide-react';
 import api from '../../api/axios';
+import { toast } from 'sonner';
 import { useAuthStore } from '../../store/authStore';
 import { Spinner } from '../ui';
 import './ShareModal.css';
 
-// In-memory cache across modal mounts to guarantee zero-jitter instant opens
-let cachedContacts = null;
-let cachedFrequent = null;
-
-export default function ShareModal({ isOpen, onClose, quiz, comment = null }) {
+export default function ShareModal({ isOpen, onClose, quiz, comment = null, profile = null }) {
   const { isAuthenticated, user } = useAuthStore();
-  const [contacts, setContacts] = useState(() => cachedContacts || []);
-  const [frequent, setFrequent] = useState(() => cachedFrequent || []);
-  const [loading, setLoading] = useState(() => !cachedContacts);
+  const [contacts, setContacts] = useState([]);
+  const [frequent, setFrequent] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [contactsError, setContactsError] = useState('');
+  const [contactsOwner, setContactsOwner] = useState(null);
+  const [reloadContacts, setReloadContacts] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [copied, setCopied] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState([]);
@@ -34,17 +34,17 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null }) {
   const quizId = typeof quiz === 'string'
     ? quiz
     : (quiz?._id || quiz?.id || comment?.quiz?._id || comment?.quiz?.id || (typeof comment?.quiz === 'string' ? comment.quiz : null));
-  const quizTitle = quiz?.title || 'Quiz from Book1.xlsx';
+  const quizTitle = quiz?.title || 'Shared quiz';
   const commentAuthor = comment?.author?.name || comment?.author?.username || 'user';
-  const effectiveTitle = isComment ? `Comment by @${commentAuthor}` : quizTitle;
+  const effectiveTitle = profile?.title || (isComment ? `Comment by @${commentAuthor}` : quizTitle);
 
-  const challengeUrl = typeof window !== 'undefined'
+  const challengeUrl = profile?.url || (quizId && typeof window !== 'undefined'
     ? (isComment
         ? `${window.location.origin}/quiz/${quizId}#comment-${comment._id}`
-        : `${window.location.origin}/quiz/${quizId || 'demo'}?challenge=true`)
-    : '';
+        : `${window.location.origin}/${quiz?.isChallenge ? 'challenges' : 'quiz'}/${quizId}${quiz?.isChallenge ? '/take' : ''}`)
+    : '');
 
-  const shareText = isComment
+  const shareText = profile ? `${profile.title} on QuizFocus` : isComment
     ? `Check out @${commentAuthor}'s comment on QuizFocus: "${comment.body?.slice(0, 100)}..."`
     : `Check out this quiz: "${quizTitle}" on QuizFocus!`;
 
@@ -76,58 +76,28 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null }) {
     };
   }, [isOpen]);
 
-  // Fetch share contacts when modal opens
+  // Account-specific contacts; failed requests never invent recipients.
   useEffect(() => {
     if (!isOpen) return;
     let cancelled = false;
-
-    if (!cachedContacts) {
-      setLoading(true);
-    }
-
-    api
-      .get('/social/share-contacts')
-      .then(({ data }) => {
-        if (!cancelled) {
-          const freq = data.data?.frequentlyConnected || [];
-          const cont = data.data?.contacts || [];
-          cachedFrequent = freq;
-          cachedContacts = cont;
-          setFrequent(freq);
-          setContacts(cont);
-        }
-      })
-      .catch(() => {
-        if (!cancelled && !cachedContacts) {
-          // Fallback mock contacts to match reference image when empty
-          const fallbackContacts = [
-            { _id: 'c1', name: 'Test User', username: 'test_user_800' },
-            { _id: 'c2', name: 'Alpha Tester', username: 'alpha_tester' },
-            { _id: 'c3', name: 'Beta Tester', username: 'beta_tester' },
-            { _id: 'c4', name: 'User Two', username: 'user_two' },
-          ];
-          const fallbackFrequent = [
-            { _id: 'f1', name: 'madhav', username: 'madhav' },
-            { _id: 'f2', name: 'ram', username: 'ram' },
-            { _id: 'f3', name: 'alpha_tester', username: 'alpha_tester' },
-            { _id: 'f4', name: 'beta_tester', username: 'beta_tester' },
-          ];
-          setContacts(fallbackContacts);
-          setFrequent(fallbackFrequent);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isOpen]);
+    setContacts([]); setFrequent([]); setSelectedContacts([]);
+    setContactsOwner(user?._id || null); setContactsError('');
+    if (!isAuthenticated) { setLoading(false); return; }
+    setLoading(true);
+    api.get('/social/share-contacts').then(({ data }) => {
+      if (cancelled) return;
+      setFrequent(data.data?.frequentlyConnected || []);
+      setContacts(data.data?.contacts || []);
+    }).catch(() => {
+      if (!cancelled) setContactsError('Could not load connections.');
+    }).finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [isOpen, isAuthenticated, user?._id, reloadContacts]);
 
   if (!isOpen) return null;
 
   const handleCopyLink = async () => {
+    if (!challengeUrl) return;
     try {
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(challengeUrl);
@@ -170,77 +140,28 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null }) {
     setIsSending(true);
 
     try {
-      const isValidMongoId = typeof quizId === 'string' && /^[0-9a-fA-F]{24}$/.test(quizId);
-      let anySucceeded = false;
+      const results = await Promise.allSettled(targets.map(contact => api.post('/messages/start', {
+        recipientId: contact._id, initialMessage: msg || shareText,
+        ...(profile ? { link: challengeUrl } : { quizId, ...(isComment ? { commentId: comment._id } : {}) }),
+      })));
+      const failed = targets.filter((_, index) => results[index].status === 'rejected');
+      const sent = targets.length - failed.length;
+      setSelectedContacts(failed);
+      if (sent) toast.success(sent === 1 ? 'Shared with 1 connection' : 'Shared with ' + sent + ' connections');
+      if (failed.length) toast.error('Could not send to ' + failed.length + ' connection(s). Check their messaging permissions and retry.');
+      else { setCustomMessage(''); onClose(); }
 
-      await Promise.all(
-        targets.map(async (contact) => {
-          try {
-            if (isComment && comment) {
-              await api.post('/messages/start', {
-                recipientId: contact._id,
-                recipientUsername: contact.username,
-                quizId: isValidMongoId ? quizId : undefined,
-                commentId: comment._id,
-                initialMessage: msg || shareText,
-              });
-              anySucceeded = true;
-            } else if (isValidMongoId) {
-              await api.post(`/social/quizzes/${quizId}/share-direct`, {
-                recipientId: contact._id,
-                recipientUsername: contact.username,
-                message: msg || undefined,
-              });
-              anySucceeded = true;
-            } else {
-              // Direct message fallback for mock or non-ObjectId items
-              await api.post('/messages/start', {
-                recipientId: contact._id,
-                recipientUsername: contact.username,
-                initialMessage: msg ? `${msg} — ${challengeUrl || shareText}` : (challengeUrl || shareText),
-              });
-              anySucceeded = true;
-            }
-          } catch (e) {
-            console.error('Failed to send share to', contact.username, e);
-          }
-        })
-      );
-
-      if (anySucceeded) {
-        setSendSuccess(true);
-        setTimeout(() => {
-          setSelectedContacts([]);
-          setCustomMessage('');
-          setSendSuccess(false);
-          onClose();
-        }, 1200);
-      }
     } finally {
       setIsSending(false);
     }
   };
 
-  const filteredContacts = (contacts.length > 0 ? contacts : [
-    { _id: 'c1', name: 'Test User', username: 'test_user_800' },
-    { _id: 'c2', name: 'Alpha Tester', username: 'alpha_tester' },
-    { _id: 'c3', name: 'Beta Tester', username: 'beta_tester' },
-    { _id: 'c4', name: 'User Two', username: 'user_two' },
-  ]).filter((c) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase().trim();
-    return (
-      (c.name && c.name.toLowerCase().includes(q)) ||
-      (c.username && c.username.toLowerCase().includes(q))
-    );
+  const ownContacts = contactsOwner === user?._id ? contacts : [];
+  const filteredContacts = ownContacts.filter(contact => {
+    const query = searchQuery.toLowerCase().trim();
+    return !query || [contact.name, contact.username].some(value => value?.toLowerCase().includes(query));
   });
-
-  const displayFrequent = frequent.length > 0 ? frequent : [
-    { _id: 'f1', name: 'madhav', username: 'madhav' },
-    { _id: 'f2', name: 'ram', username: 'ram' },
-    { _id: 'f3', name: 'alpha_tester', username: 'alpha_tester' },
-    { _id: 'f4', name: 'beta_tester', username: 'beta_tester' },
-  ];
+  const displayFrequent = contactsOwner === user?._id ? frequent : [];
 
   const modalContent = (
     <div className="share-modal-overlay" onClick={onClose}>
@@ -259,7 +180,7 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null }) {
             </div>
             <div className="share-header-meta">
               <h3 id="share-modal-title" className="share-dialog-title">
-                {isComment ? 'Share Comment' : 'Share Quiz'}
+                {profile ? 'Share profile' : isComment ? 'Share Comment' : 'Share Quiz'}
               </h3>
               <p className="share-dialog-subtitle" title={effectiveTitle}>
                 {effectiveTitle}
@@ -298,6 +219,7 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null }) {
               type="button"
               className={`share-pill-copy-btn ${copied ? 'copied' : ''}`}
               onClick={handleCopyLink}
+              disabled={!challengeUrl}
             >
               {copied ? (
                 <>
@@ -387,6 +309,7 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null }) {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="connections-search-input consistent-search-input"
+                aria-label="Search connections"
               />
             </div>
 
@@ -421,6 +344,9 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null }) {
 
             {/* Vertical Connections List */}
             <div className="connections-list-scroll custom-scrollbar">
+              {loading && <div role="status"><Spinner size="sm" /> Loading connections…</div>}
+              {contactsError && <p role="alert">{contactsError} <button type="button" onClick={() => setReloadContacts(n => n + 1)}>Retry</button></p>}
+              {!loading && !contactsError && filteredContacts.length === 0 && <p>{!isAuthenticated ? 'Sign in to share with connections.' : searchQuery ? 'No matching connections.' : 'Your connections will appear here. You can still copy the link.'}</p>}
               {filteredContacts.map((contact) => {
                 const isSelected = selectedContacts.some((c) => c._id === contact._id);
                 const initial = (contact.name?.[0] || contact.username?.[0] || 'U').toUpperCase();
@@ -428,6 +354,10 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null }) {
                 return (
                   <div
                     key={contact._id}
+                    role="checkbox"
+                    aria-checked={isSelected}
+                    tabIndex={0}
+                    onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleToggleContact(contact); } }}
                     className={`connection-row-card ${isSelected ? 'selected' : ''}`}
                     onClick={() => handleToggleContact(contact)}
                   >
@@ -477,6 +407,8 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null }) {
                 value={customMessage}
                 onChange={(e) => setCustomMessage(e.target.value)}
                 rows={3}
+                maxLength={2000}
+                aria-label="Optional message"
               />
 
               <span className="preview-hint-note">Your message is optional.</span>
@@ -517,7 +449,7 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null }) {
                   type="button"
                   className="action-btn-send-main"
                   onClick={handleSendToSelected}
-                  disabled={selectedContacts.length === 0 || isSending}
+                  disabled={selectedContacts.length === 0 || isSending || !challengeUrl || !isAuthenticated}
                 >
                   {isSending ? (
                     <Spinner size={14} />

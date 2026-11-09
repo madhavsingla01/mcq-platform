@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getGuestSessionId } from '../utils/quizSession';
+import { apiFailure } from './errorContract';
 
 export const AUTH_SESSION_EXPIRED_EVENT = 'mcq:auth-session-expired';
 
@@ -19,8 +20,7 @@ const refreshClient = axios.create({
   xsrfHeaderName: 'x-csrf-token',
 });
 
-let isRefreshing = false;
-let failedQueue = [];
+let refreshPromise;
 
 api.interceptors.request.use((config) => {
   const sessionId = getGuestSessionId();
@@ -30,17 +30,6 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
-
-const processQueue = (error, token = null) => {
-  failedQueue.forEach(prom => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-  failedQueue = [];
-};
 
 const normalizeUrl = (url = '') => {
   if (!url) return '';
@@ -55,7 +44,7 @@ const normalizeUrl = (url = '') => {
   }
 };
 
-const isAuthEndpoint = (url) => normalizeUrl(url).startsWith('/auth/');
+const sessionEndpoints = new Set(['/auth/login', '/auth/register', '/auth/bootstrap', '/auth/refresh', '/auth/logout']);
 
 const notifySessionExpired = () => {
   if (typeof window !== 'undefined') {
@@ -63,42 +52,43 @@ const notifySessionExpired = () => {
   }
 };
 
+const refreshSession = () => {
+  if (!refreshPromise) {
+    refreshPromise = refreshClient.post('/auth/refresh').catch(async (error) => {
+      if (error.response?.status !== 401) throw error;
+      // Another tab may have already rotated the cookie successfully.
+      try {
+        await refreshClient.get('/auth/me');
+      } catch (verificationError) {
+        if (verificationError.response?.status === 401) notifySessionExpired();
+        throw verificationError;
+      }
+    }).finally(() => { refreshPromise = undefined; });
+  }
+  return refreshPromise;
+};
+
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
+    error.apiFailure = apiFailure(error);
     const originalRequest = error.config;
     const shouldRefresh =
       error.response?.status === 401 &&
       originalRequest &&
       !originalRequest._retry &&
       !originalRequest.skipAuthRefresh &&
-      !isAuthEndpoint(originalRequest.url);
+      !sessionEndpoints.has(normalizeUrl(originalRequest.url));
 
     if (shouldRefresh) {
-      if (isRefreshing) {
-        return new Promise(function(resolve, reject) {
-          failedQueue.push({ resolve, reject });
-        }).then(token => {
-          return api(originalRequest);
-        }).catch(err => {
-          return Promise.reject(err);
-        });
-      }
-
       originalRequest._retry = true;
-      isRefreshing = true;
-
       try {
-        await refreshClient.post('/auth/refresh');
-        processQueue(null, true);
-        return api(originalRequest);
-      } catch (err) {
-        processQueue(err, null);
-        notifySessionExpired();
-        return Promise.reject(err);
-      } finally {
-        isRefreshing = false;
+        await refreshSession();
+      } catch (refreshError) {
+        refreshError.apiFailure = apiFailure(refreshError);
+        throw refreshError;
       }
+      return api(originalRequest);
     }
 
     return Promise.reject(error);

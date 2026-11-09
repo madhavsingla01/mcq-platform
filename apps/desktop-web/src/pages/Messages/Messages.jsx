@@ -1,3 +1,5 @@
+import { rankSearchResults } from '../../components/search/rankSearchResults';
+import { usePageSearch } from '../../components/search/PageSearchContext';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
@@ -24,6 +26,8 @@ import {
   CornerDownLeft,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import { useSettingsStore } from '../../store/settingsStore';
+import { MESSAGE_LIMIT, mergeMessages, applyMessageDeletion, applyReadReceipt, canEditMessage, readDraft, writeDraft } from './chatState';
 import { messageService } from '../../services/message.service';
 import {
   getSocket,
@@ -31,14 +35,13 @@ import {
   leaveConversation,
   sendTypingStart,
   sendTypingStop,
-  emitMarkRead,
   fetchUserPresence,
 } from '../../services/socket.service';
 import { Spinner, Button } from '../../components/ui';
 import { toast } from 'sonner';
 import './Messages.css';
 
-const QUICK_REACTIONS = ['ðŸ‘', 'â¤ï¸', 'ðŸ˜‚', 'ðŸ˜®', 'ðŸ˜¢', 'ðŸ™'];
+const QUICK_REACTIONS = ['\u{1F44D}', '\u{2764}\u{FE0F}', '\u{1F602}', '\u{1F62E}', '\u{1F622}', '\u{1F64F}'];
 
 const chatListTimeFormat = (value) => {
   if (!value) return '';
@@ -64,17 +67,6 @@ const messageTimeFormat = (value) => {
   return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
 };
 
-const dedupeMessages = (items) => {
-  const seen = new Set();
-  return items.filter((message) => {
-    if (message?._id == null) return true;
-    const id = String(message._id);
-    if (seen.has(id)) return false;
-    seen.add(id);
-    return true;
-  });
-};
-
 const getMessageDateKey = (isoString) => {
   if (!isoString) return '';
   const d = new Date(isoString);
@@ -97,6 +89,9 @@ export default function Messages() {
   const { conversationId } = useParams();
   const navigate = useNavigate();
   const { user: currentUser } = useAuthStore();
+  const sendOnEnter = useSettingsStore((s) => s.messagingSendOnEnter);
+  const typingIndicators = useSettingsStore((s) => s.messagingTypingIndicators);
+  const reducedMotion = useSettingsStore((s) => s.reducedMotion);
 
   const [conversations, setConversations] = useState([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
@@ -105,7 +100,21 @@ export default function Messages() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const { query, setQuery } = usePageSearch();
+  const searchQuery = conversationId ? '' : query;
+  const threadSearch = conversationId ? query : '';
+  const [inboxPagination, setInboxPagination] = useState(null);
+  const [loadingMoreChats, setLoadingMoreChats] = useState(false);
+  const [inboxError, setInboxError] = useState('');
+  const [threadError, setThreadError] = useState('');
+  const [historyPagination, setHistoryPagination] = useState(null);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchPagination, setSearchPagination] = useState(null);
+  const [searchingMessages, setSearchingMessages] = useState(false);
+  const [searchError, setSearchError] = useState('');
+  const [connected, setConnected] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // WhatsApp interaction states
   const [replyingTo, setReplyingTo] = useState(null);
@@ -122,6 +131,26 @@ export default function Messages() {
   const [isPeerOnline, setIsPeerOnline] = useState(false);
   const [peerLastSeen, setPeerLastSeen] = useState(null);
   const typingDebounceTimerRef = useRef(null);
+  const peerTypingTimerRef = useRef(null);
+  const lastTypingAtRef = useRef(0);
+  const currentConversationRef = useRef(conversationId);
+  currentConversationRef.current = conversationId;
+  const currentSearchRef = useRef(threadSearch);
+  currentSearchRef.current = threadSearch;
+  const inboxPagesRef = useRef(1);
+  const inboxReloadTimer = useRef(null);
+  const conversationsRef = useRef(conversations);
+  conversationsRef.current = conversations;
+  const sendingRef = useRef(false);
+  const readIdsRef = useRef(new Set());
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+  const retryPayloadRef = useRef(null);
+  const reactionPendingRef = useRef(new Set());
+  const draftBeforeEditRef = useRef('');
+  const editingMessageRef = useRef(editingMessage);
+  editingMessageRef.current = editingMessage;
+  const dialogRef = useRef(null);
 
   // New Chat Modal state
   const [newChatModalOpen, setNewChatModalOpen] = useState(false);
@@ -132,23 +161,86 @@ export default function Messages() {
   const threadStreamRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Keep message scrolling inside the thread so the composer stays in place.
   const scrollToBottom = useCallback((smooth = true) => {
     const stream = threadStreamRef.current;
     if (!stream) return;
     stream.scrollTo({
       top: stream.scrollHeight,
-      behavior: smooth ? 'smooth' : 'auto',
+      behavior: smooth && !reducedMotion && !window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'smooth' : 'instant',
     });
-  }, []);
+  }, [reducedMotion]);
 
-  const handleThreadScroll = () => {
+  const markVisibleRead = useCallback(() => {
+    const stream = threadStreamRef.current;
+    if (!conversationId || document.hidden || !stream || currentSearchRef.current.trim()) return;
+    const bounds = stream.getBoundingClientRect();
+    const bottom = Math.min(bounds.bottom, window.innerHeight);
+    const top = Math.max(bounds.top, 0);
+    const ids = messagesRef.current.filter((message) => {
+      if (message.isOptimistic || String(message.sender?._id || message.sender) === String(currentUser?._id) || readIdsRef.current.has(message._id)) return false;
+      const item = document.getElementById(`msg-${message._id}`)?.getBoundingClientRect();
+      return item && item.bottom > top && item.top < bottom;
+    }).slice(0, 200).map((message) => message._id);
+    if (!ids.length) return;
+    ids.forEach((id) => readIdsRef.current.add(id));
+    messageService.markConversationRead(conversationId, ids).then((data) => {
+      setConversations((previous) => previous.map((item) => item._id === conversationId
+        ? { ...item, unreadCount: data.unreadCount } : item));
+    }).catch(() => ids.forEach((id) => readIdsRef.current.delete(id)));
+  }, [conversationId, currentUser?._id]);
+
+  useEffect(() => {
     const stream = threadStreamRef.current;
     if (!stream) return;
-    setHoveredMessageId(null);
-    const distanceFromBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight;
-    setShowScrollBottom(distanceFromBottom > 240);
-  };
+    let frame = 0;
+    const handleScroll = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        setHoveredMessageId(null);
+        const distance = stream.scrollHeight - stream.scrollTop - stream.clientHeight;
+        setShowScrollBottom(distance > 240);
+        markVisibleRead();
+      });
+    };
+    stream.addEventListener('scroll', handleScroll, { passive: true });
+    return () => { stream.removeEventListener('scroll', handleScroll); cancelAnimationFrame(frame); };
+  }, [markVisibleRead]);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(markVisibleRead);
+    document.addEventListener('visibilitychange', markVisibleRead);
+    window.addEventListener('focus', markVisibleRead);
+    return () => {
+      cancelAnimationFrame(frame);
+      document.removeEventListener('visibilitychange', markVisibleRead);
+      window.removeEventListener('focus', markVisibleRead);
+    };
+  }, [messages, threadSearch, loadingMessages, markVisibleRead]);
+
+  // Trap focus in dialogs, support Escape and return focus to the opener.
+  useEffect(() => {
+    if (!deleteTarget && !newChatModalOpen) return;
+    const opener = document.activeElement;
+    const dialog = dialogRef.current;
+    const controls = () => [...(dialog?.querySelectorAll('button:not(:disabled), input, [href]') || [])];
+    controls()[0]?.focus();
+    const onKey = (event) => {
+      if (event.key === 'Escape' && !deleting) {
+        setDeleteTarget(null);
+        setNewChatModalOpen(false);
+      }
+      if (event.key === 'Tab') {
+        const items = controls();
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('keydown', onKey); opener?.focus(); };
+  }, [Boolean(deleteTarget), newChatModalOpen, deleting]);
 
   // Close active dropdown menu when clicking outside
   useEffect(() => {
@@ -159,493 +251,428 @@ export default function Messages() {
     return () => window.removeEventListener('click', handleClickOutside);
   }, []);
 
-  // 1. Fetch conversations list
   const loadConversations = useCallback(async (quiet = false) => {
     if (!quiet) setLoadingConversations(true);
     try {
-      const data = await messageService.getConversations();
-      setConversations(data.conversations || []);
-    } catch (err) {
-      console.error('Failed to load conversations:', err);
+      const pages = await Promise.all(Array.from({ length: quiet ? 1 : inboxPagesRef.current }, (_, index) =>
+        messageService.getConversations({ page: index + 1, limit: 30 })));
+      const unique = new Map(pages.flatMap((page) => page.conversations || []).map((item) => [item._id, item]));
+      setConversations(previous => {
+        if (quiet && inboxPagesRef.current > 1) for (const item of previous) if (!unique.has(item._id)) unique.set(item._id, item);
+        return [...unique.values()].sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
+      });
+      if (!quiet || inboxPagesRef.current === 1) setInboxPagination(pages.at(-1)?.pagination);
+      setInboxError('');
+    } catch {
+      setInboxError('Could not load conversations.');
     } finally {
       if (!quiet) setLoadingConversations(false);
     }
   }, []);
 
+  const loadMoreConversations = async () => {
+    if (loadingMoreChats || !inboxPagination?.hasMore) return;
+    setLoadingMoreChats(true);
+    try {
+      const page = inboxPagesRef.current + 1;
+      const data = await messageService.getConversations({ page, limit: 30 });
+      setConversations((previous) => [...new Map([...previous, ...(data.conversations || [])].map((item) => [item._id, item])).values()]);
+      inboxPagesRef.current = page;
+      setInboxPagination(data.pagination);
+    } catch { toast.error('Could not load more conversations.'); }
+    finally { setLoadingMoreChats(false); }
+  };
+
   useEffect(() => {
     loadConversations();
-    const interval = setInterval(() => loadConversations(true), 15000);
+    const interval = setInterval(() => { if (!document.hidden) loadConversations(true); }, 30000);
     return () => clearInterval(interval);
   }, [loadConversations]);
 
-  // 2. Fetch messages when conversationId changes
-  useEffect(() => {
-    if (!conversationId) {
-      setActiveConversation(null);
-      setMessages([]);
-      setReplyingTo(null);
-      setEditingMessage(null);
-      return;
-    }
-
-    let isCancelled = false;
+  const loadThread = useCallback(async () => {
+    if (!conversationId) return;
+    const target = conversationId;
     setLoadingMessages(true);
+    setThreadError('');
+    try {
+      const data = await messageService.getMessages(target, { limit: 40 });
+      if (currentConversationRef.current !== target) return;
+      setActiveConversation(data.conversation);
+      setMessages((previous) => mergeMessages(previous, data.messages || []));
+      setHistoryPagination(data.pagination);
+      requestAnimationFrame(() => scrollToBottom(false));
+    } catch (error) {
+      if (currentConversationRef.current === target) setThreadError(error.response?.data?.message || 'Could not load this conversation.');
+    } finally {
+      if (currentConversationRef.current === target) setLoadingMessages(false);
+    }
+  }, [conversationId, scrollToBottom]);
+
+  useEffect(() => {
+    setActiveConversation(null);
+    setMessages([]);
+    setHistoryPagination(null);
     setReplyingTo(null);
     setEditingMessage(null);
+    setDeleteTarget(null);
+    setActiveActionMenuId(null);
+    setIsPeerTyping(false);
+    setIsPeerOnline(false);
+    setPeerLastSeen(null);
     setShowScrollBottom(false);
-
-    messageService
-      .getMessages(conversationId)
-      .then((data) => {
-        if (!isCancelled) {
-          setActiveConversation(data.conversation);
-          setMessages(dedupeMessages(data.messages || []));
-          setTimeout(() => scrollToBottom(false), 80);
-
-          // Mark unread as 0 locally in conversations list
-          setConversations((prev) =>
-            prev.map((c) => (c._id === conversationId ? { ...c, unreadCount: 0 } : c))
-          );
-        }
-      })
-      .catch((err) => {
-        if (!isCancelled) {
-          console.error('Failed to load messages for conversation:', err);
-          navigate('/messages', { replace: true });
-        }
-      })
-      .finally(() => {
-        if (!isCancelled) setLoadingMessages(false);
-      });
-
+    setSearchResults([]);
+    setInputText(readDraft(currentUser?._id, conversationId));
+    setThreadError('');
+    setLoadingHistory(false);
+    readIdsRef.current = new Set();
+    retryPayloadRef.current = null;
+    if (conversationId) loadThread();
     return () => {
-      isCancelled = true;
+      clearTimeout(typingDebounceTimerRef.current);
+      clearTimeout(peerTypingTimerRef.current);
+      if (conversationId) sendTypingStop(conversationId);
     };
-  }, [conversationId, navigate, scrollToBottom]);
+  }, [conversationId, currentUser?._id, loadThread]);
 
-  // Real-Time Socket.IO Subscriptions (Replaces Polling)
+  const loadOlderMessages = async () => {
+    if (loadingHistory || !historyPagination?.hasMore) return;
+    const target = conversationId;
+    const stream = threadStreamRef.current;
+    const previousHeight = stream?.scrollHeight || 0;
+    const previousTop = stream?.scrollTop || 0;
+    setLoadingHistory(true);
+    try {
+      const data = await messageService.getMessages(target, { before: historyPagination.nextCursor, limit: 40 });
+      if (currentConversationRef.current !== target) return;
+      setMessages((previous) => mergeMessages(previous, data.messages || []));
+      setHistoryPagination(data.pagination);
+      requestAnimationFrame(() => {
+        if (stream && currentConversationRef.current === target) stream.scrollTop = previousTop + stream.scrollHeight - previousHeight;
+      });
+    } catch { toast.error('Could not load earlier messages.'); }
+    finally { if (currentConversationRef.current === target) setLoadingHistory(false); }
+  };
+
+  useEffect(() => {
+    if (!conversationId || !threadSearch.trim()) { setSearchResults([]); setSearchPagination(null); setSearchError(''); setSearchingMessages(false); return; }
+    const controller = new AbortController();
+    setSearchingMessages(true);
+    setSearchPagination(null);
+    const timer = setTimeout(async () => {
+      try {
+        const data = await messageService.getMessages(conversationId, { q: threadSearch.trim(), match: 'closest', limit: 40 }, controller.signal);
+        if (controller.signal.aborted) return;
+        setSearchResults(data.messages || []);
+        setSearchPagination(data.pagination);
+        setSearchError('');
+        requestAnimationFrame(() => {
+          if (!controller.signal.aborted && threadStreamRef.current) threadStreamRef.current.scrollTop = 0;
+        });
+      } catch (error) { if (!controller.signal.aborted) setSearchError('Could not search messages. Try again.'); }
+      finally { if (!controller.signal.aborted) setSearchingMessages(false); }
+    }, 300);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [conversationId, threadSearch]);
+
+  const loadMoreSearchResults = async () => {
+    const target = conversationId;
+    const query = threadSearch;
+    if (searchingMessages || !searchPagination?.hasMore) return;
+    setSearchingMessages(true);
+    try {
+      const data = await messageService.getMessages(target, { q: query.trim(), match: 'closest', before: searchPagination.nextCursor, limit: 40 });
+      if (currentConversationRef.current !== target || currentSearchRef.current !== query) return;
+      setSearchResults(previous => [...new Map([...previous, ...(data.messages || [])].map(message => [message._id, message])).values()]);
+      setSearchPagination(data.pagination);
+    } catch { toast.error('Could not load more search results.'); }
+    finally { if (currentConversationRef.current === target && currentSearchRef.current === query) setSearchingMessages(false); }
+  };
+
   useEffect(() => {
     const socket = getSocket();
-    if (!socket) return;
-
-    if (conversationId) {
-      joinConversation(conversationId);
-      emitMarkRead(conversationId);
-    }
-
-    // Check peer presence if we have active conversation
+    let cancelled = false;
     const otherId = activeConversation?.otherParticipant?._id;
-    if (otherId) {
-      fetchUserPresence([otherId]).then((res) => {
-        if (res && res[otherId]) {
-          setIsPeerOnline(res[otherId].isOnline);
-          setPeerLastSeen(res[otherId].lastSeen);
-        }
-      });
-    }
-
-    const handleNewMessage = (payload) => {
-      if (payload.conversationId === conversationId) {
-        setMessages((prev) => dedupeMessages([...prev, payload.message]));
-        setTimeout(() => scrollToBottom(true), 60);
-        emitMarkRead(conversationId, [payload.message._id]);
-      }
-    };
-
-    const handleConversationUpdated = (data) => {
-      setConversations((prev) => {
-        const exists = prev.some((c) => c._id === data.conversationId);
-        if (exists) {
-          return prev
-            .map((c) =>
-              c._id === data.conversationId
-                ? {
-                  ...c,
-                  lastMessage: data.lastMessage,
-                  lastMessageText: data.lastMessageText,
-                  lastMessageAt: data.lastMessageAt,
-                  unreadCount:
-                    c._id === conversationId
-                      ? 0
-                      : (Array.isArray(data.unreadCounts)
-                        ? data.unreadCounts.find((u) => u.user === currentUser?._id)?.count ?? c.unreadCount
-                        : c.unreadCount),
-                }
-                : c
-            )
-            .sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
-        } else {
-          loadConversations(true);
-          return prev;
-        }
+    const refreshPresence = () => {
+      if (otherId) fetchUserPresence([otherId]).then((result) => {
+        if (cancelled) return;
+        setIsPeerOnline(Boolean(result?.[otherId]?.isOnline));
+        setPeerLastSeen(result?.[otherId]?.lastSeen || null);
       });
     };
-
-    const handleTyping = (data) => {
-      if (data.conversationId === conversationId && data.user?._id !== currentUser?._id) {
-        setIsPeerTyping(data.isTyping);
-      }
-    };
-
-    const handlePresence = (data) => {
-      const currentOtherId = activeConversation?.otherParticipant?._id;
-      if (currentOtherId && (data.userId === currentOtherId || String(data.userId) === String(currentOtherId))) {
-        setIsPeerOnline(data.isOnline);
-        setPeerLastSeen(data.lastSeen);
-      }
-    };
-
-    const handleReactionUpdate = (data) => {
-      if (data.conversationId === conversationId) {
-        setMessages((prev) =>
-          prev.map((m) => (m._id === data.messageId ? { ...m, reactions: data.reactions } : m))
-        );
-      }
-    };
-
-    const handleEdited = (data) => {
-      if (data.conversationId === conversationId) {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m._id === data.messageId
-              ? { ...m, text: data.text, isEdited: true, editedAt: data.editedAt }
-              : m
-          )
-        );
-      }
-    };
-
-    const handleDeleted = (data) => {
-      if (data.conversationId === conversationId) {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m._id === data.messageId
-              ? { ...m, isDeleted: true, text: 'This message was deleted' }
-              : m
-          )
-        );
-      }
-    };
-
-    const handleReadStatus = (data) => {
-      if (data.conversationId === conversationId && data.readerId !== currentUser?._id) {
-        setMessages((prev) =>
-          prev.map((m) => {
-            if (String(m.sender?._id || m.sender) === String(currentUser?._id)) {
-              const currentReadBy = m.readBy || [];
-              if (!currentReadBy.includes(data.readerId)) {
-                return { ...m, readBy: [...currentReadBy, data.readerId] };
+    const handleConnect = async () => {
+      setConnected(true);
+      if (conversationId) joinConversation(conversationId);
+      refreshPresence();
+      loadConversations(true);
+      if (conversationId) {
+        try {
+          const data = await messageService.getMessages(conversationId, { limit: 40 });
+          if (!cancelled) {
+            // Reload the latest server state after a connection gap. This also
+            // removes messages hidden on another device while disconnected.
+            setMessages(data.messages || []);
+            setHistoryPagination(data.pagination);
+            const query = currentSearchRef.current.trim();
+            if (!query) requestAnimationFrame(() => scrollToBottom(false));
+            else {
+              const results = await messageService.getMessages(conversationId, { q: query, match: 'closest', limit: 40 });
+              if (!cancelled && currentSearchRef.current.trim() === query) {
+                setSearchResults(results.messages || []);
+                setSearchPagination(results.pagination);
+                setSearchError('');
               }
             }
-            return m;
-          })
-        );
+          }
+        } catch { /* Keep current history while reconnecting. */ }
       }
     };
+    const handleDisconnect = () => { setConnected(false); setIsPeerTyping(false); setIsPeerOnline(false); };
+    setConnected(socket.connected);
+    if (socket.connected) { if (conversationId) joinConversation(conversationId); refreshPresence(); }
 
-    socket.on('message:new', handleNewMessage);
-    socket.on('conversation:updated', handleConversationUpdated);
-    socket.on('typing:update', handleTyping);
-    socket.on('presence:update', handlePresence);
-    socket.on('message:reaction_update', handleReactionUpdate);
-    socket.on('message:edited', handleEdited);
-    socket.on('message:deleted', handleDeleted);
-    socket.on('message:read_status', handleReadStatus);
-
-    return () => {
-      if (conversationId) {
-        leaveConversation(conversationId);
+    const updateMessage = (id, updater) => {
+      setMessages((previous) => previous.map((item) => item._id === id ? updater(item) : item));
+      setSearchResults((previous) => previous.map((item) => item._id === id ? updater(item) : item));
+    };
+    const handleNewMessage = (payload) => {
+      if (payload.conversationId !== conversationId || !payload.message) return;
+      const stream = threadStreamRef.current;
+      const nearBottom = stream && stream.scrollHeight - stream.scrollTop - stream.clientHeight < 160;
+      setMessages((previous) => mergeMessages(previous, [payload.message]));
+      if (nearBottom && !currentSearchRef.current.trim()) requestAnimationFrame(() => scrollToBottom(false));
+      else setShowScrollBottom(true);
+    };
+    const handleConversationUpdated = (data) => {
+      if (!conversationsRef.current.some(item => item._id === data.conversationId)) {
+        clearTimeout(inboxReloadTimer.current);
+        inboxReloadTimer.current = setTimeout(() => loadConversations(true), 250);
+        return;
       }
-      socket.off('message:new', handleNewMessage);
-      socket.off('conversation:updated', handleConversationUpdated);
-      socket.off('typing:update', handleTyping);
-      socket.off('presence:update', handlePresence);
-      socket.off('message:reaction_update', handleReactionUpdate);
-      socket.off('message:edited', handleEdited);
-      socket.off('message:deleted', handleDeleted);
-      socket.off('message:read_status', handleReadStatus);
+      setConversations(previous => previous.map(item => item._id !== data.conversationId ? item : {
+        ...item, lastMessage: data.lastMessage, lastMessageAt: data.lastMessageAt, lastMessageText: data.lastMessageText,
+        unreadCount: data.unreadCounts?.find(entry => String(entry.user) === String(currentUser?._id))?.count ?? item.unreadCount,
+      }).sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt)));
+    };
+    const handleTyping = (data) => {
+      if (data.conversationId !== conversationId || String(data.user?._id) === String(currentUser?._id)) return;
+      setIsPeerTyping(Boolean(data.isTyping));
+      clearTimeout(peerTypingTimerRef.current);
+      if (data.isTyping) peerTypingTimerRef.current = setTimeout(() => setIsPeerTyping(false), 5000);
+    };
+    const handlePresence = (data) => {
+      if (String(data.userId) === String(otherId)) { setIsPeerOnline(data.isOnline); setPeerLastSeen(data.lastSeen); }
+    };
+    const handleReaction = (data) => {
+      if (data.conversationId === conversationId) updateMessage(data.messageId, (message) => ({ ...message, reactions: data.reactions }));
+    };
+    const handleEdited = (data) => {
+      if (data.conversationId === conversationId) updateMessage(data.messageId, (message) => ({ ...message, text: data.text, isEdited: true, editedAt: data.editedAt }));
+    };
+    const handleDeleted = (data) => {
+      if (data.conversationId !== conversationId) return;
+      const update = (previous) => applyMessageDeletion(previous, data.messageId, data.mode);
+      setMessages(update);
+      setSearchResults(previous => previous.filter(message => message._id !== data.messageId));
+      setDeleteTarget((previous) => previous?._id === data.messageId ? null : previous);
+      setReplyingTo((previous) => previous?._id === data.messageId ? null : previous);
+      if (editingMessageRef.current?._id === data.messageId) {
+        setEditingMessage(null);
+        setInputText(draftBeforeEditRef.current);
+      }
+    };
+    const handleRead = (data) => {
+      if (data.conversationId === conversationId && String(data.readerId) !== String(currentUser?._id)) {
+        setMessages((previous) => applyReadReceipt(previous, data, currentUser?._id));
+      }
+    };
+    const subscriptions = { connect: handleConnect, disconnect: handleDisconnect, connect_error: handleDisconnect,
+      'message:new': handleNewMessage, 'conversation:updated': handleConversationUpdated,
+      'typing:update': handleTyping, 'presence:update': handlePresence,
+      'message:reaction_update': handleReaction, 'message:edited': handleEdited,
+      'message:deleted': handleDeleted, 'message:read_status': handleRead };
+    Object.entries(subscriptions).forEach(([event, handler]) => socket.on(event, handler));
+    return () => {
+      cancelled = true;
+      clearTimeout(inboxReloadTimer.current);
+      if (conversationId) leaveConversation(conversationId);
+      Object.entries(subscriptions).forEach(([event, handler]) => socket.off(event, handler));
     };
   }, [conversationId, activeConversation?.otherParticipant?._id, currentUser?._id, loadConversations, scrollToBottom]);
 
-  const handleInputChange = (e) => {
-    const val = e.target.value;
-    setInputText(val);
-
-    if (!conversationId) return;
-    sendTypingStart(conversationId);
-
-    if (typingDebounceTimerRef.current) {
-      clearTimeout(typingDebounceTimerRef.current);
+  const handleInputChange = (event) => {
+    const value = event.target.value;
+    setInputText(value);
+    if (!editingMessage) writeDraft(currentUser?._id, conversationId, value);
+    if (!conversationId || !typingIndicators) return;
+    if (Date.now() - lastTypingAtRef.current > 1500) {
+      sendTypingStart(conversationId);
+      lastTypingAtRef.current = Date.now();
     }
-    typingDebounceTimerRef.current = setTimeout(() => {
-      sendTypingStop(conversationId);
-    }, 2500);
+    clearTimeout(typingDebounceTimerRef.current);
+    typingDebounceTimerRef.current = setTimeout(() => sendTypingStop(conversationId), 2000);
   };
 
-  // 3. Send / Edit message
-  const handleSendMessage = async (e) => {
-    e?.preventDefault();
-    inputRef.current?.focus();
-
-    if (typingDebounceTimerRef.current) {
-      clearTimeout(typingDebounceTimerRef.current);
-    }
-    if (conversationId) {
-      sendTypingStop(conversationId);
-    }
-
+  const handleSendMessage = async (event) => {
+    event?.preventDefault();
     const text = inputText.trim();
-    if (!text || sending || !conversationId) return;
+    if (!text || text.length > MESSAGE_LIMIT || sendingRef.current || !conversationId || loadingMessages || threadError) return;
+    const target = conversationId;
+    const belongsToCurrent = () => currentConversationRef.current === target;
+    clearTimeout(typingDebounceTimerRef.current);
+    sendTypingStop(target);
+    sendingRef.current = true;
+    setSending(true);
 
-    // Handle Edit Mode
     if (editingMessage) {
       const targetId = editingMessage._id;
-      setSending(true);
       try {
         const data = await messageService.editMessage(targetId, text);
-        setMessages((prev) =>
-          prev.map((m) => (m._id === targetId ? data.message : m))
-        );
-        setEditingMessage(null);
-        setInputText('');
-      } catch (err) {
-        console.error('Failed to edit message:', err);
-        toast.error('Could not edit message. Please try again.');
-      } finally {
-        setSending(false);
-        inputRef.current?.focus();
-      }
+        if (belongsToCurrent()) {
+          setMessages((previous) => previous.map((message) => message._id === targetId ? data.message : message));
+          setSearchResults((previous) => previous.map((message) => message._id === targetId ? data.message : message));
+          setEditingMessage(null);
+          setInputText(draftBeforeEditRef.current);
+        }
+      } catch (error) { toast.error(error.response?.data?.message || 'Could not edit message. Please try again.'); }
+      finally { sendingRef.current = false; setSending(false); if (belongsToCurrent()) inputRef.current?.focus(); }
       return;
     }
 
-    // Normal Send Mode (with optional Reply quote)
+    const quote = replyingTo ? {
+      messageId: replyingTo._id,
+      senderName: replyingTo.sender?.name || replyingTo.sender?.username || 'User',
+      text: replyingTo.text,
+    } : null;
+    const previousAttempt = retryPayloadRef.current;
+    const clientMessageId = previousAttempt?.conversationId === target && previousAttempt.text === text && previousAttempt.replyId === quote?.messageId
+      ? previousAttempt.id : (crypto.randomUUID?.() || Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, '0')).join(''));
+    retryPayloadRef.current = { conversationId: target, text, replyId: quote?.messageId, id: clientMessageId };
+    const temporaryId = `temp-${clientMessageId}`;
+    const optimistic = { _id: temporaryId, clientMessageId, sender: currentUser, text, type: 'text', replyTo: quote,
+      createdAt: new Date().toISOString(), isOptimistic: true, reactions: [] };
+    setMessages((previous) => mergeMessages(previous, [optimistic]));
     setInputText('');
-    setSending(true);
-
-    const payloadReplyTo = replyingTo
-      ? {
-        messageId: replyingTo._id,
-        senderName: replyingTo.sender?.name || replyingTo.sender?.username || 'User',
-        text: replyingTo.text,
-      }
-      : null;
-
     setReplyingTo(null);
-
-    // Optimistic message
-    const tempId = 'temp-' + Date.now();
-    const optimisticMsg = {
-      _id: tempId,
-      sender: {
-        _id: currentUser?._id,
-        name: currentUser?.name,
-        username: currentUser?.username,
-        avatar: currentUser?.avatar,
-      },
-      text,
-      type: 'text',
-      replyTo: payloadReplyTo,
-      createdAt: new Date().toISOString(),
-      isOptimistic: true,
-      reactions: [],
-    };
-
-    setMessages((prev) => [...prev, optimisticMsg]);
-    setTimeout(() => scrollToBottom(true), 30);
-
+    writeDraft(currentUser?._id, target, '');
+    setQuery('');
+    requestAnimationFrame(() => scrollToBottom(false));
     try {
-      const data = await messageService.sendMessage(conversationId, {
-        text,
-        replyTo: payloadReplyTo,
-      });
-      setMessages((prev) => {
-        const reconciled = prev.map((message) =>
-          String(message._id) === tempId ? data.message : message
-        );
-        const responseAlreadyPresent = reconciled.some(
-          (message) => String(message._id) === String(data.message._id)
-        );
-        return dedupeMessages(
-          responseAlreadyPresent ? reconciled : [...reconciled, data.message]
-        );
-      });
-      // Update conversations list preview
-      setConversations((prev) =>
-        prev.map((c) =>
-          c._id === conversationId
-            ? { ...c, lastMessageText: text, lastMessageAt: new Date().toISOString() }
-            : c
-        )
-      );
-    } catch (err) {
-      console.error('Failed to send message:', err);
-      setMessages((prev) => prev.filter((m) => m._id !== tempId));
-      setInputText(text);
-      toast.error('Failed to send message. Please try again.');
+      const data = await messageService.sendMessage(target, { text, replyTo: quote, clientMessageId });
+      retryPayloadRef.current = null;
+      if (belongsToCurrent()) setMessages((previous) => mergeMessages(previous, [data.message]));
+      loadConversations(true);
+    } catch (error) {
+      writeDraft(currentUser?._id, target, text);
+      if (belongsToCurrent()) {
+        setMessages((previous) => previous.filter((message) => message._id !== temporaryId));
+        setInputText(text);
+        setReplyingTo(replyingTo);
+      }
+      toast.error(error.apiFailure?.message || error.response?.data?.message || 'Message not confirmed. Your draft is saved; retry to confirm delivery.');
     } finally {
+      sendingRef.current = false;
       setSending(false);
-      inputRef.current?.focus();
+      if (belongsToCurrent()) inputRef.current?.focus();
     }
   };
 
-  // 4. WhatsApp Message Actions
-  const handleStartReply = (msg) => {
-    setReplyingTo(msg);
+  const handleStartReply = (message) => {
+    if (editingMessage) setInputText(draftBeforeEditRef.current);
+    setReplyingTo(message);
     setEditingMessage(null);
     setActiveActionMenuId(null);
     inputRef.current?.focus();
   };
-
-  const handleStartEdit = (msg) => {
-    setEditingMessage(msg);
+  const handleStartEdit = (message) => {
+    if (!canEditMessage(message)) { toast.error('Messages can be edited for 15 minutes after sending.'); return; }
+    if (!editingMessage) draftBeforeEditRef.current = inputText;
+    setEditingMessage(message);
     setReplyingTo(null);
-    setInputText(msg.text || '');
+    setInputText(message.text || '');
     setActiveActionMenuId(null);
     inputRef.current?.focus();
   };
-
-  const handleCancelEdit = () => {
-    setEditingMessage(null);
-    setInputText('');
-  };
-
-  const handleCopyText = (msg) => {
-    if (!msg.text) return;
-    navigator.clipboard?.writeText(msg.text);
-    setCopiedMessageId(msg._id);
+  const handleCancelEdit = () => { setEditingMessage(null); setInputText(draftBeforeEditRef.current); };
+  const handleCopyText = async (message) => {
+    try {
+      await navigator.clipboard.writeText(message.text);
+      setCopiedMessageId(message._id);
+      toast.success('Message copied');
+    } catch { toast.error('Could not copy. Select the message text to copy it.'); }
     setActiveActionMenuId(null);
-    setTimeout(() => {
-      setCopiedMessageId((prev) => (prev === msg._id ? null : prev));
-    }, 2000);
   };
-
   const handleDeleteConfirm = async (mode) => {
-    if (!deleteTarget) return;
+    if (!deleteTarget || deleting) return;
+    const target = conversationId;
     const targetId = deleteTarget._id;
+    setDeleting(true);
     try {
       await messageService.deleteMessage(targetId, mode);
-      if (mode === 'everyone') {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m._id === targetId
-              ? { ...m, isDeleted: true, text: 'This message was deleted' }
-              : m
-          )
-        );
-      } else {
-        setMessages((prev) => prev.filter((m) => m._id !== targetId));
+      if (currentConversationRef.current === target) {
+        const update = (previous) => applyMessageDeletion(previous, targetId, mode);
+        setMessages(update);
+        setSearchResults(previous => previous.filter(message => message._id !== targetId));
+        setDeleteTarget(null);
+        if (replyingTo?._id === targetId) setReplyingTo(null);
+        if (editingMessage?._id === targetId) handleCancelEdit();
       }
-      setDeleteTarget(null);
-    } catch (err) {
-      console.error('Failed to delete message:', err);
-      toast.error('Could not delete message. Please try again.');
-    }
+      loadConversations(true);
+    } catch (error) { toast.error(error.response?.data?.message || 'Could not delete message. Please try again.'); }
+    finally { setDeleting(false); }
   };
-
-  const handleToggleReaction = async (messageId, emoji) => {
+  const handleToggleReaction = async (id, emoji) => {
+    if (reactionPendingRef.current.has(id)) return;
+    const target = conversationId;
+    reactionPendingRef.current.add(id);
     setActiveActionMenuId(null);
-    // Optimistic UI update
-    setMessages((prev) =>
-      prev.map((m) => {
-        if (m._id !== messageId) return m;
-        const reactions = Array.isArray(m.reactions) ? [...m.reactions] : [];
-        const existingIdx = reactions.findIndex(
-          (r) =>
-            String(r.user?._id || r.user) === String(currentUser?._id) &&
-            r.emoji === emoji
-        );
-
-        if (existingIdx > -1) {
-          // Toggle off
-          reactions.splice(existingIdx, 1);
-        } else {
-          // Replace previous or add new
-          const otherReactionIdx = reactions.findIndex(
-            (r) => String(r.user?._id || r.user) === String(currentUser?._id)
-          );
-          if (otherReactionIdx > -1) {
-            reactions[otherReactionIdx] = { user: currentUser, emoji };
-          } else {
-            reactions.push({ user: currentUser, emoji });
-          }
-        }
-        return { ...m, reactions };
-      })
-    );
-
     try {
-      const data = await messageService.toggleReaction(messageId, emoji);
-      setMessages((prev) =>
-        prev.map((m) => (m._id === messageId ? data.message : m))
-      );
-    } catch (err) {
-      console.error('Failed to toggle reaction:', err);
-    }
+      const data = await messageService.toggleReaction(id, emoji);
+      if (currentConversationRef.current !== target) return;
+      const update = (previous) => previous.map((message) => message._id === id ? data.message : message);
+      setMessages(update);
+      setSearchResults(update);
+    } catch (error) { toast.error(error.response?.data?.message || 'Could not update reaction.'); }
+    finally { reactionPendingRef.current.delete(id); }
+  };
+  const handleQuoteClick = (id) => {
+    const element = document.getElementById(`msg-${id}`);
+    if (!element) { toast('Load earlier messages to view this reply.'); return; }
+    element.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' });
+    setHighlightedMessageId(id);
+    setTimeout(() => setHighlightedMessageId(null), 1800);
   };
 
-  const handleQuoteClick = (quotedMessageId) => {
-    if (!quotedMessageId) return;
-    const targetEl = document.getElementById(`msg-${quotedMessageId}`);
-    if (targetEl) {
-      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setHighlightedMessageId(quotedMessageId);
-      setTimeout(() => setHighlightedMessageId(null), 1800);
-    }
-  };
-
-  // 5. Open new chat modal & search users
-  const openNewChat = async () => {
-    setNewChatModalOpen(true);
-    setUserSearchQuery('');
+  const openNewChat = () => { setNewChatModalOpen(true); setUserSearchQuery(''); setSuggestedUsers([]); };
+  useEffect(() => {
+    if (!newChatModalOpen) return;
+    let cancelled = false;
     setSearchingUsers(true);
-    try {
-      const users = await messageService.searchUsers('');
-      setSuggestedUsers(users);
-    } catch {
-      setSuggestedUsers([]);
-    } finally {
-      setSearchingUsers(false);
-    }
-  };
-
-  const handleSearchUsers = async (q) => {
-    setUserSearchQuery(q);
-    setSearchingUsers(true);
-    try {
-      const users = await messageService.searchUsers(q);
-      setSuggestedUsers(users);
-    } catch {
-      setSuggestedUsers([]);
-    } finally {
-      setSearchingUsers(false);
-    }
-  };
+    const timer = setTimeout(async () => {
+      try {
+        const users = await messageService.searchUsers(userSearchQuery.trim());
+        if (!cancelled) setSuggestedUsers(users);
+      } catch { if (!cancelled) { setSuggestedUsers([]); toast.error('Could not search members.'); } }
+      finally { if (!cancelled) setSearchingUsers(false); }
+    }, 250);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [newChatModalOpen, userSearchQuery]);
 
   const handleSelectUserToChat = async (user) => {
     setNewChatModalOpen(false);
     try {
       const data = await messageService.startConversation({ recipientId: user._id });
-      const convId = data.conversation._id;
       loadConversations(true);
-      navigate(`/messages/${convId}`);
-    } catch (err) {
-      console.error('Failed to start conversation:', err);
-      toast.error(err.response?.data?.message || 'Could not start conversation.');
-    }
+      navigate(`/messages/${data.conversation._id}`);
+    } catch (error) { toast.error(error.response?.data?.message || 'Could not start conversation.'); }
   };
 
   // Filtered conversations list
-  const filteredConversations = conversations.filter((c) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase().trim();
-    const other = c.otherParticipant || {};
-    return (
-      (other.name && other.name.toLowerCase().includes(q)) ||
-      (other.username && other.username.toLowerCase().includes(q)) ||
-      (c.lastMessageText && c.lastMessageText.toLowerCase().includes(q))
-    );
-  });
+  const filteredConversations = rankSearchResults(conversations, searchQuery, conversation => [
+    conversation.otherParticipant?.name, conversation.otherParticipant?.username, conversation.lastMessageText,
+  ]);
 
+  const isSearchingHistory = Boolean(threadSearch.trim());
+  const displayedMessages = isSearchingHistory ? searchResults : messages;
   const otherUser = activeConversation?.otherParticipant;
   const otherInitial = (otherUser?.name?.[0] || otherUser?.username?.[0] || 'U').toUpperCase();
 
@@ -656,9 +683,9 @@ export default function Messages() {
         className={`messages-inbox-pane ${conversationId ? 'hidden-on-mobile' : ''}`}
         aria-label="Messages inbox"
       >
-        <div className="inbox-header consistent-page-header">
+        <div className="inbox-header">
           <div className="inbox-header-title-box">
-            <h1 className="inbox-username consistent-page-title">Messages</h1>
+            <h2 className="inbox-username">Inbox</h2>
             <span className="inbox-title-tag">Direct</span>
           </div>
 
@@ -673,26 +700,7 @@ export default function Messages() {
           </button>
         </div>
 
-        {/* Search bar */}
-        <div className="inbox-search-box consistent-search-field">
-          <Search size={15} className="inbox-search-icon" />
-          <input
-            type="text"
-            className="inbox-search-input consistent-search-input"
-            placeholder="Search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              className="btn-search-clear"
-              onClick={() => setSearchQuery('')}
-            >
-              <X size={13} />
-            </button>
-          )}
-        </div>
+        {inboxError && <div className="chat-inline-error" role="alert">{inboxError}<button type="button" onClick={() => loadConversations()}>Retry</button></div>}
 
         {/* Conversation Items */}
         <div className="inbox-list">
@@ -730,6 +738,7 @@ export default function Messages() {
                   type="button"
                   className={`inbox-item ${isActive ? 'active' : ''} ${hasUnread ? 'unread' : ''}`}
                   onClick={() => navigate(`/messages/${conv._id}`)}
+                  aria-current={isActive ? 'page' : undefined}
                 >
                   <div className="inbox-avatar-wrap">
                     {other.avatar ? (
@@ -768,10 +777,13 @@ export default function Messages() {
               );
             })
           )}
+          {inboxPagination?.hasMore && <button type="button" className="chat-load-more" onClick={loadMoreConversations} disabled={loadingMoreChats}>
+            {loadingMoreChats ? 'Loading…' : 'Load more conversations'}
+          </button>}
         </div>
       </aside>
 
-      {/* ===== RIGHT PANE: ACTIVE CHAT STREAM (Whole-screen scrolling) ===== */}
+      {/* ===== RIGHT PANE: INDEPENDENT CONVERSATION SCROLL ===== */}
       <section
         className={`messages-thread-pane ${!conversationId ? 'hidden-on-mobile' : ''}`}
         aria-label="Active conversation"
@@ -802,7 +814,7 @@ export default function Messages() {
                 <ArrowLeft size={18} />
               </button>
 
-              <Link to={`/@${otherUser?.username}`} className="thread-user-link">
+              <Link to={otherUser?.username ? `/@${otherUser.username}` : '/messages'} className="thread-user-link">
                 <div className="thread-header-avatar-wrap">
                   {otherUser?.avatar ? (
                     <img
@@ -821,7 +833,7 @@ export default function Messages() {
 
                 <div className="thread-user-details">
                   <div className="thread-user-name-row">
-                    <strong>{otherUser?.name || otherUser?.username}</strong>
+                    <strong>{otherUser?.name || otherUser?.username || 'Conversation'}</strong>
                   </div>
                   {isPeerTyping ? (
                     <span className="thread-user-status typing">typing...</span>
@@ -839,19 +851,26 @@ export default function Messages() {
                 </div>
               </Link>
             </header>
-
+            {!connected && <div className="chat-connection-status" role="status">Reconnecting live updates. You can still send messages.</div>}
             {/* Message Stream */}
             <div
               ref={threadStreamRef}
               className="thread-stream"
-              onScroll={handleThreadScroll}
+              aria-label={isSearchingHistory ? 'Search results' : 'Messages'}
+              aria-busy={loadingMessages || searchingMessages}
             >
-              {loadingMessages ? (
+              {isSearchingHistory ? <div className="chat-search-summary" role="status">
+                {searchingMessages ? 'Searching…' : searchError || `${searchResults.length}${searchPagination?.hasMore ? '+' : ''} matching messages`}
+                {searchPagination?.hasMore && <button type="button" className="chat-load-more" onClick={loadMoreSearchResults} disabled={searchingMessages}>Load more matches</button>}
+              </div> : historyPagination?.hasMore && <button type="button" className="chat-load-more" onClick={loadOlderMessages} disabled={loadingHistory}>
+                {loadingHistory ? 'Loading…' : 'Load earlier messages'}
+              </button>}
+              {threadError ? <div className="thread-stream-empty" role="alert"><p>{threadError}</p><Button onClick={loadThread}>Try again</Button></div> : loadingMessages ? (
                 <div className="thread-stream-loading">
                   <Spinner size={32} />
                   <span>Loading messages...</span>
                 </div>
-              ) : messages.length === 0 ? (
+              ) : displayedMessages.length === 0 && isSearchingHistory ? <div className="thread-stream-empty">{searchingMessages ? 'Searching messages…' : 'No matching messages'}</div> : displayedMessages.length === 0 ? (
                 <div className="thread-stream-empty">
                   <div className="thread-welcome-avatar">
                     {otherUser?.avatar ? (
@@ -868,16 +887,16 @@ export default function Messages() {
                     )}
                   </div>
                   <h3>{otherUser?.name || otherUser?.username}</h3>
-                  <p>@{otherUser?.username} Â· QuizFocus Member</p>
+                  <p>@{otherUser?.username} · QuizFocus Member</p>
                   <Link to={`/@${otherUser?.username}`} className="btn-view-profile">
                     View Profile
                   </Link>
                   <div className="thread-icebreaker">
-                    Wave hello or share a quiz challenge to kick off the conversation! ðŸ‘‹
+                    Say hello or share a quiz to start the conversation.
                   </div>
                 </div>
               ) : (
-                messages.map((msg, index) => {
+                displayedMessages.map((msg, index) => {
                   const isMine = String(msg.sender?._id || msg.sender) === String(currentUser?._id);
                   const isDeleted = msg.isDeleted;
                   const isHighlighted = highlightedMessageId === msg._id;
@@ -885,14 +904,14 @@ export default function Messages() {
 
                   // Group by calendar date
                   const currentDateKey = getMessageDateKey(msg.createdAt);
-                  const prevDateKey = index > 0 ? getMessageDateKey(messages[index - 1].createdAt) : null;
+                  const prevDateKey = index > 0 ? getMessageDateKey(displayedMessages[index - 1].createdAt) : null;
                   const showDateDivider = currentDateKey !== prevDateKey;
 
                   // Avatars for received messages
                   const showAvatar =
                     !isMine &&
-                    (index === messages.length - 1 ||
-                      String(messages[index + 1]?.sender?._id || messages[index + 1]?.sender) !== String(msg.sender?._id || msg.sender));
+                    (index === displayedMessages.length - 1 ||
+                      String(displayedMessages[index + 1]?.sender?._id || displayedMessages[index + 1]?.sender) !== String(msg.sender?._id || msg.sender));
 
                   // Aggregated emoji reactions
                   const reactionsList = Array.isArray(msg.reactions) ? msg.reactions : [];
@@ -950,6 +969,9 @@ export default function Messages() {
                         <div
                           className={`thread-bubble-container ${hoveredMessageId === msg._id ? 'message-hovered' : ''
                             } ${isActionMenuOpen ? 'menu-open' : ''}`}
+                          tabIndex={isDeleted ? undefined : 0}
+                          aria-label={isDeleted ? undefined : `Message from ${isMine ? 'you' : msg.sender?.name || 'member'}`}
+                          onKeyDown={(event) => { if (event.key === 'Escape') setActiveActionMenuId(null); }}
                           onMouseEnter={() => setHoveredMessageId(msg._id)}
                           onMouseLeave={() =>
                             setHoveredMessageId((currentId) =>
@@ -958,7 +980,7 @@ export default function Messages() {
                           }
                         >
                           {/* Floating WhatsApp Action & Reaction Bar (Hover) */}
-                          {!isDeleted && (
+                          {!isDeleted && !msg.isOptimistic && (
                             <div className="msg-hover-action-bar">
                               {/* Quick Emoji Reaction Pill */}
                               <div className="quick-reactions-strip">
@@ -969,6 +991,7 @@ export default function Messages() {
                                     className="btn-quick-emoji"
                                     onClick={() => handleToggleReaction(msg._id, emoji)}
                                     title={`React with ${emoji}`}
+                                    aria-label={`React with ${emoji}`}
                                   >
                                     {emoji}
                                   </button>
@@ -985,6 +1008,8 @@ export default function Messages() {
                                     setActiveActionMenuId((prev) => (prev === msg._id ? null : msg._id));
                                   }}
                                   title="Message options"
+                                  aria-label="Message options"
+                                  aria-expanded={isActionMenuOpen}
                                 >
                                   <ChevronDown size={14} />
                                 </button>
@@ -1015,7 +1040,7 @@ export default function Messages() {
                                       </button>
                                     )}
 
-                                    {isMine && !isDeleted && (
+                                    {isMine && canEditMessage(msg) && (
                                       <button
                                         type="button"
                                         className="dropdown-menu-item"
@@ -1100,7 +1125,7 @@ export default function Messages() {
                           >
                             {isDeleted ? (
                               <span className="deleted-message-text">
-                                ðŸš« This message was deleted
+                                This message was deleted
                               </span>
                             ) : (
                               <span className="thread-msg-text">{msg.text}</span>
@@ -1111,16 +1136,11 @@ export default function Messages() {
                               {msg.isEdited && <span className="edited-indicator">edited</span>}
                               <span className="bubble-time-text">{messageTimeFormat(msg.createdAt)}</span>
                               {isMine && !isDeleted && (
-                                <span className="bubble-status-check">
-                                  {msg.isOptimistic ? (
+                                <span className="bubble-status-check" role="img" aria-label={msg.isOptimistic ? 'Sending' : msg.deliveryStatus === 'read' ? 'Read' : msg.deliveryStatus === 'delivered' ? 'Delivered' : 'Sent'}>
+                                  {msg.isOptimistic || msg.deliveryStatus === 'sent' ? (
                                     <Check size={13} />
                                   ) : (
-                                    <CheckCheck
-                                      size={13}
-                                      color={
-                                        msg.readBy && msg.readBy.length > 1 ? '#53bdeb' : '#8696a0'
-                                      }
-                                    />
+                                    <CheckCheck size={13} />
                                   )}
                                 </span>
                               )}
@@ -1232,9 +1252,11 @@ export default function Messages() {
 
               {/* Input Form */}
               <form onSubmit={handleSendMessage} className="thread-composer">
-                <input
+                <textarea
                   ref={inputRef}
-                  type="text"
+                  rows={1}
+                  aria-label={editingMessage ? 'Edit message' : 'Write a message'}
+                  aria-describedby="chat-composer-hint"
                   className="thread-composer-input"
                   placeholder={
                     editingMessage
@@ -1248,6 +1270,10 @@ export default function Messages() {
                   maxLength={2000}
                   readOnly={sending}
                   onKeyDown={(e) => {
+                    if (e.key === 'Enter' && sendOnEnter && !e.shiftKey && !e.nativeEvent.isComposing) {
+                      e.preventDefault();
+                      handleSendMessage(e);
+                    }
                     if (e.key === 'Escape') {
                       if (editingMessage) handleCancelEdit();
                       if (replyingTo) setReplyingTo(null);
@@ -1257,7 +1283,7 @@ export default function Messages() {
                 <button
                   type="submit"
                   className="btn-send-message"
-                  disabled={!inputText.trim() || sending}
+                  disabled={!inputText.trim() || sending || loadingMessages || Boolean(threadError)}
                   title={editingMessage ? 'Save changes' : 'Send message'}
                   aria-label={editingMessage ? 'Save' : 'Send'}
                 >
@@ -1270,6 +1296,9 @@ export default function Messages() {
                   )}
                 </button>
               </form>
+              <span className="sr-only" id="chat-composer-hint">
+                {sendOnEnter ? 'Enter sends the message. Shift and Enter adds a new line.' : 'Enter adds a new line. Use the Send button to send.'}
+              </span>
             </div>
           </div>
         )}
@@ -1277,10 +1306,10 @@ export default function Messages() {
 
       {/* ===== WHATSAPP DELETE CONFIRMATION MODAL ===== */}
       {deleteTarget && (
-        <div className="modal-backdrop-shell" onClick={() => setDeleteTarget(null)}>
-          <div className="whatsapp-delete-modal-card" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-backdrop-shell" onClick={() => { if (!deleting) setDeleteTarget(null); }}>
+          <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="delete-message-title" className="whatsapp-delete-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="delete-modal-header">
-              <h3>Delete message?</h3>
+              <h3 id="delete-message-title">Delete message?</h3>
               <p>You can delete this message for everyone or delete it just for yourself.</p>
             </div>
 
@@ -1290,6 +1319,7 @@ export default function Messages() {
                   type="button"
                   className="btn-delete-option btn-delete-everyone"
                   onClick={() => handleDeleteConfirm('everyone')}
+                  disabled={deleting}
                 >
                   Delete for everyone
                 </button>
@@ -1299,6 +1329,7 @@ export default function Messages() {
                 type="button"
                 className="btn-delete-option btn-delete-me"
                 onClick={() => handleDeleteConfirm('me')}
+                disabled={deleting}
               >
                 Delete for me
               </button>
@@ -1307,6 +1338,7 @@ export default function Messages() {
                 type="button"
                 className="btn-delete-option btn-delete-cancel"
                 onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
               >
                 Cancel
               </button>
@@ -1318,9 +1350,9 @@ export default function Messages() {
       {/* ===== NEW CHAT MODAL ===== */}
       {newChatModalOpen && (
         <div className="new-chat-modal-overlay" onClick={() => setNewChatModalOpen(false)}>
-          <div className="new-chat-modal-card" onClick={(e) => e.stopPropagation()}>
+          <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="new-message-title" className="new-chat-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="new-chat-modal-header">
-              <h3>New Message</h3>
+              <h3 id="new-message-title">New message</h3>
               <button
                 type="button"
                 className="new-chat-modal-close"
@@ -1338,7 +1370,9 @@ export default function Messages() {
                 className="new-chat-search-input consistent-search-input"
                 placeholder="Search"
                 value={userSearchQuery}
-                onChange={(e) => handleSearchUsers(e.target.value)}
+                onChange={(e) => setUserSearchQuery(e.target.value)}
+                maxLength={100}
+                aria-label="Search members"
                 autoFocus
               />
             </div>

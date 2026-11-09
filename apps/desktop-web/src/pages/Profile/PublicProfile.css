@@ -35,9 +35,12 @@
     transition: background 0.15s ease;
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .btn-back:hover {
     background: #ff5714;
   }
+}
+
 
   /* 1. YouTube Panoramic Channel Banner */
   .yt-banner-container {
@@ -66,10 +69,13 @@
     transition: transform 0.28s var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)), opacity 0.25s ease;
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .yt-banner-media:hover .yt-banner-img {
     transform: scale(1.015);
     opacity: 1;
   }
+}
+
 
   .yt-banner-owner-actions {
     position: absolute;
@@ -94,21 +100,33 @@
     font-weight: 700;
     cursor: pointer;
     backdrop-filter: blur(8px);
-    transition: all 0.2s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 160ms var(--ease-out), border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
   }
 
+  .yt-banner-action-btn:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
   .yt-banner-action-btn:hover:not(:disabled) {
     background: #FF4500;
     border-color: #FF4500;
     box-shadow: 0 4px 14px rgba(255, 69, 0, 0.4);
     transform: translateY(-1px);
   }
+}
 
+
+  @media (hover: hover) and (pointer: fine) {
   .yt-banner-action-btn.yt-banner-delete-btn:hover:not(:disabled) {
     background: #EF4444;
     border-color: #EF4444;
     box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
   }
+}
+
 
   .yt-banner-placeholder {
     width: 100%;
@@ -137,9 +155,16 @@
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 160ms var(--ease-out), color 160ms var(--ease-out), border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
   }
 
+  .yt-banner-add-btn:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
   .yt-banner-add-btn:hover:not(:disabled) {
     background: #FF4500;
     color: #FFFFFF;
@@ -147,6 +172,8 @@
     transform: translateY(-1px);
     box-shadow: 0 4px 14px rgba(255, 69, 0, 0.35);
   }
+}
+
 
   /* 2. YouTube Channel Header (Identity Row) */
   .yt-channel-header {
@@ -171,9 +198,12 @@
     transition: transform 0.25s ease;
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .yt-avatar-img:hover {
     transform: scale(1.025);
   }
+}
+
 
   .yt-avatar-placeholder {
     width: 128px;
@@ -265,10 +295,13 @@
     transition: color 0.15s ease;
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .yt-meta-link-btn:hover {
     color: #FFFFFF;
     text-decoration: underline;
   }
+}
+
 
   .yt-meta-stat {
     color: #8E8E93;
@@ -301,10 +334,13 @@
     transition: color 0.15s;
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .yt-more-btn:hover {
     color: #FF4500;
     text-decoration: underline;
   }
+}
+
 
   /* YouTube Links Summary Pill */
   .yt-links-pill-row {
@@ -324,15 +360,24 @@
     font-weight: 600;
     color: #E5E5E7;
     cursor: pointer;
-    transition: all 0.2s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 160ms var(--ease-out), border-color 160ms var(--ease-out), color 160ms var(--ease-out);
   }
 
+  .yt-links-pill:active {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
   .yt-links-pill:hover {
     background: rgba(255, 69, 0, 0.12);
     border-color: rgba(255, 69, 0, 0.4);
     color: #FF4500;
     transform: translateY(-1px);
   }
+}
+
 
   .yt-pill-icon {
     color: #FF4500;
@@ -371,7 +416,9 @@
     gap: 7px;
     cursor: pointer;
     text-decoration: none;
-    transition: all 0.18s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 160ms var(--ease-out), border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out), color 160ms var(--ease-out);
     white-space: nowrap;
   }
 
@@ -382,11 +429,14 @@
     box-shadow: 0 4px 14px rgba(255, 69, 0, 0.3);
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .yt-btn-primary:hover {
     background: #ff5714;
     transform: translateY(-1px);
     box-shadow: 0 6px 18px rgba(255, 69, 0, 0.45);
   }
+}
+
 
   .yt-btn-subscribe {
     background: #FFFFFF;
@@ -395,36 +445,45 @@
     font-weight: 800;
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .yt-btn-subscribe:hover {
     background: #FF4500;
     color: #FFFFFF;
     transform: translateY(-1px);
     box-shadow: 0 4px 14px rgba(255, 69, 0, 0.35);
   }
+}
+
 
   .yt-btn-subscribed {
-    background: #181B22;
+    background: #18181B;
     color: #FFFFFF;
-    border: 1px solid #282C37;
+    border: 1px solid #27272A;
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .yt-btn-subscribed:hover {
-    background: #232834;
-    border-color: #383E4E;
+    background: #27272A;
+    border-color: rgba(255, 255, 255, 0.18);
   }
+}
+
 
   .yt-btn-secondary {
-    background: #12141A;
+    background: #121214;
     color: #E5E5E7;
-    border: 1px solid #20242E;
+    border: 1px solid #27272A;
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .yt-btn-secondary:hover {
-    background: #1C202A;
-    border-color: #2F3543;
+    background: #18181B;
+    border-color: rgba(255, 255, 255, 0.18);
     color: #FFFFFF;
     transform: translateY(-1px);
   }
+}
+
 
   /* 3. YouTube Tabs Bar & In-Channel Search */
   .creator-quizzes-section {
@@ -473,9 +532,12 @@
     white-space: nowrap;
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .yt-nav-tab:hover {
     color: #FFFFFF;
   }
+}
+
 
   .yt-nav-tab.active {
     color: #FFFFFF;
@@ -519,7 +581,7 @@
     border-radius: 9999px;
     padding: 6px 14px;
     width: 230px;
-    transition: all 0.2s ease;
+    transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out), background-color 160ms var(--ease-out);
   }
 
   .yt-channel-search:focus-within {
@@ -557,9 +619,12 @@
     transition: color 0.15s;
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .yt-search-clear:hover {
     color: #FFFFFF;
   }
+}
+
 
   .creator-quizzes-grid {
     display: grid;
@@ -621,10 +686,16 @@
     cursor: pointer;
     padding: 6px 12px;
     border-radius: 8px;
-    transition: all 0.15s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out), color 150ms var(--ease-out);
     display: flex;
     align-items: center;
     gap: 6px;
+  }
+
+  .floating-network-tab-btn:active {
+    transform: scale(0.97);
   }
 
   .floating-network-tab-btn.active {
@@ -656,12 +727,21 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.15s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out);
   }
 
+  .btn-floating-close:active {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
   .btn-floating-close:hover {
     background: rgba(255, 255, 255, 0.15);
   }
+}
+
 
   .floating-network-body {
     flex: 1;
@@ -688,9 +768,12 @@
     transition: background 0.15s ease;
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .floating-user-item:hover {
     background: rgba(255, 255, 255, 0.04);
   }
+}
+
 
   .floating-user-link {
     display: flex;
@@ -760,14 +843,19 @@
     background: #FF4500;
     border: 1px solid #FF4500;
     color: #ffffff;
-    transition: all 0.15s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out), border-color 150ms var(--ease-out), color 150ms var(--ease-out);
     flex-shrink: 0;
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .btn-floating-follow:hover {
     background: #ff5714;
     border-color: #ff5714;
   }
+}
+
 
   .btn-floating-follow.following {
     background: #000000;
@@ -775,11 +863,14 @@
     color: #ffffff;
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .btn-floating-follow.following:hover {
     border-color: #ef4444;
     color: #ef4444;
     background: rgba(239, 68, 68, 0.08);
   }
+}
+
 
   .floating-state-card {
     display: flex;
@@ -883,14 +974,19 @@
     font-size: 13px;
     font-weight: 650;
     cursor: pointer;
-    transition: all 0.15s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out), border-color 150ms var(--ease-out), color 150ms var(--ease-out);
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .profile-page-btn:hover:not(:disabled) {
     background: rgba(255, 69, 0, 0.1);
     border-color: #FF4500;
     color: #FF4500;
   }
+}
+
 
   .profile-page-btn:disabled {
     opacity: 0.35;
@@ -958,12 +1054,21 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.15s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out);
   }
 
+  .yt-about-close-btn:active {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
   .yt-about-close-btn:hover {
     background: rgba(255, 255, 255, 0.15);
   }
+}
+
 
   .yt-about-content {
     flex: 1;
@@ -1013,14 +1118,23 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     text-decoration: none;
     color: inherit;
-    transition: all 0.15s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out), border-color 150ms var(--ease-out);
   }
 
+  .yt-about-link-item:active {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
   .yt-about-link-item:hover {
     background: rgba(255, 69, 0, 0.08);
     border-color: rgba(255, 69, 0, 0.35);
     transform: translateX(2px);
   }
+}
+
 
   .yt-about-link-icon-wrap {
     width: 32px;
@@ -1106,13 +1220,22 @@
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out), border-color 150ms var(--ease-out);
   }
 
+  .yt-about-copy-btn:active {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
   .yt-about-copy-btn:hover {
     background: #FF4500;
     border-color: #FF4500;
   }
+}
+
 
   .yt-about-footer {
     display: flex;
@@ -1134,7 +1257,13 @@
     font-size: 13.5px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.15s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out), border-color 150ms var(--ease-out), color 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
+  }
+
+  .yt-about-footer-btn:active {
+    transform: scale(0.97);
   }
 
   .yt-about-share-btn {
@@ -1143,10 +1272,13 @@
     border: none;
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .yt-about-share-btn:hover {
     background: #ff5714;
     box-shadow: 0 4px 14px rgba(255, 69, 0, 0.35);
   }
+}
+
 
   .yt-about-report-btn {
     background: transparent;
@@ -1154,11 +1286,14 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .yt-about-report-btn:hover {
     background: rgba(239, 68, 68, 0.1);
     border-color: #EF4444;
     color: #EF4444;
   }
+}
+
 
   /* Recent Activity Styles */
   .profile-activity-container {
@@ -1188,14 +1323,19 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     color: #9ca3af;
     cursor: pointer;
-    transition: all 0.15s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out), border-color 150ms var(--ease-out), color 150ms var(--ease-out);
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .activity-filter-pill:hover {
     background: #18181B;
     color: #ffffff;
     border-color: rgba(255, 255, 255, 0.16);
   }
+}
+
 
   .activity-filter-pill.active {
     background: rgba(255, 69, 0, 0.14);
@@ -1222,16 +1362,21 @@
     gap: 16px;
     padding: 14px 18px;
     border-radius: 12px;
-    background: #07080a;
-    border: 1px solid #181b22;
-    transition: all 0.2s ease;
+    background: #121214;
+    border: 1px solid #27272A;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 160ms var(--ease-out), border-color 160ms var(--ease-out);
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .profile-activity-card:hover {
-    background: #0e1015;
+    background: #18181B;
     border-color: rgba(255, 69, 0, 0.35);
     transform: translateX(2px);
   }
+}
+
 
   .activity-card-left {
     display: flex;
@@ -1320,10 +1465,13 @@
     transition: color 0.15s ease;
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .activity-quiz-link:hover {
     color: #FF7733;
     text-decoration: underline;
   }
+}
+
 
   .activity-user-link {
     color: #FFFFFF;
@@ -1332,10 +1480,13 @@
     transition: color 0.15s ease;
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .activity-user-link:hover {
     color: #FF4500;
     text-decoration: underline;
   }
+}
+
 
   .activity-fallback-text {
     color: #d1d5db;
@@ -1440,9 +1591,12 @@
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 160ms var(--ease-out), border-color 160ms var(--ease-out), color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .btn-load-more-activity:hover:not(:disabled) {
     background: #18181B;
     border-color: #FF4500;
@@ -1450,6 +1604,8 @@
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(255, 69, 0, 0.2);
   }
+}
+
 
   .btn-load-more-activity:disabled {
     opacity: 0.6;
@@ -1463,7 +1619,7 @@
   }
 
   @keyframes modalPop {
-    from { opacity: 0; transform: scale(0.95) translateY(6px); }
+    from { opacity: 0; transform: scale(0.97) translateY(6px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
   }
 
@@ -1555,4 +1711,28 @@
     .yt-about-footer-btn {
       width: 100%;
     }
+  }
+
+  /* Tactile Press Feedback & Mobile Native Controls */
+  .yt-btn:active,
+  .yt-btn-primary:active,
+  .yt-btn-subscribe:active,
+  .yt-btn-subscribed:active,
+  .yt-btn-secondary:active,
+  .btn-floating-follow:active,
+  .profile-page-btn:active,
+  .profile-activity-card:active,
+  .btn-load-more-activity:active,
+  .activity-filter-pill:active {
+    transform: scale(0.97);
+  }
+
+  .yt-btn,
+  .btn-floating-follow,
+  .profile-page-btn,
+  .profile-activity-card,
+  .btn-load-more-activity,
+  .activity-filter-pill {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }

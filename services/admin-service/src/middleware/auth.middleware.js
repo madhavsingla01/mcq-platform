@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import { verifySessionToken } from '../utils/sessionToken.js';
 import mongoose from 'mongoose';
 import env from '../config/env.js';
 import { getAuthDb } from '../config/db.js';
@@ -18,7 +18,7 @@ export const protectAdmin = catchAsync(async (req, res, next) => {
 
   let decoded;
   try {
-    decoded = jwt.verify(token, env.JWT_SECRET);
+    decoded = verifySessionToken(token, env.JWT_SECRET);
   } catch (err) {
     return next(new AppError('Invalid or expired authentication session.', 401));
   }
@@ -41,44 +41,29 @@ export const protectAdmin = catchAsync(async (req, res, next) => {
     return next(new AppError(`Account is suspended: ${user.suspensionReason || 'Contact platform administration'}`, 403));
   }
 
-  if (decoded.tokenVersion !== undefined && user.tokenVersion !== undefined && decoded.tokenVersion !== user.tokenVersion) {
+  if ((decoded.tokenVersion ?? 0) !== (user.tokenVersion ?? 0)) {
     return next(new AppError('Session invalidated. Please log in again.', 401));
   }
 
-  // Load Admin Membership
-  let membership = await AdminMembership.findOne({ userId: user._id });
-
-  // Auto-bootstrap super_admin if this user is configured as admin or has role: 'admin'
-  const isSuperAdminCandidate =
-    user.role === 'admin' ||
-    (env.ADMIN_EMAIL && user.email?.toLowerCase() === env.ADMIN_EMAIL.toLowerCase());
-
-  if (!membership && isSuperAdminCandidate) {
-    membership = await AdminMembership.create({
-      userId: user._id,
-      userEmail: user.email,
-      userName: user.name || user.username || 'Admin',
-      roleSlugs: ['super_admin'],
-      notes: 'Initial auto-bootstrap super admin',
-    });
-  }
-
-  // Determine permissions
-  let permissions = new Set();
-  if (isSuperAdminCandidate) {
-    permissions.add('*'); // Universal admin
-  }
-
-  if (membership?.roleSlugs?.length) {
-    const roles = await AdminRole.find({ slug: { $in: membership.roleSlugs } });
+  const membership = await AdminMembership.findOne({ userId: user._id }).lean();
+  const permissions = new Set();
+  if (user.role === 'admin') {
+    permissions.add('*');
+  } else if (membership?.roleSlugs?.length) {
+    // Older provisioning copied the global role into a membership.
+    const inheritedRole = ['Initial auto-bootstrap super admin', 'Promoted via make-admin script'].includes(membership.notes);
+    const roleSlugs = inheritedRole
+      ? membership.roleSlugs.filter(slug => slug !== 'super_admin')
+      : membership.roleSlugs;
+    const roles = await AdminRole.find({ slug: { $in: roleSlugs } });
     for (const r of roles) {
       for (const p of r.permissions) {
-        permissions.add(p);
+        if (p !== '*') permissions.add(p);
       }
     }
   }
 
-  if (!isSuperAdminCandidate && permissions.size === 0) {
+  if (permissions.size === 0) {
     return next(new AppError('Access denied: You do not possess administrative permissions.', 403));
   }
 
@@ -95,14 +80,16 @@ export const protectAdmin = catchAsync(async (req, res, next) => {
   next();
 });
 
+export const hasAdminPermission = (adminUser, permission) =>
+  Boolean(adminUser?.permissions.includes('*') || adminUser?.permissions.includes(permission));
+
 export const requirePermission = (permission) => {
   return (req, res, next) => {
     if (!req.adminUser) {
       return next(new AppError('Unauthorized: Admin authentication required.', 401));
     }
 
-    const { permissions } = req.adminUser;
-    if (permissions.includes('*') || permissions.includes(permission)) {
+    if (hasAdminPermission(req.adminUser, permission)) {
       return next();
     }
 
@@ -121,7 +108,7 @@ export const optionalAuth = async (req, res, next) => {
 
     let decoded;
     try {
-      decoded = jwt.verify(token, env.JWT_SECRET);
+      decoded = verifySessionToken(token, env.JWT_SECRET);
     } catch {
       return next();
     }
@@ -140,7 +127,7 @@ export const optionalAuth = async (req, res, next) => {
       !user.isDeleted &&
       user.isActive !== false &&
       !user.isSuspended &&
-      (decoded.tokenVersion === undefined || user.tokenVersion === undefined || decoded.tokenVersion === user.tokenVersion)
+      ((decoded.tokenVersion ?? 0) === (user.tokenVersion ?? 0))
     ) {
       req.user = {
         _id: user._id,

@@ -116,7 +116,7 @@
 @keyframes settingsPopoverEnter {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.97);
   }
   to {
     opacity: 1;
@@ -131,7 +131,7 @@
 @keyframes settingsPopoverCenterEnter {
   from {
     opacity: 0;
-    transform: translateX(-50%) scale(0.95);
+    transform: translateX(-50%) scale(0.97);
   }
   to {
     opacity: 1;
@@ -182,7 +182,7 @@
 @keyframes settingsModalEnter {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.97);
   }
   to {
     opacity: 1;
@@ -432,7 +432,7 @@
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  transition: all 120ms var(--ease-out);
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), color 120ms var(--ease-out), background-color 120ms var(--ease-out);
 }
 
 @media (hover: hover) and (pointer: fine) {

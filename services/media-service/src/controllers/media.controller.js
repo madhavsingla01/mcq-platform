@@ -42,7 +42,7 @@ export const getAsset = async (req, res, next) => {
     if (!assetIdPattern.test(req.params.id)) throw new AppError('Invalid media asset ID', 400);
     const asset = await MediaAsset.findById(req.params.id)
       .select('+variants.image.filePath +variants.thumbnail.filePath');
-    if (!asset) throw new AppError('Media asset not found', 404);
+    if (!asset || asset.kind !== 'image' || asset.purpose === 'quiz-clip') throw new AppError('Media asset not found', 404);
 
     const variantName = req.params.variant || 'image';
     if (!['image', 'thumbnail'].includes(variantName)) throw new AppError('Unsupported image variant', 400);
@@ -62,7 +62,7 @@ export const getAsset = async (req, res, next) => {
 
 export const getMyMedia = async (req, res, next) => {
   try {
-    const assets = await MediaAsset.find({ ownerId: req.user.id })
+    const assets = await MediaAsset.find({ ownerId: req.user.id, purpose: { $ne: 'quiz-clip' }, $or: [{ kind: 'image' }, { kind: { $exists: false } }] })
       .sort({ createdAt: -1 })
       .limit(50);
     res.json({ success: true, data: { assets: assets.map(publicAsset) } });
@@ -75,6 +75,7 @@ export const deleteMyMedia = async (req, res, next) => {
   try {
     if (!assetIdPattern.test(req.params.id)) throw new AppError('Invalid media asset ID', 400);
     const asset = await getOwnedAsset(req.params.id, req.user.id);
+    if (asset.kind !== 'image' || asset.purpose === 'quiz-clip') throw new AppError('Use the private clip management endpoint', 400);
     await MediaAsset.deleteOne({ _id: asset._id });
 
     const paths = [asset.variants.image.filePath, asset.variants.thumbnail.filePath];

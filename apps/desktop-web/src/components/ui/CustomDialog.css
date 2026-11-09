@@ -51,13 +51,19 @@
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.08);
     color: var(--color-text-secondary, #94a3b8);
-    cursor: pointer;
-    transition: all 0.15s ease;
+    touch-action: manipulation;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease, color 140ms ease;
   }
 
-  .custom-dialog-close-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--color-text, #ffffff);
+  .custom-dialog-close-btn:active {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .custom-dialog-close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--color-text, #ffffff);
+    }
   }
 
   .custom-dialog-header {
@@ -140,9 +146,14 @@
     font-size: 13.5px;
     font-weight: 650;
     cursor: pointer;
-    transition: all 0.15s ease;
+    touch-action: manipulation;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
     font-family: inherit;
     border: 1px solid transparent;
+  }
+
+  .custom-dialog-btn:active {
+    transform: scale(0.97);
   }
 
   .custom-dialog-btn.secondary {
@@ -151,8 +162,10 @@
     color: var(--color-text, #ffffff);
   }
 
-  .custom-dialog-btn.secondary:hover {
-    background: rgba(255, 255, 255, 0.1);
+  @media (hover: hover) and (pointer: fine) {
+    .custom-dialog-btn.secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
   }
 
   .custom-dialog-btn.primary {
@@ -161,10 +174,12 @@
     box-shadow: 0 2px 10px rgba(255, 69, 0, 0.25);
   }
 
-  .custom-dialog-btn.primary:hover {
-    background: var(--color-primary-hover, #E03D00);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(255, 69, 0, 0.35);
+  @media (hover: hover) and (pointer: fine) {
+    .custom-dialog-btn.primary:hover {
+      background: var(--color-primary-hover, #E03D00);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(255, 69, 0, 0.35);
+    }
   }
 
   .custom-dialog-btn.primary.error {
@@ -172,8 +187,10 @@
     box-shadow: 0 2px 10px rgba(239, 68, 68, 0.25);
   }
 
-  .custom-dialog-btn.primary.error:hover {
-    background: #dc2626;
+  @media (hover: hover) and (pointer: fine) {
+    .custom-dialog-btn.primary.error:hover {
+      background: #dc2626;
+    }
   }
 
   @keyframes dialogFadeIn {
@@ -182,6 +199,6 @@
   }
 
   @keyframes dialogScaleIn {
-    from { opacity: 0; transform: scale(0.95) translateY(6px); }
+    from { opacity: 0; transform: scale(0.97) translateY(6px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
   }

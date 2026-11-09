@@ -1,3 +1,5 @@
+import { rankSearchResults } from '../../components/search/rankSearchResults';
+import { usePageSearch } from '../../components/search/PageSearchContext';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -5,7 +7,6 @@ import {
   FileText,
   HelpCircle,
   Plus,
-  Search,
   Bookmark,
   Sparkles,
   Trophy,
@@ -51,6 +52,8 @@ function timeAgo(dateStr) {
   return date.toLocaleDateString();
 }
 
+const quizSearchFields = quiz => [quiz.title, quiz.category, quiz.tags || []];
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
@@ -78,7 +81,7 @@ export default function Dashboard() {
 
   // Filters & Controls
   const [filterType, setFilterType] = useState('all'); // 'all' | 'public' | 'private'
-  const [searchQuery, setSearchQuery] = useState('');
+  const { query: searchQuery, setQuery: setSearchQuery } = usePageSearch();
   const [sortBy, setSortBy] = useState('newest'); // 'newest' | 'attempts' | 'questions' | 'title'
   const [activeTab, setActiveTab] = useState('quizzes'); // 'quizzes' | 'drafts' | 'bookmarks'
 
@@ -136,6 +139,10 @@ export default function Dashboard() {
   };
 
   const handlePublishDraft = async (draft) => {
+    if (draft.isChallenge) {
+      navigate(`/create/challenge?draftId=${draft._id}`);
+      return;
+    }
     if (!draft?._id) return;
     if ((draft.questionCount || 0) < 1) {
       toast.error('This draft has no questions yet. Please click Resume to add questions before publishing.');
@@ -202,20 +209,11 @@ export default function Dashboard() {
 
   // Filtered and Sorted Quizzes
   const filteredQuizzes = useMemo(() => {
-    return quizzes
+    const sortedQuizzes = quizzes
       .filter((q) => {
         if (filterType === 'public') return isPublicQuiz(q);
         if (filterType === 'private') return !isPublicQuiz(q);
         return true;
-      })
-      .filter((q) => {
-        if (!searchQuery.trim()) return true;
-        const query = searchQuery.toLowerCase();
-        return (
-          q.title?.toLowerCase().includes(query) ||
-          q.category?.toLowerCase().includes(query) ||
-          q.tags?.some((t) => t.toLowerCase().includes(query))
-        );
       })
       .sort((a, b) => {
         if (sortBy === 'attempts') return (b.totalAttempts || 0) - (a.totalAttempts || 0);
@@ -223,20 +221,12 @@ export default function Dashboard() {
         if (sortBy === 'title') return (a.title || '').localeCompare(b.title || '');
         return new Date(b.createdAt) - new Date(a.createdAt);
       });
+    return rankSearchResults(sortedQuizzes, searchQuery, quizSearchFields);
   }, [quizzes, filterType, searchQuery, sortBy]);
 
   const filteredDrafts = useMemo(() => {
-    return drafts
-      .filter((d) => {
-        if (!searchQuery.trim()) return true;
-        const q = searchQuery.toLowerCase();
-        return (
-          d.title?.toLowerCase().includes(q) ||
-          d.category?.toLowerCase().includes(q) ||
-          d.tags?.some((t) => t.toLowerCase().includes(q))
-        );
-      })
-      .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+    const sortedDrafts = [...drafts].sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+    return rankSearchResults(sortedDrafts, searchQuery, quizSearchFields);
   }, [drafts, searchQuery]);
 
   useEffect(() => {
@@ -256,13 +246,7 @@ export default function Dashboard() {
   }, [filteredDrafts, draftPage]);
 
   const filteredBookmarks = useMemo(() => {
-    if (!searchQuery.trim()) return bookmarkedQuizzes;
-    const query = searchQuery.toLowerCase();
-    return bookmarkedQuizzes.filter((q) => (
-      q.title?.toLowerCase().includes(query) ||
-      q.category?.toLowerCase().includes(query) ||
-      q.tags?.some((t) => t.toLowerCase().includes(query))
-    ));
+    return rankSearchResults(bookmarkedQuizzes, searchQuery, quizSearchFields);
   }, [bookmarkedQuizzes, searchQuery]);
 
   const totalBookmarkPages = Math.max(1, Math.ceil(filteredBookmarks.length / BOOKMARK_PAGE_SIZE));
@@ -281,39 +265,6 @@ export default function Dashboard() {
 
   return (
     <div className="mini-dash-shell">
-      {/* â”€â”€ Top Header Bar â”€â”€ */}
-      <header className="mini-dash-header consistent-page-header">
-        <div className="mini-dash-title-group">
-          <h1 className="mini-dash-title consistent-page-title">Dashboard</h1>
-        </div>
-
-        <div className="mini-dash-actions consistent-page-search">
-          {/* Minimalist Pill Search Bar */}
-          <div className="mini-search-box consistent-search-field">
-            <Search size={15} className="mini-search-icon" />
-            <input
-              type="text"
-              placeholder="Search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="mini-search-input consistent-search-input"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                className="mini-search-clear"
-                onClick={() => setSearchQuery('')}
-                title="Clear"
-              >
-                âœ•
-              </button>
-            )}
-          </div>
-
-        </div>
-      </header>
-
-      {/* â”€â”€ CONTINUE SOLVING (Only if in-progress attempts exist) â”€â”€ */}
       {!error && activeAttempts.length > 0 && (
         <section className="mini-section">
           <div className="mini-section-header">

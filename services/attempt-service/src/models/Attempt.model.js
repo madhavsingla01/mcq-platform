@@ -199,6 +199,8 @@ const suspiciousActivitySchema = new mongoose.Schema(
 
 const attemptSchema = new mongoose.Schema(
   {
+    questionSnapshot: { type: [mongoose.Schema.Types.Mixed], default: undefined, select: false },
+    contentRevision: { type: Number, default: 1 },
     quizId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Quiz',

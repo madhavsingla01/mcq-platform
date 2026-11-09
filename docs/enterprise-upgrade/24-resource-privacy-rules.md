@@ -1,0 +1,9 @@
+# Resource privacy rules
+
+Private quizzes, drafts, restricted content and invite-only challenges are filtered at current read or mutation time. They must not depend on a browser hiding controls. Unlisted content retains the existing direct-link behavior where supported. Quiz metadata and search responses exclude embedded questions and draft data from the shared Quiz and Challenge collection.
+
+Attempt serialization removes question snapshots and guest session keys. Guest history matches both the session and the absence of a signed-in owner. Sealed challenge results withhold score, correctness, analytics and rankings from participant views. The quiz attempt-list aliases return an empty page with `quarantined: true`, while quiz analytics return 403. An uploader cannot inspect another participant's sealed attempt by ID. Profile activity and challenge overview calculations exclude sealed results. Quiz cards show a masked average before the deadline, and score-based discovery sorts on that masked value.
+
+Message previews re-evaluate quiz visibility and comment availability. Invite-only quizzes and challenges in a draft or publishing state cannot be shared through those previews. Notification ownership is independent of access to its referenced content. The list redacts current private or missing quiz details and removed comments. Mark-read returns only the notification identifier and read timestamp. Comment reactions recheck quiz access, and reply notification targets must belong to the referenced thread.
+
+Media clip playback is scoped to a quiz, attempt, permitted review or the asset owner. A playback URL is a time-limited grant and byte reads use current policy. Public image and cover URL compatibility remains an explicit exception. See the [media worklog](20-accessible-media-worklog.md) for content validation, playback and storage checks.

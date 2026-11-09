@@ -1,5 +1,5 @@
-import { memo, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import AccessibleMedia from '../../media/AccessibleMedia';
+import { memo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -22,16 +22,18 @@ const OptionMarkdown = memo(function OptionMarkdown({ content }) {
 
 function OptionCard({
   option,
-  index,
   isSelected,
   isCorrect,
   shouldRevealFeedback,
   isLocked,
   onSelect,
-  fontSize
+  multiple = false,
+  fontSize,
+  questionId, quizId, attemptId
 }) {
   const isCorrectSelection = isSelected && isCorrect;
   const isWrongSelection = isSelected && !isCorrect;
+  const optionId = option.optionId || option._id || option.label;
 
   let containerClass = 'opt-card';
   if (shouldRevealFeedback) {
@@ -47,14 +49,10 @@ function OptionCard({
   const sizeClass = fontSize === 'lg' ? 'opt-card--lg' : fontSize === 'sm' ? 'opt-card--sm' : '';
 
   return (
-    <motion.button
-      type="button"
-      onClick={onSelect}
-      disabled={isLocked}
-      whileHover={!isLocked && !shouldRevealFeedback ? { y: -1 } : {}}
-      whileTap={!isLocked && !shouldRevealFeedback ? { scale: 0.97 } : {}}
-      className={`${containerClass} ${sizeClass}`}
-    >
+    <div className={`${containerClass} ${sizeClass} opt-card--accessible`}>
+      <label className="opt-choice-label">
+        <input className="opt-native-choice" type={multiple ? 'checkbox' : 'radio'} name={`question-${questionId}`} value={optionId}
+          checked={isSelected} onChange={() => onSelect(optionId)} disabled={isLocked} aria-label={`${option.label}. ${option.text || option.accessibilityMedia?.[0]?.label || 'Media answer choice'}`} />
       <div
         className={`opt-pill ${
           isSelected && !shouldRevealFeedback ? 'opt-pill--selected' : ''
@@ -73,7 +71,9 @@ function OptionCard({
       {shouldRevealFeedback && isCorrect && (
         <span className="opt-badge opt-badge--correct">Correct</span>
       )}
-    </motion.button>
+      </label>
+      <AccessibleMedia clips={option.accessibilityMedia || []} text={option.text} quizId={quizId} attemptId={attemptId} />
+    </div>
   );
 }
 

@@ -54,7 +54,7 @@ export default function Quiz() {
     onPrev: prevQuestion,
     onNext: nextQuestion,
     onSelectOption: (index) => {
-      if (!currentQuestion || !isStarted || isSubmitted) return;
+      if (!currentQuestion || !isStarted || isSubmitted || ['checkboxes', 'short_answer'].includes(currentQuestion.questionType)) return;
       const options = currentQuestion.options || [];
       if (index < options.length) {
         useQuizStore.getState().selectAnswer(currentQuestion._id, options[index].label);

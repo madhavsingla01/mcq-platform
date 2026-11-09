@@ -187,7 +187,7 @@ export default function SettingsMenu({
           {(sec.title || SecIcon) && (
             <header className="settings-menu-section-header">
               <div className="settings-menu-section-title-wrap">
-                {SecIcon && (typeof SecIcon === 'function' ? <SecIcon size={14} /> : SecIcon)}
+                {SecIcon && (React.isValidElement(SecIcon) ? SecIcon : <SecIcon size={14} />)}
                 {sec.title && <h4 className="settings-menu-section-title">{sec.title}</h4>}
               </div>
               {sec.description && <span className="settings-menu-section-desc">{sec.description}</span>}
@@ -214,7 +214,7 @@ export default function SettingsMenu({
         <div className="settings-menu-title-wrap">
           {IconComponent && (
             <div className="settings-menu-icon-badge">
-              {typeof IconComponent === 'function' ? <IconComponent size={16} /> : IconComponent}
+              {React.isValidElement(IconComponent) ? IconComponent : <IconComponent size={16} />}
             </div>
           )}
           <div className="settings-menu-title-col">
@@ -267,6 +267,7 @@ export default function SettingsMenu({
       className={`settings-menu-panel variant-${variant} align-${align} ${className}`}
       style={panelStyle}
       role="dialog"
+      aria-label={title || triggerAriaLabel}
       aria-modal={variant !== 'popover'}
       onClick={(e) => e.stopPropagation()}
     >

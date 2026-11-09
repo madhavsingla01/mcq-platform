@@ -80,3 +80,12 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.ws-nav-meta-minimal { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.ws-nav-meta-minimal button { display: grid; place-items: center; width: 34px; height: 38px; border: 1px solid var(--color-border); border-radius: var(--radius-control, 8px); color: var(--color-text); background: var(--color-surface); cursor: pointer; }
+.ws-nav-meta-minimal button:disabled { opacity: .45; cursor: not-allowed; }
+.ws-nav-meta-minimal button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+@media (max-width: 520px) {
+  .ws-navbar-minimal { flex-wrap: wrap; row-gap: 8px; }
+  .ws-nav-meta-minimal { gap: 4px; }
+}

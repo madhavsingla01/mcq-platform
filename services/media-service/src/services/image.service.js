@@ -11,7 +11,7 @@ const MAX_PIXELS = 40000000;
 const MAX_IMAGE_WIDTH = 2560;
 const THUMBNAIL_WIDTH = 480;
 const ALLOWED_FORMATS = new Set(['jpeg', 'png', 'webp', 'gif', 'svg', 'avif', 'tiff']);
-const ALLOWED_PURPOSES = new Set(['quiz-cover', 'profile-avatar', 'profile-banner', 'question-media']);
+const ALLOWED_PURPOSES = new Set(['quiz-cover', 'challenge-cover', 'profile-avatar', 'profile-banner', 'question-media']);
 const storageRoot = path.resolve(env.MEDIA_STORAGE_PATH);
 
 const safeUnlink = async (filePath) => {

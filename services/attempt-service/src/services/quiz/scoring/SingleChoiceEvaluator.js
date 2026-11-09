@@ -2,8 +2,9 @@ import { BaseQuestionEvaluator } from './BaseQuestionEvaluator.js';
 
 export class SingleChoiceEvaluator extends BaseQuestionEvaluator {
   supports(question) {
-    const type = question?.type || 'single_choice';
-    return type === 'single_choice' || type === 'mcq';
+    const type = question?.type;
+    return question?.questionType !== 'checkboxes' && question?.questionType !== 'short_answer'
+      && (!type || type === 'single_choice' || type === 'mcq');
   }
 
   evaluate({ question, userResponse, options = {} }) {

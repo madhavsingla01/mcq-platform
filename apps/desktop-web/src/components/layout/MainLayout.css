@@ -1,6 +1,5 @@
 .layout-shell {
-  min-height: 100vh;
-  min-height: 100dvh;
+  min-height: var(--app-screen-height);
   display: flex;
   background: var(--bg-primary, #000000);
 }
@@ -11,38 +10,22 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  min-height: 100vh;
-  min-height: 100dvh;
+  min-height: var(--app-screen-height);
   box-sizing: border-box;
   position: relative;
-}
-
-.layout-main-area.messages-main-area,
-.layout-main-area.chat-open-layout {
-  height: 100dvh;
-  min-height: 0;
-  overflow: hidden;
 }
 
 .layout-page-content.chat-open-content {
   width: 100%;
   max-width: none;
-  height: 100%;
-  min-height: 0;
   margin: 0;
   padding: 0;
   display: flex;
-  overflow: hidden;
-}
-
-.chat-open-content .messages-layout-container {
-  height: 100%;
-  min-height: 0;
 }
 
 @media (min-width: 861px) {
   .layout-main-area.settings-main-area {
-    height: 100dvh;
+    height: var(--app-screen-height);
     min-height: 0;
     overflow: hidden;
   }
@@ -54,19 +37,11 @@
   }
 
   .layout-main-area.chat-open-layout {
-    height: 100dvh;
-    min-height: 0;
     margin-left: 0 !important;
   }
 
   .layout-page-content.messages-content-fill.chat-open-content {
-    height: 100%;
-    min-height: 0;
     padding: 0;
-  }
-
-  .chat-open-content .messages-layout-container {
-    height: 100%;
   }
 }
 
@@ -80,14 +55,29 @@
   box-sizing: border-box;
 }
 
+.layout-page-content:has(> .ws-root) { padding-block: 0; }
+
+.layout-page-content:has(> .builder-viewport) {
+  display: flex;
+  flex: 0 0 auto;
+  height: var(--app-screen-height);
+  min-height: 0;
+  padding-block: 12px 16px;
+}
+
 /* Borderless edge-to-edge layout for Messages: no outer border, seamless screen */
+.layout-main-area.messages-main-area {
+  height: var(--app-screen-height);
+  min-height: 0;
+  overflow: hidden;
+}
+
 .layout-page-content.messages-content-fill {
   max-width: 100%;
   width: 100%;
+  min-height: 0;
   margin: 0;
   padding: 0;
-  height: 100%;
-  min-height: 0;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -105,12 +95,11 @@
 @media (min-width: 861px) {
   .layout-page-content.settings-content-fill {
     flex: 1 1 0%;
-    height: 100%;
     min-height: 0;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+    overflow: auto;
+    overscroll-behavior: contain;
   }
+
 }
 
 /* Responsive screen adjustment */
@@ -121,23 +110,28 @@
 }
 
 @media (max-width: 768px) {
+  .layout-page-content > .ws-root { height: calc(var(--app-screen-height) - 60px - env(safe-area-inset-bottom, 0px)); }
+  .layout-page-content:has(> .builder-viewport) {
+    height: calc(var(--app-screen-height) - 60px - env(safe-area-inset-bottom, 0px));
+    padding-block: 12px 10px;
+  }
+
   .layout-page-content {
-    padding-top: calc(58px + env(safe-area-inset-top, 0px));
+    padding-top: 16px;
     padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
     padding-left: 14px;
     padding-right: 14px;
   }
 
   .layout-page-content.messages-content-fill {
-    padding-top: calc(54px + env(safe-area-inset-top, 0px));
+    padding-top: 0;
     padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
     padding-left: 0;
     padding-right: 0;
-    min-height: 100dvh;
   }
 
   .layout-page-content.settings-content-fill {
-    padding-top: calc(54px + env(safe-area-inset-top, 0px));
+    padding-top: 0;
     padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px));
     padding-left: 10px;
     padding-right: 10px;

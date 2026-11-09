@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const messageSchema = new mongoose.Schema(
   {
+    clientMessageId: { type: String, maxlength: 100 },
     conversation: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Conversation',
@@ -126,6 +127,10 @@ const messageSchema = new mongoose.Schema(
 messageSchema.index({ conversation: 1, createdAt: 1 });
 messageSchema.index({ conversation: 1, createdAt: -1 });
 messageSchema.index({ sender: 1, createdAt: -1 });
+messageSchema.index({ conversation: 1, createdAt: -1, _id: -1 });
+messageSchema.index({ sender: 1, clientMessageId: 1 }, {
+  unique: true, partialFilterExpression: { clientMessageId: { $type: 'string' } },
+});
 
 const Message = mongoose.model('Message', messageSchema);
 export default Message;

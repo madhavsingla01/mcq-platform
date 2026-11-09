@@ -1,70 +1,48 @@
 import { create } from 'zustand';
+import { toast } from 'sonner';
 import api, { AUTH_SESSION_EXPIRED_EVENT } from '../api/axios';
-import { hydrateServerPreferences, setServerSessionAuthenticated } from './settingsStore';
+import { hydrateServerPreferences, setServerSessionAuthenticated, queueProfileUpdate } from './settingsStore';
+import { disconnectSocket } from '../services/socket.service';
 
 const SESSION_HINT_KEY = 'mcq.auth.has-session.v2';
-const SESSION_CHECKED_KEY = 'mcq.auth.session-checked.v2';
 
 let checkAuthPromise = null;
-
-const hasSessionHint = () => {
-  if (typeof window === 'undefined') return false;
-  return window.localStorage.getItem(SESSION_HINT_KEY) === 'true';
-};
-
-const hasCheckedSession = () => {
-  if (typeof window === 'undefined') return false;
-  return window.localStorage.getItem(SESSION_CHECKED_KEY) === 'true';
-};
-
-const setSessionChecked = () => {
-  if (typeof window !== 'undefined') {
-    window.localStorage.setItem(SESSION_CHECKED_KEY, 'true');
-  }
-};
+let sessionRevision = 0;
 
 const setSessionHint = () => {
-  if (typeof window !== 'undefined') {
-    window.localStorage.setItem(SESSION_HINT_KEY, 'true');
-    window.localStorage.setItem(SESSION_CHECKED_KEY, 'true');
-  }
+  try { window.localStorage.setItem(SESSION_HINT_KEY, 'true'); } catch { /* Storage is optional. */ }
 };
 
 const clearSessionHint = () => {
-  if (typeof window !== 'undefined') {
-    window.localStorage.removeItem(SESSION_HINT_KEY);
-    window.localStorage.setItem(SESSION_CHECKED_KEY, 'true');
-  }
+  try { window.localStorage.removeItem(SESSION_HINT_KEY); } catch { /* Storage is optional. */ }
 };
 
 const unauthenticatedState = {
   user: null,
   isAuthenticated: false,
   isLoading: false,
+  sessionNotice: '',
 };
 
-export const useAuthStore = create((set) => ({
+export const useAuthStore = create((set, get) => ({
   user: null,
   isLoading: true,
   isAuthenticated: false,
+  sessionNotice: '',
 
-  checkAuth: async ({ force = false } = {}) => {
-    if (!force && !hasSessionHint() && hasCheckedSession()) {
-      setServerSessionAuthenticated(false);
-      set(unauthenticatedState);
-      return null;
-    }
-
+  checkAuth: async () => {
     if (checkAuthPromise) {
       return checkAuthPromise;
     }
 
     checkAuthPromise = (async () => {
+      const revision = sessionRevision;
       setServerSessionAuthenticated(false);
       set({ isLoading: true });
 
       try {
         const { data } = await api.get('/auth/bootstrap', { skipAuthRefresh: true });
+        if (revision !== sessionRevision) return null;
         const user = data.data?.authenticated ? data.data.user : null;
 
         if (!user) {
@@ -75,17 +53,18 @@ export const useAuthStore = create((set) => ({
         }
 
         setSessionHint();
-        setServerSessionAuthenticated(true);
-        set({ user, isAuthenticated: true, isLoading: false });
+        if (get().user?._id !== user._id) disconnectSocket();
+        setServerSessionAuthenticated(true, user._id);
+        set({ user, isAuthenticated: true, isLoading: false, sessionNotice: '' });
         hydrateServerPreferences(user?.preferences);
         return data;
-      } catch (error) {
-        clearSessionHint();
-        setServerSessionAuthenticated(false);
-        set(unauthenticatedState);
+      } catch {
+        if (revision !== sessionRevision) return null;
+        const current = get().user;
+        setServerSessionAuthenticated(Boolean(current), current?._id);
+        set({ isLoading: false, sessionNotice: 'Could not check your session. Try again when you are connected.' });
         return null;
       } finally {
-        setSessionChecked();
         checkAuthPromise = null;
       }
     })();
@@ -95,18 +74,22 @@ export const useAuthStore = create((set) => ({
 
   login: async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password }, { skipAuthRefresh: true });
+    sessionRevision += 1;
     setSessionHint();
-    setServerSessionAuthenticated(true);
-    set({ user: data.data.user, isAuthenticated: true, isLoading: false });
+    disconnectSocket();
+    setServerSessionAuthenticated(true, data.data.user._id);
+    set({ user: data.data.user, isAuthenticated: true, isLoading: false, sessionNotice: '' });
     hydrateServerPreferences(data.data.user?.preferences);
     return data;
   },
 
   register: async (name, email, password) => {
     const { data } = await api.post('/auth/register', { name, email, password }, { skipAuthRefresh: true });
+    sessionRevision += 1;
     setSessionHint();
-    setServerSessionAuthenticated(true);
-    set({ user: data.data.user, isAuthenticated: true, isLoading: false });
+    disconnectSocket();
+    setServerSessionAuthenticated(true, data.data.user._id);
+    set({ user: data.data.user, isAuthenticated: true, isLoading: false, sessionNotice: '' });
     hydrateServerPreferences(data.data.user?.preferences);
     return data;
   },
@@ -114,38 +97,61 @@ export const useAuthStore = create((set) => ({
   logout: async () => {
     try {
       await api.post('/auth/logout', {}, { skipAuthRefresh: true });
-    } finally {
-      clearSessionHint();
-      setServerSessionAuthenticated(false);
-      set(unauthenticatedState);
+    } catch {
+      toast.error('Could not confirm sign-out. Please try again.', { id: 'sign-out-failed' });
+      return false;
     }
+    sessionRevision += 1;
+    clearSessionHint();
+    disconnectSocket();
+    setServerSessionAuthenticated(false);
+    set(unauthenticatedState);
+    return true;
   },
   updateProfile: async (payload) => {
-    const { data } = await api.patch('/auth/me', payload);
+    const userId = get().user?._id;
+    const { data } = await queueProfileUpdate(payload);
+    if (!userId || get().user?._id !== userId) throw new Error('Your session changed. Please try again.');
     set({ user: data.data.user });
     hydrateServerPreferences(data.data.user?.preferences);
+    return data;
+  },
+  revokeOtherSessions: async (currentPassword) => {
+    const userId = get().user?._id;
+    const { data } = await api.post('/auth/me/sessions/revoke', { currentPassword });
+    if (!userId || get().user?._id !== userId) return data;
+    disconnectSocket();
+    set({ user: data.data.user });
     return data;
   },
   deleteAccount: async () => {
     try {
       await api.delete('/auth/me');
-    } finally {
+      sessionRevision += 1;
       clearSessionHint();
+      disconnectSocket();
       setServerSessionAuthenticated(false);
       set(unauthenticatedState);
+    } catch (error) {
+      throw error;
     }
   },
 }));
 
 if (typeof window !== 'undefined') {
   window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, () => {
+    if (!useAuthStore.getState().isAuthenticated) return;
+    sessionRevision += 1;
     clearSessionHint();
+    disconnectSocket();
     setServerSessionAuthenticated(false);
-    useAuthStore.setState(unauthenticatedState);
+    useAuthStore.setState({ ...unauthenticatedState, sessionNotice: 'Your session ended. Sign in again to continue.' });
   });
 
   window.addEventListener('storage', (event) => {
     if (event.key === SESSION_HINT_KEY && event.newValue !== 'true') {
+      sessionRevision += 1;
+      disconnectSocket();
       setServerSessionAuthenticated(false);
       useAuthStore.setState(unauthenticatedState);
     }

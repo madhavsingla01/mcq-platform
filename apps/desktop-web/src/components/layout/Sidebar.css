@@ -1,10 +1,9 @@
 /* ===== SIDEBAR CONTAINER (Desktop Icon Rail by default) ===== */
 .app-sidebar {
   width: 68px;
-  height: 100vh;
-  height: 100dvh;
+  height: var(--app-screen-height);
   position: fixed;
-  top: 0;
+  top: var(--app-header-height);
   left: 0;
   background: rgba(8, 8, 10, 0.85);
   backdrop-filter: var(--material-blur);
@@ -274,10 +273,12 @@
 }
 
 /* Show tooltips only in collapsed state on hover */
-.app-sidebar:not(.open) .sidebar-nav-item:hover .sidebar-tooltip,
-.app-sidebar:not(.open) .sidebar-user-info:hover .sidebar-tooltip,
-.app-sidebar:not(.open) .sidebar-logout-btn:hover .sidebar-tooltip {
-  display: block;
+@media (hover: hover) and (pointer: fine) {
+  .app-sidebar:not(.open) .sidebar-nav-item:hover .sidebar-tooltip,
+  .app-sidebar:not(.open) .sidebar-user-info:hover .sidebar-tooltip,
+  .app-sidebar:not(.open) .sidebar-logout-btn:hover .sidebar-tooltip {
+    display: block;
+  }
 }
 
 /* ===== FOOTER ===== */
@@ -393,7 +394,8 @@
   cursor: pointer;
   padding: 6px;
   border-radius: var(--radius-sm, 6px);
-  transition: all 0.15s ease;
+  touch-action: manipulation;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), color 140ms ease, background-color 140ms ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -408,9 +410,15 @@
   corner-shape: squircle;
 }
 
-.sidebar-logout-btn:hover {
-  color: var(--error, #FF4F40);
-  background: rgba(255, 79, 64, 0.12);
+.sidebar-logout-btn:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sidebar-logout-btn:hover {
+    color: var(--error, #FF4F40);
+    background: rgba(255, 79, 64, 0.12);
+  }
 }
 
 /* ===== RESPONSIVE MOBILE OVERRIDES ===== */

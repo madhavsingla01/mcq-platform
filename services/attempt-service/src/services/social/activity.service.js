@@ -96,6 +96,7 @@ export const decorateQuizzesForViewer = async (quizzes, viewerId) => {
 
     return {
       ...plainQuiz,
+      ...(plainQuiz.isChallenge && !(plainQuiz.deadlineAt && new Date(plainQuiz.deadlineAt) <= new Date()) ? { avgScore: 0 } : {}),
       social: {
         likeCount: plainQuiz.likeCount || 0,
         commentCount: plainQuiz.commentCount || 0,

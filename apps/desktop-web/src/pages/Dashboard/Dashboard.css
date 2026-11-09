@@ -28,10 +28,15 @@
     cursor: pointer;
     font-size: 11px;
     padding: 0 2px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: color 140ms ease;
   }
 
-  .mini-search-clear:hover {
-    color: #FFFFFF;
+  @media (hover: hover) and (pointer: fine) {
+    .mini-search-clear:hover {
+      color: #FFFFFF;
+    }
   }
 
   /* â”€â”€ Buttons â”€â”€ */
@@ -314,7 +319,14 @@
     font-weight: 600;
   }
 
-  .mini-sort-custom-select .g2-select-trigger:hover:not(:disabled),
+  @media (hover: hover) and (pointer: fine) {
+    .mini-sort-custom-select .g2-select-trigger:hover:not(:disabled) {
+      border-color: transparent;
+      background: transparent;
+      box-shadow: none;
+    }
+  }
+
   .mini-sort-custom-select .g2-select-trigger.open {
     border-color: transparent;
     background: transparent;
@@ -454,13 +466,22 @@
 
   /* â”€â”€ Draft Cards Grid & Card Styles â”€â”€ */
   .draft-btn-glow {
-    background: #F59E0B;
-    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
+    background: #FF4500;
+    box-shadow: 0 2px 8px rgba(255, 69, 0, 0.25);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease, box-shadow 140ms ease;
   }
 
-  .draft-btn-glow:hover {
-    background: #FBBF24;
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+  .draft-btn-glow:active {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .draft-btn-glow:hover {
+      background: var(--color-primary-hover, #FF5714);
+      box-shadow: 0 4px 12px rgba(255, 69, 0, 0.35);
+    }
   }
 
   .text-amber {

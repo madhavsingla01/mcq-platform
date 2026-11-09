@@ -11,7 +11,17 @@ import Conversation from '../../models/Conversation.model.js';
 const toId = (value) => (value?._id ? value._id : value);
 const sameId = (left, right) => String(toId(left) || '') === String(toId(right) || '');
 
+export function notificationVerbs(preferences = {}) {
+  const verbs = ['quiz_liked', 'comment_liked'];
+  if (preferences.commentsAndReplies !== false) verbs.push('commented');
+  if (preferences.newFollowers !== false) verbs.push('followed');
+  return verbs;
+}
+
 export const publicQuizFilter = {
+  isRestricted: { $ne: true },
+  accessType: { $ne: 'invite_only' },
+  $nor: [{ isChallenge: true, challengeStatus: { $in: ['draft', 'publishing'] } }],
   visibility: { $ne: 'private' },
   $or: [{ visibility: 'public' }, { isPublic: true }],
   'metadata.savedAsDraft': { $ne: true },
@@ -19,6 +29,8 @@ export const publicQuizFilter = {
 
 export const isPublicQuiz = (quiz) => Boolean(
   quiz &&
+  !quiz.isRestricted && quiz.accessType !== 'invite_only' &&
+  !(quiz.isChallenge && ['draft', 'publishing'].includes(quiz.challengeStatus)) &&
   quiz.visibility !== 'private' &&
   (quiz.visibility === 'public' || quiz.isPublic === true) &&
   quiz.metadata?.savedAsDraft !== true
@@ -50,16 +62,14 @@ export const recordActivity = async ({
 
   const recipientId = notifyRecipientId || targetUserId;
   if (recipientId && !sameId(actorId, recipientId)) {
-    // Instagram style: Notifications strictly for likes and comments
-    const notificationVerb = ['quiz_liked', 'commented', 'comment_liked'].includes(verb)
-      ? verb
+    const recipient = ['commented', 'followed'].includes(verb)
+      ? await User.findById(recipientId).select('preferences.notifications').lean()
       : null;
-
-    if (notificationVerb) {
+    if (notificationVerbs(recipient?.preferences?.notifications).includes(verb)) {
       await Notification.create({
         recipient: recipientId,
         actor: actorId,
-        verb: notificationVerb,
+        verb,
         quiz: quizId || null,
         comment: commentId || null,
         metadata,
@@ -96,6 +106,7 @@ export const decorateQuizzesForViewer = async (quizzes, viewerId) => {
 
     return {
       ...plainQuiz,
+      ...(plainQuiz.isChallenge && !(plainQuiz.deadlineAt && new Date(plainQuiz.deadlineAt) <= new Date()) ? { avgScore: 0 } : {}),
       social: {
         likeCount: plainQuiz.likeCount || 0,
         commentCount: plainQuiz.commentCount || 0,

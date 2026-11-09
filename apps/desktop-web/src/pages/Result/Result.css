@@ -209,7 +209,7 @@
   }
 
   .r-review-header:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
   }
 
   .r-review-indicator {
@@ -335,3 +335,5 @@
     .r-actions { flex-direction: column; }
     .r-actions a, .r-actions button { width: 100%; }
   }
+.r-opt:has(.qf-accessible-media) { flex-wrap:wrap; }
+.r-opt .qf-accessible-media { flex-basis:100%; }

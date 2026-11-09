@@ -95,13 +95,21 @@
   font-size: 12.5px;
   font-weight: 650;
   cursor: pointer;
-  transition: all 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
-.btn-entry-action:hover {
-  background: var(--color-surface-hover, rgba(255, 255, 255, 0.08));
-  border-color: rgba(255, 255, 255, 0.2);
-  color: var(--color-text, #ffffff);
+@media (hover: hover) and (pointer: fine) {
+  .btn-entry-action:hover {
+    background: var(--color-surface-hover, rgba(255, 255, 255, 0.08));
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--color-text, #ffffff);
+  }
+}
+
+.btn-entry-action:active {
+  transform: scale(0.97);
 }
 
 .btn-entry-action.like.active {
@@ -186,11 +194,13 @@
   object-position: center;
   display: block;
   transform: scale(1.02);
-  transition: transform 0.4s ease;
+  transition: transform 260ms var(--ease-out);
 }
 
-.quiz-entry-hero-banner:hover .quiz-entry-cover-img {
-  transform: scale(1.05);
+@media (hover: hover) and (pointer: fine) {
+  .quiz-entry-hero-banner:hover .quiz-entry-cover-img {
+    transform: scale(1.05);
+  }
 }
 
 .quiz-entry-clean-backdrop {
@@ -257,13 +267,21 @@
   font-size: 11.5px;
   font-weight: 650;
   cursor: pointer;
-  transition: all 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease, border-color 140ms ease;
 }
 
-.entry-cover-upload-trigger:hover {
-  background: rgba(255, 69, 0, 0.9);
-  border-color: #FF4500;
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .entry-cover-upload-trigger:hover {
+    background: rgba(255, 69, 0, 0.9);
+    border-color: #FF4500;
+    transform: translateY(-1px);
+  }
+}
+
+.entry-cover-upload-trigger:active {
+  transform: scale(0.97);
 }
 
 /* ========================================================
@@ -317,12 +335,20 @@
   font-size: 12px;
   font-weight: 650;
   text-decoration: none;
-  transition: all 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease, border-color 140ms ease;
 }
 
-.btn-entry-settings:hover {
-  background: var(--color-primary-light, rgba(255, 69, 0, 0.12));
-  border-color: var(--color-primary, #FF4500);
+@media (hover: hover) and (pointer: fine) {
+  .btn-entry-settings:hover {
+    background: var(--color-primary-light, rgba(255, 69, 0, 0.12));
+    border-color: var(--color-primary, #FF4500);
+  }
+}
+
+.btn-entry-settings:active {
+  transform: scale(0.97);
 }
 
 .quiz-entry-grid {
@@ -404,6 +430,27 @@
   border-radius: 8px;
   font-size: 13px;
   color: var(--color-text, #ffffff);
+}
+
+.entry-media-instructions {
+  margin-top: 12px;
+  color: var(--color-text, #ededf1);
+  line-height: 1.5;
+}
+
+.entry-media-instructions summary {
+  color: #ffb18f;
+  cursor: pointer;
+  padding: 8px 0;
+}
+
+.entry-media-instructions p {
+  margin: 4px 0 0;
+}
+
+.entry-media-instructions summary:focus-visible {
+  outline: 3px solid #ff713d;
+  outline-offset: 3px;
 }
 
 @media (max-width: 820px) {

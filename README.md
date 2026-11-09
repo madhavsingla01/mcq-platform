@@ -2,13 +2,14 @@
 
 QuizFocus is a focused MERN stack application for turning tabular MCQ files into interactive quizzes. It supports Excel, CSV, and JSON imports, smart column mapping, manual quiz creation, and taking/reviewing quizzes.
 
-This README is the entry point. For implementation logic and the security roadmap, see [docs/SECURITY_AND_LOGIC.md](docs/SECURITY_AND_LOGIC.md). For recent documentation and runtime progress, see [docs/PROGRESS.md](docs/PROGRESS.md).
+Start here for local setup. See the [modernization documentation](docs/README.md) for architecture, messaging contracts, database decisions, risks, and verification. The [Step 02 report](docs/enterprise-upgrade/18-step-02-report.md) records attempt ownership, gateway contracts and migration requirements. Older design and security notes live in the [workspace docs](../docs/README.md).
 
 ## Current Status
 
 - Frontend URL: `http://localhost:5173`
 - API Gateway Entrypoint: `http://localhost:5000`
 - System Health Check: `http://localhost:5000/api/v1/health`
+- Gateway liveness: `/api/v1/livez`. Readiness: `/api/v1/readyz` (503 when a dependency is degraded).
 - Architecture: domain microservices, a dedicated Challenge Service, an administrative service, and an API Gateway
 - Microservices:
   - **API Gateway** (`:5000`): Central proxy, route distributor, and security perimeter
@@ -28,7 +29,7 @@ This README is the entry point. For implementation logic and the security roadma
 
 ### Prerequisites
 
-1. **Node.js**: v18.0.0 or higher (`node -v`)
+1. **Node.js**: Use a supported LTS release for deployment. The Step 01 report records the runtime used for local verification.
 2. **npm**: v9.0.0 or higher (`npm -v`)
 3. **MongoDB**: Running locally on default port `27017`
    - *Note*: If MongoDB is already running as a background system service (default on Windows), you do **not** need to start it manually.
@@ -199,7 +200,7 @@ Configure the gateway with `MEDIA_SERVICE_URL` and the media service with `MONGO
 
 Already implemented:
 
-- httpOnly auth cookies with `sameSite=strict` and production-only `secure`
+- HTTP-only authentication cookies with `SameSite=Lax` for local development and `SameSite=None; Secure` in production
 - Short-lived access tokens plus stored refresh tokens with `tokenVersion` revocation
 - bcrypt password hashing
 - Role-based admin route protection
@@ -226,13 +227,13 @@ Recommended next hardening work:
 - Add security headers tuned for production static hosting
 - Add automated dependency audit review in CI
 
-See [docs/SECURITY_AND_LOGIC.md](docs/SECURITY_AND_LOGIC.md) for more detail.
+See the [current security and risk register](docs/enterprise-upgrade/05-security-and-risk-register.md) for verified coverage and remaining work.
 
 ## Troubleshooting
 
 ### MongoDB connection refused
 
-If the server logs `ECONNREFUSED 127.0.0.1:27017`, check `server/.env`. Ensure you are running the native MongoDB server on standard port `27017` and that your connection string is correct:
+If a service logs `ECONNREFUSED 127.0.0.1:27017`, check its `services/<name>/.env`. Ensure the configured MongoDB instance is running and that the connection string is correct:
 
 ```env
 MONGO_URI=mongodb://127.0.0.1:27017/mcq-platform

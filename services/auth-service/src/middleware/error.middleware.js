@@ -42,7 +42,6 @@ export const notFoundHandler = (req, res, next) => {
  * Global error handler middleware.
  */
 export const errorHandler = (err, req, res, next) => {
-  console.error('[API ERROR]', req.method, req.originalUrl, err);
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 
@@ -78,6 +77,16 @@ export const errorHandler = (err, req, res, next) => {
 
   const isProduction = process.env.NODE_ENV === 'production';
   const isInternal500 = err.statusCode >= 500;
+  if (isInternal500) {
+    const requestId = req.get('x-request-id');
+    console.error(JSON.stringify({
+      category: 'auth-request-error',
+      method: req.method,
+      status: err.statusCode,
+      ...(typeof err.code === 'number' ? { code: err.code } : {}),
+      ...(/^[\w.-]{1,100}$/.test(requestId || '') ? { requestId } : {}),
+    }));
+  }
 
   const response = {
     success: false,

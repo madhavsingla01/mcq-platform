@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 /**
  * QuizFocus Social & Community Service
  * Manages feed, explore discovery, reactions (likes/upvotes), bookmarks, comments, shares, and activity.
@@ -29,11 +30,11 @@ app.use(csrfProtection);
 
 // Health check
 app.get('/api/v1/health', (req, res) => {
-  res.json({
+  const healthy = mongoose.connection.readyState === 1;
+  res.status(healthy ? 200 : 503).json({
     service: 'social-service',
-    status: 'healthy',
+    status: healthy ? 'healthy' : 'degraded',
     timestamp: new Date().toISOString(),
-    database: env.MONGO_URI.split('/').pop(),
   });
 });
 

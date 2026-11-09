@@ -537,8 +537,10 @@
     text-decoration: none;
   }
 
-  .panel-view-all:hover {
-    text-decoration: underline;
+  @media (hover: hover) and (pointer: fine) {
+    .panel-view-all:hover {
+      text-decoration: underline;
+    }
   }
 
   /* Progress Gauge */
@@ -1001,8 +1003,10 @@
   touch-action: manipulation;
 }
 
-.challenges-hero-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.14);
+@media (hover: hover) and (pointer: fine) {
+  .challenges-hero-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.14);
+  }
 }
 
 .challenges-hero-btn-secondary:active {
@@ -1049,9 +1053,11 @@
   touch-action: manipulation;
 }
 
-.comp-status-tab:hover {
-  color: #FFFFFF;
-  background: rgba(255, 255, 255, 0.04);
+@media (hover: hover) and (pointer: fine) {
+  .comp-status-tab:hover {
+    color: #FFFFFF;
+    background: rgba(255, 255, 255, 0.04);
+  }
 }
 
 .comp-status-tab.active {
@@ -1085,9 +1091,11 @@
   touch-action: manipulation;
 }
 
-.category-pill:hover {
-  color: #D4D4D8;
-  background: rgba(255, 255, 255, 0.06);
+@media (hover: hover) and (pointer: fine) {
+  .category-pill:hover {
+    color: #D4D4D8;
+    background: rgba(255, 255, 255, 0.06);
+  }
 }
 
 .category-pill.active {
@@ -1110,13 +1118,21 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition: transform 0.2s cubic-bezier(0.23, 1, 0.32, 1), border-color 0.2s ease, box-shadow 0.2s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.competition-item-card:hover {
-  border-color: rgba(255, 69, 0, 0.35);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 69, 0, 0.2);
+.competition-item-card:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .competition-item-card:hover {
+    border-color: rgba(255, 69, 0, 0.35);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 69, 0, 0.2);
+  }
 }
 
 .comp-card-top {
@@ -1172,8 +1188,10 @@
   overflow: hidden;
 }
 
-.comp-card-title:hover {
-  color: #FF4500;
+@media (hover: hover) and (pointer: fine) {
+  .comp-card-title:hover {
+    color: #FF4500;
+  }
 }
 
 .comp-card-tags {
@@ -1256,8 +1274,10 @@
   touch-action: manipulation;
 }
 
-.comp-card-standings-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
+@media (hover: hover) and (pointer: fine) {
+  .comp-card-standings-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
 }
 
 .comp-card-standings-btn:active {
@@ -1301,3 +1321,27 @@
   font-size: 10.5px;
   color: #A1A1AA;
 }
+.layout-page-content:has(> .challenges-page) { max-width: none; }
+.challenges-page { padding: clamp(14px, 2vw, 28px) clamp(12px, 2vw, 30px) 48px; background: var(--color-bg); color: var(--color-text); }
+.challenges-page .challenges-page-header, .challenges-layout-grid { max-width: none; margin-inline: 0; }
+.challenges-page .challenges-page-header { margin-bottom: 14px; }
+.challenges-layout-grid { gap: 18px; grid-template-columns: minmax(0, 1fr) minmax(240px, 290px); }
+.challenges-main-col { gap: 18px; }
+.challenges-page .challenges-hero-card { min-height: 0; padding: clamp(16px, 2vw, 28px); }
+.challenges-page .challenges-hero-content { gap: 12px; }
+.challenges-page .challenges-welcome-row { align-items: center; }
+.challenges-page .challenges-cards-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 255px), 1fr)); }
+.arena-quick-actions {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; padding: 16px;
+  border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface);
+}
+.arena-quick-actions > div { flex: 1 1 220px; }
+.arena-quick-actions h2 { margin: 0; font-size: 1.15rem; font-weight: 750; }
+.arena-quick-actions p { margin: 4px 0 0; color: var(--color-text-secondary); font-size: .875rem; }
+.arena-join-form, .arena-pagination, .arena-difficulty, .arena-list-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.arena-join-form input, .arena-difficulty select { border: 1px solid var(--color-border); border-radius: 8px; min-height: 38px; padding: 6px 10px; color: var(--color-text); background: var(--color-surface-alt); }
+.arena-join-form input { width: 10rem; }
+.arena-quick-actions .arena-join-error { flex-basis: 100%; color: var(--color-danger); }
+.arena-difficulty, .arena-pagination, .arena-list-status { color: var(--color-text-secondary); font-size: .875rem; }
+.arena-pagination, .arena-list-status { justify-content: center; padding: 14px 0; }
+@media (max-width: 1000px) { .challenges-layout-grid { grid-template-columns: minmax(0, 1fr); } }

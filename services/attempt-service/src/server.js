@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 /**
  * QuizFocus Attempt & Scoring Service
  * Handles attempt lifecycles, timer sync, locking, scoring, and performance analytics.
@@ -12,6 +13,7 @@ import { logger } from './utils/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js';
 import { csrfProtection } from './middleware/csrf.middleware.js';
 import attemptsRoutes from './routes/attempts.routes.js';
+import { startFinalizationWorker } from './jobs/finalization.worker.js';
 
 const allowedOrigins = env.CLIENT_URL;
 
@@ -29,11 +31,11 @@ app.use(csrfProtection);
 
 // Health check
 app.get('/api/v1/health', (req, res) => {
-  res.json({
+  const healthy = mongoose.connection.readyState === 1;
+  res.status(healthy ? 200 : 503).json({
     service: 'attempt-service',
-    status: 'healthy',
+    status: healthy ? 'healthy' : 'degraded',
     timestamp: new Date().toISOString(),
-    database: env.MONGO_URI.split('/').pop(),
   });
 });
 
@@ -49,9 +51,25 @@ app.use(errorHandler);
 const start = async () => {
   try {
     await connectDB();
-    app.listen(env.PORT, () => {
+    const stopWorker = startFinalizationWorker(message => logger.error(message));
+    const server = app.listen(env.PORT, () => {
       logger.info(`🚀 Attempt Service running on port ${env.PORT} [${env.NODE_ENV}]`);
     });
+    let stopping = false;
+    const shutdown = async () => {
+      if (stopping) return;
+      stopping = true;
+      const deadline = setTimeout(() => process.exit(1), 10000);
+      deadline.unref();
+      const drained = new Promise(resolve => server.close(resolve));
+      server.closeIdleConnections?.();
+      await Promise.all([drained, stopWorker()]);
+      await mongoose.disconnect();
+      clearTimeout(deadline);
+      process.exit(0);
+    };
+    process.once('SIGINT', shutdown);
+    process.once('SIGTERM', shutdown);
   } catch (err) {
     logger.error('Failed to start Attempt Service:', err.message);
     process.exit(1);

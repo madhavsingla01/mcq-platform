@@ -29,7 +29,7 @@
 .admin-shell {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  min-height: var(--app-screen-height);
   background-color: var(--admin-bg);
   color: var(--admin-text-main);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -48,7 +48,7 @@
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--admin-border);
   position: sticky;
-  top: 0;
+  top: var(--app-header-height);
   z-index: 50;
 }
 
@@ -130,14 +130,15 @@
   text-decoration: none;
   padding: 6px 12px;
   border-radius: var(--admin-radius-control);
-  border: 1px solid var(--admin-border);
-  transition: all 0.2s var(--admin-ease);
+  transition: transform var(--duration-tap, 120ms) var(--admin-ease), color 140ms ease, background-color 140ms ease, border-color 140ms ease;
 }
 
-.admin-exit-btn:hover {
-  color: var(--admin-text-main);
-  background: var(--admin-surface-hover);
-  border-color: rgba(255, 255, 255, 0.15);
+@media (hover: hover) and (pointer: fine) {
+  .admin-exit-btn:hover {
+    color: var(--admin-text-main);
+    background: var(--admin-surface-hover);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
 }
 
 .admin-exit-btn:active {
@@ -187,12 +188,19 @@
   text-decoration: none;
   font-size: 13.5px;
   font-weight: 500;
-  transition: all 0.18s var(--admin-ease);
+  touch-action: manipulation;
+  transition: transform var(--duration-tap, 120ms) var(--admin-ease), color 140ms ease, background-color 140ms ease;
 }
 
-.admin-nav-item:hover {
-  color: var(--admin-text-main);
-  background: var(--admin-surface);
+@media (hover: hover) and (pointer: fine) {
+  .admin-nav-item:hover {
+    color: var(--admin-text-main);
+    background: var(--admin-surface);
+  }
+}
+
+.admin-nav-item:active {
+  transform: scale(0.97);
 }
 
 .admin-nav-item.active {
@@ -265,8 +273,10 @@
   transition: border-color 0.2s var(--admin-ease);
 }
 
-.admin-card:hover {
-  border-color: rgba(255, 255, 255, 0.14);
+@media (hover: hover) and (pointer: fine) {
+  .admin-card:hover {
+    border-color: rgba(255, 255, 255, 0.14);
+  }
 }
 
 /* Metric Cards Grid */
@@ -349,8 +359,10 @@
   border-bottom: none;
 }
 
-.admin-table tr:hover td {
-  background: var(--admin-surface-hover);
+@media (hover: hover) and (pointer: fine) {
+  .admin-table tr:hover td {
+    background: var(--admin-surface-hover);
+  }
 }
 
 /* Status Pills */
@@ -398,7 +410,7 @@
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  transition: all 0.18s var(--admin-ease);
+  transition: transform var(--duration-tap, 120ms) var(--admin-ease), background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
 .admin-btn:active {
@@ -410,19 +422,10 @@
   color: #fff;
 }
 
-.admin-btn-primary:hover {
-  background: var(--admin-accent-hover);
-}
-
 .admin-btn-secondary {
   background: var(--admin-surface-elevated);
   border-color: var(--admin-border);
   color: var(--admin-text-main);
-}
-
-.admin-btn-secondary:hover {
-  background: #202020;
-  border-color: rgba(255, 255, 255, 0.16);
 }
 
 .admin-btn-danger {
@@ -431,8 +434,19 @@
   color: var(--admin-danger);
 }
 
-.admin-btn-danger:hover {
-  background: rgba(239, 68, 68, 0.2);
+@media (hover: hover) and (pointer: fine) {
+  .admin-btn-primary:hover {
+    background: var(--admin-accent-hover);
+  }
+
+  .admin-btn-secondary:hover {
+    background: #202020;
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+
+  .admin-btn-danger:hover {
+    background: rgba(239, 68, 68, 0.2);
+  }
 }
 
 .admin-input {
@@ -477,7 +491,7 @@
 @keyframes modal-enter {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.97);
   }
   to {
     opacity: 1;

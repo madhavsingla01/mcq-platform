@@ -180,10 +180,9 @@
 }
 
 [data-theme="dark"],
-html.dark,
-[data-theme="oled"],
-html.oled {
-  --bg-primary: #000000;
+html.dark {
+  color-scheme: dark;
+  --bg-primary: #09090B;
   --bg-surface: #121214;
   --bg-card: #121214;
   --bg-elevated: #18181B;
@@ -205,6 +204,34 @@ html.oled {
   --error: #EF4444;
   --warning: #F59E0B;
   --info: #FF4500;
+}
+
+html[data-theme="oled"] {
+  --bg-primary: #000;
+  --bg-surface: #0b0b0d;
+  --bg-card: #0b0b0d;
+  --bg-elevated: #141418;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg-primary: #f8f8fa;
+  --bg-surface: #fff;
+  --bg-card: #fff;
+  --bg-elevated: #f1f1f5;
+  --border-default: #d5d5de;
+  --border-subtle: #e5e5eb;
+  --border-strong: #a5a5b2;
+  --text-primary: #18181b;
+  --text-secondary: #484853;
+  --text-muted: #646471;
+  --accent-primary: #c73a00;
+  --accent-hover: #ad3200;
+  --color-surface-hover: #ebebf0;
+  --success: #147d45;
+  --error: #b92329;
+  --warning: #905b00;
+  --info: var(--accent-primary);
 }
 
 /* ===== BASE STYLES & G2 SQUIRCLE UNIVERSAL DEFAULT ===== */
@@ -268,6 +295,27 @@ html {
   scroll-behavior: smooth;
   font-size: 16px;
   overscroll-behavior: none;
+}
+
+html[data-font-size="sm"] { font-size: 15px; }
+html[data-font-size="lg"] { font-size: 18px; }
+html.focus-mode-active :focus-visible {
+  outline: 3px solid var(--color-primary, #FF4500) !important;
+  outline-offset: 4px;
+}
+html.reduce-motion, html.reduce-motion * { scroll-behavior: auto !important; }
+html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  html, html * { scroll-behavior: auto !important; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 body {
@@ -337,9 +385,11 @@ a {
   border-radius: var(--radius-full, 9999px);
 }
 
-*::-webkit-scrollbar-thumb:hover,
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary, #818181);
+@media (hover: hover) and (pointer: fine) {
+  *::-webkit-scrollbar-thumb:hover,
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary, #818181);
+  }
 }
 
 /* Firefox standard scrollbar */
@@ -499,8 +549,14 @@ small, .caption, .badge, .meta-text {
   corner-shape: squircle;
   -webkit-corner-shape: squircle;
   box-shadow: var(--material-card-shadow);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition: transform var(--duration-tap) var(--ease-out), border-color 150ms ease, box-shadow 150ms ease;
   overflow: hidden;
+}
+
+.apple-card:active {
+  transform: scale(0.97);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -618,6 +674,32 @@ small, .caption, .badge, .meta-text {
   outline-offset: 2px;
 }
 
+/* Keep text focus visible without the accent ring or glow from component styles. */
+@layer text-field-focus {
+  :is(textarea, input:not([type]), input:is([type=text], [type=search], [type=email], [type=password],
+    [type=url], [type=tel], [type=number], [type=date], [type=datetime-local], [type=time], [type=month], [type=week]),
+    [contenteditable=true], [contenteditable=plaintext-only]):focus {
+    border-color: var(--color-border-strong) !important;
+    box-shadow: none !important;
+    outline: 1px solid var(--color-text-secondary) !important;
+    outline-offset: -1px !important;
+  }
+
+  html.focus-mode-active :is(textarea, input:not([type]), input:is([type=text], [type=search], [type=email], [type=password],
+    [type=url], [type=tel], [type=number], [type=date], [type=datetime-local], [type=time], [type=month], [type=week]),
+    [contenteditable=true], [contenteditable=plaintext-only]):focus-visible {
+    outline-width: 2px !important;
+    outline-offset: -2px !important;
+  }
+
+  :is(.consistent-search-field, .share-link-box, .connections-search-capsule, .settings-username-input-wrap,
+    .settings-sidebar-search-wrap, .settings-activity-search-box, .qf-hashtag-input-container,
+    .explore-line-search, .yt-channel-search):focus-within {
+    border-color: var(--color-border-strong) !important;
+    box-shadow: none !important;
+  }
+}
+
 /* ── Micro-Interaction & Press Feedback (Emil Kowalski / Design Engineering Standards) ── */
 button:not(:disabled),
 a.btn:not(.disabled),
@@ -716,12 +798,20 @@ input[type="submit"]:not(:disabled):active,
   background: rgba(255, 255, 255, 0.08) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   color: #A1A1AA !important;
-  transition: all 0.15s ease !important;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease, color 140ms ease !important;
 }
 
-[data-sonner-toast] [data-close-button]:hover {
-  background: rgba(255, 255, 255, 0.16) !important;
-  color: #FFFFFF !important;
+[data-sonner-toast] [data-close-button]:active {
+  transform: scale(0.97) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-sonner-toast] [data-close-button]:hover {
+    background: rgba(255, 255, 255, 0.16) !important;
+    color: #FFFFFF !important;
+  }
 }
 
 

@@ -47,7 +47,7 @@ router.get('/users', requirePermission('manage_users'), listUsers);
 router.get('/users/:id', requirePermission('manage_users'), getUserDetails);
 router.post('/users/:id/suspend', requirePermission('suspend_users'), suspendUser);
 router.post('/users/:id/restore', requirePermission('suspend_users'), restoreUser);
-router.post('/users/:id/role', requirePermission('manage_roles'), updateUserRole);
+router.post('/users/:id/role', requirePermission('*'), updateUserRole);
 
 // Quiz & Challenge Moderation
 router.get('/content', requirePermission('manage_content'), listContent);

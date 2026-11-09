@@ -193,7 +193,7 @@
 @keyframes explanationSlideUp {
   from {
     opacity: 0;
-    transform: translateY(6px) scale(0.95);
+    transform: translateY(6px) scale(0.97);
   }
   to {
     opacity: 1;

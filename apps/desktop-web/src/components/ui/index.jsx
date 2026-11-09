@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { forwardRef, useId } from 'react';
 import { Link } from 'react-router-dom';
 
 /* ===== 1. BUTTON COMPONENT ===== */
@@ -88,7 +88,8 @@ export function Button({
 }
 
 /* ===== 2. CARD COMPONENT ===== */
-export const Card = forwardRef(function Card({ children, style, className, onClick, ...props }, ref) {
+export const Card = forwardRef(function Card({ children, style, className = '', onClick, ...props }, ref) {
+  const isInteractive = Boolean(onClick);
   return (
     <div
       ref={ref}
@@ -101,10 +102,13 @@ export const Card = forwardRef(function Card({ children, style, className, onCli
         boxShadow: 'var(--material-card-shadow)',
         padding: 'var(--card-padding, 24px)',
         boxSizing: 'border-box',
+        cursor: isInteractive ? 'pointer' : undefined,
+        touchAction: isInteractive ? 'manipulation' : undefined,
+        WebkitTapHighlightColor: isInteractive ? 'transparent' : undefined,
         transition: 'transform var(--duration-tap, 120ms) var(--ease-out), border-color 160ms ease, box-shadow 160ms ease',
         ...style,
       }}
-      className={className}
+      className={[className, isInteractive ? 'interactive-tap' : ''].filter(Boolean).join(' ')}
       {...props}
     >
       {children}
@@ -200,10 +204,12 @@ export function ProgressBar({ value, max = 100, height = 6, color }) {
       <div
         style={{
           height: '100%',
-          width: `${pct}%`,
+          width: '100%',
+          transformOrigin: 'left',
+          transform: `scaleX(${Math.max(0, Math.min(100, pct)) / 100})`,
           borderRadius: 'var(--radius-full, 9999px)',
           background: color || 'var(--color-primary, #FF4500)',
-          transition: 'width 0.35s ease',
+          transition: 'transform 200ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1))',
         }}
       />
     </div>
@@ -223,6 +229,8 @@ export function Input({
   type = 'text',
   ...props
 }) {
+  const generatedId = useId();
+  const inputId = id ?? generatedId;
   return (
     <div
       style={{
@@ -235,7 +243,7 @@ export function Input({
     >
       {label && (
         <label
-          htmlFor={id}
+          htmlFor={inputId}
           style={{
             fontSize: 13,
             fontWeight: 600,
@@ -272,7 +280,9 @@ export function Input({
           </div>
         )}
         <input
-          id={id}
+          id={inputId}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${inputId}-error` : undefined}
           type={type}
           value={value ?? ''}
           style={{
@@ -312,6 +322,7 @@ export function Input({
       </div>
       {error && (
         <span
+          id={`${inputId}-error`}
           style={{
             fontSize: 12,
             color: 'var(--color-danger, #EF4444)',

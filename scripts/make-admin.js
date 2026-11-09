@@ -18,32 +18,19 @@ async function makeAdmin() {
 
   if (!user) {
     console.error(`User '${target}' not found.`);
-    const all = await users.find({}, { projection: { email: 1, username: 1, role: 1 } }).toArray();
-    console.log('Available users:', all);
     process.exit(1);
   }
 
-  await users.updateOne({ _id: user._id }, { $set: { role: 'admin' } });
+  await users.updateOne(
+    { _id: user._id, role: { $ne: 'admin' } },
+    [{ $set: {
+      role: 'admin',
+      refreshToken: null,
+      tokenVersion: { $add: [{ $ifNull: ['$tokenVersion', 0] }, 1] },
+    } }]
+  );
   console.log(`✅ User ${user.email} (@${user.username}) is now an ADMIN (role: 'admin')!`);
 
-  // Also seed AdminMembership in mcq-platform
-  const memberships = mongoose.connection.db.collection('adminmemberships');
-  await memberships.updateOne(
-    { userId: user._id },
-    {
-      $set: {
-        userId: user._id,
-        userEmail: user.email,
-        userName: user.name || user.username,
-        roleSlugs: ['super_admin'],
-        assignedAt: new Date(),
-        notes: 'Promoted via make-admin script',
-      },
-    },
-    { upsert: true }
-  );
-
-  console.log(`🛡️ Assigned 'super_admin' membership.`);
   process.exit(0);
 }
 

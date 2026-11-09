@@ -4,6 +4,9 @@
  */
 
 import express from 'express';
+import mongoose from 'mongoose';
+import Message from './models/Message.model.js';
+import Conversation from './models/Conversation.model.js';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { connectDB } from './config/db.js';
@@ -14,7 +17,7 @@ import { csrfProtection } from './middleware/csrf.middleware.js';
 import messageRoutes from './routes/message.routes.js';
 
 import http from 'http';
-import { initSocketServer } from './socket/socketHandler.js';
+import { initSocketServer, getIO } from './socket/socketHandler.js';
 
 const allowedOrigins = env.CLIENT_URL;
 
@@ -26,18 +29,18 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '32kb' }));
+app.use(express.urlencoded({ extended: true, limit: '32kb' }));
 app.use(cookieParser());
 app.use(csrfProtection);
 
 // Health check
 app.get('/api/v1/health', (req, res) => {
-  res.json({
+  const healthy = mongoose.connection.readyState === 1;
+  res.status(healthy ? 200 : 503).json({
     service: 'message-service',
-    status: 'healthy',
+    status: healthy ? 'healthy' : 'degraded',
     timestamp: new Date().toISOString(),
-    database: env.MONGO_URI.split('/').pop(),
   });
 });
 
@@ -54,6 +57,7 @@ initSocketServer(server);
 const start = async () => {
   try {
     await connectDB();
+    await Promise.all([Message.init(), Conversation.init()]);
     server.listen(env.PORT, () => {
       logger.info(`🚀 Message Service running with Socket.IO on port ${env.PORT} [${env.NODE_ENV}]`);
     });
@@ -63,12 +67,23 @@ const start = async () => {
   }
 };
 
-process.on('unhandledRejection', (err) => {
-  logger.error('Unhandled Promise Rejection:', err);
-});
-process.on('uncaughtException', (err) => {
-  logger.error('Uncaught Exception:', err);
-});
+let stopping = false;
+const shutdown = async (code = 0) => {
+  if (stopping) return;
+  stopping = true;
+  const deadline = setTimeout(() => process.exit(code), 10000);
+  deadline.unref();
+  getIO()?.close();
+  server.close();
+  await mongoose.disconnect();
+  clearTimeout(deadline);
+  process.exit(code);
+};
+process.once('SIGTERM', () => shutdown());
+process.once('SIGINT', () => shutdown());
+for (const event of ['unhandledRejection', 'uncaughtException']) {
+  process.once(event, err => { logger.error(event, err); shutdown(1); });
+}
 
 start();
 

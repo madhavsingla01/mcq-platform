@@ -3,6 +3,8 @@ import { getAuthDb, getQuizDb } from '../config/db.js';
 import AdminAuditLog from '../models/AdminAuditLog.model.js';
 import AdminMembership from '../models/AdminMembership.model.js';
 import { AppError, catchAsync } from '../middleware/error.middleware.js';
+import { hasAdminPermission } from '../middleware/auth.middleware.js';
+import { buildClosestSearch } from '../services/closestSearch.js';
 
 /**
  * GET /api/v1/admin/users
@@ -14,6 +16,9 @@ export const listUsers = catchAsync(async (req, res) => {
   const skip = (page - 1) * limit;
 
   const search = String(req.query.search || '').trim();
+  const closest = search && req.query.match === 'closest' ? buildClosestSearch(search, {
+    primary: 'name', fields: ['username'], literalFields: ['email', 'userCode'], literalOnly: /@|^usr-/i.test(search),
+  }) : null;
   const status = String(req.query.status || 'all').toLowerCase();
   const role = String(req.query.role || 'all').toLowerCase();
 
@@ -33,7 +38,9 @@ export const listUsers = catchAsync(async (req, res) => {
     filter.role = role;
   }
 
-  if (search) {
+  if (closest) {
+    filter.$or = closest.filter.$or;
+  } else if (search) {
     const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(escaped, 'i');
     filter.$or = [
@@ -44,27 +51,17 @@ export const listUsers = catchAsync(async (req, res) => {
     ];
   }
 
+  const projection = {
+    name: 1, username: 1, email: 1, userCode: 1, role: 1, isSuspended: 1,
+    suspendedAt: 1, suspensionReason: 1, quizCount: 1, createdAt: 1,
+  };
+  const order = { createdAt: -1, _id: -1 };
+  const pageQuery = closest ? usersCollection.aggregate([
+    { $match: filter }, { $set: { searchScore: closest.score } },
+    { $sort: { searchScore: -1, ...order } }, { $skip: skip }, { $limit: limit }, { $project: projection },
+  ], { maxTimeMS: 5000 }) : usersCollection.find(filter, { projection }).sort(order).skip(skip).limit(limit);
   const [users, total] = await Promise.all([
-    usersCollection
-      .find(filter, {
-        projection: {
-          name: 1,
-          username: 1,
-          email: 1,
-          userCode: 1,
-          role: 1,
-          isSuspended: 1,
-          suspendedAt: 1,
-          suspensionReason: 1,
-          quizCount: 1,
-          createdAt: 1,
-        },
-      })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .toArray(),
-    usersCollection.countDocuments(filter),
+    pageQuery.toArray(), usersCollection.countDocuments(filter, closest ? { maxTimeMS: 5000 } : {}),
   ]);
 
   res.json({
@@ -109,10 +106,9 @@ export const getUserDetails = catchAsync(async (req, res) => {
       .limit(5)
       .project({ title: 1, quizCode: 1, visibility: 1, isChallenge: 1, isRestricted: 1, createdAt: 1 })
       .toArray(),
-    AdminAuditLog.find({ targetType: 'user', targetId: String(user._id) })
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .lean(),
+    hasAdminPermission(req.adminUser, 'view_audit_logs')
+      ? AdminAuditLog.find({ targetType: 'user', targetId: String(user._id) }).sort({ createdAt: -1 }).limit(10).lean()
+      : [],
   ]);
 
   res.json({
@@ -159,18 +155,20 @@ export const suspendUser = catchAsync(async (req, res) => {
   }
 
   const suspendedAt = new Date();
-  await usersCollection.updateOne(
-    { _id: targetUser._id },
-    {
+  const result = await usersCollection.updateOne(
+    { _id: targetUser._id, role: targetUser.role ?? null },
+    [{
       $set: {
         isSuspended: true,
         suspendedAt,
-        suspensionReason: String(reason).trim(),
+        suspensionReason: { $literal: String(reason).trim() },
         suspendedBy: req.adminUser._id,
-        tokenVersion: (targetUser.tokenVersion || 0) + 1, // Invalidate all active user JWT tokens immediately
+        tokenVersion: { $add: [{ $ifNull: ['$tokenVersion', 0] }, 1] },
+        refreshToken: null,
       },
-    }
+    }]
   );
+  if (!result.matchedCount) throw new AppError('User role changed. Refresh and try again.', 409);
 
   // Append to Immutable Audit Log
   await AdminAuditLog.create({
@@ -217,9 +215,12 @@ export const restoreUser = catchAsync(async (req, res) => {
 
   const targetUser = await usersCollection.findOne({ _id: new mongoose.Types.ObjectId(id) });
   if (!targetUser) throw new AppError('User not found', 404);
+  if (targetUser.role === 'admin' && !req.adminUser.permissions.includes('*')) {
+    throw new AppError('Only Super Administrators can restore admin accounts.', 403);
+  }
 
-  await usersCollection.updateOne(
-    { _id: targetUser._id },
+  const result = await usersCollection.updateOne(
+    { _id: targetUser._id, role: targetUser.role ?? null },
     {
       $set: {
         isSuspended: false,
@@ -229,6 +230,7 @@ export const restoreUser = catchAsync(async (req, res) => {
       },
     }
   );
+  if (!result.matchedCount) throw new AppError('User role changed. Refresh and try again.', 409);
 
   // Append to Immutable Audit Log
   await AdminAuditLog.create({
@@ -280,10 +282,17 @@ export const updateUserRole = catchAsync(async (req, res) => {
   if (!targetUser) throw new AppError('User not found', 404);
 
   const prevRole = targetUser.role;
-  await usersCollection.updateOne(
-    { _id: targetUser._id },
-    { $set: { role } }
-  );
+  if (prevRole !== role) {
+    const result = await usersCollection.updateOne(
+      { _id: targetUser._id, role: prevRole ?? null },
+      [{ $set: {
+        role,
+        refreshToken: null,
+        tokenVersion: { $add: [{ $ifNull: ['$tokenVersion', 0] }, 1] },
+      } }]
+    );
+    if (!result.matchedCount) throw new AppError('User role changed. Refresh and try again.', 409);
+  }
 
   await AdminAuditLog.create({
     actorId: req.adminUser._id,

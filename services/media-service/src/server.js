@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -5,9 +6,10 @@ import helmet from 'helmet';
 import fs from 'fs/promises';
 import path from 'path';
 import env from './config/env.js';
-import { connectDB } from './config/db.js';
+import { connectDB, contentDbReady } from './config/db.js';
 import mediaRoutes from './routes/media.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
+import { recoverClipJobs, cleanupAbandonedClips } from './services/clipProcessing.service.js';
 
 const app = express();
 const storageRoot = path.resolve(env.MEDIA_STORAGE_PATH);
@@ -26,10 +28,11 @@ app.use(cookieParser());
 app.use(express.json({ limit: '32kb' }));
 
 app.get('/api/v1/health', (req, res) => {
-  res.json({
-    success: true,
+  const healthy = mongoose.connection.readyState === 1 && contentDbReady();
+  res.status(healthy ? 200 : 503).json({
+    success: healthy,
     service: 'media-service',
-    status: 'healthy',
+    status: healthy ? 'healthy' : 'degraded',
     timestamp: new Date().toISOString(),
   });
 });
@@ -45,6 +48,11 @@ const start = async () => {
   if (!env.JWT_SECRET) throw new Error('JWT_SECRET is required by the media service');
   await fs.mkdir(storageRoot, { recursive: true });
   await connectDB();
+  await recoverClipJobs();
+  const recover = setInterval(() => recoverClipJobs().catch(() => console.error('Clip job recovery failed')),30000);
+  recover.unref();
+  const cleanup = setInterval(() => cleanupAbandonedClips().catch(() => console.error('Abandoned media cleanup failed')),3600000);
+  cleanup.unref();
   server = app.listen(env.PORT, () => {
     console.log(`Media service running on port ${env.PORT} [${env.NODE_ENV}]`);
   });

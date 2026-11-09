@@ -33,7 +33,6 @@ export const notFoundHandler = (req, res, next) => {
   res.status(404).json({
     success: false,
     message: 'Route not found',
-    path: req.originalUrl,
     method: req.method
   });
 };
@@ -42,25 +41,22 @@ export const notFoundHandler = (req, res, next) => {
  * Global error handler middleware.
  */
 export const errorHandler = (err, req, res, next) => {
-  console.error('[API ERROR]', req.method, req.originalUrl, err);
-  err.statusCode = err.statusCode || 500;
-  err.status = err.status || 'error';
+  if (res.headersSent) return next(err);
+  const requestId = req.get('x-request-id');
 
   // Mongoose validation error
   if (err.name === 'ValidationError') {
-    const errors = Object.values(err.errors).map((e) => e.message);
-    err = new AppError('Validation failed', 400, errors);
+    err = new AppError('Invalid message data', 400);
   }
 
   // Mongoose duplicate key
   if (err.code === 11000) {
-    const field = Object.keys(err.keyValue)[0];
-    err = new AppError(`Duplicate value for field: ${field}`, 400);
+    err = new AppError('Message data conflicts with an existing record', 409);
   }
 
   // Mongoose cast error (invalid ID)
   if (err.name === 'CastError') {
-    err = new AppError(`Invalid ${err.path}: ${err.value}`, 400);
+    err = new AppError('Invalid identifier', 400);
   }
 
   // JWT errors
@@ -76,17 +72,19 @@ export const errorHandler = (err, req, res, next) => {
     err = new AppError('File too large', 413);
   }
 
-  const isProduction = process.env.NODE_ENV === 'production';
-  const isInternal500 = err.statusCode >= 500;
+  const status = err.statusCode || 500;
+  if (status >= 500) console.error(JSON.stringify({ service: 'message-service', requestId,
+    operation: `${req.method} ${req.route?.path || 'request'}`, status, category: err.name }));
 
   const response = {
     success: false,
-    message: isInternal500 && isProduction ? 'Internal server error' : err.message,
+    message: status >= 500 ? 'Messaging is temporarily unavailable' : err.type === 'entity.parse.failed' ? 'Invalid JSON body' : err.message,
     data: null,
-    errors: err.errors || (process.env.NODE_ENV === 'development' ? [err.stack] : []),
+    errors: err.errors || [],
+    requestId,
   };
 
-  res.status(err.statusCode).json(response);
+  res.status(status).json(response);
 };
 
 export default { AppError, catchAsync, notFoundHandler, errorHandler };

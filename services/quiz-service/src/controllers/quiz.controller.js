@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { normalizeMediaClips, stableOptionId, validateQuestionMedia } from '../services/questionMedia.service.js';
 import Quiz from '../models/Quiz.model.js';
 import Question from '../models/Question.model.js';
 import Attempt from '../models/Attempt.model.js';
@@ -92,6 +93,16 @@ const getQuizQuestionsSorted = (quizId) => {
     .sort({ orderIndex: 1, questionNumber: 1 });
 };
 
+const participantMedia = clips => (clips || []).map(clip => ({
+  kind: clip.kind, assetId: clip.assetId, label: clip.label, transcript: clip.transcript,
+  language: clip.language, purpose: clip.purpose, signedLanguage: clip.signedLanguage,
+  captionAssetId: clip.captionAssetId, captionLanguage: clip.captionLanguage,
+  describedAssetId: clip.describedAssetId, describedCaptionAssetId: clip.describedCaptionAssetId,
+}));
+const withParticipantMedia = item => item.accessibilityMedia?.length
+  ? { ...item, accessibilityMedia: participantMedia(item.accessibilityMedia) }
+  : item;
+
 export const sanitizeQuestionsForClient = (questions, { isOwner = false, isChallenge = false, deadlinePassed = false } = {}) => {
   const shouldRevealAnswers = isChallenge ? Boolean(deadlinePassed) : Boolean(isOwner);
 
@@ -108,20 +119,22 @@ export const sanitizeQuestionsForClient = (questions, { isOwner = false, isChall
       safeQuestion.options = safeQuestion.options.map((opt) => {
         const optObj = typeof opt?.toObject === 'function' ? opt.toObject() : { ...opt };
         delete optObj.isCorrect;
-        return optObj;
+        return withParticipantMedia(optObj);
       });
     }
 
-    return safeQuestion;
+    return withParticipantMedia(safeQuestion);
   });
 };
 
-export const sanitizeAttemptForClient = (attemptDoc, { isOwner = false, isChallenge = false, deadlinePassed = false } = {}) => {
+export const sanitizeAttemptForClient = (attemptDoc, { isOwner = false, isChallenge = false, deadlinePassed = false, allowReview = true } = {}) => {
   if (!attemptDoc) return null;
   const attempt = typeof attemptDoc?.toObject === 'function' ? attemptDoc.toObject() : { ...attemptDoc };
+  delete attempt.questionSnapshot;
+  delete attempt.sessionId;
   const isCompleted = attempt.status === 'completed';
   const revealChallengeResults = isChallenge && deadlinePassed;
-  const canRevealFullAnswers = isChallenge ? revealChallengeResults : isCompleted;
+  const canRevealFullAnswers = isChallenge ? revealChallengeResults : isCompleted && (allowReview || isOwner);
 
   if (Array.isArray(attempt.answers)) {
     attempt.answers = attempt.answers.map((ans) => {
@@ -134,7 +147,7 @@ export const sanitizeAttemptForClient = (attemptDoc, { isOwner = false, isChalle
       if (isChallenge && !deadlinePassed) {
         sanitized.isCorrect = false;
         sanitized.marksAwarded = 0;
-      } else if (!isCompleted && !attempt.instantFeedback) {
+      } else if (!canRevealFullAnswers && !(attempt.instantFeedback && !isCompleted && sanitized.isLocked)) {
         sanitized.isCorrect = false;
         sanitized.marksAwarded = 0;
       }
@@ -245,7 +258,7 @@ const assertQuizReadAccess = async (quiz, req) => {
 const normalizeQuestionInput = (question, index) => {
   const questionText = String(question.question || question.questionText || '').trim();
 
-  if (!questionText) {
+  if (!questionText && !question.accessibilityMedia?.length) {
     throw new AppError(`Question ${index + 1} text is required`, 400);
   }
 
@@ -260,13 +273,15 @@ const normalizeQuestionInput = (question, index) => {
     const label = String(option.label || String.fromCharCode(65 + optionIndex)).trim().toUpperCase();
     const text = String(option.text || option.optionText || option.option_text || '').trim();
 
-    if (!text) {
+    if (!text && !option.accessibilityMedia?.length) {
       throw new AppError(`Question ${index + 1} option ${optionIndex + 1} text is required`, 400);
     }
 
     return {
       label,
       text,
+      optionId: stableOptionId(option),
+      accessibilityMedia: normalizeMediaClips(option.accessibilityMedia),
       isCorrect: option.isCorrect === true || option.is_correct === true,
     };
   });
@@ -289,6 +304,7 @@ const normalizeQuestionInput = (question, index) => {
   return {
     questionNumber: index + 1,
     questionText,
+    accessibilityMedia: normalizeMediaClips(question.accessibilityMedia),
     options: options.map((option) => ({
       ...option,
       isCorrect: option.label === correctAnswer,
@@ -624,21 +640,7 @@ export const getQuizByCode = catchAsync(async (req, res, next) => {
 
 export const getQuiz = catchAsync(async (req, res, next) => {
   const quizId = req.params.id;
-  const isAnonymous = !req.user;
-  const cacheKey = `quiz:public:${quizId}`;
-
-  if (isAnonymous) {
-    const cached = memoryCache.get(cacheKey);
-    if (cached) {
-      return res.json({
-        success: true,
-        data: {
-          quiz: cached,
-        },
-      });
-    }
-  }
-
+  // Re-read policy on every detail request. Admin changes bypass this cache.
   const quiz = await resolveQuizDoc(quizId, { populateUploader: true });
 
   if (!quiz) {
@@ -649,13 +651,6 @@ export const getQuiz = catchAsync(async (req, res, next) => {
 
   const [decorated] = await decorateQuizzesForViewer([quiz], req.user?._id);
   const finalQuiz = decorated || quiz;
-
-  if (isAnonymous && (quiz.visibility === 'public' || quiz.isPublic)) {
-    memoryCache.set(cacheKey, finalQuiz, env.CACHE_DEFAULT_TTL_MS);
-    if (quiz.quizCode) {
-      memoryCache.set(`quiz:public:${quiz.quizCode}`, finalQuiz, env.CACHE_DEFAULT_TTL_MS);
-    }
-  }
 
   res.json({
     success: true,
@@ -1175,10 +1170,12 @@ export const normalizeManualQuestion = (q, index) => {
         const label = String(option.label || String.fromCharCode(65 + optionIndex)).trim().toUpperCase();
         return {
           label,
-          text: String(option.text || option.optionText || `Option ${optionIndex + 1}`).trim(),
+          optionId: stableOptionId(option),
+          accessibilityMedia: normalizeMediaClips(option.accessibilityMedia),
+          text: String(option.text || option.optionText || (option.accessibilityMedia?.length ? '' : `Option ${optionIndex + 1}`)).trim(),
           isCorrect: option.isCorrect === true,
         };
-      }).filter((option) => option.text)
+      }).filter(option => option.text || option.accessibilityMedia.length)
     : [];
 
   let correctAnswer = q.correctAnswer ?? q.correctAnswers ?? null;
@@ -1192,8 +1189,9 @@ export const normalizeManualQuestion = (q, index) => {
   }
 
   return {
+    accessibilityMedia: normalizeMediaClips(q.accessibilityMedia),
     questionNumber: q.questionNumber || index + 1,
-    questionText: String(q.questionText || q.question || `Question ${index + 1}`).trim(),
+    questionText: String(q.questionText ?? q.question ?? (q.accessibilityMedia?.length ? '' : `Question ${index + 1}`)).trim(),
     questionType,
     options,
     correctAnswer,
@@ -1229,18 +1227,18 @@ export const getDrafts = catchAsync(async (req, res) => {
 
   const filter = {
     uploader: req.user._id,
-    'metadata.savedAsDraft': true,
+    $or: [{ 'metadata.savedAsDraft': true }, { isChallenge: true, challengeStatus: 'draft' }],
   };
 
   if (search) {
     const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(escaped, 'i');
-    filter.$or = [
+    filter.$and = [{ $or: [
       { title: regex },
       { category: regex },
       { tags: regex },
       { description: regex },
-    ];
+    ] }];
   }
 
   let sort = { updatedAt: -1, createdAt: -1 };
@@ -1257,20 +1255,22 @@ export const getDrafts = catchAsync(async (req, res) => {
     Quiz.countDocuments(filter),
   ]);
 
-  const drafts = rawDrafts.map((draft) => {
+  const drafts = rawDrafts.map(({ draftData, ...draft }) => {
+    const questionCount = draftData?.questions?.length ?? draft.questionCount ?? 0;
     let score = 0;
     if (draft.title && draft.title !== 'Untitled Quiz') score += 25;
     if (draft.category && draft.category !== 'General') score += 15;
-    if ((draft.questionCount || 0) > 0) score += 35;
+    if (questionCount > 0) score += 35;
     if (draft.description) score += 10;
     if (draft.thumbnail) score += 15;
     const readiness = Math.min(100, Math.max(15, score));
 
     return {
       ...draft,
+      questionCount,
       isDraft: true,
       readiness,
-      isReadyToPublish: (draft.questionCount || 0) >= 1 && Boolean(draft.title),
+      isReadyToPublish: questionCount >= 1 && Boolean(draft.title),
     };
   });
 
@@ -1303,7 +1303,9 @@ export const getDraftById = catchAsync(async (req, res, next) => {
     return next(new AppError('Draft not found or unauthorized', 404));
   }
 
-  const questions = await Question.find({ quizId: quiz._id })
+  const { draftData, ...draft } = quiz;
+  const challengeDraft = draft.isChallenge && draft.challengeStatus === 'draft' ? draftData : null;
+  const questions = challengeDraft?.questions ?? await Question.find({ quizId: quiz._id })
     .sort({ orderIndex: 1, questionNumber: 1 })
     .lean();
 
@@ -1311,7 +1313,8 @@ export const getDraftById = catchAsync(async (req, res, next) => {
     success: true,
     data: {
       draft: {
-        ...quiz,
+        ...draft,
+        ...challengeDraft,
         questions,
       },
     },
@@ -1319,6 +1322,7 @@ export const getDraftById = catchAsync(async (req, res, next) => {
 });
 
 export const updateDraft = catchAsync(async (req, res, next) => {
+  if (Array.isArray(req.body.questions)) req.body.questions = await validateQuestionMedia(req.body.questions, req, { draft: true });
   const quiz = await Quiz.findOne({
     _id: req.params.id,
     uploader: req.user._id,
@@ -1444,7 +1448,7 @@ export const publishDraft = catchAsync(async (req, res, next) => {
   }
 
   for (const q of questions) {
-    if (quiz.isChallenge && q.questionType === 'short_answer' && !String(q.correctAnswer || '').trim()) {
+    if (q.questionType === 'short_answer' && !String(q.correctAnswer || '').trim()) {
       return next(new AppError(`Question ${q.questionNumber || ''} is missing its expected answer.`, 400));
     }
     if (['multiple_choice', 'dropdown', 'checkboxes'].includes(q.questionType)) {
@@ -1460,6 +1464,8 @@ export const publishDraft = catchAsync(async (req, res, next) => {
       }
     }
   }
+
+  await validateQuestionMedia(questions.map(q => q.toObject()), req);
 
   const visibility = quiz.isChallenge
     ? quiz.accessType === 'invite_only' ? 'private' : 'public'
@@ -1566,6 +1572,8 @@ export const listQuizzes = catchAsync(async (req, res) => {
   const canonicalPublic = {
     visibility: { $ne: 'private' },
     $or: [{ visibility: 'public' }, { isPublic: true }],
+    accessType: { $ne: 'invite_only' },
+    $nor: [{ isChallenge: true, challengeStatus: { $in: ['draft', 'publishing'] } }],
     'metadata.savedAsDraft': { $ne: true },
     isRestricted: { $ne: true },
   };
@@ -1640,15 +1648,21 @@ export const listQuizzes = catchAsync(async (req, res) => {
     sort = { lastSocialActivityAt: -1, createdAt: -1 };
   }
 
-  const [quizzes, total] = await Promise.all([
-    Quiz.find(filter)
-      .sort(sort)
-      .skip(skip)
-      .limit(limit)
-      .populate('uploader', 'name username avatar bio followersCount quizCount')
-      .lean(),
-    Quiz.countDocuments(filter),
-  ]);
+  const uploader = { path: 'uploader', select: 'name username avatar bio followersCount quizCount', options: { lean: true } };
+  const pageQuery = sort.avgScore
+    ? Quiz.aggregate([
+      { $match: filter },
+      { $set: { avgScore: { $cond: [
+        { $and: [{ $eq: ['$isChallenge', true] }, { $or: [
+          { $ne: [{ $type: '$deadlineAt' }, 'date'] }, { $gt: ['$deadlineAt', '$$NOW'] },
+        ] }] },
+        0,
+        '$avgScore',
+      ] } } },
+      { $sort: sort }, { $skip: skip }, { $limit: limit },
+    ]).then(rows => Quiz.populate(rows, uploader))
+    : Quiz.find(filter).sort(sort).skip(skip).limit(limit).populate(uploader).lean();
+  const [quizzes, total] = await Promise.all([pageQuery, Quiz.countDocuments(filter)]);
 
   const decoratedQuizzes = await decorateQuizzesForViewer(quizzes, req.user?._id);
   const totalPages = Math.ceil(total / limit) || 1;
@@ -1671,6 +1685,7 @@ export const listQuizzes = catchAsync(async (req, res) => {
 });
 
 export const createQuiz = catchAsync(async (req, res) => {
+  if (Array.isArray(req.body.questions)) req.body.questions = await validateQuestionMedia(req.body.questions, req);
   const quizInput = normalizeQuizInput(req.body);
   const questionsInput = Array.isArray(req.body.questions) ? req.body.questions : [];
 
@@ -1714,6 +1729,7 @@ export const createQuiz = catchAsync(async (req, res) => {
 });
 
 export const saveManualDraft = catchAsync(async (req, res, next) => {
+  if (Array.isArray(req.body.questions)) req.body.questions = await validateQuestionMedia(req.body.questions, req, { draft: req.body.isDraft === true });
   const { title, description, questions, isDraft, builderMode = 'exam', contentKind = 'quiz', metadata = {} } = req.body;
   const allowedContentKinds = ['quiz', 'form', 'coding', 'upload', 'rating', 'survey', 'universal'];
   const normalizedContentKind = allowedContentKinds.includes(contentKind) ? contentKind : 'quiz';
@@ -1768,23 +1784,31 @@ export const saveManualDraft = catchAsync(async (req, res, next) => {
   }
 
   if (!effectiveDraft && !isChallenge) {
-    const unsupportedQuestion = questions.find((q) => {
+    const unsupportedIndex = questions.findIndex((q) => {
       const questionType = q.questionType || q.type || 'multiple_choice';
-      return !['multiple_choice', 'dropdown'].includes(questionType);
+      return !['multiple_choice', 'dropdown', 'checkboxes', 'short_answer'].includes(questionType);
     });
 
-    if (unsupportedQuestion) {
-      return next(new AppError('Only multiple choice and dropdown questions can be published in quiz mode right now.', 400));
+    if (unsupportedIndex !== -1) {
+      return next(new AppError(`Question ${unsupportedIndex + 1}: choose a supported quiz question type.`, 400));
     }
 
-    const questionMissingAnswer = questions.find((q) => {
-      const options = Array.isArray(q.options) ? q.options : [];
-      const hasMarkedAnswer = options.some((option) => option.isCorrect === true);
-      return !q.correctAnswer && !hasMarkedAnswer;
-    });
-
-    if (questionMissingAnswer) {
-      return next(new AppError('Every published question needs a correct answer.', 400));
+    for (const [index, input] of questions.entries()) {
+      const question = normalizeManualQuestion(input, index);
+      if (question.questionType === 'short_answer') {
+        if (typeof question.correctAnswer !== 'string' || !question.correctAnswer.trim()) {
+          return next(new AppError(`Question ${index + 1}: enter the expected answer.`, 400));
+        }
+        continue;
+      }
+      if (question.options.length < 2) {
+        return next(new AppError(`Question ${index + 1}: add at least two answer choices.`, 400));
+      }
+      const answers = Array.isArray(question.correctAnswer) ? question.correctAnswer : [question.correctAnswer];
+      const labels = new Set(question.options.map(option => option.label.toUpperCase()));
+      if (!answers.length || answers.some(answer => typeof answer !== 'string' || !labels.has(answer.trim().toUpperCase()))) {
+        return next(new AppError(`Question ${index + 1}: mark the correct answer.`, 400));
+      }
     }
   }
 
@@ -1792,7 +1816,7 @@ export const saveManualDraft = catchAsync(async (req, res, next) => {
     ? 'private'
     : isChallenge && accessType === 'invite_only'
       ? 'private'
-      : 'public';
+      : normalizeVisibility(req.body.visibility, 'public');
   const uploader = req.user._id;
 
   // Support in-place draft update if draftId is supplied
@@ -1919,6 +1943,7 @@ export const saveManualDraft = catchAsync(async (req, res, next) => {
 });
 
 export const updateQuiz = catchAsync(async (req, res, next) => {
+  if (Array.isArray(req.body.questions)) req.body.questions = await validateQuestionMedia(req.body.questions, req);
   const quiz = await resolveQuizDoc(req.params.id);
 
   if (!quiz) {
@@ -2291,6 +2316,10 @@ export const getQuizAnalytics = catchAsync(async (req, res, next) => {
 
   await assertQuizReadAccess(quiz, req);
 
+  if (quiz.isChallenge && !(quiz.deadlineAt && new Date(quiz.deadlineAt) <= new Date())) {
+    return next(new AppError('Challenge results are sealed until the deadline', 403));
+  }
+
   const [questions, attempts] = await Promise.all([
     getQuizQuestionsSorted(quiz._id).then((docs) => docs.map((doc) => doc.toObject())),
     Attempt.find({ quizId: quiz._id, status: 'completed' })
@@ -2330,6 +2359,15 @@ export const getQuizAttempts = catchAsync(async (req, res, next) => {
     return next(new AppError('Quiz not found', 404));
   }
 
+  await assertQuizReadAccess(quiz, req);
+  const deadlinePassed = quiz.deadlineAt ? new Date() >= quiz.deadlineAt : false;
+  if (quiz.isChallenge && !deadlinePassed) {
+    return res.json({
+      success: true,
+      data: { attempts: [], pagination: { total: 0, page, limit, pages: 0 }, quarantined: true },
+    });
+  }
+
   const matchCondition = {
     quizId: quiz._id,
     status: 'completed',
@@ -2356,11 +2394,13 @@ export const getQuizAttempts = catchAsync(async (req, res, next) => {
     .limit(limit);
 
   const total = await Attempt.countDocuments(matchCondition);
-
   res.json({
     success: true,
     data: {
-      attempts,
+      attempts: attempts.map(attempt => sanitizeAttemptForClient(attempt, {
+        isChallenge: quiz.isChallenge, deadlinePassed, allowReview: quiz.settings?.allowReview !== false,
+        isOwner: String(quiz.uploader) === String(req.user._id),
+      })),
       pagination: {
         total,
         page,

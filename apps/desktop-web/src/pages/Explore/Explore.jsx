@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Search,
-  SlidersHorizontal,
   Sparkles,
   Flame,
   Award,
@@ -12,14 +11,12 @@ import {
   X,
 } from 'lucide-react';
 import { SocialService } from '../../services/social.service';
-import { useUIStore } from '../../store/uiStore';
 import { useAuthStore } from '../../store/authStore';
 import { Spinner, EmptyState } from '../../components/ui';
 import QuizCard from '../../components/quiz/QuizCard';
 import './Explore.css';
 
 export default function Explore() {
-  const openSearch = useUIStore((s) => s.openSearch);
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Read URL query parameters
@@ -27,18 +24,14 @@ export default function Explore() {
   const urlSearch = searchParams.get('search') || searchParams.get('q') || '';
   const cleanUrlTag = urlTag ? urlTag.replace(/^#+/, '').trim() : '';
   const cleanUrlSearch = urlSearch ? urlSearch.trim() : '';
+  const closestSearch = searchParams.has('q') && !searchParams.has('search');
 
   const user = useAuthStore((s) => s.user);
   const [page, setPage] = useState(1);
   const [feedMode, setFeedMode] = useState('foryou'); // 'foryou' | 'trending' | 'top' | 'newest'
-  const [difficulty, setDifficulty] = useState(() => {
-    return user?.preferences?.defaultDifficulty || user?.preferences?.feed?.defaultDifficulty || 'all';
-  });
-  const [category, setCategory] = useState(() => {
-    const cat = user?.preferences?.primaryCategory || user?.preferences?.feed?.preferredCategory;
-    return cat && cat !== 'All Categories' ? cat : '';
-  });
-  const [showFilters, setShowFilters] = useState(false);
+  const preferenceDifficulty = user?.preferences?.defaultDifficulty || user?.preferences?.feed?.defaultDifficulty;
+  const difficulty = preferenceDifficulty && preferenceDifficulty !== 'All Levels' ? preferenceDifficulty : 'all';
+  const category = user?.preferences?.primaryCategory || user?.preferences?.feed?.preferredCategory || '';
   const [selectedTag, setSelectedTag] = useState(cleanUrlTag);
   const [searchQuery, setSearchQuery] = useState(cleanUrlSearch);
   // Quizzes state
@@ -47,6 +40,7 @@ export default function Explore() {
   const [meta, setMeta] = useState(null);
   const [quizzesLoading, setQuizzesLoading] = useState(true);
   const [quizzesError, setQuizzesError] = useState('');
+  const [retry, setRetry] = useState(0);
 
   // Synchronize state when URL parameters change (e.g. from Universal Search modal or browser navigation)
   useEffect(() => {
@@ -72,6 +66,7 @@ export default function Explore() {
     }
     if (searchQuery) {
       params.search = searchQuery;
+      if (closestSearch) params.match = 'closest';
     }
     if (difficulty && difficulty !== 'all') {
       params.difficulty = difficulty;
@@ -79,15 +74,16 @@ export default function Explore() {
     if (category && category !== 'All Categories') {
       params.category = category;
     }
-    if (user?.preferences?.hideCompletedQuizzes || user?.preferences?.feed?.hideCompletedQuizzes) {
+    if (user?.preferences?.hideCompletedQuizzes ?? user?.preferences?.feed?.hideCompletedQuizzes) {
       params.hideCompleted = 'true';
     }
-    if (user?.preferences?.showVerifiedOnly || user?.preferences?.feed?.filterUnverified) {
+    if (user?.preferences?.filterUnverified ?? user?.preferences?.feed?.filterUnverified ?? user?.preferences?.showVerifiedOnly) {
       params.showVerifiedOnly = 'true';
     }
 
-    SocialService.getExplore(params)
+    SocialService.getExplore(params, { signal: controller.signal })
       .then((data) => {
+        if (controller.signal.aborted) return;
         setQuizzes(data?.quizzes || []);
         setPagination(data?.pagination || null);
         setMeta(data?.meta || null);
@@ -99,11 +95,11 @@ export default function Explore() {
         }
       })
       .finally(() => {
-        setQuizzesLoading(false);
+        if (!controller.signal.aborted) setQuizzesLoading(false);
       });
 
     return () => controller.abort();
-  }, [page, feedMode, selectedTag, searchQuery, difficulty, category, user]);
+  }, [page, feedMode, selectedTag, searchQuery, closestSearch, difficulty, category, user, retry]);
 
   const handlePageChange = (newPage) => {
     if (newPage < 1 || (pagination && newPage > pagination.pages) || newPage === page) return;
@@ -113,11 +109,6 @@ export default function Explore() {
 
   const handleModeChange = (newMode) => {
     setFeedMode(newMode);
-    setPage(1);
-  };
-
-  const handleDifficultyChange = (newDiff) => {
-    setDifficulty(newDiff);
     setPage(1);
   };
 
@@ -157,49 +148,6 @@ export default function Explore() {
 
   return (
     <div className="explore-page-wrapper">
-      {/* â”€â”€ Top Header Row with Minimalist Underline Search â”€â”€ */}
-      <header className="explore-top-bar consistent-page-header">
-        <div className="explore-title-wrap">
-          <h1 className="explore-page-title consistent-page-title">Explore</h1>
-        </div>
-
-        <div className="explore-header-search consistent-page-search">
-          <div
-            className="explore-line-search consistent-search-field"
-            onClick={() => openSearch(selectedTag ? `#${selectedTag}` : searchQuery || '')}
-            role="button"
-            tabIndex={0}
-            title="Search quizzes, creators, #hashtags (Ctrl+K)"
-          >
-            <Search size={16} className="line-search-icon" />
-            <input
-              type="text"
-              readOnly
-              value={selectedTag ? `#${selectedTag}` : searchQuery ? searchQuery : ''}
-              placeholder="Search"
-              className="line-search-input consistent-search-input"
-            />
-            {Boolean(selectedTag || searchQuery) ? (
-              <button
-                type="button"
-                className="explore-search-clear-inline-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (selectedTag) handleClearTag();
-                  if (searchQuery) handleClearSearch();
-                }}
-                title="Clear filter"
-                aria-label="Clear filter"
-              >
-                <X size={13} />
-              </button>
-            ) : (
-              <span className="explore-search-shortcut-badge">Ctrl K</span>
-            )}
-          </div>
-        </div>
-      </header>
-
       {/* Active Filter Pill indicator if tag is selected */}
       {selectedTag && (
         <div className="explore-active-filter-banner">
@@ -279,45 +227,8 @@ export default function Explore() {
           </button>
         </div>
 
-        <button
-          type="button"
-          className={`explore-filter-toggle-btn ${showFilters || difficulty !== 'all' ? 'active' : ''}`}
-          onClick={() => setShowFilters((prev) => !prev)}
-          aria-label="Toggle difficulty filters"
-        >
-          <SlidersHorizontal size={14} />
-          <span>Filters</span>
-          {difficulty !== 'all' && <span className="explore-filter-active-dot" />}
-        </button>
       </div>
 
-      {/* â”€â”€ Collapsible Difficulty Controls â”€â”€ */}
-      {showFilters && (
-        <div className="explore-expanded-filters">
-          <div className="explore-filter-control-row">
-            <span className="explore-filter-label">Difficulty Level:</span>
-            <div className="explore-subpills-wrap">
-              {[
-                { id: 'all', label: 'All Levels' },
-                { id: 'Beginner', label: 'Beginner' },
-                { id: 'Intermediate', label: 'Intermediate' },
-                { id: 'Advanced', label: 'Advanced' },
-              ].map((d) => (
-                <button
-                  key={d.id}
-                  type="button"
-                  className={`explore-subpill ${difficulty === d.id ? 'active' : ''}`}
-                  onClick={() => handleDifficultyChange(d.id)}
-                >
-                  {d.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* â”€â”€ Main Content Flow: Pure Quiz Discovery Grid â”€â”€ */}
       <div className="explore-content-flow">
         {quizzesLoading && quizzes.length === 0 ? (
           <div className="explore-loading-state">
@@ -330,7 +241,7 @@ export default function Explore() {
             description={quizzesError}
             action={{
               label: 'Retry',
-              onClick: () => setPage(1),
+              onClick: () => setRetry((value) => value + 1),
             }}
           />
         ) : quizzes.length === 0 ? (
@@ -338,18 +249,18 @@ export default function Explore() {
             icon={<Search size={24} />}
             title="No quizzes match your feed"
             description={
-              selectedTag || searchQuery || difficulty !== 'all'
-                ? 'No public quizzes match your active topic, search, or difficulty filter.'
+              selectedTag || searchQuery
+                ? 'No public quizzes match your topic or search.'
                 : 'No public quizzes available in this mode yet.'
             }
             action={
-              selectedTag || searchQuery || difficulty !== 'all'
+              selectedTag || searchQuery
                 ? {
                     label: 'Reset Filters',
                     onClick: () => {
-                      handleClearTag();
-                      handleClearSearch();
-                      setDifficulty('all');
+                      const next = new URLSearchParams(searchParams);
+                      ['tag', 'hashtag', 'search', 'q'].forEach((key) => next.delete(key));
+                      setSearchParams(next, { replace: true });
                       setFeedMode('foryou');
                     },
                   }
@@ -361,7 +272,7 @@ export default function Explore() {
           />
         ) : (
           <>
-            {/* Header Counter & Context Info */}
+            {/* Feed heading */}
             <div className="explore-section-header">
               <div className="explore-section-title-wrap">
                 <span className="explore-feed-label">
@@ -373,11 +284,6 @@ export default function Explore() {
                     ? 'Top Ranked Quizzes'
                     : 'Recently Published Quizzes'}
                 </span>
-                {pagination?.total > 0 && (
-                  <span className="explore-section-count-badge">
-                    {pagination.total} {pagination.total === 1 ? 'quiz' : 'quizzes'}
-                  </span>
-                )}
               </div>
 
             </div>

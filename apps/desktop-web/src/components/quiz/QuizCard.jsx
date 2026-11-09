@@ -538,7 +538,7 @@ function StandardQuizCard({
               </h3>
             </div>
           </div>
-          <QuizCardOverflowMenu label="Quiz details and actions" details={details} actions={actions} />
+          <QuizCardOverflowMenu label="Quiz details and actions" title={title} details={details} actions={actions} />
         </div>
       </article>
 
@@ -614,7 +614,7 @@ export function DraftCard({
     if (onResume) {
       onResume(draftId);
     } else {
-      navigate(`/create/manual?draftId=${draftId}`);
+      navigate(`/create/${isChallenge ? 'challenge' : 'manual'}?draftId=${draftId}`);
     }
   };
 
@@ -676,6 +676,7 @@ export function DraftCard({
           </h3>
           <QuizCardOverflowMenu
             label="Draft details and actions"
+            title={title}
             details={details}
             actions={actions}
           />

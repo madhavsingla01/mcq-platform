@@ -46,7 +46,7 @@
 @keyframes chipAppear {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.97);
   }
   to {
     opacity: 1;
@@ -75,12 +75,19 @@
   margin-left: 2px;
   border-radius: var(--radius-xs, 4px);
   corner-shape: squircle;
-  transition: all 0.12s ease;
+  touch-action: manipulation;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 120ms ease, color 120ms ease;
 }
 
-.qf-chip-remove:hover {
-  background: rgba(255, 69, 0, 0.25);
-  color: #FFFFFF;
+.qf-chip-remove:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .qf-chip-remove:hover {
+    background: rgba(255, 69, 0, 0.25);
+    color: #FFFFFF;
+  }
 }
 
 .qf-hashtag-input-field-wrap {

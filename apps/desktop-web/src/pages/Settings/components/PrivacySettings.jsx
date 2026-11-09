@@ -1,210 +1,77 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Shield,
-  Lock,
-  Globe,
-  Eye,
-  EyeOff,
-  Smartphone,
-  Check,
-  AlertCircle,
-  KeyRound,
-  MessageSquare,
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { Shield, KeyRound, MessageSquare } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuthStore } from '../../../store/authStore';
-import { SettingsInfo, SettingsSection, SettingsRow, SettingsToggle, SettingsSelect } from './SettingsSection';
-import { Button, showCustomDialog } from '../../../components/ui';
+import { SettingsSection, SettingsRow, SettingsToggle, SettingsSelect } from './SettingsSection';
 
 export function PrivacySettings() {
-  const { user, updateProfile } = useAuthStore();
+  const { user, updateProfile, revokeOtherSessions } = useAuthStore();
+  const [saving, setSaving] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const preferences = user?.preferences || {};
 
-  const [isPrivate, setIsPrivate] = useState(false);
-  const [searchDiscovery, setSearchDiscovery] = useState(true);
-  const [allowMessagesFrom, setAllowMessagesFrom] = useState('everyone');
-  const [savingField, setSavingField] = useState('');
-  const [toast, setToast] = useState('');
-
-  useEffect(() => {
-    if (user) {
-      setIsPrivate(Boolean(user.isPrivate));
-      const prefs = user.preferences || {};
-      setSearchDiscovery(prefs.searchDiscovery !== false);
-      setAllowMessagesFrom(prefs.allowMessagesFrom || 'everyone');
-    }
-  }, [user]);
-
-  const showSavedToast = (msg = 'Settings saved') => {
-    setToast(msg);
-    setTimeout(() => setToast(''), 3000);
+  const update = async (payload) => {
+    setSaving(true);
+    try {
+      await updateProfile(payload);
+      toast.success('Privacy settings saved');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not save privacy settings');
+    } finally { setSaving(false); }
   };
 
-  const handleTogglePrivate = async (val) => {
-    setIsPrivate(val);
-    setSavingField('isPrivate');
+  const revoke = async (event) => {
+    event.preventDefault();
+    if (!currentPassword || saving) return;
+    setSaving(true);
     try {
-      await updateProfile({
-        isPrivate: val,
-        isProfilePublic: !val,
-      });
-      showSavedToast(val ? 'Account is now Private' : 'Account is now Public');
-    } catch (err) {
-      console.error(err);
-      showCustomDialog({
-        title: 'Update Failed',
-        message: err.response?.data?.message || 'Failed to update account visibility',
-        type: 'error',
-      });
-    } finally {
-      setSavingField('');
-    }
-  };
-
-  const handleToggleDiscovery = async (val) => {
-    setSearchDiscovery(val);
-    setSavingField('searchDiscovery');
-    try {
-      await updateProfile({
-        preferences: {
-          searchDiscovery: val,
-        },
-      });
-      showSavedToast('Discovery preference updated');
-    } catch (err) {
-      console.error(err);
-      showCustomDialog({
-        title: 'Update Failed',
-        message: err.response?.data?.message || 'Failed to update discovery settings',
-        type: 'error',
-      });
-    } finally {
-      setSavingField('');
-    }
-  };
-
-  const handleChangeMessagesFrom = async (val) => {
-    setAllowMessagesFrom(val);
-    setSavingField('allowMessagesFrom');
-    try {
-      await updateProfile({
-        preferences: {
-          allowMessagesFrom: val,
-        },
-      });
-      showSavedToast('Messaging privacy updated');
-    } catch (err) {
-      console.error(err);
-      showCustomDialog({
-        title: 'Update Failed',
-        message: err.response?.data?.message || 'Failed to update messaging settings',
-        type: 'error',
-      });
-    } finally {
-      setSavingField('');
-    }
+      await revokeOtherSessions(currentPassword);
+      setCurrentPassword('');
+      toast.success('Other sessions signed out');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not sign out other sessions');
+    } finally { setSaving(false); }
   };
 
   return (
     <div className="settings-tab-panel">
-      {/* Category Hero */}
-      <div className="settings-panel-hero">
-        <div className="settings-panel-title-row">
-          <h2 className="settings-panel-title">Privacy & Security</h2>
-          <SettingsInfo text="Control who can see your activity, manage messaging permissions, and audit account security." />
-        </div>
-      </div>
-
-      {toast && (
-        <div className="settings-alert-banner success">
-          <Check size={16} />
-          <span>{toast}</span>
-        </div>
-      )}
-
-      {/* 1. Profile Visibility */}
-      <SettingsSection
-        title="Account Visibility"
-        description="Choose how your profile and published quizzes appear to the community."
-        icon={Shield}
-      >
-        <SettingsRow
-          title="Private Account"
-          description={
-            isPrivate
-              ? 'Only approved followers can view your full profile and quizzes.'
-              : 'Anyone on QuizFocus can see your public quizzes and profile stats.'
-          }
-        >
-          <SettingsToggle
-            checked={isPrivate}
-            onChange={handleTogglePrivate}
-            label={isPrivate ? 'Private' : 'Public'}
-          />
+      <div className="settings-panel-hero"><h2 className="settings-panel-title">Privacy &amp; Security</h2></div>
+      <SettingsSection title="Account visibility" icon={Shield}>
+        <SettingsRow title="Private account" description="Restrict your public profile. Quiz visibility is set separately on each quiz.">
+          <SettingsToggle checked={user?.isPrivate === true || user?.isProfilePublic === false} disabled={saving}
+            onChange={(value) => update({ isPrivate: value, isProfilePublic: !value })} />
         </SettingsRow>
-
-        <SettingsRow
-          title="Search & Explore Discovery"
-          description={
-            isPrivate
-              ? 'When Private is active, your quizzes remain hidden from Explore feeds and public search catalogs.'
-              : 'Allow your profile and public quizzes to appear in search results and member recommendations.'
-          }
-        >
-          <SettingsToggle
-            checked={searchDiscovery}
-            onChange={handleToggleDiscovery}
-            label={searchDiscovery ? 'Visible' : 'Hidden'}
-          />
+        <SettingsRow title="Appear in member search" description="Control whether people can find your account through search.">
+          <SettingsToggle checked={preferences.searchDiscovery !== false} disabled={saving}
+            onChange={(value) => update({ preferences: { searchDiscovery: value } })} />
         </SettingsRow>
       </SettingsSection>
-
-      {/* 2. Direct Messaging Permissions */}
-      <SettingsSection
-        title="Direct Messaging & Interactions"
-        description="Configure who can send you direct chat messages and challenge links."
-        icon={MessageSquare}
-      >
-        <SettingsRow
-          title="Who Can Message You"
-          description="Control incoming chat requests in your messages inbox."
-        >
-          <SettingsSelect
-            value={allowMessagesFrom}
-            onChange={handleChangeMessagesFrom}
+      <SettingsSection title="Direct messages" icon={MessageSquare}>
+        <SettingsRow title="Who can message you">
+          <SettingsSelect value={preferences.allowMessagesFrom || 'everyone'} disabled={saving}
+            onChange={(value) => update({ preferences: { allowMessagesFrom: value } })}
             options={[
-              { value: 'everyone', label: 'Everyone on QuizFocus' },
-              { value: 'followers', label: 'People you follow / Followers' },
-              { value: 'none', label: 'No one (Disable direct messages)' },
-            ]}
-          />
+              { value: 'everyone', label: 'Everyone' },
+              { value: 'followers', label: 'Followers' },
+              { value: 'following', label: 'People you follow' },
+              { value: 'none', label: 'No one' },
+            ]} />
         </SettingsRow>
       </SettingsSection>
-
-      {/* 3. Login Sessions & Security Audit */}
-      <SettingsSection
-        title="Active Sessions & Security"
-        description="Review active devices and manage account credentials."
-        icon={KeyRound}
-      >
-        <SettingsRow
-          title="Two-Factor Authentication (2FA)"
-          description="Protect your account with an extra verification layer upon sign in."
-        >
-          <span className="settings-badge-pill active">Protected (Password + JWT)</span>
-        </SettingsRow>
-
-        <SettingsRow
-          title="Current Device Session"
-          description={`Logged in as ${user?.email || 'User'} • Active Now • Desktop / Browser`}
-          align="start"
-        >
-          <div className="settings-session-chip">
-            <span className="status-dot online" />
-            <span>Active Session</span>
-          </div>
-        </SettingsRow>
+      <SettingsSection title="Session security" icon={KeyRound}>
+        <SettingsRow title="Two-factor authentication"><span className="settings-badge-pill">Not available yet</span></SettingsRow>
+        <p className="settings-supporting-note">Your password protects sign-in. Two-factor authentication has not been configured for this application.</p>
+        <SettingsRow title="Sign out other sessions" />
+        <p className="settings-supporting-note">Confirm your password to revoke older sign-ins. This browser stays signed in.</p>
+        <form className="settings-session-form" onSubmit={revoke}>
+          <label htmlFor="revoke-session-password">Current password</label>
+          <input id="revoke-session-password" type="password" autoComplete="current-password"
+            value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)}
+            disabled={saving} required maxLength={1024} />
+          <button type="submit" disabled={saving || !currentPassword}>{saving ? 'Saving…' : 'Sign out other sessions'}</button>
+        </form>
       </SettingsSection>
     </div>
   );
 }
-
 export default PrivacySettings;

@@ -1,8 +1,15 @@
 import Quiz from '../models/Quiz.model.js';
 import User from '../models/User.model.js';
 import { catchAsync } from '../middleware/error.middleware.js';
-import memoryCache from '../services/cache/cache.service.js';
-import env from '../config/env.js';
+import { decorateQuizzesForViewer } from '../services/social/activity.service.js';
+
+const canonicalPublicQuizFilter = {
+  visibility: 'public',
+  'metadata.savedAsDraft': { $ne: true },
+  isRestricted: { $ne: true },
+  accessType: { $ne: 'invite_only' },
+  $nor: [{ isChallenge: true, challengeStatus: { $in: ['draft', 'publishing'] } }],
+};
 
 /**
  * Normalizes an array or comma-separated string of tags.
@@ -87,12 +94,6 @@ export const universalSearch = catchAsync(async (req, res) => {
   const escaped = escapeRegex(cleanTerm);
   const regex = new RegExp(escaped, 'i');
 
-  const canonicalPublicQuizFilter = {
-    visibility: 'public',
-    'metadata.savedAsDraft': { $ne: true },
-    isRestricted: { $ne: true },
-  };
-
   const results = {
     query: rawQuery,
     type,
@@ -152,8 +153,8 @@ export const universalSearch = catchAsync(async (req, res) => {
         .limit(limit)
         .populate('uploader', 'name username avatar bio followersCount quizCount')
         .lean()
-        .then((quizzes) => {
-          results.quizzes = quizzes || [];
+        .then(async (quizzes) => {
+          results.quizzes = await decorateQuizzesForViewer(quizzes, req.user?._id);
 
           // Identify direct quiz match if quizCode is an exact match
           if (isQuizCodeSearch && results.quizzes.length > 0) {
@@ -183,6 +184,11 @@ export const universalSearch = catchAsync(async (req, res) => {
     const userFilter = {
       isDeleted: { $ne: true },
       isProfilePublic: { $ne: false },
+      isPrivate: { $ne: true },
+      isDeleted: { $ne: true },
+      isSuspended: { $ne: true },
+      isActive: { $ne: false },
+      'preferences.searchDiscovery': { $ne: false },
       $or: isUserSearch
         ? [
             { username: new RegExp(`^${escaped}`, 'i') },
@@ -270,25 +276,14 @@ export const universalSearch = catchAsync(async (req, res) => {
 /**
  * GET /api/v1/search/trending-tags
  * Retrieves most popular hashtags across public quizzes.
- * Results are cached in memory for 60 seconds.
+ * Re-check visibility because Admin moderation writes cross process.
  */
 export const getTrendingTags = catchAsync(async (req, res) => {
   const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 12, 1), 30);
-  const cacheKey = `search:trending-tags:${limit}`;
-
-  const cached = memoryCache.get(cacheKey);
-  if (cached) {
-    return res.json({
-      success: true,
-      data: cached,
-    });
-  }
-
   const tags = await Quiz.aggregate([
     {
       $match: {
-        visibility: 'public',
-        'metadata.savedAsDraft': { $ne: true },
+        ...canonicalPublicQuizFilter,
         tags: { $exists: true, $ne: [] },
       },
     },
@@ -310,7 +305,6 @@ export const getTrendingTags = catchAsync(async (req, res) => {
     })),
   };
 
-  memoryCache.set(cacheKey, payload, env.CACHE_SEARCH_TTL_MS);
 
   res.json({
     success: true,
@@ -339,8 +333,7 @@ export const getQuizzesByTag = catchAsync(async (req, res) => {
   const tagRegex = new RegExp(`^${escapedTag}$`, 'i');
 
   const filter = {
-    visibility: 'public',
-    'metadata.savedAsDraft': { $ne: true },
+    ...canonicalPublicQuizFilter,
     tags: tagRegex,
   };
 
@@ -360,7 +353,7 @@ export const getQuizzesByTag = catchAsync(async (req, res) => {
     success: true,
     data: {
       tag: rawTag,
-      quizzes: quizzes || [],
+      quizzes: await decorateQuizzesForViewer(quizzes, req.user?._id),
       pagination: {
         total,
         page,

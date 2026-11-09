@@ -1,5 +1,5 @@
 .auth-standalone-wrapper {
-  min-height: 100vh;
+  min-height: var(--app-screen-height);
   width: 100%;
   background: var(--color-bg);
   display: flex;
@@ -29,12 +29,20 @@
   background: var(--color-surface);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: all 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), color 140ms ease, border-color 140ms ease;
 }
 
-.auth-theme-btn:hover {
-  color: var(--color-text);
-  border-color: var(--color-primary);
+@media (hover: hover) and (pointer: fine) {
+  .auth-theme-btn:hover {
+    color: var(--color-text);
+    border-color: var(--color-primary);
+  }
+}
+
+.auth-theme-btn:active {
+  transform: scale(0.97);
 }
 
 .auth-card-container {
@@ -75,6 +83,11 @@
   box-shadow: none !important;
 }
 
+.auth-standalone-card .auth-input:focus-visible {
+  outline: 2px solid #ff4500 !important;
+  outline-offset: 2px;
+}
+
 .auth-card-error {
   background: var(--color-danger-light, rgba(239, 68, 68, 0.12));
   border: 1px solid var(--color-danger, #ef4444);
@@ -105,10 +118,13 @@
   color: var(--color-text);
   text-decoration: none;
   font-weight: 600;
+  transition: color 140ms ease;
 }
 
-.auth-action-link:hover {
-  color: var(--color-text-secondary);
+@media (hover: hover) and (pointer: fine) {
+  .auth-action-link:hover {
+    color: var(--color-text-secondary);
+  }
 }
 
 @media (max-width: 480px) {

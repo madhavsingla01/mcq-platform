@@ -14,6 +14,9 @@ export default defineConfig(({ mode }) => {
   const proxyTarget = new URL(apiUrl).origin;
   return {
     plugins: [react(), tailwindcss()],
+    // These are shared by lazy Quiz/Results routes. Discover them before route
+    // navigation so dev optimization does not invalidate an in-flight import.
+    optimizeDeps: { include: ['react-markdown', 'remark-math', 'rehype-katex'] },
     server: {
       port,
       proxy: {

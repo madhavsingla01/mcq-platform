@@ -27,8 +27,8 @@ aside.settings-drawer-panel {
   opacity: 1;
   transform: translateY(0) scale(1);
   transition:
-    opacity 160ms ease-out,
-    transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
+    opacity 200ms var(--ease-out),
+    transform 250ms var(--ease-drawer);
   animation: none;
   outline: none;
 }
@@ -36,7 +36,7 @@ aside.settings-drawer-panel {
 @starting-style {
   aside.settings-drawer-panel {
     opacity: 0;
-    transform: translateY(-6px) scale(0.95);
+    transform: translateY(-6px) scale(0.97);
   }
 }
 
@@ -121,10 +121,12 @@ aside.settings-drawer-panel {
   transition: color 140ms ease, background-color 140ms ease, border-color 140ms ease, transform 140ms ease-out;
 }
 
-.settings-drawer-close:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.14);
+@media (hover: hover) and (pointer: fine) {
+  .settings-drawer-close:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.14);
+  }
 }
 
 .settings-drawer-close:active,
@@ -307,8 +309,10 @@ aside.settings-drawer-panel {
   transition: color 140ms ease, background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
 }
 
-.settings-drawer-segmented-button:hover {
-  color: #f4f4f5;
+@media (hover: hover) and (pointer: fine) {
+  .settings-drawer-segmented-button:hover {
+    color: #f4f4f5;
+  }
 }
 
 .settings-drawer-segmented-button.active {
@@ -393,7 +397,17 @@ aside.settings-drawer-panel {
   cursor: help;
 }
 
-.settings-drawer-row .settings-info-button:hover,
+@media (hover: hover) and (pointer: fine) {
+  .settings-drawer-row .settings-info-button:hover {
+    color: #fff;
+  }
+  .settings-drawer-row .settings-info-wrap:hover .settings-info-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+}
+
 .settings-drawer-row .settings-info-button:focus-visible {
   color: #fff;
 }
@@ -420,7 +434,6 @@ aside.settings-drawer-panel {
   transition: opacity 130ms ease-out, transform 130ms ease-out, visibility 130ms ease-out;
 }
 
-.settings-drawer-row .settings-info-wrap:hover .settings-info-tooltip,
 .settings-drawer-row .settings-info-wrap:focus-within .settings-info-tooltip {
   opacity: 1;
   visibility: visible;
@@ -529,3 +542,6 @@ aside.settings-drawer-panel {
     animation-iteration-count: 1 !important;
   }
 }
+
+.settings-media-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.settings-media-speed { min-height: 34px; border: 1px solid var(--color-border); border-radius: var(--radius-control, 8px); padding-inline: 8px; color: var(--color-text); background: var(--color-surface-alt); }

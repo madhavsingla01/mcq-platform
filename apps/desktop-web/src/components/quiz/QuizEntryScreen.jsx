@@ -34,13 +34,14 @@ export default function QuizEntryScreen({
   const { user, isAuthenticated } = useAuthStore();
   const fileInputRef = useRef(null);
 
-  const isOwner = Boolean(
-    user && quiz && (String(quiz.uploader?._id || quiz.uploader) === String(user._id) || user.role === 'admin')
-  );
+  const isHost = Boolean(user && quiz && String(quiz.uploader?._id || quiz.uploader) === String(user._id));
+  const isOwner = Boolean(quiz && (isHost || user?.role === 'admin'));
+  const isHostPractice = quiz?.isChallenge === true && isHost;
   const searchParams = new URLSearchParams(location.search);
   const isChallenge = searchParams.get('challenge') === 'true' || searchParams.get('ref') === 'challenge';
 
   const questionCount = questions.length || quiz?.questionCount || 0;
+  const hasMedia = questions.some(question => question.accessibilityMedia?.length || question.options?.some(option => option.accessibilityMedia?.length));
   const timeLimit = quiz?.settings?.timeLimit;
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
@@ -197,12 +198,13 @@ export default function QuizEntryScreen({
       <div className="quiz-entry-shell">
         <Card className="quiz-entry-card" style={{ padding: 0, overflow: 'hidden' }}>
           {/* Challenge Mode Alert */}
-          {isChallenge && (
+          {(isHostPractice || isChallenge) && (
             <div className="challenge-banner">
               <Trophy size={20} className="text-warning" />
               <div>
-                <strong>Public Quiz Challenge</strong>
-                <p>You have been invited to challenge this quiz! Start below to test your knowledge.</p>
+                <strong>{isHostPractice ? 'Host practice' : 'Public Quiz Challenge'}</strong>
+                <p>{isHostPractice ? 'Your submission is saved for review and excluded from the official standings.'
+                  : 'You have been invited to challenge this quiz! Start below to test your knowledge.'}</p>
               </div>
             </div>
           )}
@@ -255,7 +257,7 @@ export default function QuizEntryScreen({
                 </div>
               </div>
 
-              <h1 className="quiz-entry-title">{quiz?.title}</h1>
+              <h2 className="quiz-entry-title">{quiz?.title}</h2>
               {quiz?.description && (
                 <p className="quiz-entry-description">{quiz.description}</p>
               )}
@@ -388,6 +390,10 @@ export default function QuizEntryScreen({
                   <div className="entry-actions-desc">
                     {quiz?.description || 'Start when ready. Progress is recovered automatically if the session is interrupted.'}
                   </div>
+                  {hasMedia && <details className="entry-media-instructions">
+                    <summary>Taking a quiz with audio or video</summary>
+                    <p>Tab to playback controls or open the transcript beside each clip. Playing media leaves your choice unchanged. Use the arrow keys inside the answer group to change your choice, then use the question navigation buttons to continue.</p>
+                  </details>}
                 </div>
 
                 <div className="entry-actions-buttons">
@@ -433,7 +439,7 @@ export default function QuizEntryScreen({
                       }}
                       style={{ width: '100%', fontSize: 17, padding: '15px 20px' }}
                     >
-                      Start Quiz
+                      {isHostPractice ? 'Start Practice' : 'Start Quiz'}
                     </Button>
                   )}
                 </div>

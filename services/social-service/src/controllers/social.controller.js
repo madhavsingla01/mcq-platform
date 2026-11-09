@@ -11,16 +11,19 @@ import Conversation from '../models/Conversation.model.js';
 import Message from '../models/Message.model.js';
 import Attempt from '../models/Attempt.model.js';
 import { AppError, catchAsync } from '../middleware/error.middleware.js';
+import { closestQuizSearch } from '../services/social/closestQuizSearch.js';
 import {
   decorateQuizzesForViewer,
   isPublicQuiz,
+  notificationVerbs,
   publicQuizFilter,
   recordActivity,
 } from '../services/social/activity.service.js';
 
 const USER_PUBLIC_SELECT = 'name username avatar banner bio quizCount followersCount followingCount activityCount isProfilePublic createdAt socialLinks';
 const USER_LIST_SELECT = 'name username avatar bio quizCount followersCount followingCount';
-const QUIZ_FEED_SELECT = 'title description category difficulty thumbnail visibility isPublic uploader questionCount totalAttempts avgScore likeCount commentCount bookmarkCount shareCount lastSocialActivityAt createdAt tags';
+const QUIZ_FEED_SELECT = 'title description category difficulty thumbnail visibility isPublic uploader questionCount totalAttempts avgScore likeCount commentCount bookmarkCount shareCount lastSocialActivityAt createdAt tags isChallenge deadlineAt';
+const resultsSealed = quiz => Boolean(quiz?.isChallenge && !(quiz.deadlineAt && new Date(quiz.deadlineAt) <= new Date()));
 
 const toIdString = (value) => (value?._id ? String(value._id) : String(value || ''));
 const normalizeUsername = (username = '') => String(username).replace(/^@/, '').toLowerCase().trim();
@@ -144,8 +147,8 @@ const syncNonNegativeQuizCounters = async (quizId) => {
   );
 };
 
-const buildQuizQuery = async ({ req, publicOnly = true }) => {
-  const search = String(req.query.search || req.query.q || '').trim();
+const buildQuizQuery = async ({ req, publicOnly = true, closestQuery = '' }) => {
+  const search = closestQuery || String(req.query.search || req.query.q || '').trim();
   const filters = [publicOnly ? publicQuizFilter : {}];
 
   if (search) {
@@ -156,7 +159,7 @@ const buildQuizQuery = async ({ req, publicOnly = true }) => {
       $or: [{ username: regex }, { name: regex }],
     }).select('_id').limit(100).lean();
 
-    filters.push({
+    filters.push(closestQuery ? closestQuizSearch(search, users.map(user => user._id)).filter : {
       $or: [
         { title: regex },
         { description: regex },
@@ -236,6 +239,27 @@ const sortForQuery = (query) => {
   return { createdAt: -1 };
 };
 
+const sortedQuizPage = (filter, sort, skip, limit, searchScore) => {
+  const uploader = { path: 'uploader', select: USER_LIST_SELECT, options: { lean: true } };
+  if (!sort.avgScore && !searchScore) {
+    return Quiz.find(filter).select(QUIZ_FEED_SELECT).sort(sort).skip(skip).limit(limit).populate(uploader).lean();
+  }
+  return Quiz.aggregate([
+    { $match: filter },
+    { $project: Object.fromEntries(QUIZ_FEED_SELECT.split(' ').map(field => [field, 1])) },
+    { $set: { avgScore: { $cond: [
+      { $and: [{ $eq: ['$isChallenge', true] }, { $or: [
+        { $ne: [{ $type: '$deadlineAt' }, 'date'] }, { $gt: ['$deadlineAt', '$$NOW'] },
+      ] }] },
+      0,
+      '$avgScore',
+    ] } } },
+    ...(searchScore ? [{ $set: { searchScore } }] : []),
+    { $sort: searchScore ? { searchScore: -1, ...sort, _id: 1 } : sort }, { $skip: skip }, { $limit: limit },
+    ...(searchScore ? [{ $unset: 'searchScore' }] : []),
+  ]).option(searchScore ? { maxTimeMS: 5000 } : {}).then(rows => Quiz.populate(rows, uploader));
+};
+
 export const getFeed = catchAsync(async (req, res) => {
   const { page, limit, skip } = clampPagination(req.query, 12, 40);
   const scope = req.query.scope === 'following' ? 'following' : 'all';
@@ -264,13 +288,7 @@ export const getFeed = catchAsync(async (req, res) => {
 
   const filter = filters.length === 1 ? filters[0] : { $and: filters };
   const [quizzes, total] = await Promise.all([
-    Quiz.find(filter)
-      .select(QUIZ_FEED_SELECT)
-      .sort(sortForQuery({ ...req.query, sort: req.query.sort || 'active' }))
-      .skip(skip)
-      .limit(limit)
-      .populate('uploader', USER_LIST_SELECT)
-      .lean(),
+    sortedQuizPage(filter, sortForQuery({ ...req.query, sort: req.query.sort || 'active' }), skip, limit),
     Quiz.countDocuments(filter),
   ]);
 
@@ -297,22 +315,20 @@ export const getFeed = catchAsync(async (req, res) => {
 
 export const getExplore = catchAsync(async (req, res) => {
   const { page, limit, skip } = clampPagination(req.query, 12, 50);
-  const filter = await buildQuizQuery({ req, publicOnly: true });
+  const closestQuery = req.query.match === 'closest' ? String(req.query.search || req.query.q || '').trim().slice(0, 100) : '';
+  const filter = await buildQuizQuery({ req, publicOnly: true, closestQuery });
   const mode = String(req.query.mode || req.query.sort || 'foryou').trim().toLowerCase();
   const userId = req.user?._id;
 
   // 1. Explicit Non-Algorithmic Sorts (Newest, Top Attempts, Oldest, Popular, etc.)
   const explicitModes = ['newest', 'recent', 'oldest', 'questions', 'popular', 'top', 'rating', 'active', 'title', 'alphabetical'];
-  if (explicitModes.includes(mode)) {
+  if (closestQuery || explicitModes.includes(mode)) {
+    const searchScore = closestQuery ? closestQuizSearch(closestQuery).score : null;
+    const count = Quiz.countDocuments(filter);
+    if (closestQuery) count.maxTimeMS(5000);
     const [quizzes, total] = await Promise.all([
-      Quiz.find(filter)
-        .select(QUIZ_FEED_SELECT)
-        .sort(sortForQuery({ ...req.query, sort: req.query.sort || mode }))
-        .skip(skip)
-        .limit(limit)
-        .populate('uploader', USER_LIST_SELECT)
-        .lean(),
-      Quiz.countDocuments(filter),
+      sortedQuizPage(filter, sortForQuery({ ...req.query, sort: req.query.sort || mode }), skip, limit, searchScore),
+      count,
     ]);
 
     const totalPages = Math.ceil(total / limit) || 1;
@@ -335,7 +351,7 @@ export const getExplore = catchAsync(async (req, res) => {
       data: {
         quizzes: decorated.map((q) => ({
           ...q,
-          recommendationReason: reasonMap[mode] || '⭐ Recommended',
+          recommendationReason: closestQuery ? 'Search match' : reasonMap[mode] || '⭐ Recommended',
         })),
         pagination: {
           total,
@@ -348,7 +364,7 @@ export const getExplore = catchAsync(async (req, res) => {
         },
         meta: {
           mode,
-          algorithm: 'explicit-sort',
+          algorithm: closestQuery ? 'search-relevance' : 'explicit-sort',
           hasUserContext: Boolean(userId),
         },
       },
@@ -821,13 +837,17 @@ export const getChallengesOverview = catchAsync(async (req, res) => {
   };
 
   if (viewerId) {
+    const releasedQuiz = { isChallenge: true, deadlineAt: { $lte: new Date() } };
     const completedAttempts = await Attempt.find({
       userId: viewerId,
       status: 'completed',
+      isPractice: { $ne: true },
     })
-      .select('createdAt score percentage correctCount totalQuestions answers')
+      .select('quizId createdAt score percentage correctCount totalQuestions')
+      .populate({ path: 'quizId', match: releasedQuiz, select: '_id' })
       .sort({ createdAt: -1 })
-      .lean();
+      .lean()
+      .then(attempts => attempts.filter(attempt => attempt.quizId));
 
     const quizzesDone = completedAttempts.length;
     const correctAnswers = completedAttempts.reduce((acc, curr) => acc + (curr.correctCount || 0), 0);
@@ -839,13 +859,18 @@ export const getChallengesOverview = catchAsync(async (req, res) => {
     // Global Rank: based on total score or completed count
     const userTotalScore = completedAttempts.reduce((acc, c) => acc + (c.score || 0), 0);
     const higherRankedUsers = await Attempt.aggregate([
-      { $match: { status: 'completed', userId: { $ne: null } } },
+      { $match: { status: 'completed', isPractice: { $ne: true }, userId: { $ne: null } } },
+      { $lookup: {
+        from: Quiz.collection.name, localField: 'quizId', foreignField: '_id',
+        pipeline: [{ $match: releasedQuiz }, { $project: { _id: 1 } }], as: 'releasedQuiz',
+      } },
+      { $match: { 'releasedQuiz.0': { $exists: true } } },
       { $group: { _id: '$userId', totalScore: { $sum: '$score' }, count: { $sum: 1 } } },
       { $match: { $or: [{ totalScore: { $gt: userTotalScore } }, { totalScore: userTotalScore, count: { $gt: quizzesDone } }] } },
       { $count: 'higher' },
     ]);
     const rankNum = (higherRankedUsers[0]?.higher || 0) + 1;
-    const globalRank = `#${rankNum}`;
+    const globalRank = quizzesDone ? `#${rankNum}` : '#-';
 
     stats = {
       dayStreak,
@@ -887,7 +912,7 @@ export const getChallengesOverview = catchAsync(async (req, res) => {
     .populate({
       path: 'quiz',
       match: publicQuizFilter,
-      select: 'title questionCount difficulty category thumbnail totalAttempts',
+      select: 'title questionCount difficulty category thumbnail totalAttempts isChallenge deadlineAt',
     })
     .lean();
 
@@ -899,6 +924,7 @@ export const getChallengesOverview = catchAsync(async (req, res) => {
 
   const recentActivities = rawActivities
     .filter((act) => act.actor && (act.quiz || act.verb === 'followed' || act.targetUser))
+    .filter((act) => act.verb !== 'quiz_attempted' || (act.quiz && !resultsSealed(act.quiz)))
     .map((act) => {
       let actionText = 'interacted on the platform';
       let badge = 'Active';
@@ -1240,7 +1266,7 @@ export const getUserActivity = catchAsync(async (req, res) => {
       .lean();
 
     for (const attempt of completedAttempts) {
-      if (attempt.quizId && !loggedQuizIds.has(String(attempt.quizId._id))) {
+      if (attempt.quizId && !resultsSealed(attempt.quizId) && !loggedQuizIds.has(String(attempt.quizId._id))) {
         activities.push({
           _id: attempt._id,
           actor: {
@@ -1275,6 +1301,7 @@ export const getUserActivity = catchAsync(async (req, res) => {
   const total = Math.max(activityTotal, activities.length);
   const formatted = activities
     .filter((act) => act.verb === 'followed' || act.quiz || act.targetUser)
+    .filter((act) => act.verb !== 'quiz_attempted' || (act.quiz && !resultsSealed(act.quiz)))
     .map((act) => {
       let actionText = 'interacted on the platform';
       let badge = 'Active';
@@ -1329,6 +1356,7 @@ export const getUserActivity = catchAsync(async (req, res) => {
 
       return {
         ...act,
+        ...(resultsSealed(act.quiz) ? { quiz: { ...act.quiz, avgScore: 0 } } : {}),
         action: actionText,
         actionText,
         badge,
@@ -1523,127 +1551,28 @@ export const getShareContacts = catchAsync(async (req, res) => {
   });
 });
 
+// Compatibility endpoint: the message service owns all direct-message writes.
 export const shareQuizDirect = catchAsync(async (req, res) => {
-  const { recipientId, recipientUsername } = req.body;
-  if (!recipientId && !recipientUsername) {
-    throw new AppError('Recipient ID is required', 400);
+  const { recipientId, recipientUsername, message, clientMessageId } = req.body;
+  if (!recipientId && !recipientUsername) throw new AppError('Recipient is required', 400);
+  if (!mongoose.isValidObjectId(req.params.quizId)) throw new AppError('Invalid quiz id', 400);
+  const headers = { 'content-type': 'application/json' };
+  for (const key of ['cookie', 'authorization', 'x-csrf-token', 'x-request-id']) {
+    if (req.headers[key]) headers[key] = req.headers[key];
   }
-
-  let recipient = null;
-  if (recipientId && mongoose.isValidObjectId(recipientId)) {
-    recipient = await User.findById(recipientId);
-  }
-  if (!recipient && recipientUsername) {
-    recipient = await User.findOne({ username: String(recipientUsername).toLowerCase() });
-  }
-  if (!recipient && recipientId && !recipientId.startsWith('f') && !recipientId.startsWith('c')) {
-    recipient = await User.findOne({ username: String(recipientId).toLowerCase() });
-  }
-  if (!recipient && recipientId && (recipientId.startsWith('f') || recipientId.startsWith('c'))) {
-    const mockMap = {
-      f1: 'madhav',
-      f2: 'ram',
-      f3: 'alpha_tester',
-      f4: 'beta_tester',
-      c1: 'test_user_800',
-      c2: 'alpha_tester',
-      c3: 'beta_tester',
-      c4: 'user_two',
-    };
-    const mapped = mockMap[recipientId];
-    if (mapped) {
-      recipient = await User.findOne({ username: mapped });
-    }
-  }
-  if (!recipient) {
-    recipient = await User.findOne({ _id: { $ne: req.user._id } });
-  }
-  if (!recipient) {
-    throw new AppError('Recipient user not found', 404);
-  }
-
-  if (!mongoose.isValidObjectId(req.params.quizId)) {
-    throw new AppError('Invalid quiz id', 400);
-  }
-
-  const quiz = await Quiz.findById(req.params.quizId).populate('uploader', USER_LIST_SELECT);
-  if (!quiz) {
-    throw new AppError('Quiz not found', 404);
-  }
-
-  const isOwner = req.user && toIdString(quiz.uploader?._id || quiz.uploader) === toIdString(req.user._id);
-  const isAdmin = req.user && req.user.role === 'admin';
-  if (!isPublicQuiz(quiz) && !isOwner && !isAdmin) {
-    throw new AppError('Public quiz not found', 404);
-  }
-
-  // Deliver directly into 1-on-1 Instagram-style DM conversation
-  let conversation = await Conversation.findOne({
-    participants: { $all: [req.user._id, recipient._id], $size: 2 },
-  });
-
-  if (!conversation) {
-    conversation = await Conversation.create({
-      participants: [req.user._id, recipient._id],
-      unreadCounts: [
-        { user: req.user._id, count: 0 },
-        { user: recipient._id, count: 0 },
-      ],
-      lastMessageAt: new Date(),
+  let upstream;
+  try {
+    upstream = await fetch((process.env.MESSAGE_SERVICE_URL || 'http://127.0.0.1:5006') + '/api/v1/messages/start', {
+      method: 'POST', headers, signal: AbortSignal.timeout(10000),
+      body: JSON.stringify({ recipientId, recipientUsername, initialMessage: message,
+        quizId: req.params.quizId, clientMessageId }),
     });
-  }
-
-  const shareText = req.body.message ? String(req.body.message).trim() : `Shared a quiz: "${quiz.title}"`;
-
-  const message = await Message.create({
-    conversation: conversation._id,
-    sender: req.user._id,
-    text: shareText,
-    type: 'quiz_share',
-    quiz: quiz._id,
-    readBy: [req.user._id],
-  });
-
-  // Increment recipient unread count
-  let foundRecipient = false;
-  const updatedUnread = (conversation.unreadCounts || []).map((entry) => {
-    if (String(entry.user) === String(recipient._id)) {
-      foundRecipient = true;
-      return { user: entry.user, count: (entry.count || 0) + 1 };
-    }
-    return entry;
-  });
-  if (!foundRecipient) {
-    updatedUnread.push({ user: recipient._id, count: 1 });
-  }
-
-  conversation.lastMessage = message._id;
-  conversation.lastMessageText = shareText;
-  conversation.lastMessageAt = new Date();
-  conversation.unreadCounts = updatedUnread;
-  await conversation.save();
-
-  // Record share interaction
-  await QuizShare.create({
-    quiz: quiz._id,
-    user: req.user._id,
-    channel: 'direct_share',
-    clientSessionId: String(req.get('x-client-session-id') || '').slice(0, 120),
-  });
-
-  await Quiz.findByIdAndUpdate(quiz._id, {
-    $inc: { shareCount: 1 },
-    $set: { lastSocialActivityAt: new Date() },
-  });
-
-  res.status(201).json({
-    success: true,
-    message: `Quiz shared with @${recipient.username}`,
-    data: {
-      conversationId: conversation._id,
-      messageId: message._id,
-    },
-  });
+  } catch { throw new AppError('Messaging is temporarily unavailable', 503); }
+  const payload = await upstream.json().catch(() => ({}));
+  if (!upstream.ok) throw new AppError(payload.message || 'Could not share this quiz', upstream.status);
+  res.status(201).json({ success: true, message: 'Quiz shared', data: {
+    conversationId: payload.data?.conversation?._id, messageId: payload.data?.message?._id,
+  } });
 });
 
 export const listComments = catchAsync(async (req, res) => {
@@ -1788,7 +1717,13 @@ export const createComment = catchAsync(async (req, res) => {
     });
     if (parent) {
       parentCommentId = parent.parentComment ? parent.parentComment : parent._id;
-      replyToUserId = req.body.replyToUser || parent.author;
+      replyToUserId = parent.author;
+      const requestedUser = req.body.replyToUser;
+      if (mongoose.isObjectIdOrHexString(requestedUser) && await QuizComment.exists({
+        quiz: quiz._id, parentComment: parentCommentId, author: requestedUser, status: 'active',
+      })) {
+        replyToUserId = requestedUser;
+      }
 
       await QuizComment.findByIdAndUpdate(parentCommentId, { $inc: { replyCount: 1 } });
     }
@@ -1844,6 +1779,7 @@ export const likeComment = catchAsync(async (req, res) => {
   if (!comment || comment.status !== 'active') {
     throw new AppError('Comment not found', 404);
   }
+  await getPublicQuiz(String(comment.quiz), req.user);
 
   const userId = req.user._id;
   const alreadyLiked = comment.likes?.some((id) => toIdString(id) === toIdString(userId));
@@ -1870,6 +1806,7 @@ export const unlikeComment = catchAsync(async (req, res) => {
   if (!comment || comment.status !== 'active') {
     throw new AppError('Comment not found', 404);
   }
+  await getPublicQuiz(String(comment.quiz), req.user);
 
   const userId = req.user._id;
   comment.likes = (comment.likes || []).filter((id) => toIdString(id) !== toIdString(userId));
@@ -1899,8 +1836,8 @@ export const updateComment = catchAsync(async (req, res) => {
   }
 
   const body = String(req.body.body || req.body.content || '').trim();
-  if (!body) {
-    throw new AppError('Comment cannot be empty', 400);
+  if (!body || body.length > 1000) {
+    throw new AppError('Comment must be between 1 and 1000 characters', 400);
   }
 
   comment.body = body;
@@ -1962,10 +1899,9 @@ export const deleteComment = catchAsync(async (req, res) => {
 export const getNotifications = catchAsync(async (req, res) => {
   const { page, limit, skip } = clampPagination(req.query, 20, 60);
   
-  // Instagram style: Notifications feed strictly contains likes and comments
   const filter = {
     recipient: req.user._id,
-    verb: { $in: ['quiz_liked', 'commented', 'comment_liked'] },
+    verb: { $in: notificationVerbs(req.user.preferences?.notifications) },
   };
 
   const [notifications, total, unread] = await Promise.all([
@@ -1974,8 +1910,8 @@ export const getNotifications = catchAsync(async (req, res) => {
       .skip(skip)
       .limit(limit)
       .populate('actor', USER_LIST_SELECT)
-      .populate('quiz', 'title')
-      .populate('comment', 'body')
+      .populate('quiz', 'title uploader visibility isPublic accessType isRestricted metadata.savedAsDraft isChallenge challengeStatus')
+      .populate('comment', 'body status')
       .lean(),
     Notification.countDocuments(filter),
     Notification.countDocuments({ ...filter, readAt: null }),
@@ -1984,7 +1920,16 @@ export const getNotifications = catchAsync(async (req, res) => {
   res.json({
     success: true,
     data: {
-      notifications,
+      notifications: notifications.map(({ quiz, comment, metadata, ...notification }) => {
+        const canReadQuiz = quiz && (String(quiz.uploader) === String(req.user._id) || isPublicQuiz(quiz));
+        const canReadComment = canReadQuiz && comment?.status === 'active';
+        return {
+          ...notification,
+          quiz: canReadQuiz ? { _id: quiz._id, title: quiz.title } : null,
+          comment: canReadComment ? { _id: comment._id, body: comment.body } : null,
+          metadata: canReadQuiz && (notification.verb === 'quiz_liked' || canReadComment) ? metadata : {},
+        };
+      }),
       unread,
       pagination: {
         total,
@@ -1999,7 +1944,7 @@ export const getNotifications = catchAsync(async (req, res) => {
 export const getUnreadNotificationCount = catchAsync(async (req, res) => {
   const unreadCount = await Notification.countDocuments({
     recipient: req.user._id,
-    verb: { $in: ['quiz_liked', 'commented', 'comment_liked'] },
+    verb: { $in: notificationVerbs(req.user.preferences?.notifications) },
     readAt: null,
   });
 
@@ -2013,7 +1958,7 @@ export const markNotificationRead = catchAsync(async (req, res) => {
   const notification = await Notification.findOneAndUpdate(
     { _id: req.params.id, recipient: req.user._id },
     { readAt: new Date() },
-    { new: true }
+    { new: true, projection: { _id: 1, readAt: 1 } }
   );
 
   if (!notification) {

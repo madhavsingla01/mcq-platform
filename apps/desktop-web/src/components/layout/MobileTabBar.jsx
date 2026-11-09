@@ -9,6 +9,7 @@ import {
   X,
   Activity,
   MessageSquare,
+  Bell,
   Settings,
   BookOpen,
   LogOut,
@@ -17,6 +18,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import api from '../../api/axios';
 import messageService from '../../services/message.service';
 import './MobileTabBar.css';
 
@@ -26,7 +28,9 @@ export default function MobileTabBar() {
   const location = useLocation();
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [messageCount, setUnreadMessages] = useState(0);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const unreadMessages = user?.preferences?.notifications?.directMessages === false ? 0 : messageCount;
 
   // Close sheet on route change
   useEffect(() => {
@@ -37,14 +41,19 @@ export default function MobileTabBar() {
   useEffect(() => {
     if (!isAuthenticated) {
       setUnreadMessages(0);
+      setNotificationCount(0);
       return undefined;
     }
 
     let isMounted = true;
     const fetchUnreadMsg = async () => {
       try {
-        const unreadCount = await messageService.getUnreadCount();
-        if (isMounted) setUnreadMessages(unreadCount);
+        const [messages, notifications] = await Promise.allSettled([
+          messageService.getUnreadCount(), api.get('/social/notifications/unread-count'),
+        ]);
+        if (!isMounted) return;
+        if (messages.status === 'fulfilled') setUnreadMessages(messages.value);
+        if (notifications.status === 'fulfilled') setNotificationCount(notifications.value.data?.data?.unreadCount || 0);
       } catch {
         // silent fallback
       }
@@ -59,8 +68,7 @@ export default function MobileTabBar() {
 
   const handleLogout = async () => {
     setIsSheetOpen(false);
-    await logout();
-    navigate('/login');
+    if (await logout()) navigate('/login');
   };
 
   const userInitial = (user?.name?.[0] || user?.username?.[0] || 'U').toUpperCase();
@@ -123,7 +131,7 @@ export default function MobileTabBar() {
             ) : (
               <div className="tab-avatar-placeholder">{userInitial}</div>
             )}
-            {unreadMessages > 0 && <span className="tab-dot-badge" />}
+            {(unreadMessages > 0 || notificationCount > 0) && <span className="tab-dot-badge" />}
           </div>
           <span className="tab-label">Menu</span>
         </button>
@@ -208,7 +216,12 @@ export default function MobileTabBar() {
                 )}
               </Link>
 
-              {/* Settings */}
+              <Link to="/notifications" className="sheet-link-row" onClick={() => setIsSheetOpen(false)}>
+                <div className="sheet-link-icon-box neutral"><Bell size={18} /></div>
+                <div className="sheet-link-text"><span className="sheet-link-title">Notifications</span></div>
+                {notificationCount > 0 ? <span className="sheet-count-badge">{notificationCount}</span>
+                  : <ChevronRight size={16} className="sheet-link-chevron" />}
+              </Link>
               <Link
                 to="/settings"
                 className="sheet-link-row"

@@ -62,7 +62,6 @@ export default function AdminOverview() {
   return (
     <div>
       <div className="admin-page-header">
-        <h1 className="admin-page-title">Platform Overview</h1>
         <p className="admin-page-desc">
           Live operations, user management metrics, and moderation indicators across QuizFocus.
         </p>
@@ -171,7 +170,8 @@ export default function AdminOverview() {
                       background: 'var(--admin-accent)',
                       borderRadius: '4px',
                       height: `${Math.max(12, Math.min(70, day.count * 15))}px`,
-                      transition: 'height 0.3s var(--admin-ease)',
+                      transformOrigin: 'bottom',
+                      transition: 'transform 200ms var(--admin-ease, cubic-bezier(0.23, 1, 0.32, 1)), opacity 200ms ease',
                     }}
                     title={`${day._id}: ${day.count} signups`}
                   />

@@ -76,7 +76,6 @@ export default function AdminSystemHealth() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
         <div>
-          <h1 className="admin-page-title">System Health & Diagnostics</h1>
           <p className="admin-page-desc">
             Real-time ping matrix and latency telemetry across all 9 QuizFocus application microservices.
           </p>

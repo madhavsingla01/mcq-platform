@@ -1,99 +1,63 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
-import { MoreHorizontal } from 'lucide-react';
+import { useId, useRef } from 'react';
+import { MoreHorizontal, X } from 'lucide-react';
 import './QuizCardOverflowMenu.css';
 
-export default function QuizCardOverflowMenu({ label = 'Quiz options', details = [], actions = [] }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const menuId = useId();
-  const menuRef = useRef(null);
-  const triggerRef = useRef(null);
-  const panelRef = useRef(null);
-
-  useEffect(() => {
-    if (!isOpen) return undefined;
-
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        setIsOpen(false);
-        triggerRef.current?.focus();
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isOpen]);
-
-  // Viewport-safe horizontal boundary alignment
-  useLayoutEffect(() => {
-    if (!isOpen || !panelRef.current) return;
-    const panel = panelRef.current;
-    panel.style.transform = '';
-    const rect = panel.getBoundingClientRect();
-    const padding = 16;
-    if (rect.left < padding) {
-      const shiftRight = padding - rect.left;
-      panel.style.transform = `translateX(${shiftRight}px)`;
-    } else if (rect.right > window.innerWidth - padding) {
-      const shiftLeft = rect.right - (window.innerWidth - padding);
-      panel.style.transform = `translateX(-${shiftLeft}px)`;
-    }
-  }, [isOpen]);
+export default function QuizCardOverflowMenu({ label = 'Quiz options', title, details = [], actions = [] }) {
+  const dialogId = useId();
+  const dialogRef = useRef(null);
+  const visibleDetails = details.filter(({ value }) => value !== undefined && value !== null && value !== '');
+  const close = () => dialogRef.current?.close();
 
   return (
-    <div
-      className={`quiz-card-overflow-anchor ${isOpen ? 'is-open' : ''}`}
-      ref={menuRef}
-    >
+    <div className="quiz-card-overflow-anchor">
       <button
-        ref={triggerRef}
         type="button"
-        className={`quiz-card-overflow-trigger ${isOpen ? 'active' : ''}`}
+        className="quiz-card-overflow-trigger"
         aria-label={label}
         aria-haspopup="dialog"
-        aria-expanded={isOpen}
-        aria-controls={menuId}
+        aria-controls={dialogId}
         title={label}
         onClick={(event) => {
           event.stopPropagation();
-          setIsOpen((open) => !open);
+          dialogRef.current?.showModal();
         }}
       >
-        <MoreHorizontal size={18} />
+        <MoreHorizontal size={18} aria-hidden="true" />
       </button>
-      {isOpen && (
-        <div
-          id={menuId}
-          ref={panelRef}
-          className="quiz-card-overflow-panel"
-          role="dialog"
-          aria-label={label}
-          onClick={(event) => event.stopPropagation()}
-        >
-          {details.length > 0 && (
-            <section className="quiz-card-overflow-section quiz-card-overflow-details">
-              <h4>Details</h4>
+      <dialog
+        id={dialogId}
+        ref={dialogRef}
+        className="quiz-card-overflow-panel"
+        aria-labelledby={`${dialogId}-title`}
+        onClick={(event) => {
+          event.stopPropagation();
+          if (event.target === event.currentTarget) close();
+        }}
+        onKeyDown={(event) => event.stopPropagation()}
+      >
+        <div className="quiz-card-overflow-content">
+          <header className="quiz-card-overflow-heading">
+            <h2 id={`${dialogId}-title`}>{title || label}</h2>
+            <button type="button" className="quiz-card-overflow-close" aria-label="Close quiz details" onClick={close}>
+              <X size={18} aria-hidden="true" />
+            </button>
+          </header>
+          {visibleDetails.length > 0 && (
+            <section className="quiz-card-overflow-section">
+              <h3>Details</h3>
               <dl>
-                {details.filter((detail) => detail.value !== undefined && detail.value !== null && detail.value !== '').map((detail) => (
-                  <div className="quiz-card-overflow-detail" key={detail.label}>
-                    <dt>{detail.label}</dt>
-                    <dd>{detail.value}</dd>
+                {visibleDetails.map(({ label: detailLabel, value }) => (
+                  <div className="quiz-card-overflow-detail" key={detailLabel}>
+                    <dt>{detailLabel}</dt>
+                    <dd>{value}</dd>
                   </div>
                 ))}
               </dl>
             </section>
           )}
           {actions.length > 0 && (
-            <section className="quiz-card-overflow-section quiz-card-overflow-actions">
-              <h4>Actions</h4>
+            <section className="quiz-card-overflow-section">
+              <h3>Actions</h3>
               <div className="quiz-card-overflow-actions-list">
                 {actions.map((action) => (
                   <button
@@ -103,7 +67,8 @@ export default function QuizCardOverflowMenu({ label = 'Quiz options', details =
                     disabled={action.disabled}
                     title={action.title}
                     onClick={(event) => {
-                      setIsOpen(false);
+                      event.stopPropagation();
+                      close();
                       action.onClick(event);
                     }}
                   >
@@ -115,7 +80,7 @@ export default function QuizCardOverflowMenu({ label = 'Quiz options', details =
             </section>
           )}
         </div>
-      )}
+      </dialog>
     </div>
   );
 }

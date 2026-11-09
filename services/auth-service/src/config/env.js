@@ -3,6 +3,7 @@ dotenv.config();
 
 const env = {
   PORT: Number(process.env.PORT),
+  AUTH_TRUST_PROXY_HOPS: Number(process.env.AUTH_TRUST_PROXY_HOPS ?? 0),
   NODE_ENV: process.env.NODE_ENV || '',
   MONGO_URI: process.env.MONGO_URI || '',
   JWT_SECRET: process.env.JWT_SECRET || '',
@@ -15,6 +16,9 @@ const env = {
 };
 
 if (!Number.isInteger(env.PORT) || env.PORT < 1 || env.PORT > 65535) throw new Error('PORT must be an integer from 1 to 65535');
+if (!Number.isInteger(env.AUTH_TRUST_PROXY_HOPS) || env.AUTH_TRUST_PROXY_HOPS < 0 || env.AUTH_TRUST_PROXY_HOPS > 1) {
+  throw new Error('AUTH_TRUST_PROXY_HOPS must be 0 or 1');
+}
 for (const key of ['NODE_ENV', 'MONGO_URI', 'JWT_EXPIRES_IN', 'JWT_REFRESH_EXPIRES_IN']) if (!env[key]) throw new Error(`${key} is required`);
 if (!env.CLIENT_URL.length) throw new Error('CLIENT_URL must contain at least one allowed origin');
 
@@ -25,5 +29,6 @@ if (!jwtSecret || Buffer.byteLength(jwtSecret) < 32 || /default-jwt-secret|mcq-p
 if (!env.JWT_REFRESH_SECRET || Buffer.byteLength(env.JWT_REFRESH_SECRET) < 32 || /default-refresh-secret|mcq-platform-refresh-secret-change-in-production|replace-with-/i.test(env.JWT_REFRESH_SECRET)) {
   throw new Error('JWT_REFRESH_SECRET must be a configured, non-placeholder secret of at least 32 bytes');
 }
+if (env.JWT_REFRESH_SECRET === env.JWT_SECRET) throw new Error('Access and refresh tokens require distinct signing secrets');
 
 export default env;

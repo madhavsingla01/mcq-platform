@@ -39,3 +39,6 @@ coverage/
 
 # Docker
 docker-data/
+
+# Disposable verification data and local operational reports
+.runtime/

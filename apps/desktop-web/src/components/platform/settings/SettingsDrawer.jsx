@@ -1,9 +1,8 @@
-import React, { memo, useState, useEffect, useLayoutEffect, useRef } from 'react';
+import React, { memo, useContext, useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSettingsStore } from '../../../store/settingsStore';
-import { useUIStore } from '../../../store/uiStore';
 import { useQuizStore } from '../../../store/quizStore';
-import { useAuthStore } from '../../../store/authStore';
+import { QuizMediaPreferences } from '../../media/QuizMediaPreferences';
 import './SettingsDrawer.css';
 import {
   showCustomDialog,
@@ -25,6 +24,7 @@ import {
   Moon,
   Zap,
   Sliders,
+  Captions,
 } from 'lucide-react';
 
 const getMenuPosition = () => {
@@ -48,7 +48,7 @@ const getMenuPosition = () => {
 // Tiny Web Audio synthesizer click feedback
 const playAudioFeedback = (type = 'click') => {
   try {
-    const isSoundEnabled = localStorage.getItem('mcq.sound.enabled') !== 'false';
+    const isSoundEnabled = useSettingsStore.getState().soundCues;
     if (!isSoundEnabled) return;
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if (!AudioContext) return;
@@ -57,6 +57,7 @@ const playAudioFeedback = (type = 'click') => {
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
+    osc.onended = () => { ctx.close().catch(() => {}); };
 
     if (type === 'click') {
       osc.frequency.setValueAtTime(600, ctx.currentTime);
@@ -77,8 +78,11 @@ const playAudioFeedback = (type = 'click') => {
 
 function SettingsDrawer({ collaboration }) {
   const navigate = useNavigate();
-  const { theme, setTheme } = useUIStore();
   const {
+    theme,
+    updatePreference,
+    soundCues: soundEnabled,
+    autoAdvance,
     setDrawerOpen,
     fontSize,
     setFontSize,
@@ -88,35 +92,17 @@ function SettingsDrawer({ collaboration }) {
     setKeyboardShortcutsEnabled,
     showCorrectAnswerInstantly,
     setShowCorrectAnswerInstantly,
+    syncStatus,
+    syncError,
+    retryPreferenceSync,
   } = useSettingsStore();
 
-  const setInstantFeedback = useQuizStore((s) => s.setInstantFeedback);
-
-  const user = useAuthStore((s) => s.user);
+  const isChallenge = useQuizStore(state => state.quiz?.isChallenge === true);
+  const media = useContext(QuizMediaPreferences);
   const menuRef = useRef(null);
   const [menuPosition, setMenuPosition] = useState(getMenuPosition);
   const [copied, setCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
-  const [soundEnabled, setSoundEnabled] = useState(() => {
-    if (user?.preferences?.soundCues !== undefined) return Boolean(user.preferences.soundCues);
-    return localStorage.getItem('mcq.sound.enabled') !== 'false';
-  });
-  const [autoAdvance, setAutoAdvance] = useState(() => {
-    if (user?.preferences?.autoAdvance !== undefined) return Boolean(user.preferences.autoAdvance);
-    return localStorage.getItem('mcq.quiz.autoAdvance') === 'true';
-  });
-
-  useEffect(() => {
-    if (user?.preferences?.soundCues !== undefined) {
-      setSoundEnabled(Boolean(user.preferences.soundCues));
-      localStorage.setItem('mcq.sound.enabled', String(user.preferences.soundCues));
-    }
-    if (user?.preferences?.autoAdvance !== undefined) {
-      setAutoAdvance(Boolean(user.preferences.autoAdvance));
-      localStorage.setItem('mcq.quiz.autoAdvance', String(user.preferences.autoAdvance));
-    }
-  }, [user?.preferences?.soundCues, user?.preferences?.autoAdvance]);
-
   useEffect(() => {
     const handleFsChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
     document.addEventListener('fullscreenchange', handleFsChange);
@@ -181,7 +167,7 @@ function SettingsDrawer({ collaboration }) {
   const toggleFullscreen = () => {
     playAudioFeedback('click');
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
+      document.documentElement.requestFullscreen?.().catch(() => {});
     } else {
       document.exitFullscreen().catch(() => {});
     }
@@ -189,38 +175,23 @@ function SettingsDrawer({ collaboration }) {
 
   const handleToggleSound = (next) => {
     playAudioFeedback('toggle');
-    setSoundEnabled(next);
-    localStorage.setItem('mcq.sound.enabled', String(next));
-    const auth = useAuthStore.getState();
-    if (auth.isAuthenticated) {
-      auth.updateProfile({ preferences: { soundCues: next } }).catch(() => {});
-    }
+    updatePreference('soundCues', next);
   };
 
   const handleToggleAutoAdvance = (next) => {
     playAudioFeedback('toggle');
-    setAutoAdvance(next);
-    localStorage.setItem('mcq.quiz.autoAdvance', String(next));
-    const auth = useAuthStore.getState();
-    if (auth.isAuthenticated) {
-      auth.updateProfile({ preferences: { autoAdvance: next } }).catch(() => {});
-    }
+    updatePreference('autoAdvance', next);
   };
 
   const handleToggleTimer = (checked) => {
     playAudioFeedback('toggle');
     const mode = checked ? 'visible' : 'hidden';
     setTimerVisibility(mode);
-    const auth = useAuthStore.getState();
-    if (auth.isAuthenticated) {
-      auth.updateProfile({ preferences: { timerVisibility: mode } }).catch(() => {});
-    }
   };
 
   const handleToggleInstantFeedback = (checked) => {
     playAudioFeedback('toggle');
     setShowCorrectAnswerInstantly(checked);
-    setInstantFeedback(checked);
   };
 
   const handleQuitQuiz = async () => {
@@ -282,6 +253,10 @@ function SettingsDrawer({ collaboration }) {
         </div>
 
         <div className="settings-drawer-body">
+          {syncStatus === 'error' && <SettingsRow title="Preferences could not sync">
+            <span role="alert">{syncError}</span>
+            <Button variant="secondary" size="sm" onClick={retryPreferenceSync}>Retry</Button>
+          </SettingsRow>}
           <SettingsSection
             className="settings-drawer-section"
             title="Visual Appearance"
@@ -300,7 +275,7 @@ function SettingsDrawer({ collaboration }) {
                     type="button"
                     onClick={() => {
                       playAudioFeedback('click');
-                      setTheme(id);
+                      updatePreference('theme', id);
                     }}
                     className={`settings-drawer-segmented-button ${theme === id ? 'active' : ''}`}
                     aria-pressed={theme === id}
@@ -370,15 +345,16 @@ function SettingsDrawer({ collaboration }) {
               <SettingsToggle
                 id="drawer-timer"
                 ariaLabel="Timer display"
-                checked={timerVisibility === 'visible'}
+                checked={isChallenge || timerVisibility === 'visible'}
+                disabled={isChallenge}
                 onChange={handleToggleTimer}
               />
             </SettingsRow>
 
             <SettingsRow
               className="settings-drawer-row"
-              title="Instant Explanations"
-              description="Reveal answers immediately upon answering"
+              title="Instant feedback for new practice attempts"
+              description="Applies when you start a new practice attempt"
             >
               <SettingsToggle
                 id="drawer-instant"
@@ -401,6 +377,24 @@ function SettingsDrawer({ collaboration }) {
               />
             </SettingsRow>
           </SettingsSection>
+
+          {media && <SettingsSection className="settings-drawer-section" title="Media & transcripts" icon={Captions}>
+            <SettingsRow title="Transcripts" description="Apply to all clips in this quiz.">
+              <div className="settings-media-actions">
+                <Button variant="secondary" size="sm" onClick={() => media.setMedia(previous => ({ ...previous, transcripts: { open: true } }))}>Open all</Button>
+                <Button variant="secondary" size="sm" onClick={() => media.setMedia(previous => ({ ...previous, transcripts: { open: false } }))}>Close all</Button>
+              </div>
+            </SettingsRow>
+            <SettingsRow title="Show captions where available">
+              <SettingsToggle checked={media.captions} onChange={captions => media.setMedia(previous => ({ ...previous, captions }))} />
+            </SettingsRow>
+            <SettingsRow title="Default playback speed">
+              <select className="settings-media-speed" aria-label="Default playback speed" value={media.speed}
+                onChange={event => { const speed = Number(event.target.value); media.setMedia(previous => ({ ...previous, speed })); }}>
+                {[0.5, 0.75, 1, 1.25, 1.5, 2].map(speed => <option key={speed} value={speed}>{speed}×</option>)}
+              </select>
+            </SettingsRow>
+          </SettingsSection>}
 
           <SettingsSection
             className="settings-drawer-section"

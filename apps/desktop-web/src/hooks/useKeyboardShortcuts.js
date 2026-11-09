@@ -1,5 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { useUIStore } from '../store/uiStore';
+import { useSettingsStore } from '../store/settingsStore';
 
 const isMac = typeof navigator !== 'undefined' && /Mac/.test(navigator.userAgent);
 
@@ -22,10 +23,12 @@ export function useKeyboardShortcuts({
   onSubmit,
   enabled = true,
 } = {}) {
+  const shortcutsEnabled = useSettingsStore(state=>state.keyboardShortcutsEnabled);
   // focus mode keyboard shortcuts removed
 
   const handleKeyDown = useCallback((e) => {
-    if (!enabled) return;
+    if (!enabled || !shortcutsEnabled || useUIStore.getState().isSearchOpen) return;
+    if (e.target.closest?.('audio,video,button,a,summary,[role="dialog"]')) return;
 
     // Modifier key (Cmd on Mac, Ctrl on others)
     const modKey = isMac ? e.metaKey : e.ctrlKey;
@@ -80,7 +83,7 @@ export function useKeyboardShortcuts({
       onSubmit?.();
       return;
     }
-  }, [enabled, onPrev, onNext, onSelectOption, onFlag, onSubmit]);
+  }, [enabled, shortcutsEnabled, onPrev, onNext, onSelectOption, onFlag, onSubmit]);
 
   useEffect(() => {
     if (!enabled) return;

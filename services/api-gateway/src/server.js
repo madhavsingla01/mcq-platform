@@ -12,6 +12,8 @@ import dotenv from 'dotenv';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 
 import http from 'http';
+import { createHealthMonitor, integerSetting, isSocketPath, requestContext } from './runtime.js';
+import { errorBody, proxyFailure, sanitizeProxyRequest } from './contracts.js';
 
 dotenv.config();
 
@@ -40,6 +42,24 @@ const SERVICES = {
   challenge: requiredSetting('CHALLENGE_SERVICE_URL'),
 };
 
+for (const [name, value] of Object.entries(SERVICES)) {
+  const url = new URL(value);
+  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash || url.pathname !== '/') {
+    throw new Error(`${name} service URL must be an HTTP(S) origin without credentials`);
+  }
+}
+const proxyTimeout = integerSetting(process.env, 'PROXY_TIMEOUT_MS', 30000);
+const shutdownTimeout = integerSetting(process.env, 'SHUTDOWN_TIMEOUT_MS', 10000);
+const checkHealth = createHealthMonitor(SERVICES, {
+  timeoutMs: integerSetting(process.env, 'HEALTH_CHECK_TIMEOUT_MS', 2000),
+  ttlMs: integerSetting(process.env, 'HEALTH_CACHE_TTL_MS', 3000),
+});
+let draining = false;
+app.disable('x-powered-by');
+// Trust only a configured number of hops, never arbitrary forwarded IP headers.
+app.set('trust proxy', integerSetting(process.env, 'TRUST_PROXY_HOPS', 0, 0, 5));
+app.use(requestContext);
+
 // Security headers
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -52,67 +72,42 @@ app.use(helmet({
 app.use(cors({
   origin: allowedOrigins,
   credentials: true,
+  exposedHeaders: ['X-Request-ID'],
 }));
 
 app.use(cookieParser());
+app.use((req, res, next) => {
+  const origin = req.get('origin');
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && origin && !allowedOrigins.includes(origin)) {
+    return res.status(403).json(errorBody(403, 'Request origin is not allowed', req.requestId));
+  }
+  next();
+});
 
 if (NODE_ENV !== 'test') {
-  app.use(morgan('dev'));
+  morgan.token('request-id', req => req.requestId);
+  morgan.token('safe-path', req => req.path);
+  app.use(morgan(':request-id :method :safe-path :status :response-time ms'));
 }
 
-// System Health Aggregator
-app.get('/api/v1/health', async (req, res) => {
-  const checkService = async (name, url) => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
-    try {
-      const resp = await fetch(`${url}/api/v1/health`, { signal: controller.signal });
-      const data = await resp.json().catch(() => ({}));
-      return {
-        ...data,
-        service: data.service || name,
-        status: resp.ok ? (data.status || 'healthy') : 'degraded',
-        code: resp.status,
-      };
-    } catch (err) {
-      return { service: name, status: 'unreachable', error: err.message };
-    } finally {
-      clearTimeout(timeoutId);
-    }
-  };
-
-  const [authHealth, quizHealth, parserHealth, attemptHealth, socialHealth, messageHealth, mediaHealth, adminHealth, challengeHealth] = await Promise.all([
-    checkService('auth', SERVICES.auth),
-    checkService('quiz', SERVICES.quiz),
-    checkService('parser', SERVICES.parser),
-    checkService('attempt', SERVICES.attempt),
-    checkService('social', SERVICES.social),
-    checkService('message', SERVICES.message),
-    checkService('media', SERVICES.media),
-    checkService('admin', SERVICES.admin),
-    checkService('challenge', SERVICES.challenge),
-  ]);
-
-  const allHealthy = [authHealth, quizHealth, parserHealth, attemptHealth, socialHealth, messageHealth, mediaHealth, adminHealth, challengeHealth]
-    .every(s => s.status === 'healthy');
-
-  res.status(allHealthy ? 200 : 207).json({
-    success: true,
-    gateway: 'healthy',
-    timestamp: new Date().toISOString(),
-    environment: NODE_ENV,
-    services: {
-      auth: authHealth,
-      quiz: quizHealth,
-      parser: parserHealth,
-      attempt: attemptHealth,
-      social: socialHealth,
-      message: messageHealth,
-      media: mediaHealth,
-      admin: adminHealth,
-      challenge: challengeHealth,
-    },
-  });
+app.get('/api/v1/livez', (req, res) => res.json({ status: 'alive' }));
+app.get(['/api/v1/health', '/api/v1/readyz'], async (req, res, next) => {
+  try {
+    const health = await checkHealth();
+    const ready = health.healthy && !draining;
+    res.setHeader('Cache-Control', 'no-store');
+    res.status(ready ? 200 : 503).json({
+      success: ready,
+      status: ready ? 'healthy' : 'degraded',
+      gateway: draining ? 'draining' : 'healthy',
+      timestamp: new Date().toISOString(),
+      services: health.services,
+    });
+  } catch (error) { next(error); }
+});
+app.use((req, res, next) => {
+  if (draining) return res.status(503).set('Connection', 'close').json(errorBody(503, 'Service restarting', req.requestId));
+  next();
 });
 
 // Proxy helper with standard logging & header forwarding
@@ -120,8 +115,16 @@ const makeProxy = (target, pathPrefix = '') => createProxyMiddleware({
   target: pathPrefix ? `${target}${pathPrefix}` : target,
   changeOrigin: true,
   xfwd: true,
+  proxyTimeout,
+  timeout: proxyTimeout + 5000,
   on: {
+    proxyReqWs: (proxyReq, req) => {
+      if (!req.requestId) requestContext(req, { setHeader() {} }, () => {});
+      sanitizeProxyRequest(proxyReq, { headers: req.headers, requestId: req.requestId, ip: req.socket.remoteAddress });
+    },
     proxyReq: (proxyReq, req) => {
+      sanitizeProxyRequest(proxyReq, req);
+      proxyReq.once('timeout', () => { req.proxyTimedOut = true; });
       if (req.headers.cookie) {
         proxyReq.setHeader('cookie', req.headers.cookie);
       }
@@ -139,18 +142,15 @@ const makeProxy = (target, pathPrefix = '') => createProxyMiddleware({
       }
     },
     error: (err, req, res) => {
-      console.error(`[Gateway Proxy Error] ${req.method} ${req.url} -> ${target}:`, err.message);
+      console.error(`[Gateway Proxy Error] ${req.requestId} ${req.method}`, err.code || 'PROXY_ERROR');
       if (!res) return;
+      const failure = proxyFailure(req.proxyTimedOut ? { code: 'ETIMEDOUT' } : err);
+      const body = errorBody(failure.status, failure.message, req.requestId);
 
       // 1. Standard Express Response
       if (typeof res.status === 'function') {
         if (!res.headersSent) {
-          res.status(502).json({
-            success: false,
-            message: process.env.NODE_ENV === 'production'
-              ? 'Downstream service unavailable'
-              : `Downstream service unavailable: ${err.message}`,
-          });
+          res.status(failure.status).json(body);
         }
         return;
       }
@@ -158,13 +158,8 @@ const makeProxy = (target, pathPrefix = '') => createProxyMiddleware({
       // 2. Standard Node.js http.ServerResponse
       if (typeof res.writeHead === 'function') {
         if (!res.headersSent) {
-          res.writeHead(502, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({
-            success: false,
-            message: process.env.NODE_ENV === 'production'
-              ? 'Downstream service unavailable'
-              : `Downstream service unavailable: ${err.message}`,
-          }));
+          res.writeHead(failure.status, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(body));
         }
         return;
       }
@@ -227,43 +222,58 @@ app.use('/api/v1/challenges', makeProxy(SERVICES.challenge, '/api/v1/challenges'
 
 // Fallback 404
 app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: `API Gateway route not found: ${req.originalUrl}`,
-  });
+  res.status(404).json(errorBody(404, 'API Gateway route not found', req.requestId));
 });
 
 // Global Gateway Error Handler
 app.use((err, req, res, next) => {
-  console.error('[API Gateway Error]:', err);
+  console.error(JSON.stringify({ service: 'api-gateway', requestId: req.requestId, category: err.name, code: err.code }));
   const status = err.status || err.statusCode || 500;
-  res.status(status).json({
-    success: false,
-    message: process.env.NODE_ENV === 'production' && status >= 500
-      ? 'Internal Gateway Error'
-      : (err.message || 'Internal Gateway Error'),
-  });
-});
-
-// Process crash guards
-process.on('unhandledRejection', (err) => {
-  console.error('[API Gateway Unhandled Rejection]:', err);
-});
-process.on('uncaughtException', (err) => {
-  console.error('[API Gateway Uncaught Exception]:', err);
+  if (res.headersSent) return next(err);
+  res.status(status).json(errorBody(status, status >= 500 ? 'Internal Gateway Error' : 'Invalid gateway request', req.requestId));
 });
 
 const server = http.createServer(app);
+server.headersTimeout = 15000;
+server.requestTimeout = proxyTimeout + 5000;
+const sockets = new Set();
+server.on('connection', socket => {
+  sockets.add(socket);
+  socket.once('close', () => sockets.delete(socket));
+});
 
 // Forward WebSocket upgrade requests to the message service
 server.on('upgrade', (req, socket, head) => {
   socket.on('error', (err) => {
     console.error('[Gateway WS Client Socket Error]:', err.message);
   });
-  if (req.url?.startsWith('/socket.io') && typeof socketProxy.upgrade === 'function') {
+  const origin = req.headers.origin;
+  if (!draining && isSocketPath(req.url) && (!origin || allowedOrigins.includes(origin)) && typeof socketProxy.upgrade === 'function') {
     socketProxy.upgrade(req, socket, head);
+  } else {
+    socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
   }
 });
+
+function shutdown(exitCode = 0) {
+  if (draining) return;
+  draining = true;
+  const deadline = setTimeout(() => {
+    for (const socket of sockets) socket.destroy();
+    process.exit(exitCode);
+  }, shutdownTimeout);
+  deadline.unref();
+  server.close(() => { clearTimeout(deadline); process.exit(exitCode); });
+  server.closeIdleConnections?.();
+}
+process.once('SIGTERM', () => shutdown());
+process.once('SIGINT', () => shutdown());
+for (const event of ['unhandledRejection', 'uncaughtException']) {
+  process.once(event, error => {
+    console.error(`[API Gateway ${event}]`, error);
+    shutdown(1);
+  });
+}
 
 server.listen(PORT, () => {
   console.log(`🚀 API Gateway active on http://127.0.0.1:${PORT}`);

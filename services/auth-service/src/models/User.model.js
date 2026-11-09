@@ -135,6 +135,9 @@ const userSchema = new mongoose.Schema(
         quizTimer: false,
         shuffleQuestions: false,
         keyboardShortcutsEnabled: true,
+        messagingSendOnEnter: true,
+        messagingReadReceipts: true,
+        messagingTypingIndicators: true,
         panelWidths: {
           navigator: 20,
           workspace: 55,
@@ -238,16 +241,21 @@ userSchema.methods.isLocked = function () {
 
 // Increment failed attempts and trigger lockout if limit reached
 userSchema.methods.incrementLoginAttempts = async function () {
-  if (this.lockUntil && this.lockUntil < Date.now()) {
-    this.failedLoginAttempts = 1;
-    this.lockUntil = null;
-    return this.save({ validateBeforeSave: false });
-  }
-  this.failedLoginAttempts = (this.failedLoginAttempts || 0) + 1;
-  if (this.failedLoginAttempts >= 5) {
-    this.lockUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes lockout
-  }
-  return this.save({ validateBeforeSave: false });
+  const now = new Date();
+  const lockUntil = new Date(now.getTime() + 15 * 60 * 1000);
+  return this.constructor.updateOne(
+    { _id: this._id, $or: [{ lockUntil: null }, { lockUntil: { $lte: now } }] },
+    [
+      { $set: { failedLoginAttempts: {
+        $cond: [
+          { $ne: [{ $ifNull: ['$lockUntil', null] }, null] },
+          1,
+          { $add: [{ $ifNull: ['$failedLoginAttempts', 0] }, 1] },
+        ],
+      } } },
+      { $set: { lockUntil: { $cond: [{ $gte: ['$failedLoginAttempts', 5] }, lockUntil, null] } } },
+    ],
+  );
 };
 
 // Reset failed attempts on successful login

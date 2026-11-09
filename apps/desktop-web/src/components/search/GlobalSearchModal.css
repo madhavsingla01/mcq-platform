@@ -99,12 +99,19 @@
   border-radius: var(--radius-control, 8px);
   color: #9CA3AF;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  touch-action: manipulation;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease, color 140ms ease;
 }
 
-.global-search-icon-btn:hover {
-  background: rgba(255, 255, 255, 0.18);
-  color: #FFFFFF;
+.global-search-icon-btn:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .global-search-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: #FFFFFF;
+  }
 }
 
 .global-search-esc-badge {
@@ -117,23 +124,32 @@
   border-radius: var(--radius-sm, 6px);
   color: #9CA3AF;
   cursor: pointer;
-  transition: all 0.15s ease;
+  touch-action: manipulation;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), border-color 140ms ease, color 140ms ease;
   user-select: none;
 }
 
-.global-search-esc-badge:hover {
-  border-color: rgba(255, 255, 255, 0.25);
-  color: #FFFFFF;
+.global-search-esc-badge:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .global-search-esc-badge:hover {
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #FFFFFF;
+  }
 }
 
 /* ── Category Tabs (Instagram style) ── */
 .global-search-tabs {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   padding: 0 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background-color: #000000;
+  background: transparent;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
 .global-search-tab {
@@ -148,15 +164,22 @@
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: color 0.15s ease;
+  touch-action: manipulation;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), color 140ms ease;
 }
 
-.global-search-tab:hover {
-  color: #FFFFFF;
+.global-search-tab:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .global-search-tab:hover {
+    color: #FFFFFF;
+  }
 }
 
 .global-search-tab.active {
-  color: #FFFFFF;
+  color: #FF713D;
   font-weight: 600;
 }
 
@@ -237,12 +260,15 @@
   color: var(--color-primary, #FF4500);
   cursor: pointer;
   padding: 0;
-  transition: opacity 0.15s ease;
+  touch-action: manipulation;
+  transition: opacity 140ms ease;
 }
 
-.search-clear-all-btn:hover {
-  opacity: 0.8;
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .search-clear-all-btn:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+  }
 }
 
 .search-recent-list {
@@ -259,11 +285,18 @@
   border-radius: var(--radius-control, 8px);
   background-color: transparent;
   cursor: pointer;
-  transition: background-color 0.12s ease;
+  touch-action: manipulation;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 120ms ease;
 }
 
-.search-recent-item:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+.search-recent-item:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .search-recent-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
 }
 
 .search-recent-icon {
@@ -294,12 +327,19 @@
   border-radius: var(--radius-control, 8px);
   color: #6B7280;
   cursor: pointer;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  touch-action: manipulation;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), color 140ms ease, background-color 140ms ease;
 }
 
-.search-recent-remove-btn:hover {
-  color: #FFFFFF;
-  background-color: rgba(255, 255, 255, 0.10);
+.search-recent-remove-btn:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .search-recent-remove-btn:hover {
+    color: #FFFFFF;
+    background-color: rgba(255, 255, 255, 0.10);
+  }
 }
 
 .search-no-recent-text {
@@ -337,13 +377,20 @@
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  touch-action: manipulation;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
-.trending-tag-chip:hover {
-  background: rgba(255, 69, 0, 0.10);
-  border-color: rgba(255, 69, 0, 0.35);
-  color: #FFFFFF;
+.trending-tag-chip:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .trending-tag-chip:hover {
+    background: rgba(255, 69, 0, 0.10);
+    border-color: rgba(255, 69, 0, 0.35);
+    color: #FFFFFF;
+  }
 }
 
 .chip-hash-icon {
@@ -396,12 +443,19 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-control, 8px);
   cursor: pointer;
-  transition: background-color 0.12s ease, border-color 0.12s ease;
+  touch-action: manipulation;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 120ms ease, border-color 120ms ease;
 }
 
-.search-result-row:hover {
-  background-color: #121212;
-  border-color: rgba(255, 255, 255, 0.14);
+.search-result-row:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .search-result-row:hover {
+    background-color: #121212;
+    border-color: rgba(255, 255, 255, 0.14);
+  }
 }
 
 .result-avatar {
@@ -544,8 +598,7 @@
   align-items: center;
   gap: 8px;
   padding: 8px 20px 10px;
-  background-color: #050505;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: transparent;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -567,16 +620,18 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 10px;
+  min-height: 32px;
+  padding: 3px 6px;
   font-size: 12px;
   font-weight: 500;
   border-radius: var(--radius-pill, 9999px);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  border: 0;
+  white-space: nowrap;
   color: #D1D5DB;
   cursor: pointer;
   touch-action: manipulation;
-  transition: all 0.16s var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1));
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 160ms var(--ease-out), border-color 160ms var(--ease-out), color 160ms var(--ease-out);
 }
 
 .syntax-chip:active {
@@ -585,16 +640,12 @@
 
 @media (hover: hover) and (pointer: fine) {
   .syntax-chip:hover {
-    background: rgba(255, 69, 0, 0.12);
-    border-color: rgba(255, 69, 0, 0.35);
     color: #FFFFFF;
   }
 }
 
 .syntax-chip.active {
-  background: var(--color-primary, #FF4500);
-  border-color: var(--color-primary, #FF4500);
-  color: #000000;
+  color: #FF713D;
   font-weight: 700;
 }
 
@@ -603,10 +654,6 @@
   font-weight: 700;
   font-size: 13px;
   color: var(--color-primary, #FF4500);
-}
-
-.syntax-chip.active .syntax-symbol {
-  color: #000000;
 }
 
 /* ── Direct Jump Banner ── */
@@ -711,7 +758,9 @@
   padding: 1px 6px;
   border-radius: 4px;
   cursor: copy;
-  transition: all 0.14s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
 .quiz-row-code-badge:active {
@@ -722,6 +771,10 @@
   .quiz-row-code-badge:hover {
     background: rgba(255, 69, 0, 0.15);
     border-color: rgba(255, 69, 0, 0.4);
+    color: #FFFFFF;
+  }
+
+  .quiz-row-code-badge:hover .copy-icon {
     color: #FFFFFF;
   }
 }
@@ -735,10 +788,6 @@
   color: rgba(255, 255, 255, 0.4);
   margin-left: 2px;
   transition: color 0.14s ease;
-}
-
-.quiz-row-code-badge:hover .copy-icon {
-  color: #FFFFFF;
 }
 
 .quiz-row-code-badge .copy-icon.success {
@@ -772,3 +821,10 @@
     -webkit-overflow-scrolling: touch;
   }
 }
+
+.explore-header-search.search-is-open > button { visibility: hidden; }
+.explore-line-search .line-search-input { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.global-search-anchored { position: fixed; max-height: min(80dvh, calc(100dvh - 80px)); }
+.global-search-container .global-search-input-row { min-height: 48px; padding: 10px 14px; background: transparent; border-bottom: 1px solid var(--color-border); }
+.global-search-container .global-search-input { min-width: 0; color: #f4f4f5; }
+.global-search-container .global-search-input::placeholder { color: #a1a1aa; }

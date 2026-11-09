@@ -1,7 +1,6 @@
 .notifications-shell {
-  max-width: 840px;
   margin: 0 auto;
-  padding: 24px 16px 80px;
+  padding: 0 0 80px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -55,6 +54,8 @@
 }
 
 .notifications-list {
+  max-width: 840px;
+  margin-inline: auto;
   border: none;
   border-radius: 0;
   background: transparent;
@@ -76,8 +77,10 @@
   border-bottom: 1px solid var(--color-border);
 }
 
-.notification-row:hover {
-  background: rgba(255, 255, 255, 0.03);
+@media (hover: hover) and (pointer: fine) {
+  .notification-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
 }
 
 .notification-row.unread {
@@ -160,14 +163,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), color 140ms ease, border-color 140ms ease, background-color 140ms ease;
   flex-shrink: 0;
 }
 
-.btn-mark-single-read:hover {
-  color: var(--color-primary);
-  border-color: var(--color-primary);
-  background: var(--color-primary-light);
+.btn-mark-single-read:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-mark-single-read:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+  }
 }
 
 .notifications-state {

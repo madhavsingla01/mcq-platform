@@ -6,6 +6,24 @@ import './index.css';
 import './components/search/SearchField.css';
 import './components/ui/SegmentedControls.css';
 
+if (import.meta.env.PROD) {
+  window.addEventListener('vite:preloadError', (event) => {
+    const message = event.payload?.message || '';
+    if (!navigator.onLine || !/failed to fetch dynamically imported module|importing a module script failed|error loading dynamically imported module|unable to preload css/i.test(message)) return;
+
+    try {
+      const key = 'quizfocus.preload-recovery';
+      if (sessionStorage.getItem(key) === import.meta.url) return;
+      sessionStorage.setItem(key, import.meta.url);
+    } catch {
+      return;
+    }
+
+    event.preventDefault();
+    window.location.reload();
+  });
+}
+
 // Register G2 Squircle Paint Worklet for browsers supporting CSS Houdini Paint API
 if (typeof window !== 'undefined' && typeof CSS !== 'undefined' && 'paintWorklet' in CSS) {
   try {

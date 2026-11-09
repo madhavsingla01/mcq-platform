@@ -10,7 +10,9 @@
     padding: 60px 40px;
     text-align: center;
     background: var(--color-surface);
-    transition: all 0.3s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
     cursor: pointer;
     display: flex;
     flex-direction: column;
@@ -18,9 +20,15 @@
     gap: 12px;
   }
 
-  .qf-dropzone:hover {
-    border-color: var(--color-primary);
-    background: var(--color-primary-light);
+  .qf-dropzone:active {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .qf-dropzone:hover {
+      border-color: var(--color-primary);
+      background: var(--color-primary-light);
+    }
   }
 
   .qf-dropzone.active {

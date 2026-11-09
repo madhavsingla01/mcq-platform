@@ -32,11 +32,19 @@
   border-radius: 50%;
   color: var(--color-text);
   font-size: 16px;
-  transition: background 0.2s;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.attempt-detail-back-btn:hover {
-  background: var(--color-surface-hover);
+@media (hover: hover) and (pointer: fine) {
+  .attempt-detail-back-btn:hover {
+    background: var(--color-surface-hover);
+  }
+}
+
+.attempt-detail-back-btn:active {
+  transform: scale(0.97);
 }
 
 .attempt-detail-body {
@@ -183,16 +191,25 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), opacity 140ms ease;
 }
 
-.attempt-explanation-toggle:hover {
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .attempt-explanation-toggle:hover {
+    text-decoration: underline;
+  }
+}
+
+.attempt-explanation-toggle:active {
+  transform: scale(0.97);
 }
 
 .attempt-explanation-box {
   margin-top: 12px;
   padding: 16px;
-  background: rgba(79, 70, 229, 0.04);
+  background: var(--color-primary-light, rgba(255, 69, 0, 0.08));
   border-radius: 12px;
   font-size: 14px;
   color: var(--color-text);
@@ -230,11 +247,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), opacity 140ms ease;
 }
 
-.attempt-palette-btn:hover {
-  transform: scale(1.1);
+@media (hover: hover) and (pointer: fine) {
+  .attempt-palette-btn:hover {
+    transform: scale(1.05);
+  }
+}
+
+.attempt-palette-btn:active {
+  transform: scale(0.97);
 }
 
 .attempt-palette-legend {

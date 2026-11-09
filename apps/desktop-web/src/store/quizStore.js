@@ -85,6 +85,7 @@ const normalizeAnswerState = (answer = {}) => ({
   ]),
   submittedAt: normalizeIso(answer.submittedAt),
   isLocked: answer.isLocked === true,
+  feedbackCorrect: typeof answer.feedbackCorrect === 'boolean' ? answer.feedbackCorrect : null,
   lockedAt: normalizeIso(answer.lockedAt),
   lastClientUpdatedAt: normalizeIso(answer.lastClientUpdatedAt) || normalizeIso(answer.submittedAt),
 });
@@ -125,6 +126,7 @@ const mergeAnswerStates = (baseAnswer = createDefaultAnswerState(), incomingAnsw
 
   return {
     selectedAnswer: selectionConflict ? normalizedBase.selectedAnswer : selectedAnswer,
+    feedbackCorrect: [normalizedBase, normalizedIncoming].find(answer => answer.selectedAnswer === selectedAnswer && answer.feedbackCorrect !== null)?.feedbackCorrect ?? null,
     timeSpentMs: Math.max(normalizedBase.timeSpentMs, normalizedIncoming.timeSpentMs),
     visitTimestamps: dedupeIsoTimestamps([
       ...normalizedBase.visitTimestamps,
@@ -149,7 +151,10 @@ const buildAnswersMap = (questions, serverAttempt = null, localAnswers = null) =
   const serverAnswersByQuestionId = {};
 
   (serverAttempt?.answers || []).forEach((answer) => {
-    serverAnswersByQuestionId[String(answer.questionId)] = normalizeAnswerState(answer);
+    serverAnswersByQuestionId[String(answer.questionId)] = normalizeAnswerState({
+      ...answer,
+      feedbackCorrect: serverAttempt.instantFeedback && answer.isLocked && answer.selectedAnswer ? answer.isCorrect : null,
+    });
   });
 
   const localAnswerMap = localAnswers || {};

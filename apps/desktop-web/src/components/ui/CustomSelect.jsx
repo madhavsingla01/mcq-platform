@@ -90,6 +90,9 @@ export function CustomSelect({
     if (!isOpen || !portal || !triggerRef.current) return undefined;
 
     const updateDropdownPosition = () => {
+      const dropdown = listRef.current;
+      const optionsList = dropdown?.firstElementChild;
+      if (!optionsList) return;
       const triggerRect = triggerRef.current.getBoundingClientRect();
       let scrollBoundary = containerRef.current?.parentElement;
       while (scrollBoundary && scrollBoundary !== document.body) {
@@ -98,21 +101,38 @@ export function CustomSelect({
         scrollBoundary = scrollBoundary.parentElement;
       }
 
-      const boundaryRect = scrollBoundary && scrollBoundary !== document.body
+      const viewport = document.documentElement;
+      const boundary = scrollBoundary && scrollBoundary !== document.body
         ? scrollBoundary.getBoundingClientRect()
-        : { top: 0, bottom: window.innerHeight };
-      const desiredHeight = Math.min(240, Math.max(48, normalizedOptions.length * 36 + 12));
-      const spaceBelow = Math.max(0, boundaryRect.bottom - triggerRect.bottom - 14);
-      const spaceAbove = Math.max(0, triggerRect.top - boundaryRect.top - 14);
+        : { top: 0, bottom: viewport.clientHeight, left: 0, right: viewport.clientWidth };
+      const topEdge = Math.max(8, boundary.top + 4);
+      const bottomEdge = Math.min(viewport.clientHeight - 8, boundary.bottom - 4);
+      const leftEdge = Math.max(8, boundary.left);
+      const rightEdge = Math.min(viewport.clientWidth - 8, boundary.right);
+      if (triggerRect.bottom <= topEdge || triggerRect.top >= bottomEdge) {
+        setIsOpen(false);
+        return;
+      }
+
+      const style = window.getComputedStyle(dropdown);
+      const chrome = ['paddingTop', 'paddingBottom', 'borderTopWidth', 'borderBottomWidth']
+        .reduce((sum, property) => sum + parseFloat(style[property]), 0);
+      const desiredHeight = Math.min(240, optionsList.scrollHeight + chrome);
+      const gap = 6;
+      const spaceBelow = Math.max(0, bottomEdge - triggerRect.bottom - gap);
+      const spaceAbove = Math.max(0, triggerRect.top - topEdge - gap);
       const openAbove = spaceBelow < desiredHeight && spaceAbove > spaceBelow;
       const availableHeight = openAbove ? spaceAbove : spaceBelow;
-      const maxHeight = Math.max(48, Math.min(desiredHeight, availableHeight));
-      const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
-      const width = Math.min(triggerRect.width, viewportWidth - 16);
-      const left = Math.max(8, Math.min(triggerRect.left, viewportWidth - width - 8));
+      const maxHeight = Math.min(desiredHeight, availableHeight);
+      const width = Math.min(triggerRect.width, rightEdge - leftEdge);
+      if (maxHeight <= 0 || width <= 0) {
+        setIsOpen(false);
+        return;
+      }
+      const left = Math.max(leftEdge, Math.min(triggerRect.left, rightEdge - width));
       const top = openAbove
-        ? triggerRect.top - maxHeight - 6
-        : triggerRect.bottom + 6;
+        ? triggerRect.top - maxHeight - gap
+        : triggerRect.bottom + gap;
 
       setDropdownPosition((previous) => {
         const next = { top, left, width, maxHeight };
@@ -130,13 +150,27 @@ export function CustomSelect({
     };
 
     updateDropdownPosition();
+    const panel = triggerRef.current.closest('.settings-menu-panel');
+    panel?.addEventListener('animationend', updateDropdownPosition);
     window.addEventListener('resize', updateDropdownPosition);
     window.addEventListener('scroll', updateDropdownPosition, true);
     return () => {
       window.removeEventListener('resize', updateDropdownPosition);
       window.removeEventListener('scroll', updateDropdownPosition, true);
+      panel?.removeEventListener('animationend', updateDropdownPosition);
     };
   }, [isOpen, portal, normalizedOptions.length]);
+
+  useLayoutEffect(() => {
+    if (!isOpen || activeIndex < 0) return;
+    const list = listRef.current?.firstElementChild;
+    const option = list?.children[activeIndex];
+    if (!option) return;
+    const visible = list.getBoundingClientRect();
+    const item = option.getBoundingClientRect();
+    if (item.bottom > visible.bottom) list.scrollTop += item.bottom - visible.bottom;
+    else if (item.top < visible.top) list.scrollTop += item.top - visible.top;
+  }, [activeIndex, isOpen, dropdownPosition]);
 
   // Handle keyboard navigation
   const handleKeyDown = (e) => {
@@ -157,6 +191,7 @@ export function CustomSelect({
       }
     } else if (e.key === 'Escape' && isOpen) {
       e.preventDefault();
+      e.stopPropagation();
       setIsOpen(false);
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -199,7 +234,7 @@ export function CustomSelect({
     <div
       ref={listRef}
       id={`${selectId}-options`}
-      className={`g2-select-dropdown animate-scale-fade ${dropdownClassName}`}
+      className={`g2-select-dropdown ${portal ? 'g2-select-dropdown--portal' : 'animate-scale-fade'} ${dropdownClassName}`}
       role="listbox"
       tabIndex={-1}
       style={portal ? {
@@ -209,7 +244,7 @@ export function CustomSelect({
         width: dropdownPosition?.width,
         minWidth: 0,
         maxHeight: dropdownPosition?.maxHeight,
-        zIndex: 1100,
+        zIndex: triggerRef.current?.closest('.settings-menu-panel') ? 1300 : 1100,
       } : undefined}
     >
       <div className="g2-select-options-list">

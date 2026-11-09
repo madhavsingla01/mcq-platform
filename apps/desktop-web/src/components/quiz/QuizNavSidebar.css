@@ -61,13 +61,20 @@
   color: var(--color-text);
   font-size: 14px;
   font-weight: 700;
-  cursor: pointer;
-  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
 }
 
-.quiz-sidebar-index:hover {
-  transform: translateY(-1px);
-  border-color: var(--color-primary);
+@media (hover: hover) and (pointer: fine) {
+  .quiz-sidebar-index:hover {
+    transform: translateY(-1px);
+    border-color: var(--color-primary);
+  }
+}
+
+.quiz-sidebar-index:active {
+  transform: scale(0.97);
 }
 
 .quiz-sidebar-index.current {

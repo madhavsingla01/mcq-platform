@@ -1,0 +1,17 @@
+# Authentication and sessions
+
+- Login accepts the existing `email` field and the `identifier` alias. Both can contain a username or email. Wrong passwords and unknown identifiers share an error message and each performs a bcrypt comparison. Existing account lockout remains five failures followed by 15 minutes. Failure counting is atomic.
+- New passwords use the existing bcrypt cost of 12 and a maximum of 72 UTF-8 bytes. Existing credentials use their original comparison path. The minimum remains six characters for compatibility.
+- Access and refresh tokens use separate configured keys and HS256. Access verification requires a MongoDB account ID, expiration, and a valid token version when present. Signed media grants carry their own audience, issuer and purpose.
+- The access and refresh cookies are HttpOnly and their browser lifetimes follow the signed expiration. In production they use Secure and SameSite=None with configured origins. Cookie-authenticated writes require a matching readable CSRF cookie and header. Bearer-only clients can use their existing authorization path.
+- Each account has one current refresh credential. A successful login replaces it. Older access tokens can remain valid until expiry or a token-version change. Refresh and bootstrap compare the submitted credential with the current stored value and replace it atomically. A losing refresh returns 401 without clearing cookies written by a concurrent winner.
+- Explicit logout revokes the account's older sessions. Password change and password-confirmed session revocation advance the version and issue replacement cookies for the current browser. A stale refresh cookie cannot revoke a newer refresh credential.
+- Account deletion disables the account, removes its refresh credential and replaces its stored password with the bcrypt hash of a random value.
+- The desktop client shares one refresh promise per tab, retries each request once, and checks the browser's current session after a refresh 401. A transient network or service error during refresh keeps local sign-in state. Simultaneous refreshes across tabs still depend on the browser receiving the winner's cookies in time.
+- The desktop checks the server on startup, ignores session checks that return after a newer local sign-in or sign-out, and displays a retry message if the server cannot confirm sign-out. Expired sessions prompt users to sign in again. Login and registration accept only local redirect paths.
+
+## Abuse limits
+
+Login and registration each allow 150 requests per source IP per 15 minutes, with a second limit of 50 per IP and normalized identifier on each route. Refresh allows 50 per IP per 15 minutes. Session revocation uses IP and the authenticated user ID. The counters are in memory per Auth replica. They reset when the replica restarts, and the limit returns 429 with `Retry-After`. Auth uses the configured trusted proxy hops to establish the source IP. It does not use an arbitrary identifier sent to refresh as part of the limit.
+
+There is no new per-device session model, MFA, password reset or external identity provider in this step. See the [migration plan](28-security-migration-plan.md) for deployment order. [OWASP Session Management](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html) · [OWASP Password Storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)

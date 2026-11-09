@@ -1,3 +1,5 @@
+import { rankSearchResults } from '../../components/search/rankSearchResults';
+import { usePageSearch } from '../../components/search/PageSearchContext';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
@@ -53,6 +55,7 @@ import { MediaService } from '../../services/media.service';
 import { useAuthStore } from '../../store/authStore';
 import { Spinner, EmptyState } from '../../components/ui';
 import QuizCard from '../../components/quiz/QuizCard';
+import ShareModal from '../../components/social/ShareModal';
 import { messageService } from '../../services/message.service';
 import { toast } from 'sonner';
 import './PublicProfile.css';
@@ -124,7 +127,8 @@ export default function PublicProfile() {
 
   // YouTube features: About Modal, In-channel Search, Copied Toast
   const [aboutModalOpen, setAboutModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [shareProfileOpen, setShareProfileOpen] = useState(false);
+  const { query: searchQuery, setQuery: setSearchQuery } = usePageSearch();
   const [copiedLink, setCopiedLink] = useState(false);
   const [isReporting, setIsReporting] = useState(false);
 
@@ -142,16 +146,8 @@ export default function PublicProfile() {
   }, [quizzes]);
 
   const visibleQuizzes = useMemo(() => {
-    let list = activeTab === 'challenges' ? challengeQuizzes : quizzes;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      list = list.filter((item) =>
-        (item.title && item.title.toLowerCase().includes(q)) ||
-        (item.description && item.description.toLowerCase().includes(q)) ||
-        (item.category && item.category.toLowerCase().includes(q))
-      );
-    }
-    return list;
+    const list = activeTab === 'challenges' ? challengeQuizzes : quizzes;
+    return rankSearchResults(list, searchQuery, item => [item.title, item.description, item.category]);
   }, [quizzes, challengeQuizzes, activeTab, searchQuery]);
 
   const totalQuizPages = Math.max(1, Math.ceil(visibleQuizzes.length / QUIZZES_PER_PAGE));
@@ -417,22 +413,6 @@ export default function PublicProfile() {
     }
   };
 
-  const handleShareProfile = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `${profile?.name || profile?.username} on QuizFocus`,
-          text: `Check out ${profile?.name || profile?.username}'s quizzes and challenges!`,
-          url: customProfileUrl,
-        });
-        return;
-      } catch {
-        // user cancelled or share failed
-      }
-    }
-    handleCopyCustomUrl();
-  };
-
   const handleReportUser = async () => {
     if (!profile?._id || isReporting) return;
     setIsReporting(true);
@@ -507,13 +487,13 @@ export default function PublicProfile() {
 
   const totalQuestions = quizzes.reduce((sum, q) => sum + (q.questionCount || q.questions?.length || 0), 0);
   const totalAttempts = quizzes.reduce((sum, q) => sum + (q.totalAttempts || 0), 0);
-  const hasBanner = !bannerError && Boolean(profile.banner);
+  const hasBanner = Boolean(profile.banner) && bannerError !== profile.banner;
 
   return (
     <div className="creator-profile-container yt-profile-container">
       {/* 1. YouTube Panoramic Channel Banner */}
-      <div className="yt-banner-container">
-        {hasBanner ? (
+      {hasBanner && (
+        <div className="yt-banner-container">
           <div className="yt-banner-media">
             <img
               src={profile.banner}
@@ -521,7 +501,7 @@ export default function PublicProfile() {
               className="yt-banner-img"
               loading="lazy"
               decoding="async"
-              onError={() => setBannerError(true)}
+              onError={() => setBannerError(profile.banner)}
             />
             {isOwnProfile && (
               <div className="yt-banner-owner-actions">
@@ -547,31 +527,15 @@ export default function PublicProfile() {
               </div>
             )}
           </div>
-        ) : (
-          <div className="yt-banner-placeholder">
-            {isOwnProfile ? (
-              <button
-                type="button"
-                className="yt-banner-add-btn"
-                onClick={() => bannerInputRef.current?.click()}
-                disabled={isUploadingBanner}
-              >
-                <Camera size={15} />
-                <span>{isUploadingBanner ? 'Uploading...' : 'Add Channel Banner'}</span>
-              </button>
-            ) : (
-              <div className="yt-banner-gradient-strip" />
-            )}
-          </div>
-        )}
-        <input
+        </div>
+      )}
+      {isOwnProfile && <input
           ref={bannerInputRef}
           type="file"
           accept="image/*"
           style={{ display: 'none' }}
           onChange={handleBannerUpload}
-        />
-      </div>
+        />}
 
       {/* 2. YouTube Channel Identity Header Row (Matches YouTube Fireship Screenshot 2) */}
       <section className="yt-channel-header">
@@ -596,7 +560,7 @@ export default function PublicProfile() {
         <div className="yt-channel-info-col">
           {/* Channel Name & Verified Badge */}
           <div className="yt-title-row">
-            <h1 className="yt-channel-name">{profile.name || profile.username}</h1>
+            <h2 className="yt-channel-name">{profile.name || profile.username}</h2>
             <span className="yt-verified-badge" title="Verified Creator">
               <CheckCircle2 size={20} className="yt-verified-icon" />
             </span>
@@ -680,14 +644,9 @@ export default function PublicProfile() {
                 <Link to="/create" className="yt-btn yt-btn-primary">
                   <span>Create Quiz</span>
                 </Link>
-                <button
-                  type="button"
-                  className="yt-btn yt-btn-secondary"
-                  onClick={handleShareProfile}
-                >
-                  <Share2 size={15} />
-                  <span>{copiedLink ? 'Copied!' : 'Share'}</span>
-                </button>
+                {!hasBanner && <button type="button" className="yt-btn yt-btn-secondary" onClick={() => bannerInputRef.current?.click()} disabled={isUploadingBanner}>
+                  <Camera size={15} /> <span>{isUploadingBanner ? 'Uploading…' : 'Add banner'}</span>
+                </button>}
               </>
             ) : (
               <>
@@ -732,14 +691,6 @@ export default function PublicProfile() {
                   <span>Message</span>
                 </button>
 
-                <button
-                  type="button"
-                  className="yt-btn yt-btn-secondary"
-                  onClick={handleShareProfile}
-                >
-                  <Share2 size={15} />
-                  <span>{copiedLink ? 'Copied!' : 'Share'}</span>
-                </button>
               </>
             )}
           </div>
@@ -786,29 +737,6 @@ export default function PublicProfile() {
             </button>
           </div>
 
-          {/* In-Channel Search (YouTube Channel Feature) */}
-          {quizzes.length > 0 && (activeTab === 'quizzes' || activeTab === 'challenges') && (
-            <div className="yt-channel-search consistent-search-field">
-              <Search size={15} className="yt-search-icon" />
-              <input
-                type="text"
-                placeholder="Search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="yt-search-input consistent-search-input"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  className="yt-search-clear"
-                  onClick={() => setSearchQuery('')}
-                  title="Clear search"
-                >
-                  <X size={13} />
-                </button>
-              )}
-            </div>
-          )}
         </div>
 
         {profile?.isPrivate && !isFollowing && !isOwnProfile ? (
@@ -1190,10 +1118,10 @@ export default function PublicProfile() {
                 <button
                   type="button"
                   className="yt-about-footer-btn yt-about-share-btn"
-                  onClick={handleShareProfile}
+                  onClick={() => { setAboutModalOpen(false); setShareProfileOpen(true); }}
                 >
                   <Share2 size={16} />
-                  <span>{copiedLink ? 'Link Copied!' : 'Share channel'}</span>
+                  <span>Share channel</span>
                 </button>
                 <button
                   type="button"
@@ -1375,6 +1303,8 @@ export default function PublicProfile() {
           </div>
         </div>
       )}
+      <ShareModal isOpen={shareProfileOpen} onClose={() => setShareProfileOpen(false)}
+        profile={{ title: profile.name || profile.username, url: customProfileUrl }} />
     </div>
   );
 }

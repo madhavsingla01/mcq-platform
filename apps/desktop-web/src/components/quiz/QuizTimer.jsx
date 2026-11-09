@@ -8,7 +8,7 @@ import './QuizTimer.css';
  * Reads entirely from timerStore (frontend-driven).
  * No backend calls.
  */
-function QuizTimer({ compact = false, onExpired }) {
+function QuizTimer({ compact = false, hidden = false, onExpired }) {
   const {
     timerMode,
     remainingMs,
@@ -27,7 +27,7 @@ function QuizTimer({ compact = false, onExpired }) {
     }
   }, [isExpired, timerMode, hasDeadline, onExpired]);
 
-  if (timerMode === 'none' && !hasDeadline) {
+  if (hidden || (timerMode === 'none' && !hasDeadline)) {
     return null;
   }
 
@@ -40,7 +40,7 @@ function QuizTimer({ compact = false, onExpired }) {
   ].filter(Boolean).join(' ');
 
   return (
-    <div className={timerClass}>
+    <div className={timerClass} role="timer" aria-live="off" aria-label="Time remaining">
       <span className="quiz-timer-label">
         {isExpired ? 'Time Expired' : 'Time Left'}
       </span>

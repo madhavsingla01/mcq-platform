@@ -4,27 +4,6 @@
  * CSRF tokens, headers, and authentication state isolation.
  */
 
-import path from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const AUTH_JWT_PATH = path.resolve(__dirname, '../../../services/auth-service/node_modules/jsonwebtoken/index.js');
-
-let cachedJwt = null;
-async function getJwtLib() {
-  if (cachedJwt) return cachedJwt;
-  try {
-    const mod = await import(pathToFileURL(AUTH_JWT_PATH).href);
-    cachedJwt = mod.default || mod;
-    return cachedJwt;
-  } catch {
-    return null;
-  }
-}
-
-const JWT_SECRET = process.env.JWT_SECRET || 'agacTU3wgK3s2sWFASUE-zofnDRx36g2Z7NNRHUQGAl5BrzcBfZB2ORC6BCd1kj6';
-
 export class ApiClient {
   constructor(baseUrl = process.env.API_GATEWAY_URL || 'http://127.0.0.1:5000') {
     this.baseUrl = baseUrl.replace(/\/$/, '');
@@ -200,10 +179,7 @@ export class ApiClient {
     return this.request('DELETE', path, options);
   }
 
-  /**
-   * Helper: register a unique user and establish an active session.
-   * If the in-memory IP rate limiter trips (429), safely signs a valid session token.
-   */
+  /** Register a new test account; never impersonate a pre-existing account. */
   async registerTestUser(prefix = 'testuser') {
     const timestamp = Date.now().toString(36);
     const rand = Math.random().toString(36).substring(2, 6);
@@ -222,25 +198,7 @@ export class ApiClient {
     let userId = res.data?.data?.user?._id || res.data?.data?.user?.id;
     let user = res.data?.data?.user;
 
-    // If rate limited on register endpoint, use signed session token fallback
-    if (res.status === 429 || !userId) {
-      const jwtLib = await getJwtLib();
-      if (jwtLib) {
-        // Fallback test user ID in MongoDB
-        userId = '6ad99ce016701591965e1a43';
-        const fallbackToken = jwtLib.sign(
-          { id: userId, tokenVersion: 7 },
-          JWT_SECRET,
-          { expiresIn: '15m' }
-        );
-        this.setToken(fallbackToken);
-        const meRes = await this.get('/api/v1/auth/me');
-        if (meRes.status === 200 && meRes.data?.data?.user) {
-          user = meRes.data.data.user;
-          userId = user._id;
-        }
-      }
-    }
+    if (!res.ok || !userId) throw new Error('Test registration failed: ' + res.status + ' ' + (res.data?.message || 'missing user'));
 
     return {
       name,

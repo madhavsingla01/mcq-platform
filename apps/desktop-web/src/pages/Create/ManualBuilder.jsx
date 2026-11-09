@@ -1,5 +1,8 @@
+import MediaEditor from '../../components/media/MediaEditor';
+import AccessibleMedia from '../../components/media/AccessibleMedia';
+import { MAX_BUILDER_OPTIONS, fillBuilderOptions, isEmptyBuilderOption, withMediaIds, reorderBuilderOption, removeBuilderOption, firstMediaIssue } from '../../utils/builderMediaState';
 import './ManualBuilder.css';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useId, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -37,6 +40,9 @@ import {
   FileText,
   Bookmark,
   ExternalLink,
+  Ellipsis,
+  Video,
+  Volume2,
 } from 'lucide-react';
 import api from '../../api/axios';
 import { compressImage } from '../../utils/imageCompressor';
@@ -73,7 +79,7 @@ const QUESTION_TYPES = [
   { id: 'checkboxes', label: 'Multiple Select', icon: CheckSquare, desc: 'Multiple correct options' },
   { id: 'dropdown', label: 'Dropdown Selection', icon: ListFilter, desc: 'Select from a dropdown' },
   { id: 'true_false', label: 'True / False', icon: Zap, desc: 'Binary true or false choice' },
-  { id: 'short_answer', label: 'Short Answer', icon: FileText, desc: 'Exact text or keyword match' },
+  { id: 'short_answer', label: 'Short Answer', icon: FileText, desc: 'Match the expected answer' },
 ];
 
 const toLocalDateTimeValue = (value) => {
@@ -81,6 +87,117 @@ const toLocalDateTimeValue = (value) => {
   const offset = date.getTimezoneOffset() * 60_000;
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 };
+
+function BuilderActions({ label, children }) {
+  return (
+    <details
+      className="builder-item-actions"
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false;
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape' || !event.currentTarget.open) return;
+        event.stopPropagation();
+        event.currentTarget.open = false;
+        event.currentTarget.querySelector('summary')?.focus();
+      }}
+      onClick={(event) => {
+        if (!event.target.closest('button')) return;
+        event.currentTarget.open = false;
+        event.currentTarget.querySelector('summary')?.focus();
+      }}
+    >
+      <summary aria-label={label}><Ellipsis size={19} aria-hidden="true" /></summary>
+      <div className="builder-item-actions-list">{children}</div>
+    </details>
+  );
+}
+
+function getQuestionMediaItems(question, index) {
+  const questionLabel = `Question ${index + 1}`;
+  return [
+    { key: question.id, questionId: question.id, optionId: null, title: 'Question media',
+      label: questionLabel, text: question.text, clips: question.accessibilityMedia },
+    ...question.options.map((text, optionIndex) => {
+      const optionId = question.optionIds[optionIndex];
+      const letter = String.fromCharCode(65 + optionIndex);
+      return {
+        key: `${question.id}-${optionId}`, questionId: question.id, optionId,
+        title: `Option ${letter} media`, label: `${questionLabel}, option ${letter}`,
+        text, clips: question.optionMedia[optionId] || [],
+      };
+    }),
+  ];
+}
+
+function BuilderMediaPreview({ item }) {
+  const container = useRef(null);
+  const [nearViewport, setNearViewport] = useState(false);
+  useEffect(() => {
+    if (!globalThis.IntersectionObserver) {
+      setNearViewport(true);
+      return;
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      setNearViewport(true);
+      observer.disconnect();
+    }, { rootMargin: '300px' });
+    observer.observe(container.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return <div ref={container} className="builder-inline-media" role="group" aria-label={`Preview for ${item.label}`}>
+    {nearViewport && <AccessibleMedia clips={item.clips.filter(clip => clip.assetId)} text={item.text} preview />}
+  </div>;
+}
+
+function OptionFill({ question, onFill }) {
+  const labelId = useId();
+  const details = useRef(null);
+  const [custom, setCustom] = useState('');
+  const [error, setError] = useState('');
+  const blankCount = question.options.filter((_, index) => isEmptyBuilderOption(question, index)).length;
+  const capacity = blankCount + Math.max(0, MAX_BUILDER_OPTIONS - question.options.length);
+
+  function apply(entries, byPosition) {
+    onFill(entries, byPosition);
+    setCustom('');
+    setError('');
+    details.current.open = false;
+    details.current.querySelector('summary').focus({ preventScroll: true });
+  }
+
+  function applyCustom(event) {
+    event.preventDefault();
+    const entries = custom.split(/\r?\n/).map(value => value.trim()).filter(Boolean);
+    if (entries.length > capacity) {
+      setError(`There ${capacity === 1 ? 'is' : 'are'} room for ${capacity} more ${capacity === 1 ? 'choice' : 'choices'}.`);
+      return;
+    }
+    if (entries.length) apply(entries, false);
+  }
+
+  return <details className="builder-option-fill" ref={details}>
+    <summary className="builder-media-button"><ListFilter size={16} aria-hidden="true" /> Fill options</summary>
+    <div className="builder-option-fill-body">
+      <p>Presets fill blank choices. Custom entries can also add new choices.</p>
+      <div className="builder-option-fill-presets">
+        <button type="button" className="builder-media-button" disabled={!blankCount}
+          onClick={() => apply(question.options.map((_, index) => String.fromCharCode(65 + index)), true)}>A, B, C…</button>
+        <button type="button" className="builder-media-button" disabled={!blankCount}
+          onClick={() => apply(question.options.map((_, index) => String(index + 1)), true)}>1, 2, 3…</button>
+      </div>
+      <form className="builder-option-fill-custom" onSubmit={applyCustom}>
+        <label htmlFor={labelId}>Custom choices, one per line</label>
+        <textarea id={labelId} rows={3} value={custom} disabled={!capacity}
+          onChange={event => { setCustom(event.target.value); setError(''); }} />
+        {error && <p role="alert">{error}</p>}
+        <button type="submit" className="builder-media-button" disabled={!capacity || !custom.trim()}>Apply custom choices</button>
+      </form>
+    </div>
+  </details>;
+}
 
 export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
   const navigate = useNavigate();
@@ -92,7 +209,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
   const fileInputRef = useRef(null);
 
   // ── Draft Tracking State ──
-  const [activeDraftId, setActiveDraftId] = useState(draftIdParam || null);
+  const [activeDraftId, setActiveDraftId] = useState(null);
   const [lastSavedAt, setLastSavedAt] = useState(null);
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
   const handleSaveRef = useRef(null);
@@ -150,7 +267,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
   const [floatingSettingsTab, setFloatingSettingsTab] = useState('general'); // 'general' | 'timer'
 
   // ── Questions State ──
-  const [questions, setQuestions] = useState([
+  const [questions, setQuestionsState] = useState([
     {
       id: 'q-init-1',
       text: '',
@@ -167,7 +284,43 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
       mediaUrl: '',
       activeTab: 'content', // 'content' | 'settings'
     },
-  ]);
+  ].map(withMediaIds));
+  const setQuestions = useCallback((update) => setQuestionsState(previous => {
+    const next = typeof update === 'function' ? update(previous) : update;
+    return next.map(withMediaIds);
+  }), []);
+  const [mediaTarget, setMediaTarget] = useState(null);
+  const [openedMedia, setOpenedMedia] = useState(() => new Set());
+  const mediaTriggerRef = useRef(null);
+  const mediaHeadingRef = useRef(null);
+  const mediaBodyRef = useRef(null);
+  const canvasRef = useRef(null);
+  const mediaItemsByQuestion = questions.map(getQuestionMediaItems);
+  const mediaItems = mediaItemsByQuestion.flat();
+  const activeMedia = mediaItems.find(item => item.key === mediaTarget);
+
+  const openMedia = (item, trigger) => {
+    mediaTriggerRef.current = trigger || null;
+    setOpenedMedia(previous => previous.has(item.key) ? previous : new Set(previous).add(item.key));
+    setMediaTarget(item.key);
+    if (item.key === mediaTarget) mediaHeadingRef.current?.focus();
+  };
+
+  const closeMedia = () => {
+    const key = mediaTarget;
+    const trigger = mediaTriggerRef.current;
+    setMediaTarget(null);
+    requestAnimationFrame(() => {
+      const fallback = document.getElementById(`media-trigger-${key}`);
+      (trigger?.isConnected ? trigger : fallback)?.focus();
+    });
+  };
+
+  useEffect(() => {
+    if (!activeMedia) return;
+    if (mediaBodyRef.current) mediaBodyRef.current.scrollTop = 0;
+    mediaHeadingRef.current?.focus();
+  }, [activeMedia?.key]);
 
   // ── Execution State ──
   const [saving, setSaving] = useState(false);
@@ -209,14 +362,14 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
       question.options.some((option) => option.trim()) ||
       question.shortAnswer.trim() ||
       question.explanation.trim() ||
-      question.mediaUrl.trim()
+      question.mediaUrl.trim() || question.accessibilityMedia?.length || Object.values(question.optionMedia || {}).some(clips => clips.length)
     ))
   );
 
-  const applyLocalCheckpoint = (checkpoint) => {
+  const applyLocalCheckpoint = (checkpoint, draftId = checkpoint.draftId) => {
     hasUnsavedChangesRef.current = true;
-    setIsChallengeBuilder(checkpoint.isChallenge === true || challengeRoute);
-    setActiveDraftId(checkpoint.draftId || draftIdParam || null);
+    setIsChallengeBuilder(checkpoint.isChallenge === true);
+    setActiveDraftId(draftId || null);
     setTitle(checkpoint.title || '');
     setDescription(checkpoint.description || '');
     setCoverImage(checkpoint.coverImage || '');
@@ -245,17 +398,31 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
 
   // ── Hydrate Draft If Provided in URL ──
   useEffect(() => {
+    setRecoveryReady(false);
     if (!draftIdParam) {
       let isMounted = true;
       const restoreCheckpoint = async () => {
         try {
           if (recoveryUserId) {
-            const checkpoint = await loadQuizBuilderCheckpoint(recoveryUserId);
+            const checkpoint = await loadQuizBuilderCheckpoint(recoveryUserId, challengeRoute);
+            let recoveredDraftId = checkpoint?.draftId || null;
+            if (recoveredDraftId) {
+              try {
+                const { data } = await api.get(`/quiz/drafts/${recoveredDraftId}`);
+                const draft = data.data?.draft;
+                if (!draft || Boolean(draft.isChallenge) !== challengeRoute ||
+                  (challengeRoute && draft.challengeStatus !== 'draft' && draft.metadata?.savedAsDraft !== true)) recoveredDraftId = null;
+              } catch (error) {
+                if (error.response?.status === 404) recoveredDraftId = null;
+              }
+            }
             if (isMounted && checkpoint) {
               skipDirtyEffectRef.current = true;
-              applyLocalCheckpoint(checkpoint);
+              applyLocalCheckpoint(checkpoint, recoveredDraftId);
               setRecoveryStatus('Recovered');
-              setFeedback({ type: 'success', text: 'Recovered your latest quiz checkpoint.' });
+              setFeedback({ type: 'success', text: checkpoint.draftId && !recoveredDraftId
+                ? 'Recovered your local work. Save Draft will create a new copy.'
+                : 'Recovered your latest builder checkpoint.' });
             }
           } else {
             setRecoveryStatus('Recovery unavailable');
@@ -287,6 +454,10 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
         if (!isMounted) return;
         const d = data.data?.draft;
         if (d) {
+          if (Boolean(d.isChallenge) !== challengeRoute) {
+            navigate(`/create/${d.isChallenge ? 'challenge' : 'manual'}?draftId=${encodeURIComponent(d._id)}`, { replace: true });
+            return;
+          }
           skipDirtyEffectRef.current = true;
           setActiveDraftId(d._id);
           setIsChallengeBuilder(d.isChallenge === true);
@@ -323,7 +494,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
                 qType === 'true_false' ||
                 (Array.isArray(q.options) &&
                   q.options.length === 2 &&
-                  (q.options[0]?.text === 'True' || q.options[0] === 'True'));
+                  ['True', 'False'].every(value => q.options.some(option => (option?.text ?? option) === value)));
 
               let options = ['Option 1', 'Option 2', 'Option 3', 'Option 4'];
               let correctIndex = 0;
@@ -331,8 +502,9 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
               let shortAnswer = '';
 
               if (isTrueFalse) {
-                options = ['True', 'False'];
-                correctIndex = q.correctAnswer === 'B' || q.correctAnswer === 'False' ? 1 : 0;
+                options = q.options?.length === 2 ? q.options.map(option => option?.text ?? option) : ['True', 'False'];
+                const correct = q.options?.findIndex(option => option?.label === q.correctAnswer || option?.isCorrect || (option?.text ?? option) === q.correctAnswer);
+                correctIndex = correct >= 0 ? correct : q.correctOption === 1 || q.correctAnswer === 'B' ? 1 : 0;
               } else if (isCheckboxes) {
                 options =
                   Array.isArray(q.options) && q.options.length
@@ -374,6 +546,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
                 }
               }
 
+              const optionIds = options.map((_, index) => q.options?.[index]?.optionId || String(q.options?.[index]?._id || crypto.randomUUID()));
               return {
                 id: q._id ? `q-loaded-${q._id}` : `q-${Date.now()}-${idx}`,
                 text: q.questionText || '',
@@ -388,6 +561,9 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
                 difficulty: q.difficulty || 'Inherit',
                 category: q.category || 'General',
                 mediaUrl: q.media?.url || '',
+                accessibilityMedia: q.accessibilityMedia || [],
+                optionIds,
+                optionMedia: Object.fromEntries(optionIds.map((optionId, index) => [optionId, q.options?.[index]?.accessibilityMedia || []])),
                 activeTab: 'content',
               };
             });
@@ -400,11 +576,10 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
 
           if (recoveryUserId) {
             try {
-              const checkpoint = await loadQuizBuilderCheckpoint(recoveryUserId);
+              const checkpoint = await loadQuizBuilderCheckpoint(recoveryUserId, Boolean(d.isChallenge));
               const checkpointMatchesDraft = checkpoint?.draftId === String(d._id);
               const checkpointIsNewer = checkpointMatchesDraft && (
-                !checkpoint.serverSavedAt ||
-                new Date(checkpoint.savedAt).getTime() > new Date(checkpoint.serverSavedAt).getTime()
+                !d.updatedAt || new Date(checkpoint.savedAt).getTime() > new Date(d.updatedAt).getTime()
               );
               if (isMounted && checkpointIsNewer) {
                 skipDirtyEffectRef.current = true;
@@ -427,14 +602,18 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
           }
         }
       } catch (err) {
+        const draftMissing = err?.response?.status === 404;
+        if (isMounted) setActiveDraftId(null);
         if (recoveryUserId) {
           try {
-            const checkpoint = await loadQuizBuilderCheckpoint(recoveryUserId);
+            const checkpoint = await loadQuizBuilderCheckpoint(recoveryUserId, challengeRoute);
             if (isMounted && checkpoint?.draftId === String(draftIdParam)) {
               skipDirtyEffectRef.current = true;
-              applyLocalCheckpoint(checkpoint);
+              applyLocalCheckpoint(checkpoint, draftMissing ? null : checkpoint.draftId);
               setRecoveryStatus('Recovered offline');
-              setFeedback({ type: 'success', text: 'The server draft is unavailable; recovered your local checkpoint.' });
+              setFeedback({ type: 'success', text: draftMissing
+                ? 'Recovered your local work. Save Draft will create a new copy.'
+                : 'The server draft is unavailable. Your local work was recovered.' });
             } else if (isMounted) {
               setFeedback({
                 type: 'error',
@@ -468,7 +647,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
     return () => {
       isMounted = false;
     };
-  }, [draftIdParam, recoveryUserId]);
+  }, [challengeRoute, draftIdParam, navigate, recoveryUserId]);
 
   useEffect(() => {
     if (!recoveryReady) return;
@@ -507,7 +686,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
   useEffect(() => {
     if (!recoveryReady || !recoveryUserId) return undefined;
     const timer = window.setTimeout(async () => {
-      if (recoveryDisabledRef.current) return;
+      if (recoveryDisabledRef.current || !hasUnsavedChangesRef.current || !hasEditorContentRef.current) return;
       setRecoveryStatus('Saving locally…');
       try {
         await saveQuizBuilderCheckpoint(recoveryUserId, recoverySnapshotRef.current);
@@ -567,7 +746,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
   useEffect(() => {
     if (!recoveryReady || !recoveryUserId) return undefined;
     const flushCheckpoint = () => {
-      if (recoveryDisabledRef.current) return;
+      if (recoveryDisabledRef.current || !hasUnsavedChangesRef.current || !hasEditorContentRef.current) return;
       saveQuizBuilderCheckpoint(recoveryUserId, recoverySnapshotRef.current).catch((error) => {
         setRecoveryStatus('Local checkpoint failed');
         setFeedback({ type: 'error', text: error.message || 'Could not save the local quiz checkpoint.' });
@@ -785,14 +964,18 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
     setActiveQuestionIndex(index);
     setShowQuestionJump(false);
     const element = document.getElementById(`q-card-${index}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    const canvas = canvasRef.current;
+    if (!element || !canvas) return;
+    const offset = element.getBoundingClientRect().top - canvas.getBoundingClientRect().top;
+    const inset = Math.max(0, (canvas.clientHeight - element.offsetHeight) / 2);
+    canvas.scrollTo({ top: canvas.scrollTop + offset - inset, behavior: 'smooth' });
   };
 
   const updateQuestionField = (index, field, value) => {
     const updated = [...questions];
-    updated[index][field] = value;
+    const question = updated[index];
+    updated[index] = { ...question, [field]: value };
+    if (field === 'text') updated[index].accessibilityMedia = question.accessibilityMedia.map(clip => ({ ...clip, equivalenceReviewed: false }));
     setQuestions(updated);
   };
 
@@ -802,12 +985,13 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
     q.type = newType;
     if (newType === 'true_false') {
       q.options = ['True', 'False'];
+      q.optionIds = q.options.map(() => crypto.randomUUID()); q.optionMedia = {};
       q.correctIndex = 0;
     } else if (newType === 'short_answer') {
-      q.options = [];
+      q.options = []; q.optionIds = []; q.optionMedia = {};
     } else {
       if (!q.options || q.options.length < 2) {
-        q.options = ['', '', '', ''];
+        q.options = ['', '', '', '']; q.optionIds = q.options.map(() => crypto.randomUUID()); q.optionMedia = {};
       }
     }
     setQuestions(updated);
@@ -815,38 +999,46 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
 
   const updateOptionText = (qIndex, oIndex, value) => {
     const updated = [...questions];
-    updated[qIndex].options[oIndex] = value;
+    const question = updated[qIndex];
+    const optionId = question.optionIds[oIndex];
+    updated[qIndex] = {
+      ...question,
+      options: question.options.map((option, index) => index === oIndex ? value : option),
+      optionMedia: { ...question.optionMedia, [optionId]: (question.optionMedia[optionId] || []).map(clip => ({ ...clip, equivalenceReviewed: false })) },
+    };
     setQuestions(updated);
   };
 
   const addOptionToQuestion = (qIndex) => {
     const updated = [...questions];
-    if (updated[qIndex].options.length >= 8) {
-      setFeedback({ type: 'error', text: 'Maximum 8 options allowed per question.' });
+    if (updated[qIndex].options.length >= MAX_BUILDER_OPTIONS) {
+      setFeedback({ type: 'error', text: `Maximum ${MAX_BUILDER_OPTIONS} options allowed per question.` });
       return;
     }
-    updated[qIndex].options.push('');
+    updated[qIndex] = { ...updated[qIndex], options: [...updated[qIndex].options, ''], optionIds: [...updated[qIndex].optionIds, crypto.randomUUID()] };
     setQuestions(updated);
   };
 
   const removeOptionFromQuestion = (qIndex, oIndex) => {
-    const updated = [...questions];
-    if (updated[qIndex].options.length <= 2) {
+    if (questions[qIndex].options.length <= 2) {
       setFeedback({ type: 'error', text: 'Multiple choice questions must have at least 2 options.' });
       return;
     }
-    updated[qIndex].options.splice(oIndex, 1);
-    // Adjust correctIndex if needed
-    if (updated[qIndex].correctIndex >= updated[qIndex].options.length) {
-      updated[qIndex].correctIndex = 0;
-    }
-    updated[qIndex].correctIndexes = updated[qIndex].correctIndexes
-      .filter((ci) => ci !== oIndex)
-      .map((ci) => (ci > oIndex ? ci - 1 : ci));
-    if (!updated[qIndex].correctIndexes.length) {
-      updated[qIndex].correctIndexes = [0];
-    }
-    setQuestions(updated);
+    setQuestions(previous => previous.map((question, index) => index === qIndex ? removeBuilderOption(question, oIndex) : question));
+  };
+
+  const updateItemMedia = (questionId, optionId, clips) => {
+    setQuestions(previous => previous.map(question => question.id !== questionId ? question
+      : optionId ? question.optionIds.includes(optionId) ? { ...question, optionMedia: { ...question.optionMedia, [optionId]: clips } } : question
+      : { ...question, accessibilityMedia: clips }));
+  };
+  const moveOption = (questionId, optionId, direction) => {
+    setQuestions(previous => previous.map(question => {
+      if (question.id !== questionId) return question;
+      const from = question.optionIds.indexOf(optionId);
+      return reorderBuilderOption(question, from, from + direction);
+    }));
+    setFeedback({ type: 'success', text: 'Answer choice moved.' });
   };
 
   const toggleOptionCorrect = (qIndex, oIndex) => {
@@ -874,7 +1066,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
 
   // ── Save & Publish ──
   const handleSave = async (isDraft = false, { auto = false } = {}) => {
-    if (isSavingRef.current) return;
+    if (!recoveryReady || isLoadingDraft || isSavingRef.current) return;
     if (!title.trim() && !auto) {
       setFeedback({ type: 'error', text: `Please enter a ${isChallengeBuilder ? 'challenge' : 'quiz'} title before saving.` });
       return;
@@ -909,18 +1101,26 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
     if (!isDraft) {
       for (let i = 0; i < questions.length; i++) {
         const q = questions[i];
-        if (isChallengeBuilder && !['multiple_choice', 'true_false'].includes(q.type)) {
-          setFeedback({ type: 'error', text: `Question ${i + 1}: challenges currently support single-answer multiple choice and true/false questions.` });
+        for (const item of mediaItemsByQuestion[i]) {
+          const issue = firstMediaIssue(item.clips, item.text);
+          if (!issue) continue;
+          setFeedback({ type: 'error', text: `${item.label}. ${issue}` });
+          updateQuestionField(i, 'activeTab', 'content');
+          openMedia(item);
           return;
         }
-        if (!q.text.trim()) {
+        if (!q.text.trim() && !q.accessibilityMedia?.length) {
           setFeedback({ type: 'error', text: `Question ${i + 1} has an empty prompt.` });
           return;
         }
         if (['multiple_choice', 'dropdown', 'checkboxes'].includes(q.type)) {
-          const filled = q.options.filter((o) => o.trim());
+          const filled = q.options.filter((option, index) => option.trim() || q.optionMedia?.[q.optionIds[index]]?.length);
           if (filled.length < 2) {
             setFeedback({ type: 'error', text: `Question ${i + 1} must have at least 2 non-empty options.` });
+            return;
+          }
+          if (q.type === 'checkboxes' && !q.correctIndexes?.length) {
+            setFeedback({ type: 'error', text: `Question ${i + 1} needs at least one correct option.` });
             return;
           }
         }
@@ -931,6 +1131,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
       }
     }
 
+    if (isSavingRef.current) return;
     const revisionAtSave = changeRevisionRef.current;
     const challengeDeadlineDate = new Date(challengeDeadline);
     isSavingRef.current = true;
@@ -982,14 +1183,14 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
 
           if (qType === 'true_false') {
             opts = [
-              { label: 'A', text: 'True', isCorrect: q.correctIndex === 0 },
-              { label: 'B', text: 'False', isCorrect: q.correctIndex === 1 },
+              { label: 'A', text: q.options[0], isCorrect: q.correctIndex === 0 },
+              { label: 'B', text: q.options[1], isCorrect: q.correctIndex === 1 },
             ];
             correctAnswer = q.correctIndex === 0 ? 'A' : 'B';
           } else if (qType === 'checkboxes') {
             opts = q.options.map((opt, optIndex) => ({
               label: String.fromCharCode(65 + optIndex),
-              text: opt.trim() || `Option ${optIndex + 1}`,
+              text: opt.trim() || (q.optionMedia?.[q.optionIds[optIndex]]?.length ? '' : `Option ${optIndex + 1}`),
               isCorrect: Array.isArray(q.correctIndexes) ? q.correctIndexes.includes(optIndex) : false,
             }));
             correctAnswer = opts.filter((o) => o.isCorrect).map((o) => o.label);
@@ -1000,15 +1201,18 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
             // multiple_choice or dropdown
             opts = q.options.map((opt, optIndex) => ({
               label: String.fromCharCode(65 + optIndex),
-              text: opt.trim() || `Option ${optIndex + 1}`,
+              text: opt.trim() || (q.optionMedia?.[q.optionIds[optIndex]]?.length ? '' : `Option ${optIndex + 1}`),
               isCorrect: optIndex === q.correctIndex,
             }));
             correctAnswer = String.fromCharCode(65 + q.correctIndex);
           }
 
+          opts = opts.map((option, index) => ({ ...option, optionId: q.optionIds[index], accessibilityMedia: q.optionMedia?.[q.optionIds[index]] || [] }));
+
           return {
+            accessibilityMedia: q.accessibilityMedia || [],
             questionNumber: i + 1,
-            questionText: q.text.trim() || `Question ${i + 1}`,
+            questionText: q.text.trim() || (q.accessibilityMedia?.length ? '' : `Question ${i + 1}`),
             questionType: qType === 'true_false' ? 'multiple_choice' : qType,
             options: opts,
             correctAnswer,
@@ -1038,6 +1242,9 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
       if (isDraft) {
         if (createdQuizId) {
           setActiveDraftId(createdQuizId);
+          if (draftIdParam && draftIdParam !== createdQuizId && changeRevisionRef.current === revisionAtSave) {
+            navigate(`/create/${isChallengeBuilder ? 'challenge' : 'manual'}?draftId=${encodeURIComponent(createdQuizId)}`, { replace: true });
+          }
         }
         setLastSavedAt(new Date());
         hasUnsavedChangesRef.current = changeRevisionRef.current !== revisionAtSave;
@@ -1056,7 +1263,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
         hasUnsavedChangesRef.current = false;
         if (recoveryUserId) {
           try {
-            await deleteQuizBuilderCheckpoint(recoveryUserId);
+            await deleteQuizBuilderCheckpoint(recoveryUserId, isChallengeBuilder);
           } catch (error) {
             setRecoveryStatus('Cleanup failed');
             setFeedback({ type: 'error', text: error.message || 'Quiz published, but its local recovery checkpoint could not be cleared.' });
@@ -1069,6 +1276,12 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
         }
       }
     } catch (err) {
+      if (isChallengeBuilder && activeDraftId && err?.response?.status === 404) {
+        setActiveDraftId(null);
+        setRecoveryStatus('Saved locally');
+        setFeedback({ type: 'error', text: 'This draft is no longer available on the server. Your work is still here. Use Save Draft to create a new copy.' });
+        return;
+      }
       if (auto) {
         setRecoveryStatus(
           !navigator.onLine || !err?.response
@@ -1078,7 +1291,9 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
       } else {
         setFeedback({
           type: 'error',
-          text: err?.response?.data?.message || `Failed to save ${isChallengeBuilder ? 'challenge' : 'quiz'}. Please verify all fields.`,
+          text: Array.isArray(err?.response?.data?.errors) && err.response.data.errors.some(error => error?.path)
+            ? err.response.data.errors.slice(0, 6).map(error => `${error.path}: ${error.message}`).join('\n')
+            : err?.response?.data?.message || `Failed to save ${isChallengeBuilder ? 'challenge' : 'quiz'}. Please verify all fields.`,
         });
       }
     } finally {
@@ -1092,7 +1307,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
   return (
     <div className={`builder-viewport ${isChallengeBuilder ? 'challenge-builder' : ''}`}>
       {/* ── Sticky Top Bar (Wireframe Redesign with Squircle Design) ── */}
-      <header className="top-header" role="banner" aria-label="Builder Navigation">
+      <div className="top-header" role="group" aria-label="Builder actions">
         {/* Left: Back button & Question Counter Badge [ 1 | 1 ] */}
         <div className="header-left">
           <button
@@ -1243,11 +1458,11 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
             )}
           </div>
         </div>
-      </header>
+      </div>
 
       {/* ── Toast Feedback Notification ── */}
       {feedback && (
-        <div className={`feedback-toast ${feedback.type}`}>
+        <div className={`feedback-toast ${feedback.type}`} role={feedback.type === 'error' ? 'alert' : 'status'}>
           {feedback.type === 'error' ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
           <span>{feedback.text}</span>
           <button onClick={() => setFeedback(null)} className="toast-close-btn">
@@ -1257,7 +1472,8 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
       )}
 
       {/* ── Main Canvas Content ── */}
-      <main className="canvas-container">
+      <div className={`builder-workspace${activeMedia ? ' has-media-inspector' : ''}`}>
+      <div className="canvas-container" ref={canvasRef} role="region" aria-label="Quiz questions" tabIndex={0}>
         {/* Quiz Cover Banner */}
         <div
           className={`cover-banner ${coverImage ? 'has-image' : 'empty'} ${isDraggingCover ? 'drag-over' : ''}`}
@@ -1373,7 +1589,8 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
         <div className="questions-stack">
           {questions.map((q, qIndex) => {
             const currentTypeObj = QUESTION_TYPES.find((t) => t.id === q.type) || QUESTION_TYPES[0];
-            const TypeIcon = currentTypeObj.icon;
+            const [promptMedia, ...optionMedia] = mediaItemsByQuestion[qIndex];
+            const points = q.marks ?? 1;
 
             return (
               <div
@@ -1386,84 +1603,30 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
                 {/* Question Card Header */}
                 <div className="q-card-header">
                   <div className="q-header-meta">
-                    <span className="q-index-pill">Question {qIndex + 1}</span>
-                    <span className="q-type-badge">
-                      <TypeIcon size={13} /> {currentTypeObj.label}
-                    </span>
-                    <span className="q-points-badge">
-                      +{q.marks || 1} {q.negativeMarks > 0 ? `(-${q.negativeMarks})` : ''} pts
-                    </span>
-                    {q.difficulty !== 'Inherit' && (
-                      <span className="q-diff-badge">{q.difficulty}</span>
-                    )}
+                    <h2 className="builder-question-title">Question {qIndex + 1}</h2>
+                    <p className="builder-question-meta">
+                      {currentTypeObj.label} · {points} {points === 1 ? 'point' : 'points'}
+                      {q.negativeMarks > 0 && ` · −${q.negativeMarks} for incorrect answers`}
+                      {q.difficulty !== 'Inherit' && ` · ${q.difficulty}`}
+                    </p>
                   </div>
-
-                  <div className="q-header-tools">
-                    {/* Card Tab Switcher */}
-                    <div className="q-tab-switcher">
-                      <button
-                        type="button"
-                        className={`q-tab-btn ${q.activeTab === 'content' ? 'active' : ''}`}
-                        onClick={() => updateQuestionField(qIndex, 'activeTab', 'content')}
-                      >
-                        <FileText size={13} /> Editor
-                      </button>
-                      <button
-                        type="button"
-                        className={`q-tab-btn ${q.activeTab === 'settings' ? 'active' : ''}`}
-                        onClick={() => updateQuestionField(qIndex, 'activeTab', 'settings')}
-                      >
-                        <Sliders size={13} /> Settings
-                        {(q.explanation || q.negativeMarks > 0 || q.difficulty !== 'Inherit' || q.mediaUrl) && (
-                          <span className="tab-indicator-dot" />
-                        )}
-                      </button>
-                    </div>
-
-                    <div className="q-tool-divider" />
-
-                    {/* Reordering */}
-                    <button
-                      type="button"
-                      className="q-tool-btn"
-                      onClick={() => moveQuestion(qIndex, -1)}
-                      disabled={qIndex === 0}
-                      title="Move Up"
-                    >
-                      <MoveUp size={15} />
+                  <BuilderActions label={`Question ${qIndex + 1} actions`}>
+                    <button type="button" onClick={() => updateQuestionField(qIndex, 'activeTab', q.activeTab === 'content' ? 'settings' : 'content')}>
+                      <Sliders size={15} /> {q.activeTab === 'content' ? 'Question settings' : 'Edit question'}
                     </button>
-                    <button
-                      type="button"
-                      className="q-tool-btn"
-                      onClick={() => moveQuestion(qIndex, 1)}
-                      disabled={qIndex === questions.length - 1}
-                      title="Move Down"
-                    >
-                      <MoveDown size={15} />
+                    <button type="button" onClick={() => moveQuestion(qIndex, -1)} disabled={qIndex === 0}>
+                      <MoveUp size={15} /> Move up
                     </button>
-
-                    {/* Duplicate */}
-                    <button
-                      type="button"
-                      className="q-tool-btn"
-                      onClick={() => duplicateQuestion(qIndex)}
-                      disabled={isChallengeBuilder && questions.length >= 10}
-                      title="Duplicate Question"
-                    >
-                      <Copy size={15} />
+                    <button type="button" onClick={() => moveQuestion(qIndex, 1)} disabled={qIndex === questions.length - 1}>
+                      <MoveDown size={15} /> Move down
                     </button>
-
-                    {/* Delete */}
-                    <button
-                      type="button"
-                      className="q-tool-btn danger"
-                      onClick={() => deleteQuestion(qIndex)}
-                      disabled={questions.length <= 1}
-                      title={questions.length <= 1 ? 'Cannot delete the only question' : 'Delete Question'}
-                    >
-                      <Trash2 size={15} />
+                    <button type="button" onClick={() => duplicateQuestion(qIndex)} disabled={isChallengeBuilder && questions.length >= 10}>
+                      <Copy size={15} /> Duplicate question
                     </button>
-                  </div>
+                    <button type="button" className="builder-danger-action" onClick={() => deleteQuestion(qIndex)} disabled={questions.length <= 1}>
+                      <Trash2 size={15} /> Delete question
+                    </button>
+                  </BuilderActions>
                 </div>
 
                 {/* Question Card Body */}
@@ -1488,96 +1651,115 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
 
                       <textarea
                         className="q-prompt-textarea"
+                        aria-label={`Question ${qIndex + 1} prompt text`}
                         placeholder={`Enter question ${qIndex + 1} text or prompt here...`}
                         value={q.text}
                         onChange={(e) => updateQuestionField(qIndex, 'text', e.target.value)}
                         rows={2}
                       />
 
-                      {/* Options or Answer Input according to Type */}
+                      <div className="builder-prompt-media">
+                        {promptMedia.clips.map(clip => {
+                          const Icon = { video: Video, audio: Volume2, image: ImageIcon }[clip.kind];
+                          const name = { video: 'Video', audio: 'Audio', image: 'Image' }[clip.kind];
+                          const status = clip.uploadState === 'failed' ? 'Needs attention'
+                            : clip.uploadState === 'uploading' ? 'Uploading'
+                            : clip.uploadState === 'processing' ? 'Processing'
+                            : !clip.assetId ? 'Incomplete' : '';
+                          return (
+                            <button key={clip.kind} type="button" className="builder-media-button builder-clip-chip"
+                              aria-label={`Edit ${promptMedia.label.toLowerCase()} ${name.toLowerCase()}${status ? `, ${status}` : ''}`}
+                              aria-expanded={mediaTarget === promptMedia.key} aria-controls="builder-media-inspector"
+                              onClick={event => openMedia(promptMedia, event.currentTarget)}>
+                              <Icon size={16} aria-hidden="true" /> {name}{status && <span> · {status}</span>}
+                            </button>
+                          );
+                        })}
+                        <button type="button" className="builder-media-button" id={`media-trigger-${promptMedia.key}`}
+                          aria-label={`${promptMedia.clips.length >= 3 ? 'Edit' : 'Add'} media for ${promptMedia.label}`}
+                          aria-expanded={mediaTarget === promptMedia.key} aria-controls="builder-media-inspector"
+                          onClick={event => openMedia(promptMedia, event.currentTarget)}>
+                          <Plus size={16} aria-hidden="true" /> {promptMedia.clips.length >= 3 ? 'Edit media' : 'Add media'}
+                        </button>
+                      </div>
+                      {promptMedia.clips.some(clip => clip.assetId) && <BuilderMediaPreview item={promptMedia} />}
                       {q.type === 'short_answer' ? (
                         <div className="short-answer-box">
-                          <label className="short-answer-label">Expected Correct Answer / Keyword:</label>
+                          <label className="short-answer-label" htmlFor={`expected-answer-${q.id}`}>Expected answer</label>
                           <input
+                            id={`expected-answer-${q.id}`}
                             type="text"
                             className="short-answer-input"
-                            placeholder="Enter the exact answer string that students must type..."
+                            placeholder="Enter the expected text (case insensitive)"
                             value={q.shortAnswer}
+                            maxLength={1000}
                             onChange={(e) => updateQuestionField(qIndex, 'shortAnswer', e.target.value)}
                           />
                         </div>
-                      ) : q.type === 'true_false' ? (
-                        <div className="tf-options-grid">
-                          {['True', 'False'].map((label, optIdx) => {
-                            const isSelected = q.correctIndex === optIdx;
-                            return (
-                              <button
-                                key={label}
-                                type="button"
-                                className={`tf-pill-btn ${isSelected ? 'selected' : ''}`}
-                                onClick={() => updateQuestionField(qIndex, 'correctIndex', optIdx)}
-                              >
-                                <span className="tf-indicator">
-                                  {isSelected && <Check size={16} strokeWidth={3} />}
-                                </span>
-                                <span className="tf-text">{label}</span>
-                                {isSelected && <span className="tf-correct-tag">Correct Answer</span>}
-                              </button>
-                            );
-                          })}
-                        </div>
                       ) : (
-                        /* Multiple Choice, Checkboxes, Dropdown */
                         <div className="options-stack">
-                          {q.options.map((opt, oIndex) => {
-                            const letter = String.fromCharCode(65 + oIndex);
-                            const isCorrect =
-                              q.type === 'checkboxes'
-                                ? q.correctIndexes.includes(oIndex)
-                                : q.correctIndex === oIndex;
-
+                          <h3 className="builder-answers-heading">Answer choices</h3>
+                          {q.type !== 'true_false' && <OptionFill question={q} onFill={(entries, byPosition) => {
+                            setQuestions(previous => previous.map(question => question.id === q.id
+                              ? fillBuilderOptions(question, entries, byPosition) : question));
+                          }} />}
+                          {q.options.map((option, optionIndex) => {
+                            const letter = String.fromCharCode(65 + optionIndex);
+                            const item = optionMedia[optionIndex];
+                            const isCorrect = q.type === 'checkboxes'
+                              ? q.correctIndexes.includes(optionIndex)
+                              : q.correctIndex === optionIndex;
+                            const hasMedia = item.clips.some(clip => clip.assetId);
+                            const mediaPending = item.clips.some(clip => clip.uploadState || !clip.assetId);
+                            const MediaIcon = item.clips.some(clip => clip.kind === 'video') ? Video
+                              : item.clips.some(clip => clip.kind === 'image') ? ImageIcon : hasMedia ? Volume2 : Video;
                             return (
-                              <div key={oIndex} className={`option-item-row ${isCorrect ? 'is-correct' : ''}`}>
-                                <button
-                                  type="button"
-                                  className={`option-check-btn ${q.type === 'checkboxes' ? 'is-checkbox' : 'is-radio'} ${isCorrect ? 'checked' : ''}`}
-                                  onClick={() => toggleOptionCorrect(qIndex, oIndex)}
-                                  title={`Mark option ${letter} as ${isCorrect ? 'incorrect' : 'correct'}`}
-                                >
-                                  {isCorrect && <Check size={14} strokeWidth={3} />}
+                              <div key={item.optionId} className="builder-option">
+                              <div className={`option-item-row${isCorrect ? ' is-correct' : ''}`}>
+                                <button type="button"
+                                  className={`option-check-btn ${q.type === 'checkboxes' ? 'is-checkbox' : 'is-radio'}${isCorrect ? ' checked' : ''}`}
+                                  onClick={() => toggleOptionCorrect(qIndex, optionIndex)}
+                                  aria-pressed={isCorrect} aria-label={`Mark option ${letter} as correct`}>
+                                  {isCorrect && <Check size={14} strokeWidth={3} aria-hidden="true" />}
                                 </button>
-
-                                <span className="option-letter-badge">{letter}</span>
-
-                                <input
-                                  type="text"
-                                  className="option-text-input"
-                                  placeholder={`Option ${letter} text...`}
-                                  value={opt}
-                                  onChange={(e) => updateOptionText(qIndex, oIndex, e.target.value)}
-                                />
-
-                                {q.options.length > 2 && (
-                                  <button
-                                    type="button"
-                                    className="option-delete-btn"
-                                    onClick={() => removeOptionFromQuestion(qIndex, oIndex)}
-                                    title="Delete Option"
-                                  >
-                                    <X size={15} />
-                                  </button>
+                                <span className="option-letter-badge" aria-hidden="true">{letter}</span>
+                                {q.type === 'true_false' ? <span className="option-text-input">{option}</span> : (
+                                  <input type="text" className="option-text-input"
+                                    aria-label={`Question ${qIndex + 1}, option ${letter} text`}
+                                    placeholder={`Option ${letter} text…`}
+                                    value={option} onChange={event => updateOptionText(qIndex, optionIndex, event.target.value)} />
                                 )}
+                                {isCorrect && <span className="builder-correct-badge">Correct</span>}
+                                <button type="button" className={`builder-media-button builder-option-media${hasMedia ? ' has-attachment' : ''}`}
+                                  id={`media-trigger-${item.key}`}
+                                  aria-label={`Media for ${item.label}${mediaPending ? ', needs attention' : ''}`}
+                                  aria-expanded={mediaTarget === item.key} aria-controls="builder-media-inspector"
+                                  onClick={event => openMedia(item, event.currentTarget)}>
+                                  <MediaIcon size={16} aria-hidden="true" /> <span>Media</span>
+                                  {mediaPending && <span className="builder-media-dot" aria-hidden="true" />}
+                                </button>
+                                <BuilderActions label={`Option ${letter} actions for Question ${qIndex + 1}`}>
+                                  <button type="button" disabled={optionIndex === 0} onClick={() => moveOption(q.id, item.optionId, -1)}>
+                                    <MoveUp size={15} /> Move up
+                                  </button>
+                                  <button type="button" disabled={optionIndex === q.options.length - 1} onClick={() => moveOption(q.id, item.optionId, 1)}>
+                                    <MoveDown size={15} /> Move down
+                                  </button>
+                                  {q.type !== 'true_false' && <button type="button" className="builder-danger-action"
+                                    disabled={q.options.length <= 2} onClick={() => removeOptionFromQuestion(qIndex, optionIndex)}>
+                                    <Trash2 size={15} /> Remove option
+                                  </button>}
+                                </BuilderActions>
+                              </div>
+                              {hasMedia && <BuilderMediaPreview item={item} />}
                               </div>
                             );
                           })}
-
-                          <button
-                            type="button"
-                            className="add-option-btn"
-                            onClick={() => addOptionToQuestion(qIndex)}
-                          >
-                            <Plus size={15} /> Add Another Option
-                          </button>
+                          {q.type !== 'true_false' && (
+                            <button type="button" className="add-option-btn" onClick={() => addOptionToQuestion(qIndex)}>
+                              <Plus size={16} /> Add option
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1750,7 +1932,47 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
             </button>
           </div>
         </div>
-      </main>
+      </div>
+      <aside
+        id="builder-media-inspector"
+        className="builder-media-inspector"
+        hidden={!activeMedia}
+        aria-labelledby="builder-media-title"
+        onKeyDown={event => {
+          if (event.key === 'Escape') {
+            event.stopPropagation();
+            closeMedia();
+          }
+        }}
+      >
+        <div className="builder-media-header">
+          <div>
+            <h2 id="builder-media-title" ref={mediaHeadingRef} tabIndex={-1}>{activeMedia?.title || 'Media'}</h2>
+            {activeMedia && <p>{activeMedia.label}</p>}
+          </div>
+          <button type="button" className="builder-media-button builder-media-close" aria-label="Close media panel" onClick={closeMedia}>
+            <X size={20} aria-hidden="true" />
+          </button>
+        </div>
+        <div ref={mediaBodyRef} className="builder-media-scroll">
+          {mediaItems.filter(item => openedMedia.has(item.key) || item.clips.some(clip => clip.pendingAssetId)).map(item => (
+            <MediaEditor key={item.key} active={item.key === activeMedia?.key} clips={item.clips}
+              contextLabel={item.label} text={item.text}
+              onChange={clips => updateItemMedia(item.questionId, item.optionId, clips)} />
+          ))}
+        </div>
+        <div className="builder-media-footer">
+          <p role="status">
+            {activeMedia?.clips.length ? (
+              firstMediaIssue(activeMedia.clips, activeMedia.text)
+                ? <><AlertCircle size={17} aria-hidden="true" /> Needs review</>
+                : <><CheckCircle2 size={17} aria-hidden="true" /> Reviewed</>
+            ) : 'No attachments'}
+          </p>
+          <button type="button" className="builder-media-done" onClick={closeMedia}>Done</button>
+        </div>
+      </aside>
+      </div>
 
       {/* ────────────────────────────────────────────────────────── */}
       {/* ────────────────────────────────────────────────────────── */}

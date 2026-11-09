@@ -1,5 +1,6 @@
+import AccessibleMedia from '../../components/media/AccessibleMedia';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { CheckCircle, Percent, Timer, Zap, ChevronDown, EyeOff, RotateCcw, LayoutDashboard, Shield, Trophy, Lock } from 'lucide-react';
 import api from '../../api/axios';
 import { Badge, Button, Spinner } from '../../components/ui';
@@ -10,10 +11,10 @@ import './Result.css';
 const getAnswerTimeMs = (answer) => Number(answer?.timeTakenMs || 0) || Number(answer?.timeTaken || 0) * 1000;
 
 const SCORE_TIERS = [
-  { min: 90, emoji: 'ðŸ†', label: 'Outstanding', color: 'var(--color-primary)' },
-  { min: 75, emoji: 'â­', label: 'Excellent', color: 'var(--color-primary)' },
-  { min: 50, emoji: 'ðŸ‘', label: 'Good Work', color: 'var(--color-primary)' },
-  { min: 0, emoji: 'ðŸ’ª', label: 'Keep Practicing', color: 'var(--color-primary)' },
+  { min: 90, label: 'Outstanding', color: 'var(--color-primary)' },
+  { min: 75, label: 'Excellent', color: 'var(--color-primary)' },
+  { min: 50, label: 'Good Work', color: 'var(--color-primary)' },
+  { min: 0, label: 'Keep Practicing', color: 'var(--color-primary)' },
 ];
 
 function getScoreTier(pct) {
@@ -50,7 +51,7 @@ function ScoreRing({ percentage, size = 160, strokeWidth = 10 }) {
       </svg>
       <div className="score-ring-inner">
         <span className="score-ring-pct">{percentage}%</span>
-        <span className="score-ring-emoji">{tier.emoji}</span>
+        <Trophy size={24} aria-hidden="true" className="score-ring-emoji" />
       </div>
     </div>
   );
@@ -58,12 +59,15 @@ function ScoreRing({ percentage, size = 160, strokeWidth = 10 }) {
 
 export default function Result() {
   const { attemptId } = useParams();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [resultData, setResultData] = useState(null);
   const [error, setError] = useState('');
   const [expandedQ, setExpandedQ] = useState(null);
   const currentUser = useAuthStore((s) => s.user);
   const reviewRefs = useRef({});
+  const headingRef = useRef(null);
+  useEffect(() => { if (resultData) headingRef.current?.focus(); }, [resultData]);
 
   useEffect(() => {
     let cancelled = false;
@@ -130,8 +134,8 @@ export default function Result() {
 
   const retakePath = `/quiz/${attempt.quizId?._id}`;
 
-  const isReviewAllowed = !isQuarantined && resultData?.allowReview !== false && resultData?.attempt?.quizId?.settings?.allowReview !== false;
-  const isExplanationAllowed = !isQuarantined && resultData?.showExplanation !== false && resultData?.attempt?.quizId?.settings?.showExplanation !== false;
+  const isReviewAllowed = !isQuarantined && (resultData.allowReview ?? (attempt.quizId?.settings?.allowReview !== false));
+  const isExplanationAllowed = !isQuarantined && (resultData.showExplanation ?? (attempt.quizId?.settings?.showExplanation !== false));
 
   const scrollToReview = (idx) => {
     setExpandedQ(idx);
@@ -174,10 +178,11 @@ export default function Result() {
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#FFFFFF' }}>
-                Contest Submission Sealed
+                {attempt.isPractice ? 'Practice submission saved' : 'Contest Submission Sealed'}
               </h3>
               <p style={{ margin: '4px 0 0', fontSize: 13.5, color: '#FBBF24', lineHeight: 1.4 }}>
-                Your answers have been submitted. Scores and correct answers are quarantined until the contest deadline.
+                {attempt.isPractice ? 'Your host practice was recorded. Your results are available after the contest deadline.'
+                  : 'Your answers have been submitted. Scores and correct answers are quarantined until the contest deadline.'}
               </p>
             </div>
           </div>
@@ -210,7 +215,7 @@ export default function Result() {
               <ScoreRing percentage={attempt.percentage ?? 0} />
             )}
             <div className="r-hero-text">
-              <h1 className="r-hero-label">{isQuarantined ? 'Submission Sealed' : tier.label}</h1>
+              <h2 ref={headingRef} tabIndex={-1} className="r-hero-label">{isQuarantined ? 'Submission Sealed' : tier.label}</h2>
               <p className="r-hero-title">{attempt.quizId?.title || (isChallenge ? 'Competitive Contest' : 'Quiz')}</p>
               {!isQuarantined ? (
                 <div className="r-hero-summary">
@@ -288,12 +293,12 @@ export default function Result() {
                 return (
                   <div key={`${question._id}-${idx}`} ref={(el) => (reviewRefs.current[idx] = el)}
                     className={`r-review ${isOpen ? 'r-review--open' : ''}`}>
-                    <button className="r-review-header" onClick={() => setExpandedQ(isOpen ? null : idx)}>
-                      <div className={`r-review-indicator r-review-indicator--${status}`}>
-                        {status === 'correct' ? 'âœ“' : status === 'wrong' ? 'âœ—' : 'â€”'}
+                    <button aria-expanded={isOpen} aria-label={["Question " + (idx + 1), status === "wrong" ? "incorrect" : status, question.questionText].filter(Boolean).join(". ")} aria-controls={`review-${question._id}`} className="r-review-header" onClick={() => setExpandedQ(isOpen ? null : idx)}>
+                      <div aria-hidden="true" className={`r-review-indicator r-review-indicator--${status}`}>
+                        {status === 'correct' ? '✓' : status === 'wrong' ? '×' : '–'}
                       </div>
                       <div className="r-review-info">
-                        <span className="r-review-qnum">Q{idx + 1}</span>
+                        <span className="r-review-qnum">Question {idx + 1}</span>
                         <span className="r-review-qtext">{question.questionText}</span>
                       </div>
                       <ChevronDown
@@ -303,22 +308,30 @@ export default function Result() {
                     </button>
 
                     {isOpen && (
-                      <div className="r-review-body">
+                      <div className="r-review-body" id={`review-${question._id}`}>
+                        <AccessibleMedia clips={question.accessibilityMedia || []} text={question.questionText} attemptId={attemptId} />
                         <div className="r-review-meta">
                           <Badge variant={answer.isCorrect ? 'success' : answer.selectedAnswer ? 'danger' : 'warning'}>
                             {answer.isCorrect ? 'Correct' : answer.selectedAnswer ? 'Incorrect' : 'Skipped'}
                           </Badge>
                           <span className="r-review-time">{formatDurationMs(getAnswerTimeMs(answer))}</span>
                         </div>
+                        {question.questionType === 'short_answer' && <div className="r-review-options">
+                          <p><strong>Your answer</strong> {answer.selectedAnswer || 'Skipped'}</p>
+                          <p><strong>Expected answer</strong> {question.correctAnswer}</p>
+                        </div>}
                         <div className="r-review-options">
-                          {question.options.map((option) => {
-                            const isCorrectOpt = option.label === question.correctAnswer;
-                            const isSelected = option.label === answer.selectedAnswer;
+                          {question.options?.map((option) => {
+                            const isCorrectOpt = Array.isArray(question.correctAnswer)
+                              ? question.correctAnswer.includes(option.label) : option.label === question.correctAnswer;
+                            const isSelected = question.questionType === 'checkboxes'
+                              ? answer.selectedAnswer?.split(',').includes(option.label) : option.label === answer.selectedAnswer;
                             return (
-                              <div key={option.label}
+                              <div key={option.optionId || option._id || option.label}
                                 className={`r-opt ${isCorrectOpt ? 'r-opt--correct' : ''} ${isSelected && !answer.isCorrect ? 'r-opt--wrong' : ''}`}>
                                 <span className="r-opt-label">{option.label}</span>
                                 <span className="r-opt-text">{option.text}</span>
+                                <AccessibleMedia clips={option.accessibilityMedia || []} text={option.text} attemptId={attemptId} />
                                 {isCorrectOpt && <span className="r-opt-badge">Correct</span>}
                                 {isSelected && !answer.isCorrect && <span className="r-opt-badge r-opt-badge--wrong">Your Answer</span>}
                               </div>
@@ -351,26 +364,20 @@ export default function Result() {
         {/* ── Actions ── */}
         <div className="r-actions">
           {isChallenge ? (
-            <Link to={`/challenges/${challengeId}/leaderboard`} style={{ textDecoration: 'none' }}>
-              <Button variant="primary">
+            <Button variant="primary" onClick={() => navigate(`/challenges/${challengeId}/leaderboard`)}>
                 <Trophy size={16} />
                 View Contest Standings
               </Button>
-            </Link>
           ) : (
-            <Link to={retakePath} style={{ textDecoration: 'none' }}>
-              <Button variant="secondary">
+            <Button variant="secondary" onClick={() => navigate(retakePath)}>
                 <RotateCcw size={16} />
                 Retake Quiz
               </Button>
-            </Link>
           )}
-          <Link to="/dashboard" style={{ textDecoration: 'none' }}>
-            <Button variant="secondary">
+          <Button variant="secondary" onClick={() => navigate('/dashboard')}>
               <LayoutDashboard size={16} />
               Dashboard
             </Button>
-          </Link>
         </div>
       </div>
   );

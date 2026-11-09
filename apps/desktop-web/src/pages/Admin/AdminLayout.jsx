@@ -28,7 +28,7 @@ export default function AdminLayout() {
   return (
     <div className="admin-shell">
       {/* Sticky Topbar */}
-      <header className="admin-topbar">
+      <div className="admin-topbar" role="group" aria-label="Control Center actions">
         <div className="admin-topbar-left">
           <Link to="/admin" className="admin-logo-mark">
             <div className="admin-logo-badge">Q</div>
@@ -50,7 +50,7 @@ export default function AdminLayout() {
             <ArrowUpRight size={14} />
           </Link>
         </div>
-      </header>
+      </div>
 
       {/* Main Body */}
       <div className="admin-body">

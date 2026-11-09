@@ -95,7 +95,6 @@ export default function AdminReports() {
   return (
     <div>
       <div className="admin-page-header">
-        <h1 className="admin-page-title">Moderation Queue</h1>
         <p className="admin-page-desc">
           Review community reports regarding offensive questions, harassment, spam, and challenge integrity.
         </p>

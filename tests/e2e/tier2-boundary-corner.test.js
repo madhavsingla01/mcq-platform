@@ -331,15 +331,16 @@ describe('Tier 2: Boundary & Corner Cases (F1 through F12)', () => {
       expect(res.data?.data?.user?.preferences).toBeDefined();
     });
 
-    it('F7-B2: arbitrary unknown preferences keys are handled safely without schema crash', async () => {
+    it('F7-B2: unknown preferences are rejected without persisting unsupported fields', async () => {
       const res = await userClient.patch('/api/v1/auth/me', {
         preferences: {
           customExperimentalFlag: 'enabled',
           timerVisibility: 'visible',
         },
       });
-      expect(res.status).toBe(200);
-      expect(res.data?.data?.user?.preferences?.timerVisibility).toBe('visible');
+      expect(res.status).toBe(400);
+      const current = await userClient.get('/api/v1/auth/me');
+      expect(current.data?.data?.user?.preferences?.customExperimentalFlag).toBeUndefined();
     });
 
     it('F7-B3: explicit toggle isProfilePublic: false synchronizes isPrivate: true', async () => {

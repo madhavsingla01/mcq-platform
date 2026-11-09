@@ -48,16 +48,19 @@
   width: 34px;
   height: 34px;
   border-radius: 9px;
-  transition: all 0.16s ease;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 160ms var(--ease-out), border-color 160ms var(--ease-out), color 160ms var(--ease-out);
   flex-shrink: 0;
 }
 
-.c-nav-back-btn:hover {
+@media (hover: hover) and (pointer: fine) {
+  .c-nav-back-btn:hover {
   background: #16161B;
   color: #FF4500;
   border-color: #FF4500;
   transform: translateX(-1px);
 }
+}
+
 
 .c-header-identity {
   display: flex;
@@ -162,7 +165,7 @@
   font-size: 12.5px;
   font-weight: 650;
   cursor: pointer;
-  transition: all 0.16s ease;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 160ms var(--ease-out), border-color 160ms var(--ease-out), color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
 }
 
 .c-floating-settings-trigger .c-action-icon {
@@ -170,17 +173,28 @@
   transition: transform 0.16s ease;
 }
 
-.c-floating-settings-trigger:hover,
 .c-floating-settings-trigger.active {
   background: #15151A;
   border-color: #FF4500;
   color: #FF4500;
   box-shadow: 0 0 16px rgba(255, 69, 0, 0.2);
 }
+@media (hover: hover) and (pointer: fine) {
+  .c-floating-settings-trigger:hover {
+  background: #15151A;
+  border-color: #FF4500;
+  color: #FF4500;
+  box-shadow: 0 0 16px rgba(255, 69, 0, 0.2);
+}
+}
 
-.c-floating-settings-trigger:hover .c-action-icon {
+
+@media (hover: hover) and (pointer: fine) {
+  .c-floating-settings-trigger:hover .c-action-icon {
   transform: rotate(45deg);
 }
+}
+
 
 .c-draft-btn {
   display: inline-flex;
@@ -194,14 +208,17 @@
   font-size: 12.5px;
   font-weight: 650;
   cursor: pointer;
-  transition: all 0.16s ease;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 160ms var(--ease-out), border-color 160ms var(--ease-out), color 160ms var(--ease-out);
 }
 
-.c-draft-btn:hover {
+@media (hover: hover) and (pointer: fine) {
+  .c-draft-btn:hover {
   background: #16161B;
   color: #FFFFFF;
   border-color: #38383D;
 }
+}
+
 
 .c-publish-btn {
   display: inline-flex;
@@ -216,15 +233,18 @@
   font-weight: 750;
   cursor: pointer;
   box-shadow: 0 4px 18px rgba(255, 69, 0, 0.38);
-  transition: all 0.16s ease;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
   white-space: nowrap;
 }
 
-.c-publish-btn:hover {
+@media (hover: hover) and (pointer: fine) {
+  .c-publish-btn:hover {
   background: #FF571A;
   transform: translateY(-1px);
   box-shadow: 0 6px 24px rgba(255, 69, 0, 0.52);
 }
+}
+
 
 .c-publish-btn:disabled, .c-draft-btn:disabled {
   opacity: 0.45;
@@ -277,7 +297,7 @@
   border-radius: 16px;
   overflow: hidden;
   margin-bottom: 24px;
-  transition: all 0.2s ease;
+  transition: border-color 160ms var(--ease-out), background-color 160ms var(--ease-out);
 }
 .c-cover-banner.empty {
   border: 2px dashed #262628;
@@ -288,10 +308,17 @@
   justify-content: center;
   cursor: pointer;
 }
-.c-cover-banner.empty:hover, .c-cover-banner.drag-over {
+.c-cover-banner.drag-over {
   border-color: #FF4500;
   background: #141416;
 }
+@media (hover: hover) and (pointer: fine) {
+  .c-cover-banner.empty:hover {
+  border-color: #FF4500;
+  background: #141416;
+}
+}
+
 .c-cover-placeholder {
   display: flex;
   flex-direction: column;
@@ -377,10 +404,16 @@
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out), border-color 150ms var(--ease-out), color 150ms var(--ease-out);
 }
-.c-cover-action-btn:hover { background: #262628; border-color: #FF4500; color: #FF4500; }
-.c-cover-action-btn.danger:hover { background: #180D0D; border-color: #FF4500; color: #FF571A; }
+@media (hover: hover) and (pointer: fine) {
+  .c-cover-action-btn:hover { background: #262628; border-color: #FF4500; color: #FF4500; }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .c-cover-action-btn.danger:hover { background: #180D0D; border-color: #FF4500; color: #FF571A; }
+}
+
 
 /* ── Meta Card ── */
 .c-meta-card {
@@ -420,7 +453,7 @@
   padding: 3px 8px;
   border-radius: 6px;
   font-variant-numeric: tabular-nums;
-  transition: all 0.15s ease;
+  transition: border-color 150ms var(--ease-out), background-color 150ms var(--ease-out), color 150ms var(--ease-out);
 }
 .c-meta-char-count.limit-warn {
   color: #FF7A00;
@@ -488,7 +521,10 @@
   cursor: pointer;
   transition: color 0.15s;
 }
-.c-pill-settings-link:hover { color: #FF571A; }
+@media (hover: hover) and (pointer: fine) {
+  .c-pill-settings-link:hover { color: #FF571A; }
+}
+
 
 /* ── Questions Stack ── */
 .c-questions-stack {
@@ -503,7 +539,7 @@
   border: 1px solid #262628;
   border-radius: 12px;
   overflow: hidden;
-  transition: all 0.2s ease;
+  transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
 }
 .c-question-card-shell:focus-within {
   border-color: #FF4500;
@@ -580,7 +616,9 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  transition: all 0.15s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out), color 150ms var(--ease-out);
 }
 .c-q-tab-btn.active {
   background: #222225;
@@ -610,11 +648,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out), color 150ms var(--ease-out);
 }
-.c-q-tool-btn:hover { background: #222225; color: #FFFFFF; }
+@media (hover: hover) and (pointer: fine) {
+  .c-q-tool-btn:hover { background: #222225; color: #FFFFFF; }
+}
+
 .c-q-tool-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-.c-q-tool-btn.danger:hover { background: #180D0D; color: #FF4500; }
+@media (hover: hover) and (pointer: fine) {
+  .c-q-tool-btn.danger:hover { background: #180D0D; color: #FF4500; }
+}
+
 
 .c-q-card-body { padding: 22px; }
 .c-q-prompt-textarea {
@@ -664,7 +710,7 @@
   background: #141416;
   border: 1px solid #262628;
   border-radius: 10px;
-  transition: all 0.15s;
+  transition: border-color 150ms var(--ease-out), background-color 150ms var(--ease-out);
 }
 .c-option-item-row.is-correct {
   border-color: #FF4500;
@@ -681,7 +727,9 @@
   justify-content: center;
   color: #FFFFFF;
   flex-shrink: 0;
-  transition: all 0.15s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out), border-color 150ms var(--ease-out);
 }
 .c-option-check-btn.is-radio { border-radius: 50%; }
 .c-option-check-btn.is-checkbox { border-radius: 6px; }
@@ -715,7 +763,10 @@
   padding: 4px;
   transition: color 0.15s;
 }
-.c-option-delete-btn:hover { color: #FF4500; }
+@media (hover: hover) and (pointer: fine) {
+  .c-option-delete-btn:hover { color: #FF4500; }
+}
+
 
 .c-add-option-btn {
   align-self: flex-start;
@@ -731,7 +782,10 @@
   cursor: pointer;
   transition: color 0.15s;
 }
-.c-add-option-btn:hover { color: #FF4500; }
+@media (hover: hover) and (pointer: fine) {
+  .c-add-option-btn:hover { color: #FF4500; }
+}
+
 
 .c-tf-options-grid {
   display: grid;
@@ -748,7 +802,9 @@
   align-items: center;
   gap: 12px;
   color: #D1D5DB;
-  transition: all 0.15s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), border-color 150ms var(--ease-out), background-color 150ms var(--ease-out), color 150ms var(--ease-out);
 }
 .c-tf-pill-btn.selected {
   border-color: #FF4500;
@@ -879,9 +935,12 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.15s;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out), border-color 150ms var(--ease-out), color 150ms var(--ease-out);
 }
-.c-q-done-btn:hover { background: #222225; border-color: #FF4500; color: #FF4500; }
+@media (hover: hover) and (pointer: fine) {
+  .c-q-done-btn:hover { background: #222225; border-color: #FF4500; color: #FF4500; }
+}
+
 
 .c-bottom-add-bar {
   display: flex;
@@ -903,13 +962,16 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  transition: all 0.2s ease;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), border-color 160ms var(--ease-out), color 160ms var(--ease-out), background-color 160ms var(--ease-out);
 }
-.c-add-main-btn:hover:not(:disabled) {
+@media (hover: hover) and (pointer: fine) {
+  .c-add-main-btn:hover:not(:disabled) {
   border-color: #FF4500;
   color: #FF4500;
   background: rgba(255, 69, 0, 0.05);
 }
+}
+
 .c-add-main-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -980,9 +1042,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out), color 150ms var(--ease-out);
 }
-.c-window-close-btn:hover { background: #222225; color: #FFFFFF; }
+@media (hover: hover) and (pointer: fine) {
+  .c-window-close-btn:hover { background: #222225; color: #FFFFFF; }
+}
+
 
 .c-window-tabs-bar {
   display: flex;
@@ -1002,7 +1067,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.15s;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), color 150ms var(--ease-out), border-color 150ms var(--ease-out);
 }
 .c-window-tab.active {
   color: #FFFFFF;
@@ -1054,7 +1119,7 @@
   cursor: pointer;
   text-align: left;
   color: #9CA3AF;
-  transition: all 0.15s;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), border-color 150ms var(--ease-out), background-color 150ms var(--ease-out), color 150ms var(--ease-out);
 }
 .c-vis-card-btn.selected {
   border-color: #FF4500;
@@ -1118,9 +1183,12 @@
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out), border-color 150ms var(--ease-out);
 }
-.c-apply-url-btn:hover { background: #222225; border-color: #FF4500; }
+@media (hover: hover) and (pointer: fine) {
+  .c-apply-url-btn:hover { background: #222225; border-color: #FF4500; }
+}
+
 .c-clear-cover-btn {
   align-self: flex-start;
   background: transparent;
@@ -1161,7 +1229,10 @@
   align-items: center;
   transition: color 0.15s;
 }
-.c-tag-chip button:hover { color: #FF4500; }
+@media (hover: hover) and (pointer: fine) {
+  .c-tag-chip button:hover { color: #FF4500; }
+}
+
 .c-add-tag-row { display: flex; gap: 6px; }
 .c-add-tag-row input {
   flex: 1;
@@ -1183,9 +1254,12 @@
   padding: 0 12px;
   border-radius: 7px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out), border-color 150ms var(--ease-out);
 }
-.c-btn-add-tag:hover { background: #222225; border-color: #FF4500; }
+@media (hover: hover) and (pointer: fine) {
+  .c-btn-add-tag:hover { background: #222225; border-color: #FF4500; }
+}
+
 
 .c-window-footer {
   padding: 16px 24px;
@@ -1205,9 +1279,12 @@
   padding: 8px 22px;
   border-radius: 9px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out);
 }
-.c-window-done-btn:hover { background: #FF571A; }
+@media (hover: hover) and (pointer: fine) {
+  .c-window-done-btn:hover { background: #FF571A; }
+}
+
 
 @media (max-width: 768px) {
   .c-header-stats-pill { display: none; }
@@ -1223,3 +1300,51 @@
 
 .spinner { animation: spin 1s linear infinite; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* Tactile Press Feedback & Mobile Native Controls */
+.c-nav-back-btn:active,
+.c-floating-settings-trigger:active,
+.c-draft-btn:active,
+.c-publish-btn:active,
+.c-cover-action-btn:active,
+.c-q-tab-btn:active,
+.c-q-tool-btn:active,
+.c-option-check-btn:active,
+.c-option-delete-btn:active,
+.c-add-option-btn:active,
+.c-tf-pill-btn:active,
+.c-q-done-btn:active,
+.c-add-main-btn:active,
+.c-window-close-btn:active,
+.c-window-tab:active,
+.c-vis-card-btn:active,
+.c-apply-url-btn:active,
+.c-clear-cover-btn:active,
+.c-btn-add-tag:active,
+.c-window-done-btn:active {
+  transform: scale(0.97);
+}
+
+.c-nav-back-btn,
+.c-floating-settings-trigger,
+.c-draft-btn,
+.c-publish-btn,
+.c-cover-action-btn,
+.c-q-tab-btn,
+.c-q-tool-btn,
+.c-option-check-btn,
+.c-option-delete-btn,
+.c-add-option-btn,
+.c-tf-pill-btn,
+.c-q-done-btn,
+.c-add-main-btn,
+.c-window-close-btn,
+.c-window-tab,
+.c-vis-card-btn,
+.c-apply-url-btn,
+.c-clear-cover-btn,
+.c-btn-add-tag,
+.c-window-done-btn {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}

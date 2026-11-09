@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 /**
  * QuizFocus Challenge Service
  * Microservice dedicated exclusively to competitive challenges,
@@ -37,9 +38,10 @@ if (env.isDev) {
 
 // Global Microservice Health Check
 app.get('/api/v1/health', (req, res) => {
-  res.json({
+  const healthy = mongoose.connection.readyState === 1;
+  res.status(healthy ? 200 : 503).json({
     service: 'challenge-service',
-    status: 'healthy',
+    status: healthy ? 'healthy' : 'degraded',
     port: env.PORT,
     timestamp: new Date().toISOString(),
   });

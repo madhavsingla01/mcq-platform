@@ -1,13 +1,13 @@
 import api from '../api/axios';
 
 export const messageService = {
-  getConversations: async () => {
-    const { data } = await api.get('/messages/conversations');
+  getConversations: async (params = {}) => {
+    const { data } = await api.get('/messages/conversations', { params });
     return data.data;
   },
 
-  getMessages: async (conversationId) => {
-    const { data } = await api.get(`/messages/conversations/${conversationId}`);
+  getMessages: async (conversationId, params = {}, signal) => {
+    const { data } = await api.get(`/messages/conversations/${conversationId}`, { params, signal });
     return data.data;
   },
 
@@ -21,8 +21,8 @@ export const messageService = {
     return data.data;
   },
 
-  markConversationRead: async (conversationId) => {
-    const { data } = await api.patch(`/messages/conversations/${conversationId}/read`);
+  markConversationRead: async (conversationId, messageIds = []) => {
+    const { data } = await api.patch(`/messages/conversations/${conversationId}/read`, { messageIds });
     return data.data;
   },
 

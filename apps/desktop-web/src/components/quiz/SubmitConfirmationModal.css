@@ -28,7 +28,7 @@
   align-items: center;
   gap: 16px;
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.06);
-  transform: scale(0.95) translateY(10px);
+  transform: scale(0.97) translateY(10px);
   opacity: 0;
   transition: transform 0.24s var(--ease-out), opacity 0.2s ease;
 }
@@ -151,3 +151,6 @@
     font-size: 24px;
   }
 }
+.scm-native-dialog { position:fixed; inset:0; width:100%; height:100%; max-width:none; max-height:none; margin:0; padding:0; border:0; background:transparent; color:inherit; }
+.scm-native-dialog::backdrop { background:transparent; }
+.scm-native-dialog :focus-visible { outline:3px solid #ff713d; outline-offset:3px; }

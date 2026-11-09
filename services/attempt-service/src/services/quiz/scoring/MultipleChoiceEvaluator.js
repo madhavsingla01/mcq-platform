@@ -2,7 +2,7 @@ import { BaseQuestionEvaluator } from './BaseQuestionEvaluator.js';
 
 export class MultipleChoiceEvaluator extends BaseQuestionEvaluator {
   supports(question) {
-    return question?.type === 'multiple_choice' || question?.type === 'multi_select';
+    return question?.questionType === 'checkboxes' || question?.type === 'multiple_choice' || question?.type === 'multi_select';
   }
 
   evaluate({ question, userResponse, options = {} }) {
@@ -11,11 +11,9 @@ export class MultipleChoiceEvaluator extends BaseQuestionEvaluator {
       ? Number(question.negativeMarks)
       : (options.negativeMarking ? (options.negativeMarkValue || 0.25) : 0);
 
-    const userAnswers = Array.isArray(userResponse)
-      ? userResponse.map((a) => String(a).trim().toLowerCase())
-      : userResponse
-      ? [String(userResponse).trim().toLowerCase()]
-      : [];
+    const userAnswers = (Array.isArray(userResponse) ? userResponse : String(userResponse || '').split(','))
+      .map(answer => String(answer).trim().toLowerCase())
+      .filter(Boolean);
 
     if (userAnswers.length === 0) {
       return {
@@ -53,7 +51,7 @@ export class MultipleChoiceEvaluator extends BaseQuestionEvaluator {
       marksAwarded = defaultMarks;
     } else if (isPartiallyCorrect && options.allowPartialCredit !== false) {
       marksAwarded = Number(((correctSelected.length / correctAnswers.length) * defaultMarks).toFixed(2));
-    } else if (incorrectSelected.length > 0) {
+    } else {
       marksAwarded = -defaultNegativeMarks;
     }
 

@@ -35,8 +35,12 @@ export const recordActivity = async ({
 export const decorateQuizzesForViewer = async (quizzes, viewerId) => {
   return quizzes.map((quiz) => {
     const plainQuiz = typeof quiz.toObject === 'function' ? quiz.toObject() : quiz;
+    // The shared quizzes collection can contain embedded authoring data from Challenge.
+    const { questions, draftData, ...metadata } = plainQuiz;
     return {
-      ...plainQuiz,
+      ...metadata,
+      questionCount: plainQuiz.questionCount || questions?.length || 0,
+      ...(plainQuiz.isChallenge && !(plainQuiz.deadlineAt && new Date(plainQuiz.deadlineAt) <= new Date()) ? { avgScore: 0 } : {}),
       social: {
         likeCount: plainQuiz.likeCount || 0,
         commentCount: plainQuiz.commentCount || 0,

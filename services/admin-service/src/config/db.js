@@ -6,8 +6,11 @@ let quizDbConn = null;
 let attemptDbConn = null;
 
 const MONGO_OPTIONS = {
-  maxPoolSize: Number(process.env.MONGO_MAX_POOL_SIZE) || 10,
-  minPoolSize: Number(process.env.MONGO_MIN_POOL_SIZE) || 2,
+  maxPoolSize: Number(process.env.MONGO_MAX_POOL_SIZE ?? 10),
+  minPoolSize: 0,
+  maxIdleTimeMS: 30000,
+  waitQueueTimeoutMS: 5000,
+  bufferCommands: false,
   serverSelectionTimeoutMS: 5000,
   socketTimeoutMS: 45000,
   connectTimeoutMS: 10000,

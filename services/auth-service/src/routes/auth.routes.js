@@ -13,10 +13,11 @@ import {
   checkUsername,
   searchUsers,
   bootstrapSession,
+  revokeOtherSessions,
 } from '../controllers/auth.controller.js';
 import { optionalAuth, protect } from '../middleware/auth.middleware.js';
 import { validateBody } from '../middleware/validation.middleware.js';
-import { authRateLimit } from '../middleware/rateLimit.middleware.js';
+import { authAddressLimit, authRateLimit } from '../middleware/rateLimit.middleware.js';
 
 const router = Router();
 
@@ -31,20 +32,24 @@ router.get('/check-username', optionalAuth, checkUsername);
 router.get('/users/search', optionalAuth, searchUsers);
 router.get('/bootstrap', bootstrapSession);
 
-router.post('/register', authRateLimit, validateBody({
+router.post('/register', authAddressLimit, authRateLimit, validateBody({
   name: { required: true, type: 'string', min: 2, max: 50 },
   email: { required: true, type: 'string', email: true },
   password: { required: true, type: 'string', min: 6 },
 }), register);
 
-router.post('/login', authRateLimit, validateBody({
-  email: { required: true, type: 'string', email: true },
-  password: { required: true, type: 'string' },
+router.post('/login', authAddressLimit, authRateLimit, validateBody({
+  email: { type: 'string', max: 320 },
+  identifier: { type: 'string', max: 320 },
+  password: { required: true, type: 'string', max: 1024 },
 }), login);
 
 router.post('/logout', optionalAuth, logout);
-router.post('/refresh', refresh);
+router.post('/refresh', authRateLimit, refresh);
 router.get('/me', protect, getMe);
+router.post('/me/sessions/revoke', protect, authRateLimit, validateBody({
+  currentPassword: { required: true, type: 'string', max: 1024 },
+}), revokeOtherSessions);
 router.post('/me/avatar', protect, uploadUserAvatar);
 router.post('/me/banner', protect, uploadUserBanner);
 router.delete('/me/banner', protect, removeUserBanner);

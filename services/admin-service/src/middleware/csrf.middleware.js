@@ -8,7 +8,7 @@ const CSRF_HEADER_NAME = 'x-csrf-token';
 const safeEqual = (left, right) => {
   const leftBuffer = Buffer.from(String(left || ''));
   const rightBuffer = Buffer.from(String(right || ''));
-  return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
+  return leftBuffer.length > 0 && leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
 };
 
 export const csrfProtection = (req, res, next) => {

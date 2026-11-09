@@ -1,0 +1,5250 @@
+{
+  "schemaVersion": 1,
+  "scope": "Source evidence only. Operation detection is a lower bound, not runtime reachability or complete field-level ownership. Document saves, raw Mongo collections and dynamic repositories require manual review.",
+  "services": [
+    {
+      "name": "admin-service",
+      "sourceFiles": 17,
+      "models": [
+        "services/admin-service/src/models/AdminAuditLog.model.js",
+        "services/admin-service/src/models/AdminMembership.model.js",
+        "services/admin-service/src/models/AdminRole.model.js",
+        "services/admin-service/src/models/ModerationReport.model.js"
+      ],
+      "operations": [
+        {
+          "file": "services/admin-service/src/controllers/audit.controller.js",
+          "line": 27,
+          "model": "AdminAuditLog.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/admin-service/src/controllers/audit.controller.js",
+          "line": 32,
+          "model": "AdminAuditLog.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/admin-service/src/controllers/content.controller.js",
+          "line": 125,
+          "model": "ModerationReport.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/admin-service/src/controllers/content.controller.js",
+          "line": 126,
+          "model": "AdminAuditLog.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/admin-service/src/controllers/content.controller.js",
+          "line": 175,
+          "model": "AdminAuditLog.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/admin-service/src/controllers/content.controller.js",
+          "line": 233,
+          "model": "AdminAuditLog.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/admin-service/src/controllers/dashboard.controller.js",
+          "line": 44,
+          "model": "ModerationReport.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/admin-service/src/controllers/dashboard.controller.js",
+          "line": 45,
+          "model": "AdminAuditLog.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/admin-service/src/controllers/reports.controller.js",
+          "line": 56,
+          "model": "ModerationReport.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/admin-service/src/controllers/reports.controller.js",
+          "line": 104,
+          "model": "ModerationReport.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/admin-service/src/controllers/reports.controller.js",
+          "line": 109,
+          "model": "ModerationReport.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/admin-service/src/controllers/reports.controller.js",
+          "line": 142,
+          "model": "ModerationReport.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/admin-service/src/controllers/reports.controller.js",
+          "line": 192,
+          "model": "AdminAuditLog.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/admin-service/src/controllers/users.controller.js",
+          "line": 105,
+          "model": "AdminMembership.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/admin-service/src/controllers/users.controller.js",
+          "line": 112,
+          "model": "AdminAuditLog.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/admin-service/src/controllers/users.controller.js",
+          "line": 176,
+          "model": "AdminAuditLog.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/admin-service/src/controllers/users.controller.js",
+          "line": 234,
+          "model": "AdminAuditLog.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/admin-service/src/controllers/users.controller.js",
+          "line": 288,
+          "model": "AdminAuditLog.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/admin-service/src/middleware/auth.middleware.js",
+          "line": 49,
+          "model": "AdminMembership.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/admin-service/src/middleware/auth.middleware.js",
+          "line": 55,
+          "model": "AdminMembership.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/admin-service/src/middleware/auth.middleware.js",
+          "line": 71,
+          "model": "AdminRole.model.js",
+          "operation": "find",
+          "kind": "read"
+        }
+      ],
+      "mounts": [
+        {
+          "file": "services/admin-service/src/routes/admin.routes.js",
+          "line": 28,
+          "registration": "router.get('/health', (req, res) => {"
+        },
+        {
+          "file": "services/admin-service/src/routes/admin.routes.js",
+          "line": 37,
+          "registration": "router.post('/reports/submit', optionalAuth, submitReport);"
+        },
+        {
+          "file": "services/admin-service/src/routes/admin.routes.js",
+          "line": 43,
+          "registration": "router.get('/overview', getDashboardOverview);"
+        },
+        {
+          "file": "services/admin-service/src/routes/admin.routes.js",
+          "line": 46,
+          "registration": "router.get('/users', requirePermission('manage_users'), listUsers);"
+        },
+        {
+          "file": "services/admin-service/src/routes/admin.routes.js",
+          "line": 47,
+          "registration": "router.get('/users/:id', requirePermission('manage_users'), getUserDetails);"
+        },
+        {
+          "file": "services/admin-service/src/routes/admin.routes.js",
+          "line": 48,
+          "registration": "router.post('/users/:id/suspend', requirePermission('suspend_users'), suspendUser);"
+        },
+        {
+          "file": "services/admin-service/src/routes/admin.routes.js",
+          "line": 49,
+          "registration": "router.post('/users/:id/restore', requirePermission('suspend_users'), restoreUser);"
+        },
+        {
+          "file": "services/admin-service/src/routes/admin.routes.js",
+          "line": 50,
+          "registration": "router.post('/users/:id/role', requirePermission('manage_roles'), updateUserRole);"
+        },
+        {
+          "file": "services/admin-service/src/routes/admin.routes.js",
+          "line": 53,
+          "registration": "router.get('/content', requirePermission('manage_content'), listContent);"
+        },
+        {
+          "file": "services/admin-service/src/routes/admin.routes.js",
+          "line": 54,
+          "registration": "router.get('/content/:id', requirePermission('manage_content'), getContentDetails);"
+        },
+        {
+          "file": "services/admin-service/src/routes/admin.routes.js",
+          "line": 55,
+          "registration": "router.post('/content/:id/restrict', requirePermission('restrict_content'), restrictContent);"
+        },
+        {
+          "file": "services/admin-service/src/routes/admin.routes.js",
+          "line": 56,
+          "registration": "router.post('/content/:id/restore', requirePermission('restrict_content'), restoreContent);"
+        },
+        {
+          "file": "services/admin-service/src/routes/admin.routes.js",
+          "line": 59,
+          "registration": "router.get('/reports', requirePermission('manage_reports'), listReports);"
+        },
+        {
+          "file": "services/admin-service/src/routes/admin.routes.js",
+          "line": 60,
+          "registration": "router.post('/reports/:id/resolve', requirePermission('manage_reports'), resolveReport);"
+        },
+        {
+          "file": "services/admin-service/src/routes/admin.routes.js",
+          "line": 63,
+          "registration": "router.get('/audit-logs', requirePermission('view_audit_logs'), listAuditLogs);"
+        },
+        {
+          "file": "services/admin-service/src/routes/admin.routes.js",
+          "line": 66,
+          "registration": "router.get('/system', requirePermission('system_health'), getSystemHealth);"
+        },
+        {
+          "file": "services/admin-service/src/server.js",
+          "line": 21,
+          "registration": "app.use("
+        },
+        {
+          "file": "services/admin-service/src/server.js",
+          "line": 31,
+          "registration": "app.use(express.json({ limit: '10mb' }));"
+        },
+        {
+          "file": "services/admin-service/src/server.js",
+          "line": 32,
+          "registration": "app.use(express.urlencoded({ extended: true, limit: '10mb' }));"
+        },
+        {
+          "file": "services/admin-service/src/server.js",
+          "line": 33,
+          "registration": "app.use(cookieParser());"
+        },
+        {
+          "file": "services/admin-service/src/server.js",
+          "line": 34,
+          "registration": "app.use(csrfProtection);"
+        },
+        {
+          "file": "services/admin-service/src/server.js",
+          "line": 37,
+          "registration": "app.use(morgan('dev'));"
+        },
+        {
+          "file": "services/admin-service/src/server.js",
+          "line": 52,
+          "registration": "app.use('/api/v1/admin', adminRoutes);"
+        },
+        {
+          "file": "services/admin-service/src/server.js",
+          "line": 55,
+          "registration": "app.use(notFoundHandler);"
+        },
+        {
+          "file": "services/admin-service/src/server.js",
+          "line": 56,
+          "registration": "app.use(errorHandler);"
+        }
+      ],
+      "network": [
+        {
+          "file": "services/admin-service/src/config/env.js",
+          "line": 25,
+          "reference": "auth: required('AUTH_SERVICE_URL'),"
+        },
+        {
+          "file": "services/admin-service/src/config/env.js",
+          "line": 26,
+          "reference": "quiz: required('QUIZ_SERVICE_URL'),"
+        },
+        {
+          "file": "services/admin-service/src/config/env.js",
+          "line": 27,
+          "reference": "parser: required('PARSER_SERVICE_URL'),"
+        },
+        {
+          "file": "services/admin-service/src/config/env.js",
+          "line": 28,
+          "reference": "attempt: required('ATTEMPT_SERVICE_URL'),"
+        },
+        {
+          "file": "services/admin-service/src/config/env.js",
+          "line": 29,
+          "reference": "social: required('SOCIAL_SERVICE_URL'),"
+        },
+        {
+          "file": "services/admin-service/src/config/env.js",
+          "line": 30,
+          "reference": "message: required('MESSAGE_SERVICE_URL'),"
+        },
+        {
+          "file": "services/admin-service/src/config/env.js",
+          "line": 31,
+          "reference": "media: required('MEDIA_SERVICE_URL'),"
+        },
+        {
+          "file": "services/admin-service/src/config/env.js",
+          "line": 32,
+          "reference": "challenge: required('CHALLENGE_SERVICE_URL'),"
+        },
+        {
+          "file": "services/admin-service/src/controllers/system.controller.js",
+          "line": 14,
+          "reference": "const resp = await fetch(`${url}/api/v1/health`, { signal: controller.signal });"
+        }
+      ],
+      "schedules": []
+    },
+    {
+      "name": "api-gateway",
+      "sourceFiles": 23,
+      "models": [
+        "services/api-gateway/src/models/Activity.model.js",
+        "services/api-gateway/src/models/Attempt.model.js",
+        "services/api-gateway/src/models/Conversation.model.js",
+        "services/api-gateway/src/models/Follow.model.js",
+        "services/api-gateway/src/models/MappingConfig.model.js",
+        "services/api-gateway/src/models/Message.model.js",
+        "services/api-gateway/src/models/Notification.model.js",
+        "services/api-gateway/src/models/Question.model.js",
+        "services/api-gateway/src/models/Quiz.model.js",
+        "services/api-gateway/src/models/QuizComment.model.js",
+        "services/api-gateway/src/models/QuizInteraction.model.js",
+        "services/api-gateway/src/models/QuizShare.model.js",
+        "services/api-gateway/src/models/Upload.model.js",
+        "services/api-gateway/src/models/User.model.js"
+      ],
+      "operations": [],
+      "mounts": [
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 61,
+          "registration": "app.use(requestContext);"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 64,
+          "registration": "app.use(helmet({"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 72,
+          "registration": "app.use(cors({"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 78,
+          "registration": "app.use(cookieParser());"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 83,
+          "registration": "app.use(morgan(':request-id :method :safe-path :status :response-time ms'));"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 101,
+          "registration": "app.use((req, res, next) => {"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 175,
+          "registration": "app.use('/api/v1/quiz/attempts', makeProxy(SERVICES.attempt, '/api/v1/quiz/attempts'));"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 176,
+          "registration": "app.use('/api/v1/attempts', makeProxy(SERVICES.attempt, '/api/v1/attempts'));"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 179,
+          "registration": "app.use('/api/v1/auth', makeProxy(SERVICES.auth, '/api/v1/auth'));"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 180,
+          "registration": "app.use('/api/v1/users', makeProxy(SERVICES.auth, '/api/v1/users'));"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 183,
+          "registration": "app.use('/api/v1/quiz', makeProxy(SERVICES.quiz, '/api/v1/quiz'));"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 184,
+          "registration": "app.use('/api/v1/quizzes', makeProxy(SERVICES.quiz, '/api/v1/quizzes'));"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 185,
+          "registration": "app.use('/api/v1/search', makeProxy(SERVICES.quiz, '/api/v1/search'));"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 189,
+          "registration": "app.use('/api/v1/media', makeProxy(SERVICES.media, '/api/v1/media'));"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 190,
+          "registration": "app.use('/media', makeProxy(SERVICES.media, '/media'));"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 191,
+          "registration": "app.use('/api/v1/upload', makeProxy(SERVICES.parser, '/api/v1/upload'));"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 192,
+          "registration": "app.use('/api/v1/parser', makeProxy(SERVICES.parser, '/api/v1/parser'));"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 193,
+          "registration": "app.use('/uploads/covers', makeProxy(SERVICES.quiz, '/uploads/covers'));"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 194,
+          "registration": "app.use('/uploads', makeProxy(SERVICES.parser, '/uploads'));"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 197,
+          "registration": "app.use('/api/v1/social', makeProxy(SERVICES.social, '/api/v1/social'));"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 198,
+          "registration": "app.use('/api/v1/notifications', makeProxy(SERVICES.social, '/api/v1/social/notifications'));"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 202,
+          "registration": "app.use('/socket.io', (req, res, next) => {"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 206,
+          "registration": "app.use('/api/v1/messages', makeProxy(SERVICES.message, '/api/v1/messages'));"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 209,
+          "registration": "app.use('/api/v1/admin', makeProxy(SERVICES.admin, '/api/v1/admin'));"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 212,
+          "registration": "app.use('/api/v1/challenges', makeProxy(SERVICES.challenge, '/api/v1/challenges'));"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 215,
+          "registration": "app.use('*', (req, res) => {"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 220,
+          "registration": "app.use((err, req, res, next) => {"
+        }
+      ],
+      "network": [
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 34,
+          "reference": "auth: requiredSetting('AUTH_SERVICE_URL'),"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 35,
+          "reference": "quiz: requiredSetting('QUIZ_SERVICE_URL'),"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 36,
+          "reference": "parser: requiredSetting('PARSER_SERVICE_URL'),"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 37,
+          "reference": "attempt: requiredSetting('ATTEMPT_SERVICE_URL'),"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 38,
+          "reference": "social: requiredSetting('SOCIAL_SERVICE_URL'),"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 39,
+          "reference": "message: requiredSetting('MESSAGE_SERVICE_URL'),"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 40,
+          "reference": "media: requiredSetting('MEDIA_SERVICE_URL'),"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 41,
+          "reference": "admin: requiredSetting('ADMIN_SERVICE_URL'),"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 42,
+          "reference": "challenge: requiredSetting('CHALLENGE_SERVICE_URL'),"
+        },
+        {
+          "file": "services/api-gateway/src/server.js",
+          "line": 107,
+          "reference": "const makeProxy = (target, pathPrefix = '') => createProxyMiddleware({"
+        }
+      ],
+      "schedules": []
+    },
+    {
+      "name": "attempt-service",
+      "sourceFiles": 81,
+      "models": [
+        "services/attempt-service/src/models/Activity.model.js",
+        "services/attempt-service/src/models/Attempt.model.js",
+        "services/attempt-service/src/models/Conversation.model.js",
+        "services/attempt-service/src/models/Follow.model.js",
+        "services/attempt-service/src/models/MappingConfig.model.js",
+        "services/attempt-service/src/models/Message.model.js",
+        "services/attempt-service/src/models/Notification.model.js",
+        "services/attempt-service/src/models/Question.model.js",
+        "services/attempt-service/src/models/Quiz.model.js",
+        "services/attempt-service/src/models/QuizComment.model.js",
+        "services/attempt-service/src/models/QuizInteraction.model.js",
+        "services/attempt-service/src/models/QuizShare.model.js",
+        "services/attempt-service/src/models/Upload.model.js",
+        "services/attempt-service/src/models/User.model.js"
+      ],
+      "operations": [
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 35,
+          "model": "Attempt.model.js",
+          "operation": "aggregate",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 52,
+          "model": "Quiz.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 59,
+          "model": "Question.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 160,
+          "model": "Quiz.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 161,
+          "model": "User.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 355,
+          "model": "Upload.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 464,
+          "model": "Quiz.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 486,
+          "model": "Question.model.js",
+          "operation": "insertMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 549,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 573,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 606,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 629,
+          "model": "Attempt.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 638,
+          "model": "Attempt.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 658,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 681,
+          "model": "Attempt.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 694,
+          "model": "Attempt.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 753,
+          "model": "Attempt.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 797,
+          "model": "Attempt.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 822,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 841,
+          "model": "Attempt.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 859,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 903,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 937,
+          "model": "Attempt.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1045,
+          "model": "Quiz.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1051,
+          "model": "Quiz.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1102,
+          "model": "User.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1155,
+          "model": "Quiz.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1161,
+          "model": "Quiz.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1197,
+          "model": "Quiz.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1205,
+          "model": "Question.model.js",
+          "operation": "insertMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1341,
+          "model": "Quiz.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1382,
+          "model": "Question.model.js",
+          "operation": "insertMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1397,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1407,
+          "model": "Attempt.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1440,
+          "model": "Question.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1441,
+          "model": "Question.model.js",
+          "operation": "insertMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1465,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1473,
+          "model": "Attempt.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1478,
+          "model": "Question.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1479,
+          "model": "Attempt.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1481,
+          "model": "Upload.model.js",
+          "operation": "updateMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1496,
+          "model": "Attempt.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1525,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1584,
+          "model": "Attempt.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1615,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1638,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1683,
+          "model": "Attempt.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1684,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1705,
+          "model": "Attempt.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1726,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1744,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1765,
+          "model": "Attempt.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1807,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1815,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1846,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1872,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1877,
+          "model": "Attempt.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1909,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1952,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 1988,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 2013,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 2025,
+          "model": "Attempt.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/controllers/attempt.controller.js",
+          "line": 2054,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/infrastructure/repositories/MongooseAttemptRepository.js",
+          "line": 6,
+          "model": "Attempt.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/infrastructure/repositories/MongooseAttemptRepository.js",
+          "line": 23,
+          "model": "Attempt.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/infrastructure/repositories/MongooseAttemptRepository.js",
+          "line": 40,
+          "model": "Attempt.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/infrastructure/repositories/MongooseAttemptRepository.js",
+          "line": 44,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/infrastructure/repositories/MongooseAttemptRepository.js",
+          "line": 57,
+          "model": "Attempt.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/infrastructure/repositories/MongooseAttemptRepository.js",
+          "line": 63,
+          "model": "Attempt.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/infrastructure/repositories/MongooseAttemptRepository.js",
+          "line": 65,
+          "model": "Attempt.model.js",
+          "operation": "new document (save must be verified)",
+          "kind": "write-candidate"
+        },
+        {
+          "file": "services/attempt-service/src/infrastructure/repositories/MongooseAttemptRepository.js",
+          "line": 70,
+          "model": "Attempt.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/infrastructure/repositories/MongooseAttemptRepository.js",
+          "line": 74,
+          "model": "Attempt.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/infrastructure/repositories/MongooseQuestionRepository.js",
+          "line": 6,
+          "model": "Question.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/infrastructure/repositories/MongooseQuestionRepository.js",
+          "line": 14,
+          "model": "Question.model.js",
+          "operation": "insertMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/infrastructure/repositories/MongooseQuestionRepository.js",
+          "line": 18,
+          "model": "Question.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/infrastructure/repositories/MongooseQuizRepository.js",
+          "line": 6,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/infrastructure/repositories/MongooseQuizRepository.js",
+          "line": 10,
+          "model": "Quiz.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/infrastructure/repositories/MongooseQuizRepository.js",
+          "line": 23,
+          "model": "Quiz.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/infrastructure/repositories/MongooseQuizRepository.js",
+          "line": 25,
+          "model": "Quiz.model.js",
+          "operation": "new document (save must be verified)",
+          "kind": "write-candidate"
+        },
+        {
+          "file": "services/attempt-service/src/infrastructure/repositories/MongooseQuizRepository.js",
+          "line": 30,
+          "model": "Quiz.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/infrastructure/repositories/MongooseQuizRepository.js",
+          "line": 34,
+          "model": "Quiz.model.js",
+          "operation": "findByIdAndDelete",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/infrastructure/repositories/MongooseQuizRepository.js",
+          "line": 38,
+          "model": "Quiz.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/jobs/finalization.worker.js",
+          "line": 12,
+          "model": "Quiz.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/jobs/finalization.worker.js",
+          "line": 24,
+          "model": "Question.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/jobs/finalization.worker.js",
+          "line": 25,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/jobs/finalization.worker.js",
+          "line": 42,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/jobs/finalization.worker.js",
+          "line": 49,
+          "model": "Question.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/middleware/auth.middleware.js",
+          "line": 26,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/middleware/auth.middleware.js",
+          "line": 64,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/middleware/quizIdentifier.middleware.js",
+          "line": 13,
+          "model": "Quiz.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/services/quiz/quizGenerator.service.js",
+          "line": 24,
+          "model": "Upload.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/services/quiz/quizGenerator.service.js",
+          "line": 140,
+          "model": "Quiz.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/services/quiz/quizGenerator.service.js",
+          "line": 163,
+          "model": "Question.model.js",
+          "operation": "insertMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/services/social/activity.service.js",
+          "line": 39,
+          "model": "Activity.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/services/social/activity.service.js",
+          "line": 49,
+          "model": "User.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/services/social/activity.service.js",
+          "line": 59,
+          "model": "Notification.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/services/social/activity.service.js",
+          "line": 78,
+          "model": "QuizInteraction.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/services/social/activity.service.js",
+          "line": 114,
+          "model": "Quiz.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/services/social/activity.service.js",
+          "line": 131,
+          "model": "QuizComment.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/services/social/activity.service.js",
+          "line": 135,
+          "model": "QuizInteraction.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/services/social/activity.service.js",
+          "line": 136,
+          "model": "QuizComment.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/services/social/activity.service.js",
+          "line": 137,
+          "model": "QuizShare.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/services/social/activity.service.js",
+          "line": 138,
+          "model": "Message.model.js",
+          "operation": "updateMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/services/social/activity.service.js",
+          "line": 139,
+          "model": "Activity.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/services/social/activity.service.js",
+          "line": 142,
+          "model": "Notification.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/services/social/activity.service.js",
+          "line": 150,
+          "model": "QuizInteraction.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/services/social/activity.service.js",
+          "line": 151,
+          "model": "QuizComment.model.js",
+          "operation": "updateMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/services/social/activity.service.js",
+          "line": 152,
+          "model": "QuizShare.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/services/social/activity.service.js",
+          "line": 153,
+          "model": "Message.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/services/social/activity.service.js",
+          "line": 154,
+          "model": "Conversation.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/services/social/activity.service.js",
+          "line": 155,
+          "model": "Activity.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/services/social/activity.service.js",
+          "line": 156,
+          "model": "Notification.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/attempt-service/src/services/upload/fileHash.service.js",
+          "line": 45,
+          "model": "Quiz.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/attempt-service/src/services/upload/fileHash.service.js",
+          "line": 51,
+          "model": "Quiz.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        }
+      ],
+      "mounts": [
+        {
+          "file": "services/attempt-service/src/routes/attempts.routes.js",
+          "line": 24,
+          "registration": "router.get('/', optionalAuth, getUserAttempts);"
+        },
+        {
+          "file": "services/attempt-service/src/routes/attempts.routes.js",
+          "line": 25,
+          "registration": "router.get('/my-attempts', optionalAuth, getUserAttempts);"
+        },
+        {
+          "file": "services/attempt-service/src/routes/attempts.routes.js",
+          "line": 26,
+          "registration": "router.get('/user', optionalAuth, getUserAttempts);"
+        },
+        {
+          "file": "services/attempt-service/src/routes/attempts.routes.js",
+          "line": 27,
+          "registration": "router.post('/start', optionalAuth, resolveQuizIdentifier, startAttempt);"
+        },
+        {
+          "file": "services/attempt-service/src/routes/attempts.routes.js",
+          "line": 28,
+          "registration": "router.get('/in-progress', protect, getInProgressAttempts);"
+        },
+        {
+          "file": "services/attempt-service/src/routes/attempts.routes.js",
+          "line": 29,
+          "registration": "router.get('/:id/result', validateObjectId('id'), optionalAuth, getResultByAttemptId);"
+        },
+        {
+          "file": "services/attempt-service/src/routes/attempts.routes.js",
+          "line": 30,
+          "registration": "router.get('/:id/review', validateObjectId('id'), optionalAuth, getAttemptReview);"
+        },
+        {
+          "file": "services/attempt-service/src/routes/attempts.routes.js",
+          "line": 31,
+          "registration": "router.post('/:id/answer', validateObjectId('id'), optionalAuth, answerAttempt);"
+        },
+        {
+          "file": "services/attempt-service/src/routes/attempts.routes.js",
+          "line": 32,
+          "registration": "router.post('/:id/sync-time', validateObjectId('id'), optionalAuth, syncAttemptTime);"
+        },
+        {
+          "file": "services/attempt-service/src/routes/attempts.routes.js",
+          "line": 33,
+          "registration": "router.post('/:id/submit', validateObjectId('id'), optionalAuth, submitAttemptById);"
+        },
+        {
+          "file": "services/attempt-service/src/routes/attempts.routes.js",
+          "line": 34,
+          "registration": "router.get('/:id', validateObjectId('id'), optionalAuth, getAttemptById);"
+        },
+        {
+          "file": "services/attempt-service/src/routes/attempts.routes.js",
+          "line": 37,
+          "registration": "router.get('/attempts/:attemptId/result', validateObjectId('attemptId'), optionalAuth, getResultByAttemptId);"
+        },
+        {
+          "file": "services/attempt-service/src/routes/attempts.routes.js",
+          "line": 38,
+          "registration": "router.get('/:id/attempt/active', optionalAuth, resolveQuizIdentifier, getActiveAttempt);"
+        },
+        {
+          "file": "services/attempt-service/src/routes/attempts.routes.js",
+          "line": 39,
+          "registration": "router.post('/:id/attempt', optionalAuth, resolveQuizIdentifier, startAttempt);"
+        },
+        {
+          "file": "services/attempt-service/src/routes/attempts.routes.js",
+          "line": 40,
+          "registration": "router.put('/:id/attempt/:attemptId', validateObjectId('attemptId'), optionalAuth, resolveQuizIdentifier, submitAttempt);"
+        },
+        {
+          "file": "services/attempt-service/src/routes/attempts.routes.js",
+          "line": 41,
+          "registration": "router.put('/:id/attempt/:attemptId/sync-progress', validateObjectId('attemptId'), optionalAuth, resolveQuizIdentifier, syncAttempt);"
+        },
+        {
+          "file": "services/attempt-service/src/routes/attempts.routes.js",
+          "line": 42,
+          "registration": "router.post('/:id/attempt/:attemptId/sync-progress', validateObjectId('attemptId'), optionalAuth, resolveQuizIdentifier, syncAttempt);"
+        },
+        {
+          "file": "services/attempt-service/src/routes/attempts.routes.js",
+          "line": 43,
+          "registration": "router.get('/:id/attempt/:attemptId/result', validateObjectId('attemptId'), optionalAuth, resolveQuizIdentifier, getResult);"
+        },
+        {
+          "file": "services/attempt-service/src/server.js",
+          "line": 22,
+          "registration": "app.use(cors({"
+        },
+        {
+          "file": "services/attempt-service/src/server.js",
+          "line": 27,
+          "registration": "app.use(express.json({ limit: '10mb' }));"
+        },
+        {
+          "file": "services/attempt-service/src/server.js",
+          "line": 28,
+          "registration": "app.use(express.urlencoded({ extended: true, limit: '10mb' }));"
+        },
+        {
+          "file": "services/attempt-service/src/server.js",
+          "line": 29,
+          "registration": "app.use(cookieParser());"
+        },
+        {
+          "file": "services/attempt-service/src/server.js",
+          "line": 30,
+          "registration": "app.use(csrfProtection);"
+        },
+        {
+          "file": "services/attempt-service/src/server.js",
+          "line": 43,
+          "registration": "app.use('/api/v1/attempts', attemptsRoutes);"
+        },
+        {
+          "file": "services/attempt-service/src/server.js",
+          "line": 44,
+          "registration": "app.use('/api/v1/quiz/attempts', attemptsRoutes);"
+        },
+        {
+          "file": "services/attempt-service/src/server.js",
+          "line": 45,
+          "registration": "app.use('/api/v1/quiz', attemptsRoutes);"
+        },
+        {
+          "file": "services/attempt-service/src/server.js",
+          "line": 48,
+          "registration": "app.use(notFoundHandler);"
+        },
+        {
+          "file": "services/attempt-service/src/server.js",
+          "line": 49,
+          "registration": "app.use(errorHandler);"
+        }
+      ],
+      "network": [],
+      "schedules": [
+        {
+          "file": "services/attempt-service/src/jobs/finalization.worker.js",
+          "line": 63,
+          "reference": "export function startFinalizationWorker(onError = console.error) {"
+        },
+        {
+          "file": "services/attempt-service/src/jobs/finalization.worker.js",
+          "line": 70,
+          "reference": "const timer = setInterval(run, 60000);"
+        },
+        {
+          "file": "services/attempt-service/src/middleware/rateLimit.middleware.js",
+          "line": 15,
+          "reference": "setInterval(() => {"
+        },
+        {
+          "file": "services/attempt-service/src/middleware/rateLimit.middleware.js",
+          "line": 46,
+          "reference": "startCleanupWorker();"
+        },
+        {
+          "file": "services/attempt-service/src/server.js",
+          "line": 54,
+          "reference": "const stopWorker = startFinalizationWorker(message => logger.error(message));"
+        }
+      ]
+    },
+    {
+      "name": "auth-service",
+      "sourceFiles": 35,
+      "models": [
+        "services/auth-service/src/models/Activity.model.js",
+        "services/auth-service/src/models/Attempt.model.js",
+        "services/auth-service/src/models/Conversation.model.js",
+        "services/auth-service/src/models/Follow.model.js",
+        "services/auth-service/src/models/MappingConfig.model.js",
+        "services/auth-service/src/models/Message.model.js",
+        "services/auth-service/src/models/Notification.model.js",
+        "services/auth-service/src/models/Question.model.js",
+        "services/auth-service/src/models/Quiz.model.js",
+        "services/auth-service/src/models/QuizComment.model.js",
+        "services/auth-service/src/models/QuizInteraction.model.js",
+        "services/auth-service/src/models/QuizShare.model.js",
+        "services/auth-service/src/models/Upload.model.js",
+        "services/auth-service/src/models/User.model.js"
+      ],
+      "operations": [
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 73,
+          "model": "User.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 96,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 116,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 156,
+          "model": "User.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 163,
+          "model": "User.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 197,
+          "model": "User.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 270,
+          "model": "User.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 277,
+          "model": "User.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 313,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 374,
+          "model": "User.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 375,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 391,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 404,
+          "model": "User.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 454,
+          "model": "User.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 469,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 473,
+          "model": "User.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 484,
+          "model": "Follow.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 485,
+          "model": "Follow.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 492,
+          "model": "Follow.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 494,
+          "model": "User.model.js",
+          "operation": "updateMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 497,
+          "model": "User.model.js",
+          "operation": "updateMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 504,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 507,
+          "model": "User.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 548,
+          "model": "User.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 603,
+          "model": "User.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 609,
+          "model": "User.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 637,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 656,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/auth.controller.js",
+          "line": 671,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/profile.controller.js",
+          "line": 18,
+          "model": "User.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/profile.controller.js",
+          "line": 61,
+          "model": "Quiz.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/profile.controller.js",
+          "line": 124,
+          "model": "Quiz.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/profile.controller.js",
+          "line": 131,
+          "model": "Quiz.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/profile.controller.js",
+          "line": 166,
+          "model": "Follow.model.js",
+          "operation": "updateOne",
+          "kind": "write"
+        },
+        {
+          "file": "services/auth-service/src/controllers/profile.controller.js",
+          "line": 174,
+          "model": "User.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/auth-service/src/controllers/profile.controller.js",
+          "line": 175,
+          "model": "User.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/auth-service/src/controllers/profile.controller.js",
+          "line": 179,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/profile.controller.js",
+          "line": 202,
+          "model": "Follow.model.js",
+          "operation": "deleteOne",
+          "kind": "write"
+        },
+        {
+          "file": "services/auth-service/src/controllers/profile.controller.js",
+          "line": 205,
+          "model": "User.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/auth-service/src/controllers/profile.controller.js",
+          "line": 206,
+          "model": "User.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/auth-service/src/controllers/profile.controller.js",
+          "line": 210,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/profile.controller.js",
+          "line": 247,
+          "model": "Follow.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/profile.controller.js",
+          "line": 253,
+          "model": "Follow.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/profile.controller.js",
+          "line": 261,
+          "model": "Follow.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/profile.controller.js",
+          "line": 307,
+          "model": "Follow.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/profile.controller.js",
+          "line": 313,
+          "model": "Follow.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/controllers/profile.controller.js",
+          "line": 321,
+          "model": "Follow.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/middleware/auth.middleware.js",
+          "line": 27,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/auth-service/src/middleware/auth.middleware.js",
+          "line": 71,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        }
+      ],
+      "mounts": [
+        {
+          "file": "services/auth-service/src/routes/auth.routes.js",
+          "line": 31,
+          "registration": "router.get('/check-username', optionalAuth, checkUsername);"
+        },
+        {
+          "file": "services/auth-service/src/routes/auth.routes.js",
+          "line": 32,
+          "registration": "router.get('/users/search', optionalAuth, searchUsers);"
+        },
+        {
+          "file": "services/auth-service/src/routes/auth.routes.js",
+          "line": 33,
+          "registration": "router.get('/bootstrap', bootstrapSession);"
+        },
+        {
+          "file": "services/auth-service/src/routes/auth.routes.js",
+          "line": 35,
+          "registration": "router.post('/register', authRateLimit, validateBody({"
+        },
+        {
+          "file": "services/auth-service/src/routes/auth.routes.js",
+          "line": 41,
+          "registration": "router.post('/login', authRateLimit, validateBody({"
+        },
+        {
+          "file": "services/auth-service/src/routes/auth.routes.js",
+          "line": 46,
+          "registration": "router.post('/logout', optionalAuth, logout);"
+        },
+        {
+          "file": "services/auth-service/src/routes/auth.routes.js",
+          "line": 47,
+          "registration": "router.post('/refresh', refresh);"
+        },
+        {
+          "file": "services/auth-service/src/routes/auth.routes.js",
+          "line": 48,
+          "registration": "router.get('/me', protect, getMe);"
+        },
+        {
+          "file": "services/auth-service/src/routes/auth.routes.js",
+          "line": 49,
+          "registration": "router.post('/me/sessions/revoke', protect, authRateLimit, validateBody({"
+        },
+        {
+          "file": "services/auth-service/src/routes/auth.routes.js",
+          "line": 52,
+          "registration": "router.post('/me/avatar', protect, uploadUserAvatar);"
+        },
+        {
+          "file": "services/auth-service/src/routes/auth.routes.js",
+          "line": 53,
+          "registration": "router.post('/me/banner', protect, uploadUserBanner);"
+        },
+        {
+          "file": "services/auth-service/src/routes/auth.routes.js",
+          "line": 54,
+          "registration": "router.delete('/me/banner', protect, removeUserBanner);"
+        },
+        {
+          "file": "services/auth-service/src/routes/auth.routes.js",
+          "line": 55,
+          "registration": "router.patch('/me', protect, validateBody({"
+        },
+        {
+          "file": "services/auth-service/src/routes/auth.routes.js",
+          "line": 77,
+          "registration": "router.put('/me', protect, validateBody({"
+        },
+        {
+          "file": "services/auth-service/src/routes/auth.routes.js",
+          "line": 99,
+          "registration": "router.delete('/me', protect, deleteAccount);"
+        },
+        {
+          "file": "services/auth-service/src/routes/profile.routes.js",
+          "line": 16,
+          "registration": "router.get('/search', optionalAuth, searchUsers);"
+        },
+        {
+          "file": "services/auth-service/src/routes/profile.routes.js",
+          "line": 17,
+          "registration": "router.get('/:username', optionalAuth, getProfile);"
+        },
+        {
+          "file": "services/auth-service/src/routes/profile.routes.js",
+          "line": 19,
+          "registration": "router.get('/:username/quizzes', optionalAuth, getUserQuizzes);"
+        },
+        {
+          "file": "services/auth-service/src/routes/profile.routes.js",
+          "line": 20,
+          "registration": "router.get('/:username/activity', optionalAuth, getUserActivity);"
+        },
+        {
+          "file": "services/auth-service/src/routes/profile.routes.js",
+          "line": 21,
+          "registration": "router.get('/:username/followers', optionalAuth, listFollowers);"
+        },
+        {
+          "file": "services/auth-service/src/routes/profile.routes.js",
+          "line": 22,
+          "registration": "router.get('/:username/following', optionalAuth, listFollowing);"
+        },
+        {
+          "file": "services/auth-service/src/routes/profile.routes.js",
+          "line": 23,
+          "registration": "router.post('/:username/follow', protect, followUser);"
+        },
+        {
+          "file": "services/auth-service/src/routes/profile.routes.js",
+          "line": 24,
+          "registration": "router.delete('/:username/follow', protect, unfollowUser);"
+        },
+        {
+          "file": "services/auth-service/src/server.js",
+          "line": 23,
+          "registration": "app.use(cors({"
+        },
+        {
+          "file": "services/auth-service/src/server.js",
+          "line": 28,
+          "registration": "app.use(express.json({ limit: '10mb' }));"
+        },
+        {
+          "file": "services/auth-service/src/server.js",
+          "line": 29,
+          "registration": "app.use(express.urlencoded({ extended: true, limit: '10mb' }));"
+        },
+        {
+          "file": "services/auth-service/src/server.js",
+          "line": 30,
+          "registration": "app.use((req, res, next) => {"
+        },
+        {
+          "file": "services/auth-service/src/server.js",
+          "line": 38,
+          "registration": "app.use(cookieParser());"
+        },
+        {
+          "file": "services/auth-service/src/server.js",
+          "line": 39,
+          "registration": "app.use(csrfProtection);"
+        },
+        {
+          "file": "services/auth-service/src/server.js",
+          "line": 53,
+          "registration": "app.use('/api/v1/auth', authRoutes);"
+        },
+        {
+          "file": "services/auth-service/src/server.js",
+          "line": 54,
+          "registration": "app.use('/api/v1/users', profileRoutes);"
+        },
+        {
+          "file": "services/auth-service/src/server.js",
+          "line": 57,
+          "registration": "app.use(notFoundHandler);"
+        },
+        {
+          "file": "services/auth-service/src/server.js",
+          "line": 58,
+          "registration": "app.use(errorHandler);"
+        }
+      ],
+      "network": [],
+      "schedules": [
+        {
+          "file": "services/auth-service/src/middleware/rateLimit.middleware.js",
+          "line": 15,
+          "reference": "setInterval(() => {"
+        },
+        {
+          "file": "services/auth-service/src/middleware/rateLimit.middleware.js",
+          "line": 52,
+          "reference": "startCleanupWorker();"
+        }
+      ]
+    },
+    {
+      "name": "challenge-service",
+      "sourceFiles": 16,
+      "models": [
+        "services/challenge-service/src/models/Attempt.model.js",
+        "services/challenge-service/src/models/Challenge.model.js",
+        "services/challenge-service/src/models/Question.model.js",
+        "services/challenge-service/src/models/User.model.js"
+      ],
+      "operations": [
+        {
+          "file": "services/challenge-service/src/controllers/challenge.controller.js",
+          "line": 409,
+          "model": "Question.model.js",
+          "operation": "insertMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/challenge-service/src/controllers/challenge.controller.js",
+          "line": 414,
+          "model": "Question.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/challenge-service/src/controllers/challenge.controller.js",
+          "line": 548,
+          "model": "Question.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/challenge-service/src/controllers/challenge.controller.js",
+          "line": 647,
+          "model": "Attempt.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/challenge-service/src/controllers/challenge.controller.js",
+          "line": 658,
+          "model": "Question.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/challenge-service/src/controllers/leaderboard.controller.js",
+          "line": 23,
+          "model": "Challenge.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/challenge-service/src/controllers/leaderboard.controller.js",
+          "line": 65,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/challenge-service/src/controllers/overview.controller.js",
+          "line": 19,
+          "model": "Challenge.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/challenge-service/src/controllers/overview.controller.js",
+          "line": 26,
+          "model": "Challenge.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/challenge-service/src/controllers/overview.controller.js",
+          "line": 33,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/challenge-service/src/controllers/overview.controller.js",
+          "line": 56,
+          "model": "User.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/challenge-service/src/controllers/overview.controller.js",
+          "line": 68,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/challenge-service/src/middleware/auth.middleware.js",
+          "line": 18,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/challenge-service/src/middleware/auth.middleware.js",
+          "line": 48,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        }
+      ],
+      "mounts": [
+        {
+          "file": "services/challenge-service/src/routes/challenge.routes.js",
+          "line": 16,
+          "registration": "router.get('/health', (req, res) => {"
+        },
+        {
+          "file": "services/challenge-service/src/routes/challenge.routes.js",
+          "line": 25,
+          "registration": "router.get('/overview', optionalAuth, getChallengesOverview);"
+        },
+        {
+          "file": "services/challenge-service/src/routes/challenge.routes.js",
+          "line": 28,
+          "registration": "router.get('/:idOrCode/leaderboard', getChallengeLeaderboard);"
+        },
+        {
+          "file": "services/challenge-service/src/routes/challenge.routes.js",
+          "line": 31,
+          "registration": "router.get('/', optionalAuth, listChallenges);"
+        },
+        {
+          "file": "services/challenge-service/src/routes/challenge.routes.js",
+          "line": 34,
+          "registration": "router.get('/:idOrCode', optionalAuth, getChallengeByIdOrCode);"
+        },
+        {
+          "file": "services/challenge-service/src/routes/challenge.routes.js",
+          "line": 37,
+          "registration": "router.post('/', protect, createChallenge);"
+        },
+        {
+          "file": "services/challenge-service/src/routes/challenge.routes.js",
+          "line": 38,
+          "registration": "router.put('/:idOrCode', protect, updateChallenge);"
+        },
+        {
+          "file": "services/challenge-service/src/routes/challenge.routes.js",
+          "line": 39,
+          "registration": "router.delete('/:idOrCode', protect, deleteChallenge);"
+        },
+        {
+          "file": "services/challenge-service/src/server.js",
+          "line": 20,
+          "registration": "app.use("
+        },
+        {
+          "file": "services/challenge-service/src/server.js",
+          "line": 30,
+          "registration": "app.use(express.json({ limit: '10mb' }));"
+        },
+        {
+          "file": "services/challenge-service/src/server.js",
+          "line": 31,
+          "registration": "app.use(express.urlencoded({ extended: true, limit: '10mb' }));"
+        },
+        {
+          "file": "services/challenge-service/src/server.js",
+          "line": 32,
+          "registration": "app.use(cookieParser());"
+        },
+        {
+          "file": "services/challenge-service/src/server.js",
+          "line": 33,
+          "registration": "app.use(csrfProtection);"
+        },
+        {
+          "file": "services/challenge-service/src/server.js",
+          "line": 36,
+          "registration": "app.use(morgan('dev'));"
+        },
+        {
+          "file": "services/challenge-service/src/server.js",
+          "line": 51,
+          "registration": "app.use('/api/v1/challenges', challengeRoutes);"
+        },
+        {
+          "file": "services/challenge-service/src/server.js",
+          "line": 54,
+          "registration": "app.use(notFoundHandler);"
+        },
+        {
+          "file": "services/challenge-service/src/server.js",
+          "line": 55,
+          "registration": "app.use(errorHandler);"
+        }
+      ],
+      "network": [],
+      "schedules": []
+    },
+    {
+      "name": "media-service",
+      "sourceFiles": 10,
+      "models": [
+        "services/media-service/src/models/MediaAsset.model.js"
+      ],
+      "operations": [
+        {
+          "file": "services/media-service/src/controllers/media.controller.js",
+          "line": 43,
+          "model": "MediaAsset.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/media-service/src/controllers/media.controller.js",
+          "line": 65,
+          "model": "MediaAsset.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/media-service/src/controllers/media.controller.js",
+          "line": 78,
+          "model": "MediaAsset.model.js",
+          "operation": "deleteOne",
+          "kind": "write"
+        },
+        {
+          "file": "services/media-service/src/services/image.service.js",
+          "line": 106,
+          "model": "MediaAsset.model.js",
+          "operation": "new document (save must be verified)",
+          "kind": "write-candidate"
+        },
+        {
+          "file": "services/media-service/src/services/image.service.js",
+          "line": 131,
+          "model": "MediaAsset.model.js",
+          "operation": "findById",
+          "kind": "read"
+        }
+      ],
+      "mounts": [
+        {
+          "file": "services/media-service/src/routes/media.routes.js",
+          "line": 8,
+          "registration": "router.post('/images', requireAuth, receiveImage, verifyImageSignature, uploadImage);"
+        },
+        {
+          "file": "services/media-service/src/routes/media.routes.js",
+          "line": 9,
+          "registration": "router.post('/validate-url', requireAuth, validateUrl);"
+        },
+        {
+          "file": "services/media-service/src/routes/media.routes.js",
+          "line": 10,
+          "registration": "router.get('/assets', requireAuth, getMyMedia);"
+        },
+        {
+          "file": "services/media-service/src/routes/media.routes.js",
+          "line": 11,
+          "registration": "router.delete('/assets/:id', requireAuth, deleteMyMedia);"
+        },
+        {
+          "file": "services/media-service/src/routes/media.routes.js",
+          "line": 12,
+          "registration": "router.get('/assets/:id/:variant?', getAsset);"
+        },
+        {
+          "file": "services/media-service/src/server.js",
+          "line": 18,
+          "registration": "app.use(cors({"
+        },
+        {
+          "file": "services/media-service/src/server.js",
+          "line": 22,
+          "registration": "app.use(helmet({"
+        },
+        {
+          "file": "services/media-service/src/server.js",
+          "line": 26,
+          "registration": "app.use(cookieParser());"
+        },
+        {
+          "file": "services/media-service/src/server.js",
+          "line": 27,
+          "registration": "app.use(express.json({ limit: '32kb' }));"
+        },
+        {
+          "file": "services/media-service/src/server.js",
+          "line": 39,
+          "registration": "app.use('/api/v1/media', mediaRoutes);"
+        },
+        {
+          "file": "services/media-service/src/server.js",
+          "line": 40,
+          "registration": "app.use('/media', mediaRoutes);"
+        },
+        {
+          "file": "services/media-service/src/server.js",
+          "line": 41,
+          "registration": "app.use((req, res) => {"
+        },
+        {
+          "file": "services/media-service/src/server.js",
+          "line": 44,
+          "registration": "app.use(errorHandler);"
+        }
+      ],
+      "network": [],
+      "schedules": []
+    },
+    {
+      "name": "message-service",
+      "sourceFiles": 36,
+      "models": [
+        "services/message-service/src/models/Activity.model.js",
+        "services/message-service/src/models/Attempt.model.js",
+        "services/message-service/src/models/Conversation.model.js",
+        "services/message-service/src/models/Follow.model.js",
+        "services/message-service/src/models/MappingConfig.model.js",
+        "services/message-service/src/models/Message.model.js",
+        "services/message-service/src/models/Notification.model.js",
+        "services/message-service/src/models/Question.model.js",
+        "services/message-service/src/models/Quiz.model.js",
+        "services/message-service/src/models/QuizComment.model.js",
+        "services/message-service/src/models/QuizInteraction.model.js",
+        "services/message-service/src/models/QuizShare.model.js",
+        "services/message-service/src/models/Upload.model.js",
+        "services/message-service/src/models/User.model.js"
+      ],
+      "operations": [
+        {
+          "file": "services/message-service/src/controllers/message.controller.js",
+          "line": 17,
+          "model": "Conversation.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/controllers/message.controller.js",
+          "line": 18,
+          "model": "Conversation.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/controllers/message.controller.js",
+          "line": 37,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/controllers/message.controller.js",
+          "line": 40,
+          "model": "User.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/controllers/message.controller.js",
+          "line": 45,
+          "model": "Conversation.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/controllers/message.controller.js",
+          "line": 49,
+          "model": "Conversation.model.js",
+          "operation": "findOneAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/message-service/src/controllers/message.controller.js",
+          "line": 52,
+          "model": "Conversation.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/controllers/message.controller.js",
+          "line": 85,
+          "model": "Conversation.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/controllers/message.controller.js",
+          "line": 97,
+          "model": "User.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/controllers/message.controller.js",
+          "line": 100,
+          "model": "Follow.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/controllers/message.controller.js",
+          "line": 102,
+          "model": "User.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/controllers/message.controller.js",
+          "line": 104,
+          "model": "User.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/middleware/auth.middleware.js",
+          "line": 27,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/middleware/auth.middleware.js",
+          "line": 71,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 24,
+          "model": "Conversation.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 30,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 46,
+          "model": "Message.model.js",
+          "operation": "aggregate",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 54,
+          "model": "Message.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 61,
+          "model": "Conversation.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 83,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 95,
+          "model": "QuizComment.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 96,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 121,
+          "model": "Message.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 134,
+          "model": "Message.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 144,
+          "model": "Message.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 146,
+          "model": "Message.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 151,
+          "model": "Conversation.model.js",
+          "operation": "updateOne",
+          "kind": "write"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 159,
+          "model": "Quiz.model.js",
+          "operation": "updateOne",
+          "kind": "write"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 160,
+          "model": "QuizShare.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 164,
+          "model": "Message.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 182,
+          "model": "Message.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 188,
+          "model": "Message.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 204,
+          "model": "Message.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 216,
+          "model": "Message.model.js",
+          "operation": "updateOne",
+          "kind": "write"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 218,
+          "model": "Conversation.model.js",
+          "operation": "updateOne",
+          "kind": "write"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 221,
+          "model": "Message.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 229,
+          "model": "Message.model.js",
+          "operation": "updateOne",
+          "kind": "write"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 231,
+          "model": "Message.model.js",
+          "operation": "updateMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 232,
+          "model": "Conversation.model.js",
+          "operation": "updateOne",
+          "kind": "write"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 234,
+          "model": "Message.model.js",
+          "operation": "updateOne",
+          "kind": "write"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 248,
+          "model": "Message.model.js",
+          "operation": "updateOne",
+          "kind": "write"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 257,
+          "model": "Message.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 266,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 270,
+          "model": "Message.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/services/messaging.service.js",
+          "line": 274,
+          "model": "Message.model.js",
+          "operation": "updateMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/message-service/src/socket/socketHandler.js",
+          "line": 28,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/socket/socketHandler.js",
+          "line": 49,
+          "model": "Conversation.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/socket/socketHandler.js",
+          "line": 63,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/message-service/src/socket/socketHandler.js",
+          "line": 102,
+          "model": "Conversation.model.js",
+          "operation": "find",
+          "kind": "read"
+        }
+      ],
+      "mounts": [
+        {
+          "file": "services/message-service/src/routes/message.routes.js",
+          "line": 21,
+          "registration": "router.get('/conversations', getConversations);"
+        },
+        {
+          "file": "services/message-service/src/routes/message.routes.js",
+          "line": 22,
+          "registration": "router.post('/start', startConversation);"
+        },
+        {
+          "file": "services/message-service/src/routes/message.routes.js",
+          "line": 23,
+          "registration": "router.get('/unread-count', getUnreadMessagesCount);"
+        },
+        {
+          "file": "services/message-service/src/routes/message.routes.js",
+          "line": 24,
+          "registration": "router.get('/search-users', searchMessageUsers);"
+        },
+        {
+          "file": "services/message-service/src/routes/message.routes.js",
+          "line": 26,
+          "registration": "router.get('/conversations/:conversationId', validateObjectId('conversationId'), getMessages);"
+        },
+        {
+          "file": "services/message-service/src/routes/message.routes.js",
+          "line": 27,
+          "registration": "router.post('/conversations/:conversationId/messages', validateObjectId('conversationId'), sendMessage);"
+        },
+        {
+          "file": "services/message-service/src/routes/message.routes.js",
+          "line": 28,
+          "registration": "router.patch('/conversations/:conversationId/read', validateObjectId('conversationId'), markConversationRead);"
+        },
+        {
+          "file": "services/message-service/src/routes/message.routes.js",
+          "line": 31,
+          "registration": "router.patch('/:messageId', validateObjectId('messageId'), editMessage);"
+        },
+        {
+          "file": "services/message-service/src/routes/message.routes.js",
+          "line": 32,
+          "registration": "router.delete('/:messageId', validateObjectId('messageId'), deleteMessage);"
+        },
+        {
+          "file": "services/message-service/src/routes/message.routes.js",
+          "line": 33,
+          "registration": "router.post('/:messageId/reactions', validateObjectId('messageId'), toggleMessageReaction);"
+        },
+        {
+          "file": "services/message-service/src/server.js",
+          "line": 27,
+          "registration": "app.use(cors({"
+        },
+        {
+          "file": "services/message-service/src/server.js",
+          "line": 32,
+          "registration": "app.use(express.json({ limit: '32kb' }));"
+        },
+        {
+          "file": "services/message-service/src/server.js",
+          "line": 33,
+          "registration": "app.use(express.urlencoded({ extended: true, limit: '32kb' }));"
+        },
+        {
+          "file": "services/message-service/src/server.js",
+          "line": 34,
+          "registration": "app.use(cookieParser());"
+        },
+        {
+          "file": "services/message-service/src/server.js",
+          "line": 35,
+          "registration": "app.use(csrfProtection);"
+        },
+        {
+          "file": "services/message-service/src/server.js",
+          "line": 48,
+          "registration": "app.use('/api/v1/messages', messageRoutes);"
+        },
+        {
+          "file": "services/message-service/src/server.js",
+          "line": 51,
+          "registration": "app.use(notFoundHandler);"
+        },
+        {
+          "file": "services/message-service/src/server.js",
+          "line": 52,
+          "registration": "app.use(errorHandler);"
+        }
+      ],
+      "network": [],
+      "schedules": [
+        {
+          "file": "services/message-service/src/middleware/rateLimit.middleware.js",
+          "line": 15,
+          "reference": "setInterval(() => {"
+        },
+        {
+          "file": "services/message-service/src/middleware/rateLimit.middleware.js",
+          "line": 46,
+          "reference": "startCleanupWorker();"
+        },
+        {
+          "file": "services/message-service/src/services/chatBudget.js",
+          "line": 6,
+          "reference": "const cleanup = setInterval(() => {"
+        }
+      ]
+    },
+    {
+      "name": "parser-service",
+      "sourceFiles": 63,
+      "models": [
+        "services/parser-service/src/models/Activity.model.js",
+        "services/parser-service/src/models/Attempt.model.js",
+        "services/parser-service/src/models/Conversation.model.js",
+        "services/parser-service/src/models/Follow.model.js",
+        "services/parser-service/src/models/MappingConfig.model.js",
+        "services/parser-service/src/models/Message.model.js",
+        "services/parser-service/src/models/Notification.model.js",
+        "services/parser-service/src/models/Question.model.js",
+        "services/parser-service/src/models/Quiz.model.js",
+        "services/parser-service/src/models/QuizComment.model.js",
+        "services/parser-service/src/models/QuizInteraction.model.js",
+        "services/parser-service/src/models/QuizShare.model.js",
+        "services/parser-service/src/models/Upload.model.js",
+        "services/parser-service/src/models/User.model.js"
+      ],
+      "operations": [
+        {
+          "file": "services/parser-service/src/controllers/parser.controller.js",
+          "line": 17,
+          "model": "Upload.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/parser-service/src/controllers/parser.controller.js",
+          "line": 101,
+          "model": "Upload.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/parser-service/src/controllers/parser.controller.js",
+          "line": 158,
+          "model": "Upload.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/parser-service/src/controllers/upload.controller.js",
+          "line": 26,
+          "model": "Upload.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/controllers/upload.controller.js",
+          "line": 76,
+          "model": "Upload.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/parser-service/src/controllers/upload.controller.js",
+          "line": 115,
+          "model": "Upload.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/parser-service/src/controllers/upload.controller.js",
+          "line": 136,
+          "model": "Upload.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/parser-service/src/controllers/upload.controller.js",
+          "line": 144,
+          "model": "Upload.model.js",
+          "operation": "findByIdAndDelete",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/controllers/upload.controller.js",
+          "line": 161,
+          "model": "Upload.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/parser-service/src/middleware/auth.middleware.js",
+          "line": 27,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/parser-service/src/middleware/auth.middleware.js",
+          "line": 71,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/parser-service/src/services/quiz/quizGenerator.service.js",
+          "line": 24,
+          "model": "Upload.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/parser-service/src/services/quiz/quizGenerator.service.js",
+          "line": 140,
+          "model": "Quiz.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/services/quiz/quizGenerator.service.js",
+          "line": 163,
+          "model": "Question.model.js",
+          "operation": "insertMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/services/social/activity.service.js",
+          "line": 39,
+          "model": "Activity.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/services/social/activity.service.js",
+          "line": 49,
+          "model": "User.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/services/social/activity.service.js",
+          "line": 59,
+          "model": "Notification.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/services/social/activity.service.js",
+          "line": 78,
+          "model": "QuizInteraction.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/parser-service/src/services/social/activity.service.js",
+          "line": 114,
+          "model": "Quiz.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/services/social/activity.service.js",
+          "line": 131,
+          "model": "QuizComment.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/parser-service/src/services/social/activity.service.js",
+          "line": 135,
+          "model": "QuizInteraction.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/services/social/activity.service.js",
+          "line": 136,
+          "model": "QuizComment.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/services/social/activity.service.js",
+          "line": 137,
+          "model": "QuizShare.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/services/social/activity.service.js",
+          "line": 138,
+          "model": "Message.model.js",
+          "operation": "updateMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/services/social/activity.service.js",
+          "line": 139,
+          "model": "Activity.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/services/social/activity.service.js",
+          "line": 142,
+          "model": "Notification.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/services/social/activity.service.js",
+          "line": 150,
+          "model": "QuizInteraction.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/services/social/activity.service.js",
+          "line": 151,
+          "model": "QuizComment.model.js",
+          "operation": "updateMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/services/social/activity.service.js",
+          "line": 152,
+          "model": "QuizShare.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/services/social/activity.service.js",
+          "line": 153,
+          "model": "Message.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/services/social/activity.service.js",
+          "line": 154,
+          "model": "Conversation.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/services/social/activity.service.js",
+          "line": 155,
+          "model": "Activity.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/services/social/activity.service.js",
+          "line": 156,
+          "model": "Notification.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/parser-service/src/services/upload/fileHash.service.js",
+          "line": 45,
+          "model": "Quiz.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/parser-service/src/services/upload/fileHash.service.js",
+          "line": 51,
+          "model": "Quiz.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        }
+      ],
+      "mounts": [
+        {
+          "file": "services/parser-service/src/routes/parser.routes.js",
+          "line": 8,
+          "registration": "router.post('/parse/:uploadId', validateObjectId('uploadId'), optionalAuth, parseFile);"
+        },
+        {
+          "file": "services/parser-service/src/routes/parser.routes.js",
+          "line": 9,
+          "registration": "router.post('/map/:uploadId', validateObjectId('uploadId'), optionalAuth, applyMapping);"
+        },
+        {
+          "file": "services/parser-service/src/routes/parser.routes.js",
+          "line": 10,
+          "registration": "router.get('/preview/:uploadId', validateObjectId('uploadId'), optionalAuth, getPreview);"
+        },
+        {
+          "file": "services/parser-service/src/routes/upload.routes.js",
+          "line": 11,
+          "registration": "router.post('/', uploadRateLimit, optionalAuth, uploadMiddleware('file'), validateFileSecurity, persistValidatedUpload, uploadFile);"
+        },
+        {
+          "file": "services/parser-service/src/routes/upload.routes.js",
+          "line": 12,
+          "registration": "router.get('/my', protect, getMyUploads);"
+        },
+        {
+          "file": "services/parser-service/src/routes/upload.routes.js",
+          "line": 13,
+          "registration": "router.get('/:id', validateObjectId('id'), optionalAuth, getUpload);"
+        },
+        {
+          "file": "services/parser-service/src/routes/upload.routes.js",
+          "line": 14,
+          "registration": "router.get('/:id/duplicate', validateObjectId('id'), optionalAuth, checkUploadDuplicate);"
+        },
+        {
+          "file": "services/parser-service/src/routes/upload.routes.js",
+          "line": 15,
+          "registration": "router.delete('/:id', validateObjectId('id'), optionalAuth, deleteUpload);"
+        },
+        {
+          "file": "services/parser-service/src/server.js",
+          "line": 38,
+          "registration": "app.use(cors({"
+        },
+        {
+          "file": "services/parser-service/src/server.js",
+          "line": 43,
+          "registration": "app.use(express.json({ limit: '50mb' }));"
+        },
+        {
+          "file": "services/parser-service/src/server.js",
+          "line": 44,
+          "registration": "app.use(express.urlencoded({ extended: true, limit: '50mb' }));"
+        },
+        {
+          "file": "services/parser-service/src/server.js",
+          "line": 45,
+          "registration": "app.use(cookieParser());"
+        },
+        {
+          "file": "services/parser-service/src/server.js",
+          "line": 46,
+          "registration": "app.use(csrfProtection);"
+        },
+        {
+          "file": "services/parser-service/src/server.js",
+          "line": 49,
+          "registration": "app.use('/uploads', express.static(path.join(__dirname, 'uploads')));"
+        },
+        {
+          "file": "services/parser-service/src/server.js",
+          "line": 62,
+          "registration": "app.use('/api/v1/upload', uploadRoutes);"
+        },
+        {
+          "file": "services/parser-service/src/server.js",
+          "line": 63,
+          "registration": "app.use('/api/v1/parser', parserRoutes);"
+        },
+        {
+          "file": "services/parser-service/src/server.js",
+          "line": 66,
+          "registration": "app.use(notFoundHandler);"
+        },
+        {
+          "file": "services/parser-service/src/server.js",
+          "line": 67,
+          "registration": "app.use(errorHandler);"
+        }
+      ],
+      "network": [],
+      "schedules": [
+        {
+          "file": "services/parser-service/src/middleware/rateLimit.middleware.js",
+          "line": 15,
+          "reference": "setInterval(() => {"
+        },
+        {
+          "file": "services/parser-service/src/middleware/rateLimit.middleware.js",
+          "line": 46,
+          "reference": "startCleanupWorker();"
+        }
+      ]
+    },
+    {
+      "name": "quiz-service",
+      "sourceFiles": 76,
+      "models": [
+        "services/quiz-service/src/models/Attempt.model.js",
+        "services/quiz-service/src/models/Question.model.js",
+        "services/quiz-service/src/models/Quiz.model.js",
+        "services/quiz-service/src/models/Upload.model.js",
+        "services/quiz-service/src/models/User.model.js"
+      ],
+      "operations": [
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 66,
+          "model": "Attempt.model.js",
+          "operation": "aggregate",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 83,
+          "model": "Quiz.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 90,
+          "model": "Question.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 191,
+          "model": "Quiz.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 192,
+          "model": "User.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 386,
+          "model": "Upload.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 497,
+          "model": "Quiz.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 520,
+          "model": "Question.model.js",
+          "operation": "insertMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 578,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 587,
+          "model": "Quiz.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 704,
+          "model": "Attempt.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 713,
+          "model": "Attempt.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 753,
+          "model": "Attempt.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 766,
+          "model": "Attempt.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 823,
+          "model": "Attempt.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 863,
+          "model": "Attempt.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 888,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 910,
+          "model": "Attempt.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 928,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 972,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1006,
+          "model": "Attempt.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1117,
+          "model": "Quiz.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1123,
+          "model": "Quiz.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1124,
+          "model": "Quiz.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1231,
+          "model": "Quiz.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1236,
+          "model": "Quiz.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1276,
+          "model": "Quiz.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1285,
+          "model": "Question.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1301,
+          "model": "Quiz.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1375,
+          "model": "Question.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1381,
+          "model": "Question.model.js",
+          "operation": "insertMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1399,
+          "model": "Quiz.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1408,
+          "model": "Question.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1472,
+          "model": "Quiz.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1481,
+          "model": "Question.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1485,
+          "model": "Quiz.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1509,
+          "model": "Question.model.js",
+          "operation": "insertMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1522,
+          "model": "Quiz.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1531,
+          "model": "Question.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1532,
+          "model": "Quiz.model.js",
+          "operation": "findByIdAndDelete",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1570,
+          "model": "User.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1623,
+          "model": "Quiz.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1629,
+          "model": "Quiz.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1666,
+          "model": "Quiz.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1675,
+          "model": "Question.model.js",
+          "operation": "insertMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1779,
+          "model": "Quiz.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1809,
+          "model": "Question.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1815,
+          "model": "Question.model.js",
+          "operation": "insertMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1841,
+          "model": "Quiz.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1883,
+          "model": "Question.model.js",
+          "operation": "insertMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 1982,
+          "model": "Upload.model.js",
+          "operation": "updateMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 2002,
+          "model": "Attempt.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 2031,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 2090,
+          "model": "Attempt.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 2121,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 2144,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 2163,
+          "model": "Attempt.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 2184,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 2202,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 2223,
+          "model": "Attempt.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 2275,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 2332,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 2337,
+          "model": "Attempt.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 2369,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 2475,
+          "model": "Attempt.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/quiz.controller.js",
+          "line": 2504,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/search.controller.js",
+          "line": 150,
+          "model": "Quiz.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/search.controller.js",
+          "line": 200,
+          "model": "User.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/search.controller.js",
+          "line": 232,
+          "model": "Quiz.model.js",
+          "operation": "aggregate",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/search.controller.js",
+          "line": 277,
+          "model": "Quiz.model.js",
+          "operation": "aggregate",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/search.controller.js",
+          "line": 335,
+          "model": "Quiz.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/controllers/search.controller.js",
+          "line": 341,
+          "model": "Quiz.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/infrastructure/repositories/MongooseAttemptRepository.js",
+          "line": 6,
+          "model": "Attempt.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/infrastructure/repositories/MongooseAttemptRepository.js",
+          "line": 23,
+          "model": "Attempt.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/infrastructure/repositories/MongooseAttemptRepository.js",
+          "line": 27,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/infrastructure/repositories/MongooseAttemptRepository.js",
+          "line": 40,
+          "model": "Attempt.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/infrastructure/repositories/MongooseAttemptRepository.js",
+          "line": 46,
+          "model": "Attempt.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/infrastructure/repositories/MongooseAttemptRepository.js",
+          "line": 48,
+          "model": "Attempt.model.js",
+          "operation": "new document (save must be verified)",
+          "kind": "write-candidate"
+        },
+        {
+          "file": "services/quiz-service/src/infrastructure/repositories/MongooseAttemptRepository.js",
+          "line": 53,
+          "model": "Attempt.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/infrastructure/repositories/MongooseAttemptRepository.js",
+          "line": 57,
+          "model": "Attempt.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/infrastructure/repositories/MongooseQuestionRepository.js",
+          "line": 6,
+          "model": "Question.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/infrastructure/repositories/MongooseQuestionRepository.js",
+          "line": 14,
+          "model": "Question.model.js",
+          "operation": "insertMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/infrastructure/repositories/MongooseQuestionRepository.js",
+          "line": 18,
+          "model": "Question.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/infrastructure/repositories/MongooseQuizRepository.js",
+          "line": 6,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/infrastructure/repositories/MongooseQuizRepository.js",
+          "line": 10,
+          "model": "Quiz.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/infrastructure/repositories/MongooseQuizRepository.js",
+          "line": 23,
+          "model": "Quiz.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/infrastructure/repositories/MongooseQuizRepository.js",
+          "line": 25,
+          "model": "Quiz.model.js",
+          "operation": "new document (save must be verified)",
+          "kind": "write-candidate"
+        },
+        {
+          "file": "services/quiz-service/src/infrastructure/repositories/MongooseQuizRepository.js",
+          "line": 30,
+          "model": "Quiz.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/infrastructure/repositories/MongooseQuizRepository.js",
+          "line": 34,
+          "model": "Quiz.model.js",
+          "operation": "findByIdAndDelete",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/infrastructure/repositories/MongooseQuizRepository.js",
+          "line": 38,
+          "model": "Quiz.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/middleware/auth.middleware.js",
+          "line": 27,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/middleware/auth.middleware.js",
+          "line": 71,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/services/quiz/quizGenerator.service.js",
+          "line": 24,
+          "model": "Upload.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/services/quiz/quizGenerator.service.js",
+          "line": 140,
+          "model": "Quiz.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/services/quiz/quizGenerator.service.js",
+          "line": 163,
+          "model": "Question.model.js",
+          "operation": "insertMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/services/social/activity.service.js",
+          "line": 55,
+          "model": "Quiz.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/quiz-service/src/services/upload/fileHash.service.js",
+          "line": 45,
+          "model": "Quiz.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/quiz-service/src/services/upload/fileHash.service.js",
+          "line": 51,
+          "model": "Quiz.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        }
+      ],
+      "mounts": [
+        {
+          "file": "services/quiz-service/src/routes/attemptCompatibility.routes.js",
+          "line": 7,
+          "registration": "router.get('/attempts/:attemptId/result', relay);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/attemptCompatibility.routes.js",
+          "line": 8,
+          "registration": "router.get('/:id/attempt/active', relay);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/attemptCompatibility.routes.js",
+          "line": 9,
+          "registration": "router.post('/:id/attempt', relay);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/attemptCompatibility.routes.js",
+          "line": 10,
+          "registration": "router.put('/:id/attempt/:attemptId', relay);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/attemptCompatibility.routes.js",
+          "line": 11,
+          "registration": "router.put('/:id/attempt/:attemptId/sync-progress', relay);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/attemptCompatibility.routes.js",
+          "line": 12,
+          "registration": "router.post('/:id/attempt/:attemptId/sync-progress', relay);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/attemptCompatibility.routes.js",
+          "line": 13,
+          "registration": "router.get('/:id/attempt/:attemptId/result', relay);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quiz.routes.js",
+          "line": 29,
+          "registration": "router.post('/generate', optionalAuth, generateQuiz);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quiz.routes.js",
+          "line": 30,
+          "registration": "router.post('/challenge', protect, createChallenge);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quiz.routes.js",
+          "line": 31,
+          "registration": "router.post('/manual', protect, saveManualDraft);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quiz.routes.js",
+          "line": 32,
+          "registration": "router.get('/my', protect, getMyQuizzes);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quiz.routes.js",
+          "line": 35,
+          "registration": "router.get('/drafts', protect, getDrafts);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quiz.routes.js",
+          "line": 36,
+          "registration": "router.get('/drafts/:id', validateObjectId('id'), protect, getDraftById);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quiz.routes.js",
+          "line": 37,
+          "registration": "router.put('/drafts/:id', validateObjectId('id'), protect, updateDraft);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quiz.routes.js",
+          "line": 38,
+          "registration": "router.post('/drafts/:id/publish', validateObjectId('id'), protect, publishDraft);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quiz.routes.js",
+          "line": 39,
+          "registration": "router.post('/drafts/:id/duplicate', validateObjectId('id'), protect, duplicateDraft);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quiz.routes.js",
+          "line": 40,
+          "registration": "router.delete('/drafts/:id', validateObjectId('id'), protect, deleteDraft);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quiz.routes.js",
+          "line": 43,
+          "registration": "router.get('/code/:quizCode', optionalAuth, getQuizByCode);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quiz.routes.js",
+          "line": 45,
+          "registration": "router.get('/:id', validateQuizIdentifier('id'), optionalAuth, getQuiz);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quiz.routes.js",
+          "line": 46,
+          "registration": "router.get('/:id/leaderboard', validateQuizIdentifier('id'), optionalAuth, getChallengeLeaderboard);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quiz.routes.js",
+          "line": 47,
+          "registration": "router.put('/:id', validateQuizIdentifier('id'), protect, updateQuiz);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quiz.routes.js",
+          "line": 48,
+          "registration": "router.post('/:id/cover', validateQuizIdentifier('id'), protect, uploadQuizCover);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quiz.routes.js",
+          "line": 49,
+          "registration": "router.delete('/:id/cover', validateQuizIdentifier('id'), protect, removeQuizCover);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quiz.routes.js",
+          "line": 50,
+          "registration": "router.delete('/:id', validateQuizIdentifier('id'), protect, deleteQuiz);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quiz.routes.js",
+          "line": 51,
+          "registration": "router.get('/:id/analytics', validateQuizIdentifier('id'), optionalAuth, getQuizAnalytics);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quiz.routes.js",
+          "line": 52,
+          "registration": "router.get('/:id/attempts', validateQuizIdentifier('id'), protect, getQuizAttempts);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quiz.routes.js",
+          "line": 53,
+          "registration": "router.get('/:id/questions', validateQuizIdentifier('id'), optionalAuth, getQuizQuestions);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quizzes.routes.js",
+          "line": 18,
+          "registration": "router.get('/', optionalAuth, listQuizzes);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quizzes.routes.js",
+          "line": 19,
+          "registration": "router.post('/challenge', protect, createChallenge);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quizzes.routes.js",
+          "line": 20,
+          "registration": "router.post('/manual', protect, saveManualDraft);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quizzes.routes.js",
+          "line": 21,
+          "registration": "router.post('/', protect, createQuiz);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quizzes.routes.js",
+          "line": 22,
+          "registration": "router.get('/:id', validateQuizIdentifier('id'), optionalAuth, getQuiz);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quizzes.routes.js",
+          "line": 23,
+          "registration": "router.put('/:id', validateQuizIdentifier('id'), protect, updateQuiz);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quizzes.routes.js",
+          "line": 24,
+          "registration": "router.put('/:id/settings', validateQuizIdentifier('id'), protect, updateQuiz);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quizzes.routes.js",
+          "line": 25,
+          "registration": "router.delete('/:id', validateQuizIdentifier('id'), protect, deleteQuiz);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quizzes.routes.js",
+          "line": 26,
+          "registration": "router.get('/:id/questions', validateQuizIdentifier('id'), optionalAuth, getQuizQuestions);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/quizzes.routes.js",
+          "line": 27,
+          "registration": "router.get('/:id/attempts', validateQuizIdentifier('id'), protect, getQuizAttempts);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/search.routes.js",
+          "line": 12,
+          "registration": "router.get('/universal', optionalAuth, universalSearch);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/search.routes.js",
+          "line": 15,
+          "registration": "router.get('/trending-tags', optionalAuth, getTrendingTags);"
+        },
+        {
+          "file": "services/quiz-service/src/routes/search.routes.js",
+          "line": 18,
+          "registration": "router.get('/tags/:tag', optionalAuth, getQuizzesByTag);"
+        },
+        {
+          "file": "services/quiz-service/src/server.js",
+          "line": 30,
+          "registration": "app.use(cors({"
+        },
+        {
+          "file": "services/quiz-service/src/server.js",
+          "line": 35,
+          "registration": "app.use(express.json({ limit: '10mb' }));"
+        },
+        {
+          "file": "services/quiz-service/src/server.js",
+          "line": 36,
+          "registration": "app.use(express.urlencoded({ extended: true, limit: '10mb' }));"
+        },
+        {
+          "file": "services/quiz-service/src/server.js",
+          "line": 37,
+          "registration": "app.use(cookieParser());"
+        },
+        {
+          "file": "services/quiz-service/src/server.js",
+          "line": 38,
+          "registration": "app.use(csrfProtection);"
+        },
+        {
+          "file": "services/quiz-service/src/server.js",
+          "line": 41,
+          "registration": "app.use('/uploads', express.static(path.join(__dirname, 'uploads')));"
+        },
+        {
+          "file": "services/quiz-service/src/server.js",
+          "line": 54,
+          "registration": "app.use('/api/v1/quiz', attemptCompatibilityRoutes);"
+        },
+        {
+          "file": "services/quiz-service/src/server.js",
+          "line": 55,
+          "registration": "app.use('/api/v1/quiz', quizRoutes);"
+        },
+        {
+          "file": "services/quiz-service/src/server.js",
+          "line": 56,
+          "registration": "app.use('/api/v1/quizzes', quizzesRoutes);"
+        },
+        {
+          "file": "services/quiz-service/src/server.js",
+          "line": 57,
+          "registration": "app.use('/api/v1/search', searchRoutes);"
+        },
+        {
+          "file": "services/quiz-service/src/server.js",
+          "line": 61,
+          "registration": "app.use(notFoundHandler);"
+        },
+        {
+          "file": "services/quiz-service/src/server.js",
+          "line": 62,
+          "registration": "app.use(errorHandler);"
+        }
+      ],
+      "network": [
+        {
+          "file": "services/quiz-service/src/config/env.js",
+          "line": 11,
+          "reference": "PARSER_SERVICE_URL: process.env.PARSER_SERVICE_URL || 'http://localhost:5003',"
+        },
+        {
+          "file": "services/quiz-service/src/config/env.js",
+          "line": 12,
+          "reference": "ATTEMPT_SERVICE_URL: process.env.ATTEMPT_SERVICE_URL || 'http://127.0.0.1:5004',"
+        },
+        {
+          "file": "services/quiz-service/src/infrastructure/attemptClient.js",
+          "line": 6,
+          "reference": "throw new Error('ATTEMPT_SERVICE_URL must be an HTTP(S) origin without credentials');"
+        },
+        {
+          "file": "services/quiz-service/src/routes/attemptCompatibility.routes.js",
+          "line": 6,
+          "reference": "const relay = createAttemptRelay({ origin: env.ATTEMPT_SERVICE_URL, timeoutMs: env.ATTEMPT_REQUEST_TIMEOUT_MS });"
+        }
+      ],
+      "schedules": [
+        {
+          "file": "services/quiz-service/src/jobs/cleanup.worker.js",
+          "line": 14,
+          "reference": "cron.schedule('0 * * * *', () => {"
+        },
+        {
+          "file": "services/quiz-service/src/middleware/rateLimit.middleware.js",
+          "line": 15,
+          "reference": "setInterval(() => {"
+        },
+        {
+          "file": "services/quiz-service/src/middleware/rateLimit.middleware.js",
+          "line": 46,
+          "reference": "startCleanupWorker();"
+        },
+        {
+          "file": "services/quiz-service/src/server.js",
+          "line": 67,
+          "reference": "startCleanupWorker();"
+        }
+      ]
+    },
+    {
+      "name": "social-service",
+      "sourceFiles": 61,
+      "models": [
+        "services/social-service/src/models/Activity.model.js",
+        "services/social-service/src/models/Attempt.model.js",
+        "services/social-service/src/models/Conversation.model.js",
+        "services/social-service/src/models/Follow.model.js",
+        "services/social-service/src/models/MappingConfig.model.js",
+        "services/social-service/src/models/Message.model.js",
+        "services/social-service/src/models/Notification.model.js",
+        "services/social-service/src/models/Question.model.js",
+        "services/social-service/src/models/Quiz.model.js",
+        "services/social-service/src/models/QuizComment.model.js",
+        "services/social-service/src/models/QuizInteraction.model.js",
+        "services/social-service/src/models/QuizShare.model.js",
+        "services/social-service/src/models/Upload.model.js",
+        "services/social-service/src/models/User.model.js"
+      ],
+      "operations": [
+        {
+          "file": "services/social-service/src/controllers/profile.controller.js",
+          "line": 37,
+          "model": "Quiz.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/profile.controller.js",
+          "line": 102,
+          "model": "Quiz.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/profile.controller.js",
+          "line": 109,
+          "model": "Quiz.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 35,
+          "model": "User.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 77,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 101,
+          "model": "Follow.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 116,
+          "model": "User.model.js",
+          "operation": "updateOne",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 132,
+          "model": "Quiz.model.js",
+          "operation": "updateOne",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 153,
+          "model": "User.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 199,
+          "model": "Attempt.model.js",
+          "operation": "distinct",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 249,
+          "model": "Follow.model.js",
+          "operation": "distinct",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 267,
+          "model": "Quiz.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 274,
+          "model": "Quiz.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 308,
+          "model": "Quiz.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 315,
+          "model": "Quiz.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 367,
+          "model": "Attempt.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 371,
+          "model": "QuizInteraction.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 375,
+          "model": "Follow.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 376,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 616,
+          "model": "Quiz.model.js",
+          "operation": "aggregate",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 673,
+          "model": "QuizInteraction.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 684,
+          "model": "QuizInteraction.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 763,
+          "model": "Quiz.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 788,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 824,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 841,
+          "model": "Attempt.model.js",
+          "operation": "aggregate",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 860,
+          "model": "Quiz.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 882,
+          "model": "Activity.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 896,
+          "model": "Follow.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 947,
+          "model": "User.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 971,
+          "model": "User.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1017,
+          "model": "Follow.model.js",
+          "operation": "updateOne",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1025,
+          "model": "User.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1026,
+          "model": "User.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1036,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1059,
+          "model": "Follow.model.js",
+          "operation": "deleteOne",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1062,
+          "model": "User.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1063,
+          "model": "User.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1068,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1103,
+          "model": "Follow.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1109,
+          "model": "Follow.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1150,
+          "model": "Follow.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1156,
+          "model": "Follow.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1203,
+          "model": "Activity.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1216,
+          "model": "Activity.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1228,
+          "model": "Attempt.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1361,
+          "model": "QuizInteraction.model.js",
+          "operation": "updateOne",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1368,
+          "model": "Quiz.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1384,
+          "model": "QuizInteraction.model.js",
+          "operation": "deleteOne",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1386,
+          "model": "Quiz.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1391,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1410,
+          "model": "QuizShare.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1417,
+          "model": "Quiz.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1429,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1446,
+          "model": "Follow.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1450,
+          "model": "Follow.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1458,
+          "model": "User.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1485,
+          "model": "User.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1562,
+          "model": "Quiz.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1592,
+          "model": "QuizComment.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1602,
+          "model": "QuizComment.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1607,
+          "model": "QuizComment.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1612,
+          "model": "QuizComment.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1685,
+          "model": "QuizComment.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1694,
+          "model": "QuizComment.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1698,
+          "model": "QuizComment.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1709,
+          "model": "Quiz.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1724,
+          "model": "QuizComment.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1744,
+          "model": "QuizComment.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1770,
+          "model": "QuizComment.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1791,
+          "model": "QuizComment.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1811,
+          "model": "QuizComment.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1823,
+          "model": "QuizComment.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1836,
+          "model": "QuizComment.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1841,
+          "model": "QuizComment.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1845,
+          "model": "Activity.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1846,
+          "model": "Notification.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1851,
+          "model": "QuizComment.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1854,
+          "model": "Quiz.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1873,
+          "model": "Notification.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1881,
+          "model": "Notification.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1882,
+          "model": "Notification.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1901,
+          "model": "Notification.model.js",
+          "operation": "countDocuments",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1914,
+          "model": "Notification.model.js",
+          "operation": "findOneAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1931,
+          "model": "Notification.model.js",
+          "operation": "updateMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/middleware/auth.middleware.js",
+          "line": 27,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/middleware/auth.middleware.js",
+          "line": 71,
+          "model": "User.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/services/quiz/quizGenerator.service.js",
+          "line": 24,
+          "model": "Upload.model.js",
+          "operation": "findById",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/services/quiz/quizGenerator.service.js",
+          "line": 140,
+          "model": "Quiz.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/services/quiz/quizGenerator.service.js",
+          "line": 163,
+          "model": "Question.model.js",
+          "operation": "insertMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/services/social/activity.service.js",
+          "line": 44,
+          "model": "Activity.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/services/social/activity.service.js",
+          "line": 54,
+          "model": "User.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/services/social/activity.service.js",
+          "line": 64,
+          "model": "Notification.model.js",
+          "operation": "create",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/services/social/activity.service.js",
+          "line": 83,
+          "model": "QuizInteraction.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/services/social/activity.service.js",
+          "line": 119,
+          "model": "Quiz.model.js",
+          "operation": "findByIdAndUpdate",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/services/social/activity.service.js",
+          "line": 136,
+          "model": "QuizComment.model.js",
+          "operation": "find",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/services/social/activity.service.js",
+          "line": 140,
+          "model": "QuizInteraction.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/services/social/activity.service.js",
+          "line": 141,
+          "model": "QuizComment.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/services/social/activity.service.js",
+          "line": 142,
+          "model": "QuizShare.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/services/social/activity.service.js",
+          "line": 143,
+          "model": "Message.model.js",
+          "operation": "updateMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/services/social/activity.service.js",
+          "line": 144,
+          "model": "Activity.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/services/social/activity.service.js",
+          "line": 147,
+          "model": "Notification.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/services/social/activity.service.js",
+          "line": 155,
+          "model": "QuizInteraction.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/services/social/activity.service.js",
+          "line": 156,
+          "model": "QuizComment.model.js",
+          "operation": "updateMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/services/social/activity.service.js",
+          "line": 157,
+          "model": "QuizShare.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/services/social/activity.service.js",
+          "line": 158,
+          "model": "Message.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/services/social/activity.service.js",
+          "line": 159,
+          "model": "Conversation.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/services/social/activity.service.js",
+          "line": 160,
+          "model": "Activity.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/services/social/activity.service.js",
+          "line": 161,
+          "model": "Notification.model.js",
+          "operation": "deleteMany",
+          "kind": "write"
+        },
+        {
+          "file": "services/social-service/src/services/upload/fileHash.service.js",
+          "line": 45,
+          "model": "Quiz.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        },
+        {
+          "file": "services/social-service/src/services/upload/fileHash.service.js",
+          "line": 51,
+          "model": "Quiz.model.js",
+          "operation": "findOne",
+          "kind": "read"
+        }
+      ],
+      "mounts": [
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 36,
+          "registration": "router.get('/challenges-overview', optionalAuth, getChallengesOverview);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 37,
+          "registration": "router.get('/feed', optionalAuth, getFeed);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 38,
+          "registration": "router.get('/explore', optionalAuth, getExplore);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 39,
+          "registration": "router.get('/bookmarks', protect, getBookmarks);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 40,
+          "registration": "router.get('/share-contacts', protect, getShareContacts);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 43,
+          "registration": "router.get('/profile/:username', optionalAuth, getProfile);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 44,
+          "registration": "router.get('/users/:username/quizzes', optionalAuth, getUserQuizzes);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 45,
+          "registration": "router.get('/users/:username/activity', optionalAuth, getUserActivity);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 46,
+          "registration": "router.get('/users/:username/followers', optionalAuth, listFollowers);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 47,
+          "registration": "router.get('/users/:username/following', optionalAuth, listFollowing);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 48,
+          "registration": "router.post('/users/:username/follow', protect, followUser);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 49,
+          "registration": "router.delete('/users/:username/follow', protect, unfollowUser);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 51,
+          "registration": "router.get('/notifications', protect, getNotifications);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 52,
+          "registration": "router.get('/notifications/unread-count', protect, getUnreadNotificationCount);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 53,
+          "registration": "router.patch('/notifications/read-all', protect, markAllNotificationsRead);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 54,
+          "registration": "router.patch('/notifications/:id/read', validateObjectId('id'), protect, markNotificationRead);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 56,
+          "registration": "router.post('/quizzes/:quizId/like', validateObjectId('quizId'), protect, likeQuiz);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 57,
+          "registration": "router.delete('/quizzes/:quizId/like', validateObjectId('quizId'), protect, unlikeQuiz);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 58,
+          "registration": "router.post('/quizzes/:quizId/bookmark', validateObjectId('quizId'), protect, bookmarkQuiz);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 59,
+          "registration": "router.delete('/quizzes/:quizId/bookmark', validateObjectId('quizId'), protect, unbookmarkQuiz);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 60,
+          "registration": "router.post('/quizzes/:quizId/share', validateObjectId('quizId'), protect, shareQuiz);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 61,
+          "registration": "router.post('/quizzes/:quizId/share-direct', validateObjectId('quizId'), protect, shareQuizDirect);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 63,
+          "registration": "router.get('/quizzes/:quizId/comments', validateObjectId('quizId'), optionalAuth, listComments);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 64,
+          "registration": "router.post('/quizzes/:quizId/comments', validateObjectId('quizId'), protect, createComment);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 65,
+          "registration": "router.patch('/comments/:commentId', validateObjectId('commentId'), protect, updateComment);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 66,
+          "registration": "router.delete('/comments/:commentId', validateObjectId('commentId'), protect, deleteComment);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 67,
+          "registration": "router.post('/comments/:commentId/like', validateObjectId('commentId'), protect, likeComment);"
+        },
+        {
+          "file": "services/social-service/src/routes/social.routes.js",
+          "line": 68,
+          "registration": "router.delete('/comments/:commentId/like', validateObjectId('commentId'), protect, unlikeComment);"
+        },
+        {
+          "file": "services/social-service/src/server.js",
+          "line": 21,
+          "registration": "app.use(cors({"
+        },
+        {
+          "file": "services/social-service/src/server.js",
+          "line": 26,
+          "registration": "app.use(express.json({ limit: '10mb' }));"
+        },
+        {
+          "file": "services/social-service/src/server.js",
+          "line": 27,
+          "registration": "app.use(express.urlencoded({ extended: true, limit: '10mb' }));"
+        },
+        {
+          "file": "services/social-service/src/server.js",
+          "line": 28,
+          "registration": "app.use(cookieParser());"
+        },
+        {
+          "file": "services/social-service/src/server.js",
+          "line": 29,
+          "registration": "app.use(csrfProtection);"
+        },
+        {
+          "file": "services/social-service/src/server.js",
+          "line": 42,
+          "registration": "app.use('/api/v1/social', socialRoutes);"
+        },
+        {
+          "file": "services/social-service/src/server.js",
+          "line": 45,
+          "registration": "app.use(notFoundHandler);"
+        },
+        {
+          "file": "services/social-service/src/server.js",
+          "line": 46,
+          "registration": "app.use(errorHandler);"
+        }
+      ],
+      "network": [
+        {
+          "file": "services/social-service/src/controllers/social.controller.js",
+          "line": 1537,
+          "reference": "upstream = await fetch((process.env.MESSAGE_SERVICE_URL || 'http://127.0.0.1:5006') + '/api/v1/messages/start', {"
+        }
+      ],
+      "schedules": [
+        {
+          "file": "services/social-service/src/middleware/rateLimit.middleware.js",
+          "line": 15,
+          "reference": "setInterval(() => {"
+        },
+        {
+          "file": "services/social-service/src/middleware/rateLimit.middleware.js",
+          "line": 46,
+          "reference": "startCleanupWorker();"
+        }
+      ]
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 /**
  * QuizFocus Ingestion & Parser Service
  * Handles file uploads, MIME inspection, CSV/Excel/JSON parsing, and heuristic column mapping.
@@ -49,11 +50,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Health check
 app.get('/api/v1/health', (req, res) => {
-  res.json({
+  const healthy = mongoose.connection.readyState === 1;
+  res.status(healthy ? 200 : 503).json({
     service: 'parser-service',
-    status: 'healthy',
+    status: healthy ? 'healthy' : 'degraded',
     timestamp: new Date().toISOString(),
-    database: env.MONGO_URI.split('/').pop(),
   });
 });
 

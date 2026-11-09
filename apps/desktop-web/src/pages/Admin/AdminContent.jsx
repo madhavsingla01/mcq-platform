@@ -1,6 +1,6 @@
+import { usePageSearch, useSearchPage } from '../../components/search/PageSearchContext';
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  Search,
   Trophy,
   Layers,
   EyeOff,
@@ -18,11 +18,11 @@ import { Spinner } from '../../components/ui';
 export default function AdminContent() {
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const { query: search } = usePageSearch();
   const [typeFilter, setTypeFilter] = useState('all');
   const [visibilityFilter, setVisibilityFilter] = useState('all');
   const [restrictedFilter, setRestrictedFilter] = useState('all');
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useSearchPage(search);
   const [totalPages, setTotalPages] = useState(1);
   const [copiedCode, setCopiedCode] = useState(null);
 
@@ -38,6 +38,7 @@ export default function AdminContent() {
         page,
         limit: 20,
         search: search.trim(),
+        match: search.trim() ? 'closest' : undefined,
         type: typeFilter,
         visibility: visibilityFilter,
         restricted: restrictedFilter,
@@ -123,7 +124,6 @@ export default function AdminContent() {
   return (
     <div>
       <div className="admin-page-header">
-        <h1 className="admin-page-title">Quizzes & Challenges</h1>
         <p className="admin-page-desc">
           Audit user-created quizzes, monitor challenge participation, and manage public discovery restrictions.
         </p>
@@ -132,22 +132,6 @@ export default function AdminContent() {
       {/* Filter & Search Bar */}
       <div className="admin-card" style={{ marginBottom: '24px', padding: '16px' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', justifyContent: 'space-between' }}>
-          {/* Search Input */}
-          <div style={{ position: 'relative', flex: '1', minWidth: '260px' }}>
-            <Search size={16} color="var(--admin-text-subtle)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-            <input
-              type="text"
-              placeholder="Search by title, !QZ-..., or tags..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="admin-input"
-              style={{ width: '100%', paddingLeft: '38px', height: '40px' }}
-            />
-          </div>
-
           {/* Type Filter */}
           <div style={{ display: 'flex', gap: '8px' }}>
             {['all', 'quiz', 'challenge'].map((type) => (

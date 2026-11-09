@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { Outlet, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import MobileTopBar from './MobileTopBar';
 import MobileTabBar from './MobileTabBar';
 import { useUIStore } from '../../store/uiStore';
 import { useAuthStore } from '../../store/authStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import { Spinner } from '../ui';
 import './MainLayout.css';
 
@@ -13,6 +13,7 @@ export default function MainLayout() {
   const contentDensity = useUIStore((s) => s.contentDensity);
   const location = useLocation();
   const navigate = useNavigate();
+  const shortcuts = useSettingsStore(state => state.keyboardShortcutsEnabled);
 
   useEffect(() => {
     document.documentElement.style.setProperty(
@@ -21,38 +22,28 @@ export default function MainLayout() {
     );
   }, [contentDensity]);
 
-  if (isLoading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100dvh', background: 'var(--color-bg)' }}>
-        <Spinner size={40} />
-      </div>
-    );
-  }
-
-  // If not logged in, redirect to login
-  if (!isAuthenticated) {
-    const redirect = encodeURIComponent(location.pathname + location.search);
-    return <Navigate to={`/login?redirect=${redirect}`} replace />;
-  }
-
   useEffect(() => {
+    if (!shortcuts || !isAuthenticated || isLoading) return;
     const handleKeyDown = (e) => {
-      if (e.altKey && e.key === 'ArrowLeft') {
+      if (!useUIStore.getState().isSearchOpen && e.altKey && e.key === 'ArrowLeft') {
         e.preventDefault();
-        handleBack();
+        if (window.history.length > 1 && location.pathname !== '/explore') navigate(-1);
+        else navigate('/explore');
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [location.pathname]);
+  }, [shortcuts, isAuthenticated, isLoading, location.pathname, navigate]);
 
-  const handleBack = () => {
-    if (window.history.length > 1 && location.pathname !== '/explore') {
-      navigate(-1);
-    } else {
-      navigate('/explore');
-    }
-  };
+  if (isLoading) return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100dvh', background: 'var(--color-bg)' }}>
+      <Spinner size={40} />
+    </div>
+  );
+  if (!isAuthenticated) {
+    const redirect = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/login?redirect=${redirect}`} replace />;
+  }
 
   const isMessages = location.pathname.startsWith('/messages');
   const isChatOpen = /^\/messages\/[^/]+/.test(location.pathname);
@@ -60,9 +51,6 @@ export default function MainLayout() {
 
   return (
     <div className={`layout-shell ${isChatOpen ? 'chat-open-shell' : ''}`}>
-      {/* Mobile Top Header */}
-      {!isChatOpen && <MobileTopBar />}
-
       {/* Desktop Sidebar Navigation (Persistent on desktop) */}
       <Sidebar />
 

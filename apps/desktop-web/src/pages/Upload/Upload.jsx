@@ -115,7 +115,6 @@ export default function Upload() {
   return (
     <div className="qf-upload-shell">
         <div className="qf-upload-header">
-          <h1>Upload Dataset</h1>
           {!isAuthenticated && <p className="qf-upload-guest-note">Guest limit: 20KB. Log in for 10MB limit.</p>}
         </div>
 

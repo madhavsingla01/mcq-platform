@@ -11,7 +11,7 @@ export const AttemptService = {
   },
 
   syncAttemptState: async (quizId, attemptId, payload = {}, headers = {}) => {
-    const { data } = await api.put(`/quiz/${quizId}/attempt/${attemptId}`, payload, { headers });
+    const { data } = await api.put(`/quiz/${quizId}/attempt/${attemptId}/sync-progress`, payload, { headers });
     return data?.data || {};
   },
 

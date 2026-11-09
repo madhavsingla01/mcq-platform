@@ -4,7 +4,7 @@ services:
     image: mongo:7
     container_name: mcq-mongo
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     volumes:
       - mongo-data:/data/db
     restart: unless-stopped
@@ -66,6 +66,7 @@ services:
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in the root .env file}
       - JWT_EXPIRES_IN=15m
       - JWT_REFRESH_EXPIRES_IN=7d
+      - AUTH_TRUST_PROXY_HOPS=1
     depends_on:
       mongo:
         condition: service_healthy
@@ -82,6 +83,8 @@ services:
     volumes:
       - uploads-data:/app/src/uploads
     environment:
+      - MEDIA_SERVICE_URL=http://media-service:5007
+      - ATTEMPT_SERVICE_URL=http://attempt-service:5004
       - PORT=5002
       - NODE_ENV=production
       - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
@@ -159,6 +162,7 @@ services:
       - "5005"
     environment:
       - PORT=5005
+      - MESSAGE_SERVICE_URL=http://message-service:5006
       - NODE_ENV=production
       - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
       - MONGO_URI=mongodb://mongo:27017/mcq-platform
@@ -204,6 +208,7 @@ services:
     volumes:
       - uploads-data:/app/media-storage
     environment:
+      - MEDIA_CONTENT_MONGO_URI=mongodb://mongo:27017/mcq-platform
       - PORT=5007
       - NODE_ENV=production
       - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
@@ -264,6 +269,7 @@ services:
       - MONGO_URI=mongodb://mongo:27017/mcq-platform
       - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in the root .env file}
       - CHALLENGE_LIST_DEFAULT_PAGE_SIZE=12
+      - QUIZ_SERVICE_URL=http://quiz-service:5002
       - CHALLENGE_LIST_MAX_PAGE_SIZE=50
       - LEADERBOARD_CACHE_TTL_SECONDS=15
     depends_on:

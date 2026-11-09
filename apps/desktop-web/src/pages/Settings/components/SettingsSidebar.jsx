@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import { rankSearchResults } from '../../../components/search/rankSearchResults';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -12,12 +13,16 @@ import {
   HelpCircle,
   ChevronRight,
   ExternalLink,
-  Search,
-  X,
+  MessageSquare,
 } from 'lucide-react';
 import { SettingsInfo } from './SettingsSection';
 
 export const SETTINGS_CATEGORIES = [
+  {
+    id: 'messaging', title: 'Messaging', shortTitle: 'Messaging', icon: MessageSquare,
+    description: 'Message composer, read receipts and typing privacy',
+    searchTerms: ['chat', 'messages', 'read receipts', 'typing', 'enter'],
+  },
   {
     id: 'account',
     title: 'Account & Profile',
@@ -84,124 +89,18 @@ export const SETTINGS_CATEGORIES = [
   },
 ];
 
-const normalizeSearchText = (value) =>
-  value
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, ' ')
-    .trim();
-
-const editDistance = (left, right) => {
-  const distances = Array.from({ length: left.length + 1 }, (_, row) =>
-    Array.from({ length: right.length + 1 }, (_, column) =>
-      row === 0 ? column : column === 0 ? row : 0
-    )
-  );
-
-  for (let row = 1; row <= left.length; row += 1) {
-    for (let column = 1; column <= right.length; column += 1) {
-      const substitutionCost = left[row - 1] === right[column - 1] ? 0 : 1;
-      distances[row][column] = Math.min(
-        distances[row - 1][column] + 1,
-        distances[row][column - 1] + 1,
-        distances[row - 1][column - 1] + substitutionCost
-      );
-
-      if (
-        row > 1 &&
-        column > 1 &&
-        left[row - 1] === right[column - 2] &&
-        left[row - 2] === right[column - 1]
-      ) {
-        distances[row][column] = Math.min(
-          distances[row][column],
-          distances[row - 2][column - 2] + 1
-        );
-      }
-    }
-  }
-
-  return distances[left.length][right.length];
-};
-
-const scoreSearchToken = (queryToken, searchableWords) => {
-  let bestScore = 0;
-
-  for (const word of searchableWords) {
-    if (word === queryToken) {
-      bestScore = Math.max(bestScore, 100);
-      continue;
-    }
-    if (word.startsWith(queryToken)) {
-      bestScore = Math.max(bestScore, 75);
-      continue;
-    }
-    if (word.includes(queryToken)) {
-      bestScore = Math.max(bestScore, 60);
-      continue;
-    }
-
-    const maxDistance = queryToken.length >= 5 ? 2 : 1;
-    if (Math.abs(word.length - queryToken.length) <= maxDistance) {
-      const distance = editDistance(queryToken, word);
-      if (distance <= maxDistance) {
-        bestScore = Math.max(bestScore, 40 - distance * 10);
-      }
-    }
-  }
-
-  return bestScore;
-};
-
 export function searchSettingsCategories(query) {
-  const normalizedQuery = normalizeSearchText(query);
-  if (!normalizedQuery) return SETTINGS_CATEGORIES;
-
-  const queryTokens = normalizedQuery.split(/\s+/);
-
-  return SETTINGS_CATEGORIES
-    .map((category, index) => {
-      const fields = [
-        { text: category.title, weight: 1.4 },
-        { text: category.shortTitle, weight: 1.5 },
-        { text: category.description, weight: 1 },
-        { text: (category.searchTerms || []).join(' '), weight: 1.3 },
-      ].map(({ text, weight }) => ({
-        text: normalizeSearchText(text),
-        weight,
-      }));
-      const searchableText = fields.map(({ text }) => text).join(' ');
-      const tokenScores = queryTokens.map((token) =>
-        Math.max(
-          ...fields.map(({ text, weight }) =>
-            scoreSearchToken(token, text.split(/\s+/)) * weight
-          )
-        )
-      );
-
-      if (tokenScores.some((score) => score === 0)) {
-        return null;
-      }
-
-      const exactPhraseBonus = searchableText.includes(normalizedQuery) ? 50 : 0;
-      return {
-        category,
-        index,
-        score: tokenScores.reduce((total, score) => total + score, 0) + exactPhraseBonus,
-      };
-    })
-    .filter(Boolean)
-    .sort((left, right) => right.score - left.score || left.index - right.index)
-    .map(({ category }) => category);
+  return rankSearchResults(SETTINGS_CATEGORIES, query, category => [
+    category.title, category.shortTitle, category.searchTerms || [], category.description,
+  ]);
 }
 
 export function SettingsSidebar({
   activeCategory,
   onSelectCategory,
   user,
+  searchQuery = '',
 }) {
-  const [searchQuery, setSearchQuery] = useState('');
   const avatarLetter = (user?.name?.[0] || user?.username?.[0] || 'U').toUpperCase();
 
   const filteredCategories = useMemo(() => {
@@ -213,7 +112,7 @@ export function SettingsSidebar({
       {/* Top Title & User Capsule */}
       <div className="settings-sidebar-header">
         <div className="settings-panel-title-row">
-          <h2 className="settings-sidebar-heading">Settings</h2>
+          <h2 className="settings-sidebar-heading">Categories</h2>
           <SettingsInfo text="Manage your account and platform preferences." />
         </div>
       </div>
@@ -252,27 +151,6 @@ export function SettingsSidebar({
         )}
       </div>
 
-      {/* Interactive Category Search */}
-      <div className="settings-sidebar-search-wrap consistent-search-field">
-        <Search size={14} color="#64748b" />
-        <input
-          type="text"
-          className="settings-sidebar-search-input consistent-search-input"
-          placeholder="Search"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        {searchQuery && (
-          <button
-            type="button"
-            onClick={() => setSearchQuery('')}
-            className="text-gray-400 hover:text-white"
-          >
-            <X size={13} />
-          </button>
-        )}
-      </div>
-
       {/* Category Nav List with Framer Motion Liquid Active Pill */}
       <nav className="settings-sidebar-nav" aria-label="Settings categories">
         {filteredCategories.length === 0 ? (
@@ -289,6 +167,7 @@ export function SettingsSidebar({
                 key={cat.id}
                 type="button"
                 className={`settings-nav-item ${isActive ? 'active' : ''}`}
+                aria-current={isActive ? 'page' : undefined}
                 onClick={() => onSelectCategory(cat.id)}
               >
                 {isActive && (

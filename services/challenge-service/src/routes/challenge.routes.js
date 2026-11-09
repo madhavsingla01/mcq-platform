@@ -25,7 +25,7 @@ router.get('/health', (req, res) => {
 router.get('/overview', optionalAuth, getChallengesOverview);
 
 // Leaderboard for challenge (Quarantined until deadline)
-router.get('/:idOrCode/leaderboard', getChallengeLeaderboard);
+router.get('/:idOrCode/leaderboard', optionalAuth, getChallengeLeaderboard);
 
 // Public / Filtered Challenges Listing
 router.get('/', optionalAuth, listChallenges);

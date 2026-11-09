@@ -3,8 +3,7 @@
  * Reads tokens from httpOnly cookies.
  */
 
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
+import { verifySessionToken } from '../utils/sessionToken.js';
 import { AppError } from './error.middleware.js';
 import env from '../config/env.js';
 import User from '../models/User.model.js';
@@ -23,7 +22,7 @@ export const protect = async (req, res, next) => {
       return next(new AppError('Not authenticated. Please log in.', 401));
     }
 
-    const decoded = jwt.verify(token, env.JWT_SECRET);
+    const decoded = verifySessionToken(token, env.JWT_SECRET);
     const user = await User.findById(decoded.id).select('-password -refreshToken');
 
     if (!user || user.isDeleted || user.isActive === false) {
@@ -34,14 +33,8 @@ export const protect = async (req, res, next) => {
       return next(new AppError(`Account is suspended: ${user.suspensionReason || 'Please contact platform administration.'}`, 403));
     }
 
-    // Auto-backfill userCode for existing accounts if missing
-    if (!user.userCode) {
-      user.userCode = `USR-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
-      user.save({ validateBeforeSave: false }).catch(() => {});
-    }
-
     // Check token version to invalidate revoked sessions
-    if (decoded.tokenVersion !== undefined && user.tokenVersion !== undefined && decoded.tokenVersion !== user.tokenVersion) {
+    if ((decoded.tokenVersion ?? 0) !== (user.tokenVersion ?? 0)) {
       return next(new AppError('Session invalidated. Please log in again.', 401));
     }
 
@@ -67,11 +60,11 @@ export const optionalAuth = async (req, res, next) => {
       return next();
     }
 
-    const decoded = jwt.verify(token, env.JWT_SECRET);
+    const decoded = verifySessionToken(token, env.JWT_SECRET);
     const user = await User.findById(decoded.id).select('-password -refreshToken');
 
     if (user && !user.isDeleted && user.isActive !== false && !user.isSuspended &&
-        (decoded.tokenVersion === undefined || user.tokenVersion === undefined || decoded.tokenVersion === user.tokenVersion)) {
+        ((decoded.tokenVersion ?? 0) === (user.tokenVersion ?? 0))) {
       req.user = user;
     }
 

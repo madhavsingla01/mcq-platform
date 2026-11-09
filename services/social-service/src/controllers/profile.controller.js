@@ -3,7 +3,7 @@ import User from '../models/User.model.js';
 import Quiz from '../models/Quiz.model.js';
 import Follow from '../models/Follow.model.js';
 import { AppError, catchAsync } from '../middleware/error.middleware.js';
-import { decorateQuizzesForViewer } from '../services/social/activity.service.js';
+import { decorateQuizzesForViewer, publicQuizFilter } from '../services/social/activity.service.js';
 import { canViewPrivateDetails, resolveUserByIdentifier } from './social.controller.js';
 
 const publicQuizFilterFor = (userId, viewerId = null) => {
@@ -13,9 +13,7 @@ const publicQuizFilterFor = (userId, viewerId = null) => {
   }
   return {
     uploader: userId,
-    visibility: { $ne: 'private' },
-    $or: [{ visibility: 'public' }, { isPublic: true }],
-    'metadata.savedAsDraft': { $ne: true },
+    ...publicQuizFilter,
   };
 };
 

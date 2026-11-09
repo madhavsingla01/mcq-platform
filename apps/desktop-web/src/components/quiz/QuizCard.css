@@ -51,7 +51,6 @@
 
   .clean-quiz-card:hover .clean-quiz-cover-img {
     transform: scale(1.02);
-    opacity: 0.95;
   }
 }
 
@@ -61,12 +60,13 @@
   top: 0;
   right: 0;
   bottom: 0;
-  width: 62%;
+  width: 74%;
   overflow: hidden;
   pointer-events: none;
   z-index: 0;
   border-top-right-radius: 14px;
   border-bottom-right-radius: 14px;
+  mask-image: linear-gradient(to right, transparent, #000 88%);
 }
 
 .clean-quiz-cover-img {
@@ -74,18 +74,17 @@
   height: 100%;
   object-fit: cover;
   object-position: center;
-  opacity: 0.82;
-  transition: transform 0.28s var(--ease-out), opacity 0.25s ease;
+  opacity: 1;
+  transition: transform 0.28s var(--ease-out);
 }
 
-/* Smooth gradient fade: deep solid black on left smoothly fading to reveal clear image on right */
+/* Blur only the transition, leaving the right edge sharp. */
 .clean-quiz-cover-fade {
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(to right, #000000 0%, rgba(0, 0, 0, 0.85) 15%, rgba(0, 0, 0, 0.35) 55%, transparent 92%),
-    linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.3) 30%, transparent 60%),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.65) 0%, transparent 40%);
+  background: linear-gradient(to right, var(--color-surface, #121214), transparent 65%);
+  backdrop-filter: blur(9px);
+  mask-image: linear-gradient(to right, #000 14%, transparent 74%);
   pointer-events: none;
 }
 
@@ -179,8 +178,10 @@
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
 }
 
-.clean-quiz-card:hover .clean-quiz-title {
-  color: #FF4500;
+@media (hover: hover) and (pointer: fine) {
+  .clean-quiz-card:hover .clean-quiz-title {
+    color: #FF4500;
+  }
 }
 
 .clean-quiz-code-badge {
@@ -198,7 +199,7 @@
   padding: 2px 7px;
   cursor: copy;
   touch-action: manipulation;
-  transition: all 0.16s var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1));
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
 .clean-quiz-code-badge:active {
@@ -211,6 +212,10 @@
     border-color: rgba(255, 69, 0, 0.45);
     color: #FFFFFF;
   }
+
+  .clean-quiz-code-badge:hover .code-copy-icon {
+    color: #FFFFFF;
+  }
 }
 
 .clean-quiz-code-badge .code-symbol {
@@ -221,10 +226,6 @@
 .clean-quiz-code-badge .code-copy-icon {
   color: rgba(255, 255, 255, 0.4);
   transition: color 0.14s ease;
-}
-
-.clean-quiz-code-badge:hover .code-copy-icon {
-  color: #FFFFFF;
 }
 
 .clean-quiz-code-badge .code-copy-icon.success {
@@ -501,7 +502,7 @@
 @keyframes mcqDropIn {
   from {
     opacity: 0;
-    transform: translateY(-4px) scale(0.95);
+    transform: translateY(-4px) scale(0.97);
   }
   to {
     opacity: 1;
@@ -575,8 +576,10 @@
   overflow: hidden;
 }
 
-.draft-title:hover {
-  color: var(--color-primary, #FF4500);
+@media (hover: hover) and (pointer: fine) {
+  .draft-title:hover {
+    color: var(--color-primary, #FF4500);
+  }
 }
 
 .draft-pill-row {
@@ -660,8 +663,10 @@
   overflow: hidden;
 }
 
-.progress-title:hover {
-  color: var(--color-primary, #FF4500);
+@media (hover: hover) and (pointer: fine) {
+  .progress-title:hover {
+    color: var(--color-primary, #FF4500);
+  }
 }
 
 .progress-bar-container {
@@ -676,7 +681,8 @@
   height: 100%;
   background: var(--color-primary, #FF4500);
   border-radius: 9999px;
-  transition: width 0.3s var(--ease-out);
+  transform-origin: left;
+  transition: transform 200ms var(--ease-out);
 }
 
 .progress-card-bottom {
@@ -711,9 +717,11 @@
   transition: transform var(--duration-tap) var(--ease-out), background-color 140ms ease, color 140ms ease;
 }
 
-.progress-resume-btn:hover {
-  background: rgba(255, 69, 0, 0.22);
-  border-color: rgba(255, 69, 0, 0.5);
+@media (hover: hover) and (pointer: fine) {
+  .progress-resume-btn:hover {
+    background: rgba(255, 69, 0, 0.22);
+    border-color: rgba(255, 69, 0, 0.5);
+  }
 }
 
 .progress-resume-btn:active {
@@ -759,8 +767,10 @@
   transition: color 0.15s ease;
 }
 
-.clean-quiz-card.variant-challenge:hover .challenge-card-title {
-  color: var(--color-primary, #FF4500);
+@media (hover: hover) and (pointer: fine) {
+  .clean-quiz-card.variant-challenge:hover .challenge-card-title {
+    color: var(--color-primary, #FF4500);
+  }
 }
 
 .challenge-pill-row {

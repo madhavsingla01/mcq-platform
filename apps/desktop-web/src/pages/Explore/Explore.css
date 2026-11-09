@@ -32,21 +32,28 @@
     transform: scale(0.97);
   }
 
-  .explore-line-search:hover,
   .explore-line-search:focus-within {
     border-color: rgba(255, 255, 255, 0.24);
     background: rgba(255, 255, 255, 0.07);
     box-shadow: 0 0 0 1px rgba(255, 69, 0, 0.3), inset 0 1px 2px rgba(0, 0, 0, 0.3);
   }
 
+  @media (hover: hover) and (pointer: fine) {
+    .explore-line-search:hover {
+      border-color: rgba(255, 255, 255, 0.24);
+      background: rgba(255, 255, 255, 0.07);
+      box-shadow: 0 0 0 1px rgba(255, 69, 0, 0.3), inset 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .explore-line-search:hover .line-search-icon {
+      color: #FF4500;
+    }
+  }
+
   .line-search-icon {
     color: #6B7280;
     flex-shrink: 0;
     transition: color 0.15s ease;
-  }
-
-  .explore-line-search:hover .line-search-icon {
-    color: #FF4500;
   }
 
   .line-search-input {
@@ -128,10 +135,15 @@
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: color 140ms ease;
   }
 
-  .explore-clear-tag-btn:hover {
-    text-decoration: underline;
+  @media (hover: hover) and (pointer: fine) {
+    .explore-clear-tag-btn:hover {
+      text-decoration: underline;
+    }
   }
 
   /* â”€â”€ Filter Bar: Algorithm Mode Pills â”€â”€ */
@@ -168,23 +180,31 @@
     font-weight: 600;
     color: #9CA3AF;
     cursor: pointer;
-    transition: all 0.15s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), color 140ms ease, border-color 140ms ease, background-color 140ms ease;
     white-space: nowrap;
+  }
+
+  .explore-pill:active {
+    transform: scale(0.97);
   }
 
   .explore-pill-icon {
     flex-shrink: 0;
   }
 
-  .explore-pill:hover {
-    border-color: #383838;
-    color: #FFFFFF;
+  @media (hover: hover) and (pointer: fine) {
+    .explore-pill:hover {
+      border-color: #383838;
+      color: #FFFFFF;
+    }
   }
 
   .explore-pill.active {
     background: #1a1a1a;
     border-color: #FF4500;
-    color: #FF6B00;
+    color: #FF4500;
   }
 
   .explore-filter-toggle-btn {
@@ -199,15 +219,27 @@
     font-weight: 600;
     color: #9CA3AF;
     cursor: pointer;
-    transition: all 0.15s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), color 140ms ease, border-color 140ms ease, background-color 140ms ease;
     position: relative;
     flex-shrink: 0;
   }
 
-  .explore-filter-toggle-btn:hover,
+  .explore-filter-toggle-btn:active {
+    transform: scale(0.97);
+  }
+
   .explore-filter-toggle-btn.active {
     border-color: #FF4500;
     color: #FFFFFF;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .explore-filter-toggle-btn:hover {
+      border-color: #FF4500;
+      color: #FFFFFF;
+    }
   }
 
   .explore-filter-active-dot {
@@ -257,18 +289,26 @@
     font-weight: 500;
     color: #D1D5DB;
     cursor: pointer;
-    transition: all 0.15s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), color 140ms ease, border-color 140ms ease, background-color 140ms ease;
   }
 
-  .explore-subpill:hover {
-    border-color: #FF4500;
-    color: #FFFFFF;
+  .explore-subpill:active {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .explore-subpill:hover {
+      border-color: #FF4500;
+      color: #FFFFFF;
+    }
   }
 
   .explore-subpill.active {
     background: rgba(255, 69, 0, 0.15);
     border-color: #FF4500;
-    color: #FF6B00;
+    color: #FF4500;
     font-weight: 700;
   }
 
@@ -294,17 +334,6 @@
     color: #FFFFFF;
     letter-spacing: -0.01em;
   }
-
-  .explore-section-count-badge {
-    font-size: 11.5px;
-    font-weight: 700;
-    color: #9CA3AF;
-    background: #141414;
-    padding: 2px 8px;
-    border-radius: 9999px;
-    border: 1px solid #222222;
-  }
-
 
   /* â”€â”€ Pure Quizzes Grid â”€â”€ */
   .explore-quizzes-grid {
@@ -355,13 +384,21 @@
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), color 140ms ease, border-color 140ms ease, background-color 140ms ease;
   }
 
-  .explore-page-nav-btn:hover:not(:disabled) {
-    border-color: #FF4500;
-    color: #FFFFFF;
-    background: #141414;
+  .explore-page-nav-btn:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .explore-page-nav-btn:hover:not(:disabled) {
+      border-color: #FF4500;
+      color: #FFFFFF;
+      background: #141414;
+    }
   }
 
   .explore-page-nav-btn:disabled {
@@ -388,12 +425,20 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), color 140ms ease, border-color 140ms ease, background-color 140ms ease;
   }
 
-  .explore-page-num-btn:hover:not(:disabled) {
-    border-color: #FF4500;
-    color: #FFFFFF;
+  .explore-page-num-btn:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .explore-page-num-btn:hover:not(:disabled) {
+      border-color: #FF4500;
+      color: #FFFFFF;
+    }
   }
 
   .explore-page-num-btn.active {

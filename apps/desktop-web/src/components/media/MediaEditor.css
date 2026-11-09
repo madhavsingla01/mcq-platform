@@ -1,0 +1,68 @@
+.qf-media-editor, .qf-media-edit-clip { min-width: 0; color: #efeff2; }
+.qf-media-editor-body, .qf-media-edit-clip { display: grid; gap: 12px; }
+.qf-media-editor p { font-size: 13px; line-height: 1.5; margin: 0; color: #c4c4cb; }
+.qf-media-limits { margin: 0; padding-inline-start: 18px; list-style: disc; color: #c4c4cb; font-size: 13px; line-height: 1.6; }
+.qf-media-editor button, .qf-media-edit-clip .qf-media-file {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  min-height: 38px; padding: 7px 10px; box-sizing: border-box;
+  border: 1px solid #666671; border-radius: 8px; background: #141416; color: #f2f2f5;
+  font: inherit; font-size: 13px; cursor: pointer; touch-action: manipulation;
+}
+.qf-media-add, .qf-media-file-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.qf-media-image-link { display: grid; justify-items: start; gap: 8px; }
+.qf-media-add:empty { display: none; }
+.qf-media-empty {
+  display: grid; justify-items: center; gap: 8px; padding: 28px 14px; text-align: center;
+  border: 1px dashed #666671; border-radius: 12px; background: #101012;
+}
+.qf-media-empty svg { color: #ff844f; }
+.qf-media-edit-clip { margin: 0; padding: 0; border: 0; }
+.qf-media-edit-clip + .qf-media-edit-clip { border-top: 1px solid #404047; padding-top: 12px; }
+.qf-media-edit-clip legend { display: flex; align-items: center; gap: 7px; padding: 0; margin-bottom: 8px; font-weight: 700; font-size: 14px; }
+.qf-media-edit-clip label { display: grid; gap: 6px; font-size: 14px; line-height: 1.5; }
+.qf-media-edit-clip input:not([type=checkbox]):not([type=file]), .qf-media-edit-clip textarea, .qf-media-edit-clip select {
+  width: 100%; min-width: 0; box-sizing: border-box; min-height: 40px; font-size: 16px;
+  padding: 8px; background: #101012; border: 1px solid #666671; border-radius: 8px; color: #fff; font-family: inherit;
+}
+.qf-media-edit-clip textarea { resize: vertical; }
+.qf-media-edit-clip .qf-media-check { display: flex; align-items: flex-start; gap: 10px; }
+.qf-media-check input { accent-color: #ff4500; width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px; }
+.qf-media-file { position: relative; justify-self: start; }
+.qf-media-file-input { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); overflow: hidden; }
+.qf-media-accessibility, .qf-media-alternative { min-width: 0; border: 1px solid #666671; border-radius: 10px; }
+.qf-media-accessibility > summary, .qf-media-alternative > summary {
+  padding: 10px; font-size: 14px; font-weight: 650; cursor: pointer;
+}
+.qf-media-accessibility[open] > summary, .qf-media-alternative[open] > summary { border-bottom: 1px solid #45454b; }
+.qf-media-accessibility-fields, .qf-media-alternative-fields { display: grid; gap: 10px; padding: 10px; }
+.qf-media-edit-clip .qf-media-field-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+.qf-media-review-copy { display: grid; justify-items: start; gap: 4px; }
+.qf-media-requirement {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid #595960;
+  border-radius: 5px;
+  color: #d3d3da;
+  font-size: .6875rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+.qf-media-requirement.is-required { border-color: #9e4728; background: #2a1711; color: #ffb297; }
+.qf-media-alternative > summary > .qf-media-requirement { margin-inline-start: 4px; }
+.qf-media-editor .qf-media-remove, .qf-media-editor .qf-media-editor-notice { color: #ffc2ac; }
+.qf-media-editor :focus-visible, .qf-media-file:focus-within { outline: 2px solid #ff844f; outline-offset: 2px; }
+.qf-media-editor button:disabled, .qf-media-file:has(input:disabled) { opacity: .5; cursor: not-allowed; }
+.qf-media-processor { display: grid; gap: 8px; justify-items: start; }
+.qf-media-editor .qf-accessible-media { margin: 0; }
+.qf-media-editor .qf-media-clip { border-radius: 12px; padding: 10px; }
+.qf-media-editor video { max-height: 260px; border-radius: 8px; }
+.qf-media-editor button:active, .qf-media-file:active { transform: scale(.97); }
+@media (hover: hover) and (pointer: fine) {
+  .qf-media-editor button:hover:not(:disabled), .qf-media-file:hover:not(:has(input:disabled)) { background: #29292d; }
+}
+@media (max-width: 600px) { .qf-media-editor button, .qf-media-edit-clip .qf-media-file { min-height: 44px; } }

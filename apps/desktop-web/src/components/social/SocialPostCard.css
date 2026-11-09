@@ -140,12 +140,25 @@
     font-size: 12px;
     font-weight: 800;
     cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease;
   }
 
-  .social-post-actions button:hover,
-  .social-post-actions button.active,
-  .social-post-start:hover {
+  .social-post-actions button:active,
+  .social-post-start:active {
+    transform: scale(0.97);
+  }
+
+  .social-post-actions button.active {
     background: var(--color-surface-hover);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .social-post-actions button:hover,
+    .social-post-start:hover {
+      background: var(--color-surface-hover);
+    }
   }
 
   .social-post-start {

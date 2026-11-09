@@ -57,7 +57,6 @@ export default function AdminAuditLogs() {
   return (
     <div>
       <div className="admin-page-header">
-        <h1 className="admin-page-title">Audit Trail</h1>
         <p className="admin-page-desc">
           Append-only, immutable historical log of all administrative actions, suspensions, and content restrictions.
         </p>

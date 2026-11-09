@@ -24,7 +24,8 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
-  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [messageCount, setUnreadMessages] = useState(0);
+  const unreadMessages = user?.preferences?.notifications?.directMessages === false ? 0 : messageCount;
   const [isExpanded, setIsExpanded] = useState(false);
   const collapseUntilMouseLeaveRef = useRef(false);
   const isPointerOverSidebarRef = useRef(false);
@@ -108,8 +109,7 @@ export default function Sidebar() {
 
   const handleLogout = async () => {
     handleNavClick();
-    await logout();
-    navigate('/login');
+    if (await logout()) navigate('/login');
   };
 
   const userInitial = (user?.name?.[0] || user?.username?.[0] || 'U').toUpperCase();

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 /**
  * QuizFocus Quiz & Question Core Service
  * Manages quiz authoring, question banks, drafts, challenges, and analytics.
@@ -14,6 +15,7 @@ import { logger } from './utils/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js';
 import { csrfProtection } from './middleware/csrf.middleware.js';
 import quizRoutes from './routes/quiz.routes.js';
+import attemptCompatibilityRoutes from './routes/attemptCompatibility.routes.js';
 import quizzesRoutes from './routes/quizzes.routes.js';
 import searchRoutes from './routes/search.routes.js';
 import { startCleanupWorker } from './jobs/cleanup.worker.js';
@@ -40,15 +42,16 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Health check
 app.get('/api/v1/health', (req, res) => {
-  res.json({
+  const healthy = mongoose.connection.readyState === 1;
+  res.status(healthy ? 200 : 503).json({
     service: 'quiz-service',
-    status: 'healthy',
+    status: healthy ? 'healthy' : 'degraded',
     timestamp: new Date().toISOString(),
-    database: env.MONGO_URI.split('/').pop(),
   });
 });
 
 // Routes
+app.use('/api/v1/quiz', attemptCompatibilityRoutes);
 app.use('/api/v1/quiz', quizRoutes);
 app.use('/api/v1/quizzes', quizzesRoutes);
 app.use('/api/v1/search', searchRoutes);

@@ -40,8 +40,8 @@ export const SocialService = {
     return data?.data || {};
   },
 
-  getExplore: async (params = {}) => {
-    const { data } = await api.get('/social/explore', { params });
+  getExplore: async (params = {}, { signal } = {}) => {
+    const { data } = await api.get('/social/explore', { params, signal });
     return data?.data || {};
   },
 

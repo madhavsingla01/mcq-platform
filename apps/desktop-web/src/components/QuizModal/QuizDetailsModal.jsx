@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Settings, Camera, Play, Trash2, Upload } from 'lucide-react';
 import api from '../../api/axios';
 import { Badge, Button, ProgressBar, Spinner, showCustomDialog } from '../ui';
@@ -7,7 +7,6 @@ import AttemptDetailView from './AttemptDetailView';
 import QuizService from '../../services/quiz.service';
 import './QuizDetailsModal.css';
 import { useAuthStore } from '../../store/authStore';
-import { useUIStore } from '../../store/uiStore';
 import { compressImage } from '../../utils/imageCompressor';
 
 const DEFAULT_PAGINATION = {
@@ -50,11 +49,12 @@ const formatDuration = (attempt) => {
 };
 
 export default function QuizDetailsModal({ quizId, onClose }) {
-  const openSearch = useUIStore((s) => s.openSearch);
+  const navigate = useNavigate();
   const [quiz, setQuiz] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [attempts, setAttempts] = useState([]);
   const [pagination, setPagination] = useState(DEFAULT_PAGINATION);
+  const [resultsSealed, setResultsSealed] = useState(false);
   const [sortBy, setSortBy] = useState('latest');
   const [selectedAttemptId, setSelectedAttemptId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -84,6 +84,11 @@ export default function QuizDetailsModal({ quizId, onClose }) {
     const fetchDetails = async () => {
       setLoading(true);
       setError('');
+      setQuiz(null);
+      setAnalytics(null);
+      setAttempts([]);
+      setPagination(DEFAULT_PAGINATION);
+      setResultsSealed(false);
       setSelectedAttemptId(null);
 
       try {
@@ -109,6 +114,7 @@ export default function QuizDetailsModal({ quizId, onClose }) {
           const attemptsData = attemptsResult.value.data?.data || attemptsResult.value.data;
           setAttempts(attemptsData?.attempts || []);
           setPagination(attemptsData?.pagination || DEFAULT_PAGINATION);
+          setResultsSealed(attemptsData?.quarantined === true);
         }
       } catch (requestError) {
         if (!cancelled) {
@@ -157,6 +163,7 @@ export default function QuizDetailsModal({ quizId, onClose }) {
 
         setAttempts(response.data.data.attempts || []);
         setPagination(response.data.data.pagination || DEFAULT_PAGINATION);
+        setResultsSealed(response.data.data.quarantined === true);
       } catch (requestError) {
         if (!cancelled) {
           setError(requestError.response?.data?.message || 'Failed to load attempts');
@@ -213,6 +220,7 @@ export default function QuizDetailsModal({ quizId, onClose }) {
 
       setAttempts(response.data.data.attempts || []);
       setPagination(response.data.data.pagination || DEFAULT_PAGINATION);
+      setResultsSealed(response.data.data.quarantined === true);
     } catch (requestError) {
       setError(requestError.response?.data?.message || 'Failed to load attempts');
     } finally {
@@ -477,7 +485,7 @@ export default function QuizDetailsModal({ quizId, onClose }) {
                             type="button"
                             onClick={() => {
                               onClose?.();
-                              openSearch('#' + t, 'tags');
+                              navigate(`/explore?${new URLSearchParams({ tag: t })}`);
                             }}
                             style={{
                               background: 'rgba(255, 69, 0, 0.08)',
@@ -522,16 +530,18 @@ export default function QuizDetailsModal({ quizId, onClose }) {
                   <div className="quiz-attempts-header">
                     <div>
                       <h3>Recent Attempts</h3>
-                      <p>{pagination.total || 0} completed attempt{pagination.total === 1 ? '' : 's'}</p>
+                      {!resultsSealed && <p>{pagination.total || 0} completed attempt{pagination.total === 1 ? '' : 's'}</p>}
                     </div>
-                    <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} disabled={attemptsLoading}>
+                    {!resultsSealed && <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} disabled={attemptsLoading}>
                       <option value="latest">Latest</option>
                       <option value="highest">Highest score</option>
                       <option value="lowest">Lowest score</option>
-                    </select>
+                    </select>}
                   </div>
 
-                  {attemptsLoading ? (
+                  {resultsSealed ? (
+                    <div className="quiz-empty-attempts">Attempts and scores are available after the challenge deadline.</div>
+                  ) : attemptsLoading ? (
                     <div className="quiz-modal-state compact">
                       <Spinner />
                     </div>

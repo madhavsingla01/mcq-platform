@@ -111,6 +111,7 @@ const quizSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },
+    isRestricted: { type: Boolean, default: false },
     isPublic: {
       type: Boolean,
       default: false,

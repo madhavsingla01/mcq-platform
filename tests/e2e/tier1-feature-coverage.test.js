@@ -6,6 +6,7 @@
 
 import { describe, test, it, expect, before, after } from './helpers/runner-core.js';
 import { ApiClient } from './helpers/api-client.js';
+import { proxyFailure } from '../../services/api-gateway/src/contracts.js';
 import {
   PATHS,
   readFileSafe,
@@ -524,9 +525,9 @@ describe('Tier 1: Feature Coverage (F1 through F12)', () => {
     });
 
     it('F12-5: Gateway error handler responds with 502 Bad Gateway if downstream is unavailable', () => {
-      const gatewayServer = readFileSafe(PATHS.root + '/services/api-gateway/src/server.js') || '';
-      expect(gatewayServer).toContain('Downstream service unavailable');
-      expect(gatewayServer).toContain('502');
+      const failure = proxyFailure({ code: 'ECONNREFUSED' });
+      expect(failure.message).toBe('Downstream service unavailable');
+      expect(failure.status).toBe(502);
     });
   });
 

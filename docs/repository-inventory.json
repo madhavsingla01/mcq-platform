@@ -1,0 +1,3148 @@
+{
+  "date": "2026-11-07",
+  "scope": "Project-authored code and documentation, excluding dependencies, generated output, runtime data and secrets. Static inventory is not a line-by-line security certification.",
+  "files": 652,
+  "components": {
+    "apps/desktop-web": {
+      "files": 164,
+      "lines": 55049
+    },
+    "apps/mobile-web": {
+      "files": 22,
+      "lines": 5761
+    },
+    "docker-compose.yml": {
+      "files": 1,
+      "lines": 278
+    },
+    "docs": {
+      "files": 1,
+      "lines": 4
+    },
+    "package.json": {
+      "files": 1,
+      "lines": 35
+    },
+    "PROJECT.md": {
+      "files": 1,
+      "lines": 86
+    },
+    "PROJECT_TRACKER.md": {
+      "files": 1,
+      "lines": 5
+    },
+    "README.md": {
+      "files": 1,
+      "lines": 317
+    },
+    "scripts": {
+      "files": 6,
+      "lines": 472
+    },
+    "services/admin-service": {
+      "files": 18,
+      "lines": 1838
+    },
+    "services/api-gateway": {
+      "files": 25,
+      "lines": 2745
+    },
+    "services/attempt-service": {
+      "files": 83,
+      "lines": 9928
+    },
+    "services/auth-service": {
+      "files": 36,
+      "lines": 4207
+    },
+    "services/challenge-service": {
+      "files": 17,
+      "lines": 2320
+    },
+    "services/media-service": {
+      "files": 12,
+      "lines": 703
+    },
+    "services/message-service": {
+      "files": 36,
+      "lines": 3676
+    },
+    "services/parser-service": {
+      "files": 66,
+      "lines": 6613
+    },
+    "services/quiz-service": {
+      "files": 82,
+      "lines": 10757
+    },
+    "services/social-service": {
+      "files": 63,
+      "lines": 8223
+    },
+    "tests": {
+      "files": 14,
+      "lines": 3955
+    },
+    "TEST_INFRA.md": {
+      "files": 1,
+      "lines": 100
+    },
+    "TEST_READY.md": {
+      "files": 1,
+      "lines": 142
+    }
+  },
+  "identicalSourceGroups": [
+    [
+      "services/api-gateway/src/models/Activity.model.js",
+      "services/attempt-service/src/models/Activity.model.js",
+      "services/auth-service/src/models/Activity.model.js",
+      "services/message-service/src/models/Activity.model.js",
+      "services/parser-service/src/models/Activity.model.js",
+      "services/social-service/src/models/Activity.model.js"
+    ],
+    [
+      "services/api-gateway/src/models/Attempt.model.js",
+      "services/auth-service/src/models/Attempt.model.js",
+      "services/challenge-service/src/models/Attempt.model.js",
+      "services/message-service/src/models/Attempt.model.js",
+      "services/parser-service/src/models/Attempt.model.js"
+    ],
+    [
+      "services/api-gateway/src/models/Conversation.model.js",
+      "services/attempt-service/src/models/Conversation.model.js",
+      "services/auth-service/src/models/Conversation.model.js",
+      "services/parser-service/src/models/Conversation.model.js",
+      "services/social-service/src/models/Conversation.model.js"
+    ],
+    [
+      "services/api-gateway/src/models/Follow.model.js",
+      "services/attempt-service/src/models/Follow.model.js",
+      "services/auth-service/src/models/Follow.model.js",
+      "services/message-service/src/models/Follow.model.js",
+      "services/parser-service/src/models/Follow.model.js",
+      "services/social-service/src/models/Follow.model.js"
+    ],
+    [
+      "services/api-gateway/src/models/MappingConfig.model.js",
+      "services/attempt-service/src/models/MappingConfig.model.js",
+      "services/auth-service/src/models/MappingConfig.model.js",
+      "services/message-service/src/models/MappingConfig.model.js",
+      "services/parser-service/src/models/MappingConfig.model.js",
+      "services/social-service/src/models/MappingConfig.model.js"
+    ],
+    [
+      "services/api-gateway/src/models/Message.model.js",
+      "services/attempt-service/src/models/Message.model.js",
+      "services/auth-service/src/models/Message.model.js",
+      "services/parser-service/src/models/Message.model.js",
+      "services/social-service/src/models/Message.model.js"
+    ],
+    [
+      "services/api-gateway/src/models/Notification.model.js",
+      "services/attempt-service/src/models/Notification.model.js",
+      "services/auth-service/src/models/Notification.model.js",
+      "services/message-service/src/models/Notification.model.js",
+      "services/parser-service/src/models/Notification.model.js",
+      "services/social-service/src/models/Notification.model.js"
+    ],
+    [
+      "services/api-gateway/src/models/Question.model.js",
+      "services/attempt-service/src/models/Question.model.js",
+      "services/auth-service/src/models/Question.model.js",
+      "services/message-service/src/models/Question.model.js",
+      "services/parser-service/src/models/Question.model.js",
+      "services/quiz-service/src/models/Question.model.js",
+      "services/social-service/src/models/Question.model.js"
+    ],
+    [
+      "services/api-gateway/src/models/Quiz.model.js",
+      "services/auth-service/src/models/Quiz.model.js",
+      "services/parser-service/src/models/Quiz.model.js"
+    ],
+    [
+      "services/api-gateway/src/models/QuizComment.model.js",
+      "services/attempt-service/src/models/QuizComment.model.js",
+      "services/auth-service/src/models/QuizComment.model.js",
+      "services/message-service/src/models/QuizComment.model.js",
+      "services/parser-service/src/models/QuizComment.model.js",
+      "services/social-service/src/models/QuizComment.model.js"
+    ],
+    [
+      "services/api-gateway/src/models/QuizInteraction.model.js",
+      "services/attempt-service/src/models/QuizInteraction.model.js",
+      "services/auth-service/src/models/QuizInteraction.model.js",
+      "services/message-service/src/models/QuizInteraction.model.js",
+      "services/parser-service/src/models/QuizInteraction.model.js",
+      "services/social-service/src/models/QuizInteraction.model.js"
+    ],
+    [
+      "services/api-gateway/src/models/QuizShare.model.js",
+      "services/attempt-service/src/models/QuizShare.model.js",
+      "services/auth-service/src/models/QuizShare.model.js",
+      "services/message-service/src/models/QuizShare.model.js",
+      "services/parser-service/src/models/QuizShare.model.js",
+      "services/social-service/src/models/QuizShare.model.js"
+    ],
+    [
+      "services/api-gateway/src/models/Upload.model.js",
+      "services/attempt-service/src/models/Upload.model.js",
+      "services/auth-service/src/models/Upload.model.js",
+      "services/message-service/src/models/Upload.model.js",
+      "services/quiz-service/src/models/Upload.model.js",
+      "services/social-service/src/models/Upload.model.js"
+    ],
+    [
+      "services/api-gateway/src/utils/detectAnswer.js",
+      "services/attempt-service/src/utils/detectAnswer.js",
+      "services/auth-service/src/utils/detectAnswer.js",
+      "services/message-service/src/utils/detectAnswer.js",
+      "services/parser-service/src/utils/detectAnswer.js",
+      "services/quiz-service/src/utils/detectAnswer.js",
+      "services/social-service/src/utils/detectAnswer.js"
+    ],
+    [
+      "services/api-gateway/src/utils/fileCleaner.js",
+      "services/attempt-service/src/utils/fileCleaner.js",
+      "services/auth-service/src/utils/fileCleaner.js",
+      "services/message-service/src/utils/fileCleaner.js",
+      "services/parser-service/src/utils/fileCleaner.js",
+      "services/quiz-service/src/utils/fileCleaner.js",
+      "services/social-service/src/utils/fileCleaner.js"
+    ],
+    [
+      "services/api-gateway/src/utils/generateId.js",
+      "services/attempt-service/src/utils/generateId.js",
+      "services/auth-service/src/utils/generateId.js",
+      "services/message-service/src/utils/generateId.js",
+      "services/parser-service/src/utils/generateId.js",
+      "services/quiz-service/src/utils/generateId.js",
+      "services/social-service/src/utils/generateId.js"
+    ],
+    [
+      "services/api-gateway/src/utils/logger.js",
+      "services/attempt-service/src/utils/logger.js",
+      "services/auth-service/src/utils/logger.js",
+      "services/message-service/src/utils/logger.js",
+      "services/parser-service/src/utils/logger.js",
+      "services/quiz-service/src/utils/logger.js",
+      "services/social-service/src/utils/logger.js"
+    ],
+    [
+      "services/api-gateway/src/utils/normalizeColumns.js",
+      "services/attempt-service/src/utils/normalizeColumns.js",
+      "services/auth-service/src/utils/normalizeColumns.js",
+      "services/message-service/src/utils/normalizeColumns.js",
+      "services/parser-service/src/utils/normalizeColumns.js",
+      "services/quiz-service/src/utils/normalizeColumns.js",
+      "services/social-service/src/utils/normalizeColumns.js"
+    ],
+    [
+      "services/api-gateway/src/utils/parserHelpers.js",
+      "services/attempt-service/src/utils/parserHelpers.js",
+      "services/auth-service/src/utils/parserHelpers.js",
+      "services/message-service/src/utils/parserHelpers.js",
+      "services/parser-service/src/utils/parserHelpers.js",
+      "services/quiz-service/src/utils/parserHelpers.js",
+      "services/social-service/src/utils/parserHelpers.js"
+    ],
+    [
+      "services/attempt-service/src/application/use-cases/CreateChallengeUseCase.js",
+      "services/quiz-service/src/application/use-cases/CreateChallengeUseCase.js"
+    ],
+    [
+      "services/attempt-service/src/application/use-cases/DeleteQuizUseCase.js",
+      "services/quiz-service/src/application/use-cases/DeleteQuizUseCase.js"
+    ],
+    [
+      "services/attempt-service/src/application/use-cases/FinalizeExpiredChallengesUseCase.js",
+      "services/quiz-service/src/application/use-cases/FinalizeExpiredChallengesUseCase.js"
+    ],
+    [
+      "services/attempt-service/src/application/use-cases/GetLeaderboardUseCase.js",
+      "services/quiz-service/src/application/use-cases/GetLeaderboardUseCase.js"
+    ],
+    [
+      "services/attempt-service/src/application/use-cases/UpdateQuizUseCase.js",
+      "services/quiz-service/src/application/use-cases/UpdateQuizUseCase.js"
+    ],
+    [
+      "services/attempt-service/src/config/db.js",
+      "services/message-service/src/config/db.js",
+      "services/parser-service/src/config/db.js",
+      "services/quiz-service/src/config/db.js",
+      "services/social-service/src/config/db.js"
+    ],
+    [
+      "services/attempt-service/src/domain/entities/Attempt.js",
+      "services/quiz-service/src/domain/entities/Attempt.js"
+    ],
+    [
+      "services/attempt-service/src/domain/entities/Challenge.js",
+      "services/quiz-service/src/domain/entities/Challenge.js"
+    ],
+    [
+      "services/attempt-service/src/domain/entities/Quiz.js",
+      "services/quiz-service/src/domain/entities/Quiz.js"
+    ],
+    [
+      "services/attempt-service/src/domain/errors/DomainError.js",
+      "services/quiz-service/src/domain/errors/DomainError.js"
+    ],
+    [
+      "services/attempt-service/src/domain/repositories/IQuestionRepository.js",
+      "services/quiz-service/src/domain/repositories/IQuestionRepository.js"
+    ],
+    [
+      "services/attempt-service/src/domain/repositories/IQuizRepository.js",
+      "services/quiz-service/src/domain/repositories/IQuizRepository.js"
+    ],
+    [
+      "services/attempt-service/src/infrastructure/di/DIContainer.js",
+      "services/quiz-service/src/infrastructure/di/DIContainer.js"
+    ],
+    [
+      "services/attempt-service/src/infrastructure/repositories/MongooseQuestionRepository.js",
+      "services/quiz-service/src/infrastructure/repositories/MongooseQuestionRepository.js"
+    ],
+    [
+      "services/attempt-service/src/infrastructure/repositories/MongooseQuizRepository.js",
+      "services/quiz-service/src/infrastructure/repositories/MongooseQuizRepository.js"
+    ],
+    [
+      "services/attempt-service/src/middleware/auth.middleware.js",
+      "services/auth-service/src/middleware/auth.middleware.js",
+      "services/message-service/src/middleware/auth.middleware.js",
+      "services/parser-service/src/middleware/auth.middleware.js",
+      "services/quiz-service/src/middleware/auth.middleware.js",
+      "services/social-service/src/middleware/auth.middleware.js"
+    ],
+    [
+      "services/attempt-service/src/middleware/csrf.middleware.js",
+      "services/message-service/src/middleware/csrf.middleware.js",
+      "services/parser-service/src/middleware/csrf.middleware.js",
+      "services/quiz-service/src/middleware/csrf.middleware.js",
+      "services/social-service/src/middleware/csrf.middleware.js"
+    ],
+    [
+      "services/attempt-service/src/middleware/error.middleware.js",
+      "services/auth-service/src/middleware/error.middleware.js",
+      "services/message-service/src/middleware/error.middleware.js",
+      "services/parser-service/src/middleware/error.middleware.js",
+      "services/quiz-service/src/middleware/error.middleware.js",
+      "services/social-service/src/middleware/error.middleware.js"
+    ],
+    [
+      "services/attempt-service/src/middleware/rateLimit.middleware.js",
+      "services/message-service/src/middleware/rateLimit.middleware.js",
+      "services/parser-service/src/middleware/rateLimit.middleware.js",
+      "services/quiz-service/src/middleware/rateLimit.middleware.js",
+      "services/social-service/src/middleware/rateLimit.middleware.js"
+    ],
+    [
+      "services/attempt-service/src/middleware/security.middleware.js",
+      "services/auth-service/src/middleware/security.middleware.js",
+      "services/message-service/src/middleware/security.middleware.js",
+      "services/quiz-service/src/middleware/security.middleware.js",
+      "services/social-service/src/middleware/security.middleware.js"
+    ],
+    [
+      "services/attempt-service/src/middleware/upload.middleware.js",
+      "services/message-service/src/middleware/upload.middleware.js",
+      "services/social-service/src/middleware/upload.middleware.js"
+    ],
+    [
+      "services/attempt-service/src/middleware/validation.middleware.js",
+      "services/message-service/src/middleware/validation.middleware.js",
+      "services/parser-service/src/middleware/validation.middleware.js",
+      "services/social-service/src/middleware/validation.middleware.js"
+    ],
+    [
+      "services/attempt-service/src/models/Quiz.model.js",
+      "services/message-service/src/models/Quiz.model.js"
+    ],
+    [
+      "services/attempt-service/src/models/User.model.js",
+      "services/message-service/src/models/User.model.js",
+      "services/quiz-service/src/models/User.model.js"
+    ],
+    [
+      "services/attempt-service/src/services/cache/cache.service.js",
+      "services/parser-service/src/services/cache/cache.service.js",
+      "services/social-service/src/services/cache/cache.service.js"
+    ],
+    [
+      "services/attempt-service/src/services/parser/answerDetector.js",
+      "services/parser-service/src/services/parser/answerDetector.js",
+      "services/quiz-service/src/services/parser/answerDetector.js",
+      "services/social-service/src/services/parser/answerDetector.js"
+    ],
+    [
+      "services/attempt-service/src/services/parser/csvParser.js",
+      "services/parser-service/src/services/parser/csvParser.js",
+      "services/quiz-service/src/services/parser/csvParser.js",
+      "services/social-service/src/services/parser/csvParser.js"
+    ],
+    [
+      "services/attempt-service/src/services/parser/excelParser.js",
+      "services/parser-service/src/services/parser/excelParser.js",
+      "services/quiz-service/src/services/parser/excelParser.js",
+      "services/social-service/src/services/parser/excelParser.js"
+    ],
+    [
+      "services/attempt-service/src/services/parser/jsonParser.js",
+      "services/parser-service/src/services/parser/jsonParser.js",
+      "services/quiz-service/src/services/parser/jsonParser.js",
+      "services/social-service/src/services/parser/jsonParser.js"
+    ],
+    [
+      "services/attempt-service/src/services/parser/optionExtractor.js",
+      "services/parser-service/src/services/parser/optionExtractor.js",
+      "services/quiz-service/src/services/parser/optionExtractor.js",
+      "services/social-service/src/services/parser/optionExtractor.js"
+    ],
+    [
+      "services/attempt-service/src/services/parser/smartColumnMapper.js",
+      "services/parser-service/src/services/parser/smartColumnMapper.js",
+      "services/quiz-service/src/services/parser/smartColumnMapper.js",
+      "services/social-service/src/services/parser/smartColumnMapper.js"
+    ],
+    [
+      "services/attempt-service/src/services/parser/strategies/BaseParserStrategy.js",
+      "services/parser-service/src/services/parser/strategies/BaseParserStrategy.js",
+      "services/quiz-service/src/services/parser/strategies/BaseParserStrategy.js",
+      "services/social-service/src/services/parser/strategies/BaseParserStrategy.js"
+    ],
+    [
+      "services/attempt-service/src/services/parser/strategies/CsvParserStrategy.js",
+      "services/parser-service/src/services/parser/strategies/CsvParserStrategy.js",
+      "services/quiz-service/src/services/parser/strategies/CsvParserStrategy.js",
+      "services/social-service/src/services/parser/strategies/CsvParserStrategy.js"
+    ],
+    [
+      "services/attempt-service/src/services/parser/strategies/ExcelParserStrategy.js",
+      "services/parser-service/src/services/parser/strategies/ExcelParserStrategy.js",
+      "services/quiz-service/src/services/parser/strategies/ExcelParserStrategy.js",
+      "services/social-service/src/services/parser/strategies/ExcelParserStrategy.js"
+    ],
+    [
+      "services/attempt-service/src/services/parser/strategies/JsonParserStrategy.js",
+      "services/parser-service/src/services/parser/strategies/JsonParserStrategy.js",
+      "services/quiz-service/src/services/parser/strategies/JsonParserStrategy.js",
+      "services/social-service/src/services/parser/strategies/JsonParserStrategy.js"
+    ],
+    [
+      "services/attempt-service/src/services/parser/strategies/ParserRegistry.js",
+      "services/parser-service/src/services/parser/strategies/ParserRegistry.js",
+      "services/quiz-service/src/services/parser/strategies/ParserRegistry.js",
+      "services/social-service/src/services/parser/strategies/ParserRegistry.js"
+    ],
+    [
+      "services/attempt-service/src/services/quiz/attemptTracking.service.js",
+      "services/quiz-service/src/services/quiz/attemptTracking.service.js"
+    ],
+    [
+      "services/attempt-service/src/services/quiz/quizGenerator.service.js",
+      "services/parser-service/src/services/quiz/quizGenerator.service.js",
+      "services/quiz-service/src/services/quiz/quizGenerator.service.js",
+      "services/social-service/src/services/quiz/quizGenerator.service.js"
+    ],
+    [
+      "services/attempt-service/src/services/quiz/scoring/BaseQuestionEvaluator.js",
+      "services/parser-service/src/services/quiz/scoring/BaseQuestionEvaluator.js",
+      "services/quiz-service/src/services/quiz/scoring/BaseQuestionEvaluator.js",
+      "services/social-service/src/services/quiz/scoring/BaseQuestionEvaluator.js"
+    ],
+    [
+      "services/attempt-service/src/services/quiz/scoring/MultipleChoiceEvaluator.js",
+      "services/parser-service/src/services/quiz/scoring/MultipleChoiceEvaluator.js",
+      "services/quiz-service/src/services/quiz/scoring/MultipleChoiceEvaluator.js",
+      "services/social-service/src/services/quiz/scoring/MultipleChoiceEvaluator.js"
+    ],
+    [
+      "services/attempt-service/src/services/quiz/scoring/QuestionEvaluationRegistry.js",
+      "services/parser-service/src/services/quiz/scoring/QuestionEvaluationRegistry.js",
+      "services/quiz-service/src/services/quiz/scoring/QuestionEvaluationRegistry.js",
+      "services/social-service/src/services/quiz/scoring/QuestionEvaluationRegistry.js"
+    ],
+    [
+      "services/attempt-service/src/services/quiz/scoring/SingleChoiceEvaluator.js",
+      "services/parser-service/src/services/quiz/scoring/SingleChoiceEvaluator.js",
+      "services/quiz-service/src/services/quiz/scoring/SingleChoiceEvaluator.js",
+      "services/social-service/src/services/quiz/scoring/SingleChoiceEvaluator.js"
+    ],
+    [
+      "services/attempt-service/src/services/quiz/scoring/TextMatchEvaluator.js",
+      "services/parser-service/src/services/quiz/scoring/TextMatchEvaluator.js",
+      "services/quiz-service/src/services/quiz/scoring/TextMatchEvaluator.js",
+      "services/social-service/src/services/quiz/scoring/TextMatchEvaluator.js"
+    ],
+    [
+      "services/attempt-service/src/services/quiz/scoring/TrueFalseEvaluator.js",
+      "services/parser-service/src/services/quiz/scoring/TrueFalseEvaluator.js",
+      "services/quiz-service/src/services/quiz/scoring/TrueFalseEvaluator.js",
+      "services/social-service/src/services/quiz/scoring/TrueFalseEvaluator.js"
+    ],
+    [
+      "services/attempt-service/src/services/quiz/timer/BaseTimerStrategy.js",
+      "services/parser-service/src/services/quiz/timer/BaseTimerStrategy.js",
+      "services/quiz-service/src/services/quiz/timer/BaseTimerStrategy.js",
+      "services/social-service/src/services/quiz/timer/BaseTimerStrategy.js"
+    ],
+    [
+      "services/attempt-service/src/services/quiz/timer/NoTimerStrategy.js",
+      "services/parser-service/src/services/quiz/timer/NoTimerStrategy.js",
+      "services/quiz-service/src/services/quiz/timer/NoTimerStrategy.js",
+      "services/social-service/src/services/quiz/timer/NoTimerStrategy.js"
+    ],
+    [
+      "services/attempt-service/src/services/quiz/timer/SoftTimerStrategy.js",
+      "services/parser-service/src/services/quiz/timer/SoftTimerStrategy.js",
+      "services/quiz-service/src/services/quiz/timer/SoftTimerStrategy.js",
+      "services/social-service/src/services/quiz/timer/SoftTimerStrategy.js"
+    ],
+    [
+      "services/attempt-service/src/services/quiz/timer/StrictTimerStrategy.js",
+      "services/parser-service/src/services/quiz/timer/StrictTimerStrategy.js",
+      "services/quiz-service/src/services/quiz/timer/StrictTimerStrategy.js",
+      "services/social-service/src/services/quiz/timer/StrictTimerStrategy.js"
+    ],
+    [
+      "services/attempt-service/src/services/quiz/timer/TimerStrategyFactory.js",
+      "services/parser-service/src/services/quiz/timer/TimerStrategyFactory.js",
+      "services/quiz-service/src/services/quiz/timer/TimerStrategyFactory.js",
+      "services/social-service/src/services/quiz/timer/TimerStrategyFactory.js"
+    ],
+    [
+      "services/attempt-service/src/services/social/activity.service.js",
+      "services/parser-service/src/services/social/activity.service.js",
+      "services/social-service/src/services/social/activity.service.js"
+    ],
+    [
+      "services/attempt-service/src/services/upload/fileHash.service.js",
+      "services/parser-service/src/services/upload/fileHash.service.js",
+      "services/quiz-service/src/services/upload/fileHash.service.js",
+      "services/social-service/src/services/upload/fileHash.service.js"
+    ],
+    [
+      "services/attempt-service/src/services/upload/storage.service.js",
+      "services/parser-service/src/services/upload/storage.service.js",
+      "services/quiz-service/src/services/upload/storage.service.js",
+      "services/social-service/src/services/upload/storage.service.js"
+    ],
+    [
+      "services/parser-service/src/config/env.js",
+      "services/social-service/src/config/env.js"
+    ]
+  ],
+  "entries": [
+    {
+      "path": "apps/desktop-web/check_error.cjs",
+      "lines": 35
+    },
+    {
+      "path": "apps/desktop-web/check_error.js",
+      "lines": 37
+    },
+    {
+      "path": "apps/desktop-web/package.json",
+      "lines": 41
+    },
+    {
+      "path": "apps/desktop-web/public/squircle-worklet.js",
+      "lines": 118
+    },
+    {
+      "path": "apps/desktop-web/src/api/axios.js",
+      "lines": 109
+    },
+    {
+      "path": "apps/desktop-web/src/App.jsx",
+      "lines": 76
+    },
+    {
+      "path": "apps/desktop-web/src/components/layout/MainLayout.css",
+      "lines": 146
+    },
+    {
+      "path": "apps/desktop-web/src/components/layout/MainLayout.jsx",
+      "lines": 86
+    },
+    {
+      "path": "apps/desktop-web/src/components/layout/MobileTabBar.css",
+      "lines": 369
+    },
+    {
+      "path": "apps/desktop-web/src/components/layout/MobileTabBar.jsx",
+      "lines": 261
+    },
+    {
+      "path": "apps/desktop-web/src/components/layout/MobileTopBar.css",
+      "lines": 140
+    },
+    {
+      "path": "apps/desktop-web/src/components/layout/MobileTopBar.jsx",
+      "lines": 92
+    },
+    {
+      "path": "apps/desktop-web/src/components/layout/Sidebar.css",
+      "lines": 453
+    },
+    {
+      "path": "apps/desktop-web/src/components/layout/Sidebar.jsx",
+      "lines": 323
+    },
+    {
+      "path": "apps/desktop-web/src/components/platform/ai/AIWorkspace.jsx",
+      "lines": 185
+    },
+    {
+      "path": "apps/desktop-web/src/components/platform/navbar/TopNavbar.css",
+      "lines": 83
+    },
+    {
+      "path": "apps/desktop-web/src/components/platform/navbar/TopNavbar.jsx",
+      "lines": 106
+    },
+    {
+      "path": "apps/desktop-web/src/components/platform/navigator/NavigatorSidebar.jsx",
+      "lines": 159
+    },
+    {
+      "path": "apps/desktop-web/src/components/platform/options/OptionCard.css",
+      "lines": 136
+    },
+    {
+      "path": "apps/desktop-web/src/components/platform/options/OptionCard.jsx",
+      "lines": 82
+    },
+    {
+      "path": "apps/desktop-web/src/components/platform/question/QuestionCard.jsx",
+      "lines": 189
+    },
+    {
+      "path": "apps/desktop-web/src/components/platform/question/QuestionWorkspace.jsx",
+      "lines": 60
+    },
+    {
+      "path": "apps/desktop-web/src/components/platform/QuizLayout.css",
+      "lines": 26
+    },
+    {
+      "path": "apps/desktop-web/src/components/platform/QuizLayout.jsx",
+      "lines": 28
+    },
+    {
+      "path": "apps/desktop-web/src/components/platform/settings/SettingsDrawer.css",
+      "lines": 545
+    },
+    {
+      "path": "apps/desktop-web/src/components/platform/settings/SettingsDrawer.jsx",
+      "lines": 475
+    },
+    {
+      "path": "apps/desktop-web/src/components/quiz/CommentsSection.css",
+      "lines": 545
+    },
+    {
+      "path": "apps/desktop-web/src/components/quiz/CommentsSection.jsx",
+      "lines": 784
+    },
+    {
+      "path": "apps/desktop-web/src/components/quiz/QuestionCard.css",
+      "lines": 237
+    },
+    {
+      "path": "apps/desktop-web/src/components/quiz/QuestionCard.jsx",
+      "lines": 115
+    },
+    {
+      "path": "apps/desktop-web/src/components/quiz/QuizCard.css",
+      "lines": 889
+    },
+    {
+      "path": "apps/desktop-web/src/components/quiz/QuizCard.jsx",
+      "lines": 891
+    },
+    {
+      "path": "apps/desktop-web/src/components/quiz/QuizCardOverflowMenu.css",
+      "lines": 231
+    },
+    {
+      "path": "apps/desktop-web/src/components/quiz/QuizCardOverflowMenu.jsx",
+      "lines": 122
+    },
+    {
+      "path": "apps/desktop-web/src/components/quiz/QuizEntryScreen.css",
+      "lines": 454
+    },
+    {
+      "path": "apps/desktop-web/src/components/quiz/QuizEntryScreen.jsx",
+      "lines": 463
+    },
+    {
+      "path": "apps/desktop-web/src/components/quiz/QuizNavSidebar.css",
+      "lines": 119
+    },
+    {
+      "path": "apps/desktop-web/src/components/quiz/QuizNavSidebar.jsx",
+      "lines": 75
+    },
+    {
+      "path": "apps/desktop-web/src/components/quiz/QuizTimer.css",
+      "lines": 71
+    },
+    {
+      "path": "apps/desktop-web/src/components/quiz/QuizTimer.jsx",
+      "lines": 58
+    },
+    {
+      "path": "apps/desktop-web/src/components/quiz/renderers/QuestionRenderer.jsx",
+      "lines": 151
+    },
+    {
+      "path": "apps/desktop-web/src/components/quiz/SubmitConfirmationModal.css",
+      "lines": 154
+    },
+    {
+      "path": "apps/desktop-web/src/components/quiz/SubmitConfirmationModal.jsx",
+      "lines": 83
+    },
+    {
+      "path": "apps/desktop-web/src/components/QuizModal/AttemptDetailView.css",
+      "lines": 296
+    },
+    {
+      "path": "apps/desktop-web/src/components/QuizModal/AttemptDetailView.jsx",
+      "lines": 361
+    },
+    {
+      "path": "apps/desktop-web/src/components/QuizModal/QuizDetailsModal.css",
+      "lines": 605
+    },
+    {
+      "path": "apps/desktop-web/src/components/QuizModal/QuizDetailsModal.jsx",
+      "lines": 599
+    },
+    {
+      "path": "apps/desktop-web/src/components/search/GlobalSearchModal.css",
+      "lines": 829
+    },
+    {
+      "path": "apps/desktop-web/src/components/search/GlobalSearchModal.jsx",
+      "lines": 756
+    },
+    {
+      "path": "apps/desktop-web/src/components/search/SearchField.css",
+      "lines": 140
+    },
+    {
+      "path": "apps/desktop-web/src/components/social/ShareModal.css",
+      "lines": 729
+    },
+    {
+      "path": "apps/desktop-web/src/components/social/ShareModal.jsx",
+      "lines": 478
+    },
+    {
+      "path": "apps/desktop-web/src/components/social/SocialPostCard.css",
+      "lines": 245
+    },
+    {
+      "path": "apps/desktop-web/src/components/social/SocialPostCard.jsx",
+      "lines": 246
+    },
+    {
+      "path": "apps/desktop-web/src/components/ui/AppleBorders.css",
+      "lines": 1
+    },
+    {
+      "path": "apps/desktop-web/src/components/ui/ConfirmDeleteModal.css",
+      "lines": 221
+    },
+    {
+      "path": "apps/desktop-web/src/components/ui/ConfirmDeleteModal.jsx",
+      "lines": 108
+    },
+    {
+      "path": "apps/desktop-web/src/components/ui/CustomDialog.css",
+      "lines": 205
+    },
+    {
+      "path": "apps/desktop-web/src/components/ui/CustomDialog.jsx",
+      "lines": 143
+    },
+    {
+      "path": "apps/desktop-web/src/components/ui/CustomSelect.css",
+      "lines": 238
+    },
+    {
+      "path": "apps/desktop-web/src/components/ui/CustomSelect.jsx",
+      "lines": 298
+    },
+    {
+      "path": "apps/desktop-web/src/components/ui/ErrorBoundary.jsx",
+      "lines": 63
+    },
+    {
+      "path": "apps/desktop-web/src/components/ui/HashtagInput.css",
+      "lines": 132
+    },
+    {
+      "path": "apps/desktop-web/src/components/ui/HashtagInput.jsx",
+      "lines": 113
+    },
+    {
+      "path": "apps/desktop-web/src/components/ui/index.jsx",
+      "lines": 564
+    },
+    {
+      "path": "apps/desktop-web/src/components/ui/SegmentedControls.css",
+      "lines": 195
+    },
+    {
+      "path": "apps/desktop-web/src/components/ui/SettingsMenu/SettingsMenu.css",
+      "lines": 543
+    },
+    {
+      "path": "apps/desktop-web/src/components/ui/SettingsMenu/SettingsMenu.jsx",
+      "lines": 329
+    },
+    {
+      "path": "apps/desktop-web/src/components/upload/FileDropzone.css",
+      "lines": 69
+    },
+    {
+      "path": "apps/desktop-web/src/components/upload/FileDropzone.jsx",
+      "lines": 102
+    },
+    {
+      "path": "apps/desktop-web/src/components/upload/UploadPanel.css",
+      "lines": 38
+    },
+    {
+      "path": "apps/desktop-web/src/components/upload/UploadPanel.jsx",
+      "lines": 66
+    },
+    {
+      "path": "apps/desktop-web/src/hooks/useKeyboardShortcuts.js",
+      "lines": 91
+    },
+    {
+      "path": "apps/desktop-web/src/hooks/useQuizAttemptController.js",
+      "lines": 375
+    },
+    {
+      "path": "apps/desktop-web/src/index.css",
+      "lines": 765
+    },
+    {
+      "path": "apps/desktop-web/src/main.jsx",
+      "lines": 27
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Admin/AdminAuditLogs.jsx",
+      "lines": 240
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Admin/AdminContent.jsx",
+      "lines": 406
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Admin/AdminLayout.css",
+      "lines": 501
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Admin/AdminLayout.jsx",
+      "lines": 95
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Admin/AdminOverview.jsx",
+      "lines": 242
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Admin/AdminReports.jsx",
+      "lines": 359
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Admin/AdminSystemHealth.jsx",
+      "lines": 238
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Admin/AdminUsers.jsx",
+      "lines": 403
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Auth/Login.css",
+      "lines": 130
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Auth/Login.jsx",
+      "lines": 112
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Auth/Register.css",
+      "lines": 130
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Auth/Register.jsx",
+      "lines": 125
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Challenges/Challenges.css",
+      "lines": 1323
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Challenges/Challenges.jsx",
+      "lines": 673
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Challenges/CompetitionLeaderboardModal.css",
+      "lines": 528
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Challenges/CompetitionLeaderboardModal.jsx",
+      "lines": 278
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Challenges/CompetitionLeaderboardPage.jsx",
+      "lines": 328
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Create/ChallengeBuilder.css",
+      "lines": 1351
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Create/ChallengeBuilder.jsx",
+      "lines": 6
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Create/CreateHub.css",
+      "lines": 183
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Create/CreateHub.jsx",
+      "lines": 75
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Create/ManualBuilder.css",
+      "lines": 2334
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Create/ManualBuilder.jsx",
+      "lines": 2122
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Create/QuestionEditor.css",
+      "lines": 296
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Create/QuestionEditor.jsx",
+      "lines": 508
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Dashboard/Dashboard.css",
+      "lines": 535
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Dashboard/Dashboard.jsx",
+      "lines": 685
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Explore/Explore.css",
+      "lines": 496
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Explore/Explore.jsx",
+      "lines": 445
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Guide/Guide.css",
+      "lines": 77
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Guide/Guide.jsx",
+      "lines": 695
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Home/Home.jsx",
+      "lines": 23
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Mapping/Mapping.css",
+      "lines": 968
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Mapping/Mapping.jsx",
+      "lines": 901
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Messages/chatState.js",
+      "lines": 55
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Messages/Messages.css",
+      "lines": 1684
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Messages/Messages.jsx",
+      "lines": 1454
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Notifications/Notifications.css",
+      "lines": 209
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Notifications/Notifications.jsx",
+      "lines": 192
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Profile/PublicProfile.css",
+      "lines": 1738
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Profile/PublicProfile.jsx",
+      "lines": 1381
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Quiz/Quiz.jsx",
+      "lines": 155
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Quiz/QuizSettings.jsx",
+      "lines": 625
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Result/Result.css",
+      "lines": 337
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Result/Result.jsx",
+      "lines": 378
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Settings/components/AccountSettings.jsx",
+      "lines": 617
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Settings/components/ActivitySettings.jsx",
+      "lines": 692
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Settings/components/AppearanceSettings.jsx",
+      "lines": 61
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Settings/components/CompetitionSettings.jsx",
+      "lines": 208
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Settings/components/FeedSettings.jsx",
+      "lines": 152
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Settings/components/HelpSettings.jsx",
+      "lines": 162
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Settings/components/MessagingSettings.jsx",
+      "lines": 52
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Settings/components/NotificationSettings.jsx",
+      "lines": 181
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Settings/components/PrivacySettings.jsx",
+      "lines": 78
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Settings/components/SettingsSection.jsx",
+      "lines": 193
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Settings/components/SettingsSidebar.jsx",
+      "lines": 329
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Settings/Settings.css",
+      "lines": 2463
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Settings/Settings.jsx",
+      "lines": 413
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Upload/Upload.css",
+      "lines": 31
+    },
+    {
+      "path": "apps/desktop-web/src/pages/Upload/Upload.jsx",
+      "lines": 202
+    },
+    {
+      "path": "apps/desktop-web/src/routes/AppRouter.jsx",
+      "lines": 225
+    },
+    {
+      "path": "apps/desktop-web/src/services/attempt.service.js",
+      "lines": 35
+    },
+    {
+      "path": "apps/desktop-web/src/services/auth.service.js",
+      "lines": 35
+    },
+    {
+      "path": "apps/desktop-web/src/services/challenge.service.js",
+      "lines": 77
+    },
+    {
+      "path": "apps/desktop-web/src/services/index.js",
+      "lines": 13
+    },
+    {
+      "path": "apps/desktop-web/src/services/media.service.js",
+      "lines": 23
+    },
+    {
+      "path": "apps/desktop-web/src/services/message.service.js",
+      "lines": 56
+    },
+    {
+      "path": "apps/desktop-web/src/services/quiz.service.js",
+      "lines": 109
+    },
+    {
+      "path": "apps/desktop-web/src/services/search.service.js",
+      "lines": 49
+    },
+    {
+      "path": "apps/desktop-web/src/services/social.service.js",
+      "lines": 95
+    },
+    {
+      "path": "apps/desktop-web/src/services/socket.service.js",
+      "lines": 58
+    },
+    {
+      "path": "apps/desktop-web/src/store/aiStore.js",
+      "lines": 50
+    },
+    {
+      "path": "apps/desktop-web/src/store/authStore.js",
+      "lines": 174
+    },
+    {
+      "path": "apps/desktop-web/src/store/cacheStore.js",
+      "lines": 55
+    },
+    {
+      "path": "apps/desktop-web/src/store/profileStore.js",
+      "lines": 44
+    },
+    {
+      "path": "apps/desktop-web/src/store/quizStore.js",
+      "lines": 1045
+    },
+    {
+      "path": "apps/desktop-web/src/store/settingsStore.js",
+      "lines": 142
+    },
+    {
+      "path": "apps/desktop-web/src/store/timerStore.js",
+      "lines": 278
+    },
+    {
+      "path": "apps/desktop-web/src/store/uiStore.js",
+      "lines": 197
+    },
+    {
+      "path": "apps/desktop-web/src/store/uploadPanelStore.js",
+      "lines": 76
+    },
+    {
+      "path": "apps/desktop-web/src/store/uploadStore.js",
+      "lines": 24
+    },
+    {
+      "path": "apps/desktop-web/src/utils/format.js",
+      "lines": 11
+    },
+    {
+      "path": "apps/desktop-web/src/utils/imageCompressor.js",
+      "lines": 185
+    },
+    {
+      "path": "apps/desktop-web/src/utils/quizBuilderRecovery.js",
+      "lines": 73
+    },
+    {
+      "path": "apps/desktop-web/src/utils/quizSession.js",
+      "lines": 211
+    },
+    {
+      "path": "apps/desktop-web/vite.config.js",
+      "lines": 28
+    },
+    {
+      "path": "apps/desktop-web/vite.config.js.timestamp-1792955097825-2deb33c3ba848.mjs",
+      "lines": 28
+    },
+    {
+      "path": "apps/desktop-web/vite.config.js.timestamp-1792955519912-8ee7874f6c09f.mjs",
+      "lines": 28
+    },
+    {
+      "path": "apps/mobile-web/package.json",
+      "lines": 27
+    },
+    {
+      "path": "apps/mobile-web/src/api/client.js",
+      "lines": 87
+    },
+    {
+      "path": "apps/mobile-web/src/App.jsx",
+      "lines": 32
+    },
+    {
+      "path": "apps/mobile-web/src/components/layout/BottomTabBar.jsx",
+      "lines": 308
+    },
+    {
+      "path": "apps/mobile-web/src/components/layout/MobileHeader.jsx",
+      "lines": 157
+    },
+    {
+      "path": "apps/mobile-web/src/components/layout/MobileShell.jsx",
+      "lines": 32
+    },
+    {
+      "path": "apps/mobile-web/src/main.jsx",
+      "lines": 11
+    },
+    {
+      "path": "apps/mobile-web/src/pages/Auth/Login.jsx",
+      "lines": 203
+    },
+    {
+      "path": "apps/mobile-web/src/pages/Challenges/Challenges.jsx",
+      "lines": 410
+    },
+    {
+      "path": "apps/mobile-web/src/pages/Dashboard/Dashboard.jsx",
+      "lines": 334
+    },
+    {
+      "path": "apps/mobile-web/src/pages/Explore/Explore.jsx",
+      "lines": 374
+    },
+    {
+      "path": "apps/mobile-web/src/pages/Messages/MobileMessages.jsx",
+      "lines": 1884
+    },
+    {
+      "path": "apps/mobile-web/src/pages/Profile/Profile.jsx",
+      "lines": 304
+    },
+    {
+      "path": "apps/mobile-web/src/pages/QuizAttempt/QuizAttempt.jsx",
+      "lines": 603
+    },
+    {
+      "path": "apps/mobile-web/src/pages/Result/Result.jsx",
+      "lines": 304
+    },
+    {
+      "path": "apps/mobile-web/src/routes/MobileRouter.jsx",
+      "lines": 66
+    },
+    {
+      "path": "apps/mobile-web/src/services/message.service.js",
+      "lines": 56
+    },
+    {
+      "path": "apps/mobile-web/src/services/socket.service.js",
+      "lines": 132
+    },
+    {
+      "path": "apps/mobile-web/src/store/authStore.js",
+      "lines": 56
+    },
+    {
+      "path": "apps/mobile-web/src/store/quizStore.js",
+      "lines": 175
+    },
+    {
+      "path": "apps/mobile-web/src/styles/theme.css",
+      "lines": 177
+    },
+    {
+      "path": "apps/mobile-web/vite.config.js",
+      "lines": 29
+    },
+    {
+      "path": "docker-compose.yml",
+      "lines": 278
+    },
+    {
+      "path": "docs/README.md",
+      "lines": 4
+    },
+    {
+      "path": "package.json",
+      "lines": 35
+    },
+    {
+      "path": "PROJECT.md",
+      "lines": 86
+    },
+    {
+      "path": "PROJECT_TRACKER.md",
+      "lines": 5
+    },
+    {
+      "path": "README.md",
+      "lines": 317
+    },
+    {
+      "path": "scripts/backfill-quiz-codes.js",
+      "lines": 74
+    },
+    {
+      "path": "scripts/database-check.mjs",
+      "lines": 35
+    },
+    {
+      "path": "scripts/install-all.js",
+      "lines": 48
+    },
+    {
+      "path": "scripts/make-admin.js",
+      "lines": 51
+    },
+    {
+      "path": "scripts/start-all-services.js",
+      "lines": 154
+    },
+    {
+      "path": "scripts/verify-stack.mjs",
+      "lines": 110
+    },
+    {
+      "path": "services/admin-service/package.json",
+      "lines": 23
+    },
+    {
+      "path": "services/admin-service/src/config/db.js",
+      "lines": 49
+    },
+    {
+      "path": "services/admin-service/src/config/env.js",
+      "lines": 50
+    },
+    {
+      "path": "services/admin-service/src/controllers/audit.controller.js",
+      "lines": 48
+    },
+    {
+      "path": "services/admin-service/src/controllers/content.controller.js",
+      "lines": 257
+    },
+    {
+      "path": "services/admin-service/src/controllers/dashboard.controller.js",
+      "lines": 85
+    },
+    {
+      "path": "services/admin-service/src/controllers/reports.controller.js",
+      "lines": 215
+    },
+    {
+      "path": "services/admin-service/src/controllers/system.controller.js",
+      "lines": 84
+    },
+    {
+      "path": "services/admin-service/src/controllers/users.controller.js",
+      "lines": 313
+    },
+    {
+      "path": "services/admin-service/src/middleware/auth.middleware.js",
+      "lines": 160
+    },
+    {
+      "path": "services/admin-service/src/middleware/csrf.middleware.js",
+      "lines": 25
+    },
+    {
+      "path": "services/admin-service/src/middleware/error.middleware.js",
+      "lines": 59
+    },
+    {
+      "path": "services/admin-service/src/models/AdminAuditLog.model.js",
+      "lines": 77
+    },
+    {
+      "path": "services/admin-service/src/models/AdminMembership.model.js",
+      "lines": 43
+    },
+    {
+      "path": "services/admin-service/src/models/AdminRole.model.js",
+      "lines": 88
+    },
+    {
+      "path": "services/admin-service/src/models/ModerationReport.model.js",
+      "lines": 96
+    },
+    {
+      "path": "services/admin-service/src/routes/admin.routes.js",
+      "lines": 69
+    },
+    {
+      "path": "services/admin-service/src/server.js",
+      "lines": 97
+    },
+    {
+      "path": "services/api-gateway/package.json",
+      "lines": 23
+    },
+    {
+      "path": "services/api-gateway/src/models/Activity.model.js",
+      "lines": 57
+    },
+    {
+      "path": "services/api-gateway/src/models/Attempt.model.js",
+      "lines": 412
+    },
+    {
+      "path": "services/api-gateway/src/models/Conversation.model.js",
+      "lines": 50
+    },
+    {
+      "path": "services/api-gateway/src/models/Follow.model.js",
+      "lines": 29
+    },
+    {
+      "path": "services/api-gateway/src/models/MappingConfig.model.js",
+      "lines": 54
+    },
+    {
+      "path": "services/api-gateway/src/models/Message.model.js",
+      "lines": 110
+    },
+    {
+      "path": "services/api-gateway/src/models/Notification.model.js",
+      "lines": 52
+    },
+    {
+      "path": "services/api-gateway/src/models/Question.model.js",
+      "lines": 123
+    },
+    {
+      "path": "services/api-gateway/src/models/Quiz.model.js",
+      "lines": 219
+    },
+    {
+      "path": "services/api-gateway/src/models/QuizComment.model.js",
+      "lines": 69
+    },
+    {
+      "path": "services/api-gateway/src/models/QuizInteraction.model.js",
+      "lines": 35
+    },
+    {
+      "path": "services/api-gateway/src/models/QuizShare.model.js",
+      "lines": 40
+    },
+    {
+      "path": "services/api-gateway/src/models/Upload.model.js",
+      "lines": 139
+    },
+    {
+      "path": "services/api-gateway/src/models/User.model.js",
+      "lines": 250
+    },
+    {
+      "path": "services/api-gateway/src/runtime.js",
+      "lines": 55
+    },
+    {
+      "path": "services/api-gateway/src/server.js",
+      "lines": 304
+    },
+    {
+      "path": "services/api-gateway/src/utils/detectAnswer.js",
+      "lines": 85
+    },
+    {
+      "path": "services/api-gateway/src/utils/fileCleaner.js",
+      "lines": 50
+    },
+    {
+      "path": "services/api-gateway/src/utils/generateId.js",
+      "lines": 26
+    },
+    {
+      "path": "services/api-gateway/src/utils/logger.js",
+      "lines": 44
+    },
+    {
+      "path": "services/api-gateway/src/utils/normalizeColumns.js",
+      "lines": 47
+    },
+    {
+      "path": "services/api-gateway/src/utils/parserHelpers.js",
+      "lines": 95
+    },
+    {
+      "path": "services/api-gateway/tests/csrf.test.js",
+      "lines": 63
+    },
+    {
+      "path": "services/api-gateway/tests/security.test.js",
+      "lines": 314
+    },
+    {
+      "path": "services/attempt-service/package.json",
+      "lines": 25
+    },
+    {
+      "path": "services/attempt-service/src/application/use-cases/CreateChallengeUseCase.js",
+      "lines": 65
+    },
+    {
+      "path": "services/attempt-service/src/application/use-cases/DeleteQuizUseCase.js",
+      "lines": 40
+    },
+    {
+      "path": "services/attempt-service/src/application/use-cases/FinalizeExpiredChallengesUseCase.js",
+      "lines": 53
+    },
+    {
+      "path": "services/attempt-service/src/application/use-cases/GetLeaderboardUseCase.js",
+      "lines": 57
+    },
+    {
+      "path": "services/attempt-service/src/application/use-cases/StartAttemptUseCase.js",
+      "lines": 142
+    },
+    {
+      "path": "services/attempt-service/src/application/use-cases/SubmitAttemptUseCase.js",
+      "lines": 151
+    },
+    {
+      "path": "services/attempt-service/src/application/use-cases/UpdateQuizUseCase.js",
+      "lines": 70
+    },
+    {
+      "path": "services/attempt-service/src/config/db.js",
+      "lines": 38
+    },
+    {
+      "path": "services/attempt-service/src/config/env.js",
+      "lines": 31
+    },
+    {
+      "path": "services/attempt-service/src/controllers/attempt.controller.js",
+      "lines": 2083
+    },
+    {
+      "path": "services/attempt-service/src/domain/entities/Attempt.js",
+      "lines": 106
+    },
+    {
+      "path": "services/attempt-service/src/domain/entities/Challenge.js",
+      "lines": 120
+    },
+    {
+      "path": "services/attempt-service/src/domain/entities/Quiz.js",
+      "lines": 58
+    },
+    {
+      "path": "services/attempt-service/src/domain/errors/DomainError.js",
+      "lines": 44
+    },
+    {
+      "path": "services/attempt-service/src/domain/repositories/IAttemptRepository.js",
+      "lines": 40
+    },
+    {
+      "path": "services/attempt-service/src/domain/repositories/IQuestionRepository.js",
+      "lines": 20
+    },
+    {
+      "path": "services/attempt-service/src/domain/repositories/IQuizRepository.js",
+      "lines": 32
+    },
+    {
+      "path": "services/attempt-service/src/domain/services/RankingService.js",
+      "lines": 80
+    },
+    {
+      "path": "services/attempt-service/src/infrastructure/di/DIContainer.js",
+      "lines": 64
+    },
+    {
+      "path": "services/attempt-service/src/infrastructure/repositories/MongooseAttemptRepository.js",
+      "lines": 79
+    },
+    {
+      "path": "services/attempt-service/src/infrastructure/repositories/MongooseQuestionRepository.js",
+      "lines": 23
+    },
+    {
+      "path": "services/attempt-service/src/infrastructure/repositories/MongooseQuizRepository.js",
+      "lines": 43
+    },
+    {
+      "path": "services/attempt-service/src/middleware/auth.middleware.js",
+      "lines": 101
+    },
+    {
+      "path": "services/attempt-service/src/middleware/csrf.middleware.js",
+      "lines": 77
+    },
+    {
+      "path": "services/attempt-service/src/middleware/error.middleware.js",
+      "lines": 93
+    },
+    {
+      "path": "services/attempt-service/src/middleware/rateLimit.middleware.js",
+      "lines": 104
+    },
+    {
+      "path": "services/attempt-service/src/middleware/security.middleware.js",
+      "lines": 246
+    },
+    {
+      "path": "services/attempt-service/src/middleware/upload.middleware.js",
+      "lines": 143
+    },
+    {
+      "path": "services/attempt-service/src/middleware/validation.middleware.js",
+      "lines": 75
+    },
+    {
+      "path": "services/attempt-service/src/models/Activity.model.js",
+      "lines": 57
+    },
+    {
+      "path": "services/attempt-service/src/models/Attempt.model.js",
+      "lines": 427
+    },
+    {
+      "path": "services/attempt-service/src/models/Conversation.model.js",
+      "lines": 50
+    },
+    {
+      "path": "services/attempt-service/src/models/Follow.model.js",
+      "lines": 29
+    },
+    {
+      "path": "services/attempt-service/src/models/MappingConfig.model.js",
+      "lines": 54
+    },
+    {
+      "path": "services/attempt-service/src/models/Message.model.js",
+      "lines": 110
+    },
+    {
+      "path": "services/attempt-service/src/models/Notification.model.js",
+      "lines": 52
+    },
+    {
+      "path": "services/attempt-service/src/models/Question.model.js",
+      "lines": 123
+    },
+    {
+      "path": "services/attempt-service/src/models/Quiz.model.js",
+      "lines": 227
+    },
+    {
+      "path": "services/attempt-service/src/models/QuizComment.model.js",
+      "lines": 69
+    },
+    {
+      "path": "services/attempt-service/src/models/QuizInteraction.model.js",
+      "lines": 35
+    },
+    {
+      "path": "services/attempt-service/src/models/QuizShare.model.js",
+      "lines": 40
+    },
+    {
+      "path": "services/attempt-service/src/models/Upload.model.js",
+      "lines": 139
+    },
+    {
+      "path": "services/attempt-service/src/models/User.model.js",
+      "lines": 250
+    },
+    {
+      "path": "services/attempt-service/src/routes/attempts.routes.js",
+      "lines": 45
+    },
+    {
+      "path": "services/attempt-service/src/server.js",
+      "lines": 72
+    },
+    {
+      "path": "services/attempt-service/src/services/cache/cache.service.js",
+      "lines": 74
+    },
+    {
+      "path": "services/attempt-service/src/services/parser/answerDetector.js",
+      "lines": 75
+    },
+    {
+      "path": "services/attempt-service/src/services/parser/csvParser.js",
+      "lines": 62
+    },
+    {
+      "path": "services/attempt-service/src/services/parser/excelParser.js",
+      "lines": 69
+    },
+    {
+      "path": "services/attempt-service/src/services/parser/jsonParser.js",
+      "lines": 85
+    },
+    {
+      "path": "services/attempt-service/src/services/parser/optionExtractor.js",
+      "lines": 89
+    },
+    {
+      "path": "services/attempt-service/src/services/parser/smartColumnMapper.js",
+      "lines": 354
+    },
+    {
+      "path": "services/attempt-service/src/services/parser/strategies/BaseParserStrategy.js",
+      "lines": 25
+    },
+    {
+      "path": "services/attempt-service/src/services/parser/strategies/CsvParserStrategy.js",
+      "lines": 17
+    },
+    {
+      "path": "services/attempt-service/src/services/parser/strategies/ExcelParserStrategy.js",
+      "lines": 17
+    },
+    {
+      "path": "services/attempt-service/src/services/parser/strategies/JsonParserStrategy.js",
+      "lines": 16
+    },
+    {
+      "path": "services/attempt-service/src/services/parser/strategies/ParserRegistry.js",
+      "lines": 69
+    },
+    {
+      "path": "services/attempt-service/src/services/quiz/attemptTracking.service.js",
+      "lines": 1036
+    },
+    {
+      "path": "services/attempt-service/src/services/quiz/quizGenerator.service.js",
+      "lines": 178
+    },
+    {
+      "path": "services/attempt-service/src/services/quiz/scoring/BaseQuestionEvaluator.js",
+      "lines": 27
+    },
+    {
+      "path": "services/attempt-service/src/services/quiz/scoring/MultipleChoiceEvaluator.js",
+      "lines": 73
+    },
+    {
+      "path": "services/attempt-service/src/services/quiz/scoring/QuestionEvaluationRegistry.js",
+      "lines": 57
+    },
+    {
+      "path": "services/attempt-service/src/services/quiz/scoring/SingleChoiceEvaluator.js",
+      "lines": 61
+    },
+    {
+      "path": "services/attempt-service/src/services/quiz/scoring/TextMatchEvaluator.js",
+      "lines": 49
+    },
+    {
+      "path": "services/attempt-service/src/services/quiz/scoring/TrueFalseEvaluator.js",
+      "lines": 46
+    },
+    {
+      "path": "services/attempt-service/src/services/quiz/timer/BaseTimerStrategy.js",
+      "lines": 37
+    },
+    {
+      "path": "services/attempt-service/src/services/quiz/timer/NoTimerStrategy.js",
+      "lines": 16
+    },
+    {
+      "path": "services/attempt-service/src/services/quiz/timer/SoftTimerStrategy.js",
+      "lines": 29
+    },
+    {
+      "path": "services/attempt-service/src/services/quiz/timer/StrictTimerStrategy.js",
+      "lines": 29
+    },
+    {
+      "path": "services/attempt-service/src/services/quiz/timer/TimerStrategyFactory.js",
+      "lines": 40
+    },
+    {
+      "path": "services/attempt-service/src/services/social/activity.service.js",
+      "lines": 171
+    },
+    {
+      "path": "services/attempt-service/src/services/upload/fileHash.service.js",
+      "lines": 132
+    },
+    {
+      "path": "services/attempt-service/src/services/upload/storage.service.js",
+      "lines": 27
+    },
+    {
+      "path": "services/attempt-service/src/utils/detectAnswer.js",
+      "lines": 85
+    },
+    {
+      "path": "services/attempt-service/src/utils/fileCleaner.js",
+      "lines": 50
+    },
+    {
+      "path": "services/attempt-service/src/utils/generateId.js",
+      "lines": 26
+    },
+    {
+      "path": "services/attempt-service/src/utils/logger.js",
+      "lines": 44
+    },
+    {
+      "path": "services/attempt-service/src/utils/normalizeColumns.js",
+      "lines": 47
+    },
+    {
+      "path": "services/attempt-service/src/utils/parserHelpers.js",
+      "lines": 95
+    },
+    {
+      "path": "services/attempt-service/tests/attemptTracking.test.js",
+      "lines": 46
+    },
+    {
+      "path": "services/attempt-service/tests/domain.test.js",
+      "lines": 187
+    },
+    {
+      "path": "services/attempt-service/tests/useCases.test.js",
+      "lines": 306
+    },
+    {
+      "path": "services/auth-service/package.json",
+      "lines": 23
+    },
+    {
+      "path": "services/auth-service/src/config/db.js",
+      "lines": 38
+    },
+    {
+      "path": "services/auth-service/src/config/env.js",
+      "lines": 30
+    },
+    {
+      "path": "services/auth-service/src/controllers/auth.controller.js",
+      "lines": 701
+    },
+    {
+      "path": "services/auth-service/src/controllers/profile.controller.js",
+      "lines": 354
+    },
+    {
+      "path": "services/auth-service/src/middleware/auth.middleware.js",
+      "lines": 101
+    },
+    {
+      "path": "services/auth-service/src/middleware/csrf.middleware.js",
+      "lines": 77
+    },
+    {
+      "path": "services/auth-service/src/middleware/error.middleware.js",
+      "lines": 93
+    },
+    {
+      "path": "services/auth-service/src/middleware/rateLimit.middleware.js",
+      "lines": 119
+    },
+    {
+      "path": "services/auth-service/src/middleware/security.middleware.js",
+      "lines": 246
+    },
+    {
+      "path": "services/auth-service/src/middleware/validation.middleware.js",
+      "lines": 85
+    },
+    {
+      "path": "services/auth-service/src/models/Activity.model.js",
+      "lines": 57
+    },
+    {
+      "path": "services/auth-service/src/models/Attempt.model.js",
+      "lines": 412
+    },
+    {
+      "path": "services/auth-service/src/models/Conversation.model.js",
+      "lines": 50
+    },
+    {
+      "path": "services/auth-service/src/models/Follow.model.js",
+      "lines": 29
+    },
+    {
+      "path": "services/auth-service/src/models/MappingConfig.model.js",
+      "lines": 54
+    },
+    {
+      "path": "services/auth-service/src/models/Message.model.js",
+      "lines": 110
+    },
+    {
+      "path": "services/auth-service/src/models/Notification.model.js",
+      "lines": 52
+    },
+    {
+      "path": "services/auth-service/src/models/Question.model.js",
+      "lines": 123
+    },
+    {
+      "path": "services/auth-service/src/models/Quiz.model.js",
+      "lines": 219
+    },
+    {
+      "path": "services/auth-service/src/models/QuizComment.model.js",
+      "lines": 69
+    },
+    {
+      "path": "services/auth-service/src/models/QuizInteraction.model.js",
+      "lines": 35
+    },
+    {
+      "path": "services/auth-service/src/models/QuizShare.model.js",
+      "lines": 40
+    },
+    {
+      "path": "services/auth-service/src/models/Upload.model.js",
+      "lines": 139
+    },
+    {
+      "path": "services/auth-service/src/models/User.model.js",
+      "lines": 276
+    },
+    {
+      "path": "services/auth-service/src/routes/auth.routes.js",
+      "lines": 102
+    },
+    {
+      "path": "services/auth-service/src/routes/profile.routes.js",
+      "lines": 27
+    },
+    {
+      "path": "services/auth-service/src/scripts/make-admin.js",
+      "lines": 51
+    },
+    {
+      "path": "services/auth-service/src/server.js",
+      "lines": 78
+    },
+    {
+      "path": "services/auth-service/src/utils/detectAnswer.js",
+      "lines": 85
+    },
+    {
+      "path": "services/auth-service/src/utils/fileCleaner.js",
+      "lines": 50
+    },
+    {
+      "path": "services/auth-service/src/utils/generateId.js",
+      "lines": 26
+    },
+    {
+      "path": "services/auth-service/src/utils/logger.js",
+      "lines": 44
+    },
+    {
+      "path": "services/auth-service/src/utils/normalizeColumns.js",
+      "lines": 47
+    },
+    {
+      "path": "services/auth-service/src/utils/parserHelpers.js",
+      "lines": 95
+    },
+    {
+      "path": "services/auth-service/src/utils/preferences.js",
+      "lines": 70
+    },
+    {
+      "path": "services/challenge-service/package.json",
+      "lines": 24
+    },
+    {
+      "path": "services/challenge-service/src/config/db.js",
+      "lines": 22
+    },
+    {
+      "path": "services/challenge-service/src/config/env.js",
+      "lines": 43
+    },
+    {
+      "path": "services/challenge-service/src/controllers/challenge.controller.js",
+      "lines": 666
+    },
+    {
+      "path": "services/challenge-service/src/controllers/leaderboard.controller.js",
+      "lines": 88
+    },
+    {
+      "path": "services/challenge-service/src/controllers/overview.controller.js",
+      "lines": 108
+    },
+    {
+      "path": "services/challenge-service/src/middleware/auth.middleware.js",
+      "lines": 57
+    },
+    {
+      "path": "services/challenge-service/src/middleware/csrf.middleware.js",
+      "lines": 21
+    },
+    {
+      "path": "services/challenge-service/src/middleware/error.middleware.js",
+      "lines": 49
+    },
+    {
+      "path": "services/challenge-service/src/models/Attempt.model.js",
+      "lines": 412
+    },
+    {
+      "path": "services/challenge-service/src/models/Challenge.model.js",
+      "lines": 246
+    },
+    {
+      "path": "services/challenge-service/src/models/Question.model.js",
+      "lines": 122
+    },
+    {
+      "path": "services/challenge-service/src/models/User.model.js",
+      "lines": 239
+    },
+    {
+      "path": "services/challenge-service/src/routes/challenge.routes.js",
+      "lines": 42
+    },
+    {
+      "path": "services/challenge-service/src/server.js",
+      "lines": 79
+    },
+    {
+      "path": "services/challenge-service/src/services/cache.service.js",
+      "lines": 34
+    },
+    {
+      "path": "services/challenge-service/src/services/ranking.service.js",
+      "lines": 68
+    },
+    {
+      "path": "services/media-service/package.json",
+      "lines": 27
+    },
+    {
+      "path": "services/media-service/src/config/db.js",
+      "lines": 17
+    },
+    {
+      "path": "services/media-service/src/config/env.js",
+      "lines": 26
+    },
+    {
+      "path": "services/media-service/src/controllers/media.controller.js",
+      "lines": 91
+    },
+    {
+      "path": "services/media-service/src/middleware/auth.middleware.js",
+      "lines": 22
+    },
+    {
+      "path": "services/media-service/src/middleware/error.middleware.js",
+      "lines": 25
+    },
+    {
+      "path": "services/media-service/src/middleware/upload.middleware.js",
+      "lines": 87
+    },
+    {
+      "path": "services/media-service/src/models/MediaAsset.model.js",
+      "lines": 43
+    },
+    {
+      "path": "services/media-service/src/routes/media.routes.js",
+      "lines": 15
+    },
+    {
+      "path": "services/media-service/src/server.js",
+      "lines": 81
+    },
+    {
+      "path": "services/media-service/src/services/image.service.js",
+      "lines": 242
+    },
+    {
+      "path": "services/media-service/tests/image.service.test.js",
+      "lines": 27
+    },
+    {
+      "path": "services/message-service/package.json",
+      "lines": 24
+    },
+    {
+      "path": "services/message-service/src/config/db.js",
+      "lines": 38
+    },
+    {
+      "path": "services/message-service/src/config/env.js",
+      "lines": 24
+    },
+    {
+      "path": "services/message-service/src/controllers/message.controller.js",
+      "lines": 107
+    },
+    {
+      "path": "services/message-service/src/middleware/auth.middleware.js",
+      "lines": 101
+    },
+    {
+      "path": "services/message-service/src/middleware/csrf.middleware.js",
+      "lines": 77
+    },
+    {
+      "path": "services/message-service/src/middleware/error.middleware.js",
+      "lines": 93
+    },
+    {
+      "path": "services/message-service/src/middleware/rateLimit.middleware.js",
+      "lines": 104
+    },
+    {
+      "path": "services/message-service/src/middleware/security.middleware.js",
+      "lines": 246
+    },
+    {
+      "path": "services/message-service/src/middleware/upload.middleware.js",
+      "lines": 143
+    },
+    {
+      "path": "services/message-service/src/middleware/validation.middleware.js",
+      "lines": 75
+    },
+    {
+      "path": "services/message-service/src/models/Activity.model.js",
+      "lines": 57
+    },
+    {
+      "path": "services/message-service/src/models/Attempt.model.js",
+      "lines": 412
+    },
+    {
+      "path": "services/message-service/src/models/Conversation.model.js",
+      "lines": 99
+    },
+    {
+      "path": "services/message-service/src/models/Follow.model.js",
+      "lines": 29
+    },
+    {
+      "path": "services/message-service/src/models/MappingConfig.model.js",
+      "lines": 54
+    },
+    {
+      "path": "services/message-service/src/models/Message.model.js",
+      "lines": 137
+    },
+    {
+      "path": "services/message-service/src/models/Notification.model.js",
+      "lines": 52
+    },
+    {
+      "path": "services/message-service/src/models/Question.model.js",
+      "lines": 123
+    },
+    {
+      "path": "services/message-service/src/models/Quiz.model.js",
+      "lines": 227
+    },
+    {
+      "path": "services/message-service/src/models/QuizComment.model.js",
+      "lines": 69
+    },
+    {
+      "path": "services/message-service/src/models/QuizInteraction.model.js",
+      "lines": 35
+    },
+    {
+      "path": "services/message-service/src/models/QuizShare.model.js",
+      "lines": 40
+    },
+    {
+      "path": "services/message-service/src/models/Upload.model.js",
+      "lines": 139
+    },
+    {
+      "path": "services/message-service/src/models/User.model.js",
+      "lines": 250
+    },
+    {
+      "path": "services/message-service/src/routes/message.routes.js",
+      "lines": 36
+    },
+    {
+      "path": "services/message-service/src/server.js",
+      "lines": 92
+    },
+    {
+      "path": "services/message-service/src/services/messagePolicy.js",
+      "lines": 60
+    },
+    {
+      "path": "services/message-service/src/services/messaging.service.js",
+      "lines": 262
+    },
+    {
+      "path": "services/message-service/src/socket/socketHandler.js",
+      "lines": 124
+    },
+    {
+      "path": "services/message-service/src/utils/detectAnswer.js",
+      "lines": 85
+    },
+    {
+      "path": "services/message-service/src/utils/fileCleaner.js",
+      "lines": 50
+    },
+    {
+      "path": "services/message-service/src/utils/generateId.js",
+      "lines": 26
+    },
+    {
+      "path": "services/message-service/src/utils/logger.js",
+      "lines": 44
+    },
+    {
+      "path": "services/message-service/src/utils/normalizeColumns.js",
+      "lines": 47
+    },
+    {
+      "path": "services/message-service/src/utils/parserHelpers.js",
+      "lines": 95
+    },
+    {
+      "path": "services/parser-service/package.json",
+      "lines": 28
+    },
+    {
+      "path": "services/parser-service/src/config/db.js",
+      "lines": 38
+    },
+    {
+      "path": "services/parser-service/src/config/env.js",
+      "lines": 29
+    },
+    {
+      "path": "services/parser-service/src/controllers/parser.controller.js",
+      "lines": 186
+    },
+    {
+      "path": "services/parser-service/src/controllers/upload.controller.js",
+      "lines": 173
+    },
+    {
+      "path": "services/parser-service/src/middleware/auth.middleware.js",
+      "lines": 101
+    },
+    {
+      "path": "services/parser-service/src/middleware/csrf.middleware.js",
+      "lines": 77
+    },
+    {
+      "path": "services/parser-service/src/middleware/error.middleware.js",
+      "lines": 93
+    },
+    {
+      "path": "services/parser-service/src/middleware/rateLimit.middleware.js",
+      "lines": 104
+    },
+    {
+      "path": "services/parser-service/src/middleware/security.middleware.js",
+      "lines": 251
+    },
+    {
+      "path": "services/parser-service/src/middleware/upload.middleware.js",
+      "lines": 180
+    },
+    {
+      "path": "services/parser-service/src/middleware/validation.middleware.js",
+      "lines": 75
+    },
+    {
+      "path": "services/parser-service/src/models/Activity.model.js",
+      "lines": 57
+    },
+    {
+      "path": "services/parser-service/src/models/Attempt.model.js",
+      "lines": 412
+    },
+    {
+      "path": "services/parser-service/src/models/Conversation.model.js",
+      "lines": 50
+    },
+    {
+      "path": "services/parser-service/src/models/Follow.model.js",
+      "lines": 29
+    },
+    {
+      "path": "services/parser-service/src/models/MappingConfig.model.js",
+      "lines": 54
+    },
+    {
+      "path": "services/parser-service/src/models/Message.model.js",
+      "lines": 110
+    },
+    {
+      "path": "services/parser-service/src/models/Notification.model.js",
+      "lines": 52
+    },
+    {
+      "path": "services/parser-service/src/models/Question.model.js",
+      "lines": 123
+    },
+    {
+      "path": "services/parser-service/src/models/Quiz.model.js",
+      "lines": 219
+    },
+    {
+      "path": "services/parser-service/src/models/QuizComment.model.js",
+      "lines": 69
+    },
+    {
+      "path": "services/parser-service/src/models/QuizInteraction.model.js",
+      "lines": 35
+    },
+    {
+      "path": "services/parser-service/src/models/QuizShare.model.js",
+      "lines": 40
+    },
+    {
+      "path": "services/parser-service/src/models/Upload.model.js",
+      "lines": 165
+    },
+    {
+      "path": "services/parser-service/src/models/User.model.js",
+      "lines": 250
+    },
+    {
+      "path": "services/parser-service/src/routes/parser.routes.js",
+      "lines": 13
+    },
+    {
+      "path": "services/parser-service/src/routes/upload.routes.js",
+      "lines": 18
+    },
+    {
+      "path": "services/parser-service/src/server.js",
+      "lines": 91
+    },
+    {
+      "path": "services/parser-service/src/services/cache/cache.service.js",
+      "lines": 74
+    },
+    {
+      "path": "services/parser-service/src/services/parser/answerDetector.js",
+      "lines": 75
+    },
+    {
+      "path": "services/parser-service/src/services/parser/csvParser.js",
+      "lines": 62
+    },
+    {
+      "path": "services/parser-service/src/services/parser/excelParser.js",
+      "lines": 69
+    },
+    {
+      "path": "services/parser-service/src/services/parser/jsonParser.js",
+      "lines": 85
+    },
+    {
+      "path": "services/parser-service/src/services/parser/optionExtractor.js",
+      "lines": 89
+    },
+    {
+      "path": "services/parser-service/src/services/parser/smartColumnMapper.js",
+      "lines": 354
+    },
+    {
+      "path": "services/parser-service/src/services/parser/strategies/BaseParserStrategy.js",
+      "lines": 25
+    },
+    {
+      "path": "services/parser-service/src/services/parser/strategies/CsvParserStrategy.js",
+      "lines": 17
+    },
+    {
+      "path": "services/parser-service/src/services/parser/strategies/ExcelParserStrategy.js",
+      "lines": 17
+    },
+    {
+      "path": "services/parser-service/src/services/parser/strategies/JsonParserStrategy.js",
+      "lines": 16
+    },
+    {
+      "path": "services/parser-service/src/services/parser/strategies/ParserRegistry.js",
+      "lines": 69
+    },
+    {
+      "path": "services/parser-service/src/services/quiz/attemptTracking.service.js",
+      "lines": 1043
+    },
+    {
+      "path": "services/parser-service/src/services/quiz/quizGenerator.service.js",
+      "lines": 178
+    },
+    {
+      "path": "services/parser-service/src/services/quiz/scoring/BaseQuestionEvaluator.js",
+      "lines": 27
+    },
+    {
+      "path": "services/parser-service/src/services/quiz/scoring/MultipleChoiceEvaluator.js",
+      "lines": 73
+    },
+    {
+      "path": "services/parser-service/src/services/quiz/scoring/QuestionEvaluationRegistry.js",
+      "lines": 57
+    },
+    {
+      "path": "services/parser-service/src/services/quiz/scoring/SingleChoiceEvaluator.js",
+      "lines": 61
+    },
+    {
+      "path": "services/parser-service/src/services/quiz/scoring/TextMatchEvaluator.js",
+      "lines": 49
+    },
+    {
+      "path": "services/parser-service/src/services/quiz/scoring/TrueFalseEvaluator.js",
+      "lines": 46
+    },
+    {
+      "path": "services/parser-service/src/services/quiz/timer/BaseTimerStrategy.js",
+      "lines": 37
+    },
+    {
+      "path": "services/parser-service/src/services/quiz/timer/NoTimerStrategy.js",
+      "lines": 16
+    },
+    {
+      "path": "services/parser-service/src/services/quiz/timer/SoftTimerStrategy.js",
+      "lines": 29
+    },
+    {
+      "path": "services/parser-service/src/services/quiz/timer/StrictTimerStrategy.js",
+      "lines": 29
+    },
+    {
+      "path": "services/parser-service/src/services/quiz/timer/TimerStrategyFactory.js",
+      "lines": 40
+    },
+    {
+      "path": "services/parser-service/src/services/social/activity.service.js",
+      "lines": 171
+    },
+    {
+      "path": "services/parser-service/src/services/upload/fileHash.service.js",
+      "lines": 132
+    },
+    {
+      "path": "services/parser-service/src/services/upload/storage.service.js",
+      "lines": 27
+    },
+    {
+      "path": "services/parser-service/src/utils/authorizeUpload.js",
+      "lines": 17
+    },
+    {
+      "path": "services/parser-service/src/utils/detectAnswer.js",
+      "lines": 85
+    },
+    {
+      "path": "services/parser-service/src/utils/fileCleaner.js",
+      "lines": 50
+    },
+    {
+      "path": "services/parser-service/src/utils/generateId.js",
+      "lines": 26
+    },
+    {
+      "path": "services/parser-service/src/utils/logger.js",
+      "lines": 44
+    },
+    {
+      "path": "services/parser-service/src/utils/normalizeColumns.js",
+      "lines": 47
+    },
+    {
+      "path": "services/parser-service/src/utils/parserHelpers.js",
+      "lines": 95
+    },
+    {
+      "path": "services/parser-service/tests/detectAnswer.test.js",
+      "lines": 82
+    },
+    {
+      "path": "services/parser-service/tests/parser.test.js",
+      "lines": 78
+    },
+    {
+      "path": "services/quiz-service/package.json",
+      "lines": 28
+    },
+    {
+      "path": "services/quiz-service/src/application/use-cases/CreateChallengeUseCase.js",
+      "lines": 65
+    },
+    {
+      "path": "services/quiz-service/src/application/use-cases/DeleteQuizUseCase.js",
+      "lines": 40
+    },
+    {
+      "path": "services/quiz-service/src/application/use-cases/FinalizeExpiredChallengesUseCase.js",
+      "lines": 53
+    },
+    {
+      "path": "services/quiz-service/src/application/use-cases/GetLeaderboardUseCase.js",
+      "lines": 57
+    },
+    {
+      "path": "services/quiz-service/src/application/use-cases/UpdateQuizUseCase.js",
+      "lines": 70
+    },
+    {
+      "path": "services/quiz-service/src/config/db.js",
+      "lines": 38
+    },
+    {
+      "path": "services/quiz-service/src/config/env.js",
+      "lines": 31
+    },
+    {
+      "path": "services/quiz-service/src/controllers/quiz.controller.js",
+      "lines": 2565
+    },
+    {
+      "path": "services/quiz-service/src/controllers/search.controller.js",
+      "lines": 374
+    },
+    {
+      "path": "services/quiz-service/src/domain/entities/Attempt.js",
+      "lines": 106
+    },
+    {
+      "path": "services/quiz-service/src/domain/entities/Challenge.js",
+      "lines": 120
+    },
+    {
+      "path": "services/quiz-service/src/domain/entities/Quiz.js",
+      "lines": 58
+    },
+    {
+      "path": "services/quiz-service/src/domain/errors/DomainError.js",
+      "lines": 44
+    },
+    {
+      "path": "services/quiz-service/src/domain/repositories/IAttemptRepository.js",
+      "lines": 36
+    },
+    {
+      "path": "services/quiz-service/src/domain/repositories/IQuestionRepository.js",
+      "lines": 20
+    },
+    {
+      "path": "services/quiz-service/src/domain/repositories/IQuizRepository.js",
+      "lines": 32
+    },
+    {
+      "path": "services/quiz-service/src/domain/services/RankingService.js",
+      "lines": 68
+    },
+    {
+      "path": "services/quiz-service/src/infrastructure/di/DIContainer.js",
+      "lines": 64
+    },
+    {
+      "path": "services/quiz-service/src/infrastructure/repositories/MongooseAttemptRepository.js",
+      "lines": 62
+    },
+    {
+      "path": "services/quiz-service/src/infrastructure/repositories/MongooseQuestionRepository.js",
+      "lines": 23
+    },
+    {
+      "path": "services/quiz-service/src/infrastructure/repositories/MongooseQuizRepository.js",
+      "lines": 43
+    },
+    {
+      "path": "services/quiz-service/src/jobs/cleanup.worker.js",
+      "lines": 110
+    },
+    {
+      "path": "services/quiz-service/src/middleware/auth.middleware.js",
+      "lines": 101
+    },
+    {
+      "path": "services/quiz-service/src/middleware/csrf.middleware.js",
+      "lines": 77
+    },
+    {
+      "path": "services/quiz-service/src/middleware/error.middleware.js",
+      "lines": 93
+    },
+    {
+      "path": "services/quiz-service/src/middleware/rateLimit.middleware.js",
+      "lines": 104
+    },
+    {
+      "path": "services/quiz-service/src/middleware/security.middleware.js",
+      "lines": 246
+    },
+    {
+      "path": "services/quiz-service/src/middleware/validation.middleware.js",
+      "lines": 96
+    },
+    {
+      "path": "services/quiz-service/src/models/Attempt.model.js",
+      "lines": 415
+    },
+    {
+      "path": "services/quiz-service/src/models/Question.model.js",
+      "lines": 123
+    },
+    {
+      "path": "services/quiz-service/src/models/Quiz.model.js",
+      "lines": 267
+    },
+    {
+      "path": "services/quiz-service/src/models/Upload.model.js",
+      "lines": 139
+    },
+    {
+      "path": "services/quiz-service/src/models/User.model.js",
+      "lines": 250
+    },
+    {
+      "path": "services/quiz-service/src/routes/quiz.routes.js",
+      "lines": 69
+    },
+    {
+      "path": "services/quiz-service/src/routes/quizzes.routes.js",
+      "lines": 30
+    },
+    {
+      "path": "services/quiz-service/src/routes/search.routes.js",
+      "lines": 21
+    },
+    {
+      "path": "services/quiz-service/src/scripts/backfill-quiz-codes.js",
+      "lines": 68
+    },
+    {
+      "path": "services/quiz-service/src/server.js",
+      "lines": 81
+    },
+    {
+      "path": "services/quiz-service/src/services/cache/cache.service.js",
+      "lines": 6
+    },
+    {
+      "path": "services/quiz-service/src/services/cache/memory-cache.js",
+      "lines": 60
+    },
+    {
+      "path": "services/quiz-service/src/services/parser/answerDetector.js",
+      "lines": 75
+    },
+    {
+      "path": "services/quiz-service/src/services/parser/csvParser.js",
+      "lines": 62
+    },
+    {
+      "path": "services/quiz-service/src/services/parser/excelParser.js",
+      "lines": 69
+    },
+    {
+      "path": "services/quiz-service/src/services/parser/jsonParser.js",
+      "lines": 85
+    },
+    {
+      "path": "services/quiz-service/src/services/parser/optionExtractor.js",
+      "lines": 89
+    },
+    {
+      "path": "services/quiz-service/src/services/parser/smartColumnMapper.js",
+      "lines": 354
+    },
+    {
+      "path": "services/quiz-service/src/services/parser/strategies/BaseParserStrategy.js",
+      "lines": 25
+    },
+    {
+      "path": "services/quiz-service/src/services/parser/strategies/CsvParserStrategy.js",
+      "lines": 17
+    },
+    {
+      "path": "services/quiz-service/src/services/parser/strategies/ExcelParserStrategy.js",
+      "lines": 17
+    },
+    {
+      "path": "services/quiz-service/src/services/parser/strategies/JsonParserStrategy.js",
+      "lines": 16
+    },
+    {
+      "path": "services/quiz-service/src/services/parser/strategies/ParserRegistry.js",
+      "lines": 69
+    },
+    {
+      "path": "services/quiz-service/src/services/quiz/attemptTracking.service.js",
+      "lines": 1036
+    },
+    {
+      "path": "services/quiz-service/src/services/quiz/quizGenerator.service.js",
+      "lines": 178
+    },
+    {
+      "path": "services/quiz-service/src/services/quiz/scoring/BaseQuestionEvaluator.js",
+      "lines": 27
+    },
+    {
+      "path": "services/quiz-service/src/services/quiz/scoring/MultipleChoiceEvaluator.js",
+      "lines": 73
+    },
+    {
+      "path": "services/quiz-service/src/services/quiz/scoring/QuestionEvaluationRegistry.js",
+      "lines": 57
+    },
+    {
+      "path": "services/quiz-service/src/services/quiz/scoring/SingleChoiceEvaluator.js",
+      "lines": 61
+    },
+    {
+      "path": "services/quiz-service/src/services/quiz/scoring/TextMatchEvaluator.js",
+      "lines": 49
+    },
+    {
+      "path": "services/quiz-service/src/services/quiz/scoring/TrueFalseEvaluator.js",
+      "lines": 46
+    },
+    {
+      "path": "services/quiz-service/src/services/quiz/timer/BaseTimerStrategy.js",
+      "lines": 37
+    },
+    {
+      "path": "services/quiz-service/src/services/quiz/timer/NoTimerStrategy.js",
+      "lines": 16
+    },
+    {
+      "path": "services/quiz-service/src/services/quiz/timer/SoftTimerStrategy.js",
+      "lines": 29
+    },
+    {
+      "path": "services/quiz-service/src/services/quiz/timer/StrictTimerStrategy.js",
+      "lines": 29
+    },
+    {
+      "path": "services/quiz-service/src/services/quiz/timer/TimerStrategyFactory.js",
+      "lines": 40
+    },
+    {
+      "path": "services/quiz-service/src/services/social/activity.service.js",
+      "lines": 92
+    },
+    {
+      "path": "services/quiz-service/src/services/upload/authorizeUpload.js",
+      "lines": 17
+    },
+    {
+      "path": "services/quiz-service/src/services/upload/fileHash.service.js",
+      "lines": 132
+    },
+    {
+      "path": "services/quiz-service/src/services/upload/storage.service.js",
+      "lines": 27
+    },
+    {
+      "path": "services/quiz-service/src/utils/detectAnswer.js",
+      "lines": 85
+    },
+    {
+      "path": "services/quiz-service/src/utils/fileCleaner.js",
+      "lines": 50
+    },
+    {
+      "path": "services/quiz-service/src/utils/generateId.js",
+      "lines": 26
+    },
+    {
+      "path": "services/quiz-service/src/utils/logger.js",
+      "lines": 44
+    },
+    {
+      "path": "services/quiz-service/src/utils/normalizeColumns.js",
+      "lines": 47
+    },
+    {
+      "path": "services/quiz-service/src/utils/parserHelpers.js",
+      "lines": 95
+    },
+    {
+      "path": "services/quiz-service/tests/challenge.test.js",
+      "lines": 193
+    },
+    {
+      "path": "services/quiz-service/tests/createChallenge.test.js",
+      "lines": 126
+    },
+    {
+      "path": "services/quiz-service/tests/draftLifecycle.test.js",
+      "lines": 129
+    },
+    {
+      "path": "services/quiz-service/tests/paginationFilter.test.js",
+      "lines": 353
+    },
+    {
+      "path": "services/quiz-service/tests/quizImmutability.test.js",
+      "lines": 183
+    },
+    {
+      "path": "services/quiz-service/tests/search.test.js",
+      "lines": 45
+    },
+    {
+      "path": "services/quiz-service/tests/solidArchitecture.test.js",
+      "lines": 204
+    },
+    {
+      "path": "services/social-service/package.json",
+      "lines": 23
+    },
+    {
+      "path": "services/social-service/src/config/db.js",
+      "lines": 38
+    },
+    {
+      "path": "services/social-service/src/config/env.js",
+      "lines": 29
+    },
+    {
+      "path": "services/social-service/src/controllers/profile.controller.js",
+      "lines": 131
+    },
+    {
+      "path": "services/social-service/src/controllers/social.controller.js",
+      "lines": 1941
+    },
+    {
+      "path": "services/social-service/src/middleware/auth.middleware.js",
+      "lines": 101
+    },
+    {
+      "path": "services/social-service/src/middleware/csrf.middleware.js",
+      "lines": 77
+    },
+    {
+      "path": "services/social-service/src/middleware/error.middleware.js",
+      "lines": 93
+    },
+    {
+      "path": "services/social-service/src/middleware/rateLimit.middleware.js",
+      "lines": 104
+    },
+    {
+      "path": "services/social-service/src/middleware/security.middleware.js",
+      "lines": 246
+    },
+    {
+      "path": "services/social-service/src/middleware/upload.middleware.js",
+      "lines": 143
+    },
+    {
+      "path": "services/social-service/src/middleware/validation.middleware.js",
+      "lines": 75
+    },
+    {
+      "path": "services/social-service/src/models/Activity.model.js",
+      "lines": 57
+    },
+    {
+      "path": "services/social-service/src/models/Attempt.model.js",
+      "lines": 417
+    },
+    {
+      "path": "services/social-service/src/models/Conversation.model.js",
+      "lines": 50
+    },
+    {
+      "path": "services/social-service/src/models/Follow.model.js",
+      "lines": 29
+    },
+    {
+      "path": "services/social-service/src/models/MappingConfig.model.js",
+      "lines": 54
+    },
+    {
+      "path": "services/social-service/src/models/Message.model.js",
+      "lines": 110
+    },
+    {
+      "path": "services/social-service/src/models/Notification.model.js",
+      "lines": 52
+    },
+    {
+      "path": "services/social-service/src/models/Question.model.js",
+      "lines": 123
+    },
+    {
+      "path": "services/social-service/src/models/Quiz.model.js",
+      "lines": 234
+    },
+    {
+      "path": "services/social-service/src/models/QuizComment.model.js",
+      "lines": 69
+    },
+    {
+      "path": "services/social-service/src/models/QuizInteraction.model.js",
+      "lines": 35
+    },
+    {
+      "path": "services/social-service/src/models/QuizShare.model.js",
+      "lines": 40
+    },
+    {
+      "path": "services/social-service/src/models/Upload.model.js",
+      "lines": 139
+    },
+    {
+      "path": "services/social-service/src/models/User.model.js",
+      "lines": 255
+    },
+    {
+      "path": "services/social-service/src/routes/social.routes.js",
+      "lines": 71
+    },
+    {
+      "path": "services/social-service/src/server.js",
+      "lines": 70
+    },
+    {
+      "path": "services/social-service/src/services/cache/cache.service.js",
+      "lines": 74
+    },
+    {
+      "path": "services/social-service/src/services/parser/answerDetector.js",
+      "lines": 75
+    },
+    {
+      "path": "services/social-service/src/services/parser/csvParser.js",
+      "lines": 62
+    },
+    {
+      "path": "services/social-service/src/services/parser/excelParser.js",
+      "lines": 69
+    },
+    {
+      "path": "services/social-service/src/services/parser/jsonParser.js",
+      "lines": 85
+    },
+    {
+      "path": "services/social-service/src/services/parser/optionExtractor.js",
+      "lines": 89
+    },
+    {
+      "path": "services/social-service/src/services/parser/smartColumnMapper.js",
+      "lines": 354
+    },
+    {
+      "path": "services/social-service/src/services/parser/strategies/BaseParserStrategy.js",
+      "lines": 25
+    },
+    {
+      "path": "services/social-service/src/services/parser/strategies/CsvParserStrategy.js",
+      "lines": 17
+    },
+    {
+      "path": "services/social-service/src/services/parser/strategies/ExcelParserStrategy.js",
+      "lines": 17
+    },
+    {
+      "path": "services/social-service/src/services/parser/strategies/JsonParserStrategy.js",
+      "lines": 16
+    },
+    {
+      "path": "services/social-service/src/services/parser/strategies/ParserRegistry.js",
+      "lines": 69
+    },
+    {
+      "path": "services/social-service/src/services/quiz/attemptTracking.service.js",
+      "lines": 1048
+    },
+    {
+      "path": "services/social-service/src/services/quiz/quizGenerator.service.js",
+      "lines": 178
+    },
+    {
+      "path": "services/social-service/src/services/quiz/scoring/BaseQuestionEvaluator.js",
+      "lines": 27
+    },
+    {
+      "path": "services/social-service/src/services/quiz/scoring/MultipleChoiceEvaluator.js",
+      "lines": 73
+    },
+    {
+      "path": "services/social-service/src/services/quiz/scoring/QuestionEvaluationRegistry.js",
+      "lines": 57
+    },
+    {
+      "path": "services/social-service/src/services/quiz/scoring/SingleChoiceEvaluator.js",
+      "lines": 61
+    },
+    {
+      "path": "services/social-service/src/services/quiz/scoring/TextMatchEvaluator.js",
+      "lines": 49
+    },
+    {
+      "path": "services/social-service/src/services/quiz/scoring/TrueFalseEvaluator.js",
+      "lines": 46
+    },
+    {
+      "path": "services/social-service/src/services/quiz/timer/BaseTimerStrategy.js",
+      "lines": 37
+    },
+    {
+      "path": "services/social-service/src/services/quiz/timer/NoTimerStrategy.js",
+      "lines": 16
+    },
+    {
+      "path": "services/social-service/src/services/quiz/timer/SoftTimerStrategy.js",
+      "lines": 29
+    },
+    {
+      "path": "services/social-service/src/services/quiz/timer/StrictTimerStrategy.js",
+      "lines": 29
+    },
+    {
+      "path": "services/social-service/src/services/quiz/timer/TimerStrategyFactory.js",
+      "lines": 40
+    },
+    {
+      "path": "services/social-service/src/services/social/activity.service.js",
+      "lines": 171
+    },
+    {
+      "path": "services/social-service/src/services/upload/fileHash.service.js",
+      "lines": 132
+    },
+    {
+      "path": "services/social-service/src/services/upload/storage.service.js",
+      "lines": 27
+    },
+    {
+      "path": "services/social-service/src/utils/detectAnswer.js",
+      "lines": 85
+    },
+    {
+      "path": "services/social-service/src/utils/fileCleaner.js",
+      "lines": 50
+    },
+    {
+      "path": "services/social-service/src/utils/generateId.js",
+      "lines": 26
+    },
+    {
+      "path": "services/social-service/src/utils/logger.js",
+      "lines": 44
+    },
+    {
+      "path": "services/social-service/src/utils/normalizeColumns.js",
+      "lines": 47
+    },
+    {
+      "path": "services/social-service/src/utils/parserHelpers.js",
+      "lines": 95
+    },
+    {
+      "path": "services/social-service/tests/profileSocial.test.js",
+      "lines": 98
+    },
+    {
+      "path": "tests/adversarial_quizcard_navigation.test.mjs",
+      "lines": 210
+    },
+    {
+      "path": "tests/challenger_ui_stress.js",
+      "lines": 638
+    },
+    {
+      "path": "tests/chat-settings-unit.test.mjs",
+      "lines": 86
+    },
+    {
+      "path": "tests/e2e/helpers/api-client.js",
+      "lines": 216
+    },
+    {
+      "path": "tests/e2e/helpers/runner-core.js",
+      "lines": 297
+    },
+    {
+      "path": "tests/e2e/helpers/static-checker.js",
+      "lines": 86
+    },
+    {
+      "path": "tests/e2e/runner.js",
+      "lines": 106
+    },
+    {
+      "path": "tests/e2e/tier1-feature-coverage.test.js",
+      "lines": 534
+    },
+    {
+      "path": "tests/e2e/tier2-boundary-corner.test.js",
+      "lines": 576
+    },
+    {
+      "path": "tests/e2e/tier3-cross-feature.test.js",
+      "lines": 180
+    },
+    {
+      "path": "tests/e2e/tier4-application-scenarios.test.js",
+      "lines": 173
+    },
+    {
+      "path": "tests/empirical_challenge_routes.test.mjs",
+      "lines": 559
+    },
+    {
+      "path": "tests/gateway-runtime.test.mjs",
+      "lines": 120
+    },
+    {
+      "path": "tests/integration/chat-settings.test.mjs",
+      "lines": 174
+    },
+    {
+      "path": "TEST_INFRA.md",
+      "lines": 100
+    },
+    {
+      "path": "TEST_READY.md",
+      "lines": 142
+    }
+  ]
+}

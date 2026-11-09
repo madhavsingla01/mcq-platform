@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useId } from 'react';
 import { CheckCircle2, AlertTriangle, Check } from 'lucide-react';
 import { Button } from '../ui';
 import './SubmitConfirmationModal.css';
@@ -6,16 +6,15 @@ import './SubmitConfirmationModal.css';
 export default function SubmitConfirmationModal({ isOpen, answeredCount, totalQuestions, onConfirm, onCancel }) {
   const backdropRef = useRef(null);
   const cardRef = useRef(null);
+  const dialogRef=useRef(null),dialogId=useId();
   const unansweredCount = totalQuestions - answeredCount;
 
   useEffect(() => {
     if (!isOpen) return;
-    const handleKey = (e) => {
-      if (e.key === 'Escape') onCancel();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [isOpen, onCancel]);
+    const dialog=dialogRef.current;
+    if(dialog && !dialog.open)dialog.showModal();
+    return ()=>dialog?.close();
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -29,7 +28,7 @@ export default function SubmitConfirmationModal({ isOpen, answeredCount, totalQu
   if (!isOpen) return null;
 
   return (
-    <>
+    <dialog ref={dialogRef} className="scm-native-dialog" aria-labelledby={`${dialogId}-title`} aria-describedby={`${dialogId}-description`} onCancel={event=>{event.preventDefault();onCancel();}}>
       <div className="scm-backdrop" ref={backdropRef} onClick={onCancel}>
         <div className="scm-card" ref={cardRef} onClick={(e) => e.stopPropagation()}>
           {/* Icon */}
@@ -37,8 +36,8 @@ export default function SubmitConfirmationModal({ isOpen, answeredCount, totalQu
             <CheckCircle2 size={28} />
           </div>
 
-          <h2 className="scm-title">Submit Quiz?</h2>
-          <p className="scm-subtitle">
+          <h2 className="scm-title" id={`${dialogId}-title`}>Submit Quiz?</h2>
+          <p className="scm-subtitle" id={`${dialogId}-description`}>
             You're about to submit your answers. This action cannot be undone.
           </p>
 
@@ -77,6 +76,6 @@ export default function SubmitConfirmationModal({ isOpen, answeredCount, totalQu
           </div>
         </div>
       </div>
-    </>
+    </dialog>
   );
 }

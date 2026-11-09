@@ -1,8 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { usePageSearch, useSearchPage } from '../../components/search/PageSearchContext';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  Flame,
-  Star,
   Trophy,
   Code,
   ArrowRight,
@@ -15,8 +14,6 @@ import {
   Layers,
   Zap,
   Check,
-  Search,
-  X,
   Shield,
   Medal,
   Clock,
@@ -71,8 +68,15 @@ export default function Challenges() {
   // Invariant state variables: activeTab, loading/setLoading, fetchChallenges
   const [activeTab, setActiveTab] = useState('active');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const { query: searchQuery } = usePageSearch();
+  const [difficulty, setDifficulty] = useState('');
+  const [page, setPage] = useSearchPage(searchQuery);
+  const [code, setCode] = useState('');
+  const [joinError, setJoinError] = useState('');
+  const [joining, setJoining] = useState(false);
+  const [listError, setListError] = useState('');
   const [loading, setLoading] = useState(true);
+  const listRequest = useRef(0);
 
   const [data, setData] = useState({
     stats: {
@@ -91,6 +95,7 @@ export default function Challenges() {
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [followedMap, setFollowedMap] = useState({});
   const [bookmarkedMap, setBookmarkedMap] = useState({});
+  const [bookmarkPending, setBookmarkPending] = useState({});
 
   // Leaderboard modal state
   const [leaderboardModalOpen, setLeaderboardModalOpen] = useState(false);
@@ -101,6 +106,8 @@ export default function Challenges() {
    * Invariant: `fetchChallenges` and `setLoading` must remain defined in scope.
    */
   const fetchChallenges = useCallback(async () => {
+    const request = ++listRequest.current;
+    setListError('');
     try {
       setLoading(true);
       const statusParam = activeTab === 'ended' ? 'ended' : 'active';
@@ -111,14 +118,15 @@ export default function Challenges() {
         }),
         ChallengeService.listChallenges({
           status: statusParam,
+          page,
+          difficulty: difficulty || undefined,
           search: searchQuery.trim() || undefined,
+          match: searchQuery.trim() ? 'closest' : undefined,
           category: selectedCategory && selectedCategory !== 'all' ? selectedCategory : undefined,
-        }).catch((err) => {
-          console.warn('[Challenges] List fallback:', err.message);
-          return { challenges: [], pagination: {} };
         }),
       ]);
 
+      if (request !== listRequest.current) return;
       setData(overview || {});
       setChallengeList(listRes.challenges || []);
       setPagination(listRes.pagination || { page: 1, totalPages: 1, total: 0 });
@@ -142,15 +150,16 @@ export default function Challenges() {
       }
       setBookmarkedMap((prev) => ({ ...prev, ...bookmarkState }));
     } catch (err) {
-      console.error('Failed to load challenges arena', err);
+      if (request === listRequest.current) setListError(err.response?.data?.message || 'Could not load competitions.');
     } finally {
-      setLoading(false);
+      if (request === listRequest.current) setLoading(false);
     }
-  }, [activeTab, selectedCategory, searchQuery]);
+  }, [activeTab, selectedCategory, searchQuery, difficulty, page]);
 
   useEffect(() => {
-    fetchChallenges();
-  }, [fetchChallenges]);
+    const timer = setTimeout(fetchChallenges, searchQuery ? 250 : 0);
+    return () => { clearTimeout(timer); listRequest.current += 1; };
+  }, [fetchChallenges, searchQuery]);
 
   /**
    * Fix Defect 5: Key on cr.username (not cr.name) and call /social/users/${username}/follow
@@ -172,8 +181,9 @@ export default function Challenges() {
   };
 
   const handleToggleBookmark = async (quizId) => {
-    if (!quizId) return;
+    if (!quizId || bookmarkPending[quizId]) return;
     const isCurrentlyBookmarked = Boolean(bookmarkedMap[quizId]);
+    setBookmarkPending(previous => ({ ...previous, [quizId]: true }));
     setBookmarkedMap((prev) => ({ ...prev, [quizId]: !isCurrentlyBookmarked }));
 
     try {
@@ -184,6 +194,8 @@ export default function Challenges() {
       }
     } catch {
       setBookmarkedMap((prev) => ({ ...prev, [quizId]: isCurrentlyBookmarked }));
+    } finally {
+      setBookmarkPending(previous => ({ ...previous, [quizId]: false }));
     }
   };
 
@@ -193,74 +205,49 @@ export default function Challenges() {
     setLeaderboardModalOpen(true);
   };
 
-  const displayName = user?.name?.split(' ')[0] || user?.username || 'Contender';
-
-  if (loading && !data.featuredChallenge && challengeList.length === 0) {
-    return (
-      <div className="challenges-loading-container">
-        <Spinner size={36} />
-        <p className="challenges-loading-text">Loading Competition Arena...</p>
-      </div>
-    );
+  async function joinByCode(event) {
+    event.preventDefault();
+    const contestCode = code.trim();
+    if (!/^!?[a-z\d-]{4,32}$/i.test(contestCode)) {
+      setJoinError('Enter a valid contest code.');
+      return;
+    }
+    setJoining(true);
+    setJoinError('');
+    try {
+      const cleanCode = contestCode.replace(/^!/, '');
+      const { challenge, deadlinePassed } = await ChallengeService.getChallengeByIdOrCode(cleanCode);
+      if (!challenge?._id) throw new Error('Competition not found.');
+      if (deadlinePassed) handleOpenLeaderboard(challenge);
+      else navigate(`/challenges/${challenge._id}`);
+    } catch (error) {
+      setJoinError(error.response?.data?.message || error.message || 'Could not open this competition.');
+    } finally { setJoining(false); }
   }
+
 
   return (
     <div className="challenges-page">
       {/* Page Header */}
-      <header className="challenges-page-header consistent-page-header">
-        <div className="challenges-header-titles">
-          <h1 className="consistent-page-title">Competition Arena</h1>
-          <span className="challenges-header-badge">Ranked Matches</span>
-        </div>
-        <label className="challenges-search consistent-page-search consistent-search-field">
-          <Search size={15} aria-hidden="true" />
-          <input
-            type="search"
-            className="consistent-search-input"
-            placeholder="Search competitions or contest codes..."
-            aria-label="Search competitions"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-          />
-          {searchQuery && (
-            <button type="button" onClick={() => setSearchQuery('')} aria-label="Clear search">
-              <X size={14} />
-            </button>
-          )}
-        </label>
-      </header>
+      <div className="challenges-page-header app-page-tools"><span className="challenges-header-badge">Ranked Matches</span>
+      </div>
+
+      <section className="arena-quick-actions" aria-label="Competition actions">
+        <div><h2>Find your next competition</h2><p>Browse live events or open a competition by code.</p></div>
+        <form onSubmit={joinByCode} className="arena-join-form">
+          <input aria-label="Contest code" placeholder="Contest code" value={code} maxLength={33}
+            onChange={event => { setCode(event.target.value); setJoinError(''); }} required />
+          <Button type="submit" variant="secondary" disabled={joining}>{joining ? 'Opening…' : 'Open by code'}</Button>
+        </form>
+        <Link to="/create/challenge" className="challenges-hero-btn">Host competition <ArrowRight size={16} /></Link>
+        {joinError && <p className="arena-join-error" role="alert">{joinError}</p>}
+      </section>
 
       <div className="challenges-layout-grid">
         {/* ========================================================
             LEFT MAIN COLUMN (70%)
             ======================================================== */}
         <div className="challenges-main-col">
-          {/* Welcome Greeting & Live Counters */}
-          <div className="challenges-welcome-row">
-            <div className="challenges-welcome-text">
-              <span className="challenges-eyebrow">COMPETITIVE ARENA</span>
-              <h2 className="challenges-title">Welcome back, {displayName} ⚔️</h2>
-            </div>
-
-            <div className="challenges-stat-pills">
-              <div className="challenges-pill">
-                <span className="pill-icon"><Flame size={16} color="#FF4500" /></span>
-                <span className="pill-val">{data.stats?.dayStreak ?? 0}</span>
-                <span className="pill-lbl">Day Streak</span>
-              </div>
-              <div className="challenges-pill">
-                <span className="pill-icon"><Star size={16} color="#FBBF24" fill="#FBBF24" /></span>
-                <span className="pill-val">{data.stats?.quizzesDone ?? 0}</span>
-                <span className="pill-lbl">Contests Solved</span>
-              </div>
-              <div className="challenges-pill">
-                <span className="pill-icon"><Trophy size={16} color="#F59E0B" /></span>
-                <span className="pill-val">{data.stats?.globalRank || '#-'}</span>
-                <span className="pill-lbl">Global Rank</span>
-              </div>
-            </div>
-          </div>
-
           {/* Fix Defect 6: Featured Challenge Hero Card with "Enter Competition" and "View Standings" */}
           {data.featuredChallenge ? (
             <div className="challenges-hero-card">
@@ -326,32 +313,10 @@ export default function Challenges() {
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="challenges-hero-card empty-hero">
-              <div className="challenges-hero-content">
-                <div className="challenges-hero-top">
-                  <span className="challenges-hero-tag">COMPETITIVE TOURNAMENT ARENA</span>
-                </div>
-                <h2 className="challenges-hero-title">Host or Join a Competitive Arena</h2>
-                <p className="empty-hero-desc">
-                  Compete in strictly timed challenges with sealed leaderboards, automated scoring, and real-time standings.
-                </p>
-                <div className="challenges-hero-bottom">
-                  <button
-                    type="button"
-                    className="challenges-hero-btn"
-                    onClick={() => navigate('/create/challenge')}
-                  >
-                    <span>Host a Competition</span>
-                    <ArrowRight size={15} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          ) : null}
 
           {/* Fix Defect 1: Continue Solving Section (Never routes to /quiz/[object Object]) */}
-          <section className="challenges-section">
+          {data.activeAttempts?.length > 0 && <section className="challenges-section">
             <div className="challenges-section-header">
               <div className="section-title-wrap">
                 <RotateCcw size={16} className="text-accent" />
@@ -362,7 +327,6 @@ export default function Challenges() {
               </Link>
             </div>
 
-            {data.activeAttempts && data.activeAttempts.length > 0 ? (
               <div className="challenges-solving-grid">
                 {data.activeAttempts.map((att) => {
                   const qId = att.quizId?._id || att.quizId;
@@ -383,21 +347,7 @@ export default function Challenges() {
                   );
                 })}
               </div>
-            ) : (
-              <div className="challenges-empty-card">
-                <RotateCcw size={22} className="text-gray-500" />
-                <h4 className="empty-title">No contests currently in progress</h4>
-                <p className="empty-desc">Jump into an active contest below to test your skills under pressure.</p>
-                <button
-                  type="button"
-                  onClick={() => navigate('/create/challenge')}
-                  className="empty-action-btn"
-                >
-                  Host a Competition
-                </button>
-              </div>
-            )}
-          </section>
+          </section>}
 
           {/* Fix Defect 3: Dynamic Tabs for Live vs Ended Contests with server-side filters */}
           <section className="challenges-section">
@@ -408,7 +358,7 @@ export default function Challenges() {
                   role="tab"
                   aria-selected={activeTab !== 'ended'}
                   className={`comp-status-tab ${activeTab !== 'ended' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('active')}
+                  onClick={() => { setActiveTab('active'); setPage(1); }}
                 >
                   <Zap size={15} />
                   <span>Live & Upcoming Contests</span>
@@ -418,7 +368,7 @@ export default function Challenges() {
                   role="tab"
                   aria-selected={activeTab === 'ended'}
                   className={`comp-status-tab ${activeTab === 'ended' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('ended')}
+                  onClick={() => { setActiveTab('ended'); setPage(1); }}
                 >
                   <Trophy size={15} />
                   <span>Concluded Contests</span>
@@ -432,15 +382,26 @@ export default function Challenges() {
                     key={cat.id}
                     type="button"
                     className={`category-pill ${selectedCategory === cat.id ? 'active' : ''}`}
-                    onClick={() => setSelectedCategory(cat.id)}
+                    aria-pressed={selectedCategory === cat.id}
+                    onClick={() => { setSelectedCategory(cat.id); setPage(1); }}
                   >
                     {cat.label}
                   </button>
                 ))}
               </div>
+              <label className="arena-difficulty">Difficulty
+                <select value={difficulty} onChange={event => { setDifficulty(event.target.value); setPage(1); }}>
+                  <option value="">All levels</option>
+                  {['Beginner', 'Intermediate', 'Advanced'].map(level => <option key={level}>{level}</option>)}
+                </select>
+              </label>
             </div>
 
-            {challengeList.length > 0 ? (
+            {listError ? (
+              <div className="arena-list-status" role="alert">{listError} <Button onClick={fetchChallenges}>Retry</Button></div>
+            ) : loading ? (
+              <div className="arena-list-status" role="status"><Spinner size={24} /> Loading competitions…</div>
+            ) : challengeList.length > 0 ? (
               <div className="challenges-cards-grid">
                 {challengeList.map((item) => {
                   const isEnded = activeTab === 'ended' || (item.deadlineAt && new Date(item.deadlineAt) <= new Date());
@@ -455,17 +416,7 @@ export default function Challenges() {
                         </span>
                       </div>
 
-                      <h3
-                        className="comp-card-title"
-                        title={item.title}
-                        onClick={() => {
-                          if (isEnded) {
-                            handleOpenLeaderboard(item);
-                          } else {
-                            navigate(`/challenges/${item._id}`);
-                          }
-                        }}
-                      >
+                      <h3 className="comp-card-title" title={item.title}>
                         {item.title}
                       </h3>
 
@@ -489,6 +440,9 @@ export default function Challenges() {
                             className={`btn-icon-bookmark ${Boolean(bookmarkedMap[item._id]) ? 'active' : ''}`}
                             onClick={() => handleToggleBookmark(item._id)}
                             title="Bookmark contest"
+                            aria-label="Bookmark contest"
+                            aria-pressed={Boolean(bookmarkedMap[item._id])}
+                            disabled={Boolean(bookmarkPending[item._id])}
                           >
                             <Bookmark
                               size={14}
@@ -545,6 +499,11 @@ export default function Challenges() {
                 }}
               />
             )}
+            {!loading && !listError && pagination.totalPages > 1 && <nav className="arena-pagination" aria-label="Competition pages">
+              <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => setPage(current => current - 1)}>Previous</Button>
+              <span>Page {page} of {pagination.totalPages}</span>
+              <Button variant="secondary" size="sm" disabled={page >= pagination.totalPages} onClick={() => setPage(current => current + 1)}>Next</Button>
+            </nav>}
           </section>
         </div>
 
@@ -640,20 +599,6 @@ export default function Challenges() {
             )}
           </div>
 
-          {/* Fix Defect 6: Host a Competition Promo Panel */}
-          <div className="create-promo-panel">
-            <div className="create-promo-icon">
-              <Trophy size={22} fill="#FF4500" color="#FF4500" />
-            </div>
-            <h4 className="create-promo-title">Host a Competition</h4>
-            <p className="create-promo-text">
-              Create your own timed competitive tournament with sealed leaderboard rankings, anti-cheat limits, and instant standings.
-            </p>
-            <Link to="/create/challenge" className="btn-create-promo">
-              <span>Host a Competition</span>
-              <ArrowRight size={14} />
-            </Link>
-          </div>
         </aside>
       </div>
 

@@ -23,12 +23,9 @@ const startCleanupWorker = () => {
 };
 
 const defaultKeyGenerator = (req) => {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
-  }
-  return req.ip || req.connection?.remoteAddress || 'unknown';
+  return req.ip || req.socket?.remoteAddress || 'unknown';
 };
+const authRoute = req => req.route?.path ?? req.path;
 
 const setRateLimitHeaders = (res, { limit, remaining, resetAt }) => {
   res.set('RateLimit-Limit', String(limit));
@@ -84,14 +81,23 @@ export const authRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: process.env.NODE_ENV === 'test' ? 1000 : 50,
   keyGenerator: (req) => {
-    const forwarded = req.headers['x-forwarded-for'];
-    const ip = forwarded ? forwarded.split(',')[0].trim() : (req.ip || 'unknown');
-    const rawId = req.body?.email || req.body?.identifier || req.body?.username;
+    const ip = defaultKeyGenerator(req);
+    const route = authRoute(req);
+    const rawId = ['/login', '/register'].includes(route)
+      ? (req.body?.email ?? req.body?.identifier)
+      : req.user?._id?.toString();
     const identifier = (rawId && typeof rawId === 'string')
-      ? `:${rawId.toLowerCase().trim()}`
+      ? `:${rawId.trim().slice(0, 320).toLowerCase()}`
       : '';
-    return `${ip}${identifier}`;
+    return `${route}:${ip}${identifier}`;
   },
+  message: 'Too many authentication attempts. Please try again in 15 minutes.',
+});
+
+export const authAddressLimit = rateLimit({
+  keyPrefix: 'auth-address',
+  max: process.env.NODE_ENV === 'test' ? 2000 : 150,
+  keyGenerator: (req) => `${authRoute(req)}:${defaultKeyGenerator(req)}`,
   message: 'Too many authentication attempts. Please try again in 15 minutes.',
 });
 

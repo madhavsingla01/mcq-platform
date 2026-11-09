@@ -34,7 +34,7 @@
   @keyframes scaleInDialog {
     from {
       opacity: 0;
-      transform: scale(0.95) translateY(8px);
+      transform: scale(0.97) translateY(8px);
     }
     to {
       opacity: 1;
@@ -103,12 +103,19 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s ease;
+    touch-action: manipulation;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease, color 140ms ease;
   }
 
-  .share-dialog-close-btn:hover {
-    background: #141416;
-    color: #FFFFFF;
+  .share-dialog-close-btn:active {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .share-dialog-close-btn:hover {
+      background: #141416;
+      color: #FFFFFF;
+    }
   }
 
   /* ── SHARE LINK Section ── */
@@ -180,12 +187,19 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    transition: all 0.15s ease;
+    touch-action: manipulation;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease;
     flex-shrink: 0;
   }
 
-  .share-pill-copy-btn:hover {
-    background: #EDEDED;
+  .share-pill-copy-btn:active {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .share-pill-copy-btn:hover {
+      background: #EDEDED;
+    }
   }
 
   .share-pill-copy-btn.copied {
@@ -210,11 +224,18 @@
     font-size: 12.5px;
     font-weight: 600;
     text-decoration: none;
-    transition: color 0.15s ease;
+    touch-action: manipulation;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), color 0.15s ease;
   }
 
-  .social-pill-link:hover {
-    color: #FF4500;
+  .social-pill-link:active {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .social-pill-link:hover {
+      color: #FF4500;
+    }
   }
 
   .social-pill-dot {
@@ -326,6 +347,13 @@
     cursor: pointer;
     padding: 0;
     flex-shrink: 0;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out);
+  }
+
+  .frequent-circle-item:active {
+    transform: scale(0.97);
   }
 
   .frequent-avatar-circle {
@@ -340,11 +368,13 @@
     justify-content: center;
     font-size: 13.5px;
     font-weight: 700;
-    transition: all 0.15s ease;
+    transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease;
   }
 
-  .frequent-circle-item:hover .frequent-avatar-circle {
-    border-color: #FF4500;
+  @media (hover: hover) and (pointer: fine) {
+    .frequent-circle-item:hover .frequent-avatar-circle {
+      border-color: #FF4500;
+    }
   }
 
   .frequent-circle-item.selected .frequent-avatar-circle {
@@ -388,12 +418,19 @@
     border: 1px solid #202024;
     border-radius: 10px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    touch-action: manipulation;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), border-color 140ms ease, background-color 140ms ease;
   }
 
-  .connection-row-card:hover {
-    border-color: #38383c;
-    background: #101013;
+  .connection-row-card:active {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .connection-row-card:hover {
+      border-color: #38383c;
+      background: #101013;
+    }
   }
 
   .connection-row-card.selected {
@@ -464,7 +501,7 @@
     font-size: 14px;
     font-weight: 600;
     flex-shrink: 0;
-    transition: all 0.15s ease;
+    transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
   }
 
   .connection-plus-symbol {
@@ -626,11 +663,18 @@
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.15s ease;
+    touch-action: manipulation;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease;
   }
 
-  .action-btn-clear-all:hover:not(:disabled) {
-    background: #1c1c20;
+  .action-btn-clear-all:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .action-btn-clear-all:hover:not(:disabled) {
+      background: #1c1c20;
+    }
   }
 
   .action-btn-clear-all:disabled {
@@ -652,11 +696,18 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    transition: background 0.15s ease;
+    touch-action: manipulation;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease;
   }
 
-  .action-btn-send-main:hover:not(:disabled) {
-    background: #EDEDED;
+  .action-btn-send-main:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .action-btn-send-main:hover:not(:disabled) {
+      background: #EDEDED;
+    }
   }
 
   .action-btn-send-main:disabled {

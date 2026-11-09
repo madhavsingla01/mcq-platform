@@ -3,6 +3,8 @@ import { getQuizDb, getAuthDb } from '../config/db.js';
 import AdminAuditLog from '../models/AdminAuditLog.model.js';
 import ModerationReport from '../models/ModerationReport.model.js';
 import { AppError, catchAsync } from '../middleware/error.middleware.js';
+import { hasAdminPermission } from '../middleware/auth.middleware.js';
+import { buildClosestSearch } from '../services/closestSearch.js';
 
 /**
  * GET /api/v1/admin/content
@@ -14,6 +16,9 @@ export const listContent = catchAsync(async (req, res) => {
   const skip = (page - 1) * limit;
 
   const search = String(req.query.search || '').trim();
+  const closest = search && req.query.match === 'closest' ? buildClosestSearch(search, {
+    primary: 'title', arrays: ['tags'], literalFields: ['quizCode'], literalOnly: /^!?qz-/i.test(search),
+  }) : null;
   const type = String(req.query.type || 'all').toLowerCase();
   const visibility = String(req.query.visibility || 'all').toLowerCase();
   const restricted = String(req.query.restricted || 'all').toLowerCase();
@@ -40,7 +45,9 @@ export const listContent = catchAsync(async (req, res) => {
     filter.isRestricted = { $ne: true };
   }
 
-  if (search) {
+  if (closest) {
+    filter.$or = closest.filter.$or;
+  } else if (search) {
     const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(escaped, 'i');
     filter.$or = [
@@ -50,29 +57,17 @@ export const listContent = catchAsync(async (req, res) => {
     ];
   }
 
+  const projection = {
+    title: 1, quizCode: 1, visibility: 1, isChallenge: 1, challengeStatus: 1, deadlineAt: 1,
+    totalQuestions: 1, totalAttempts: 1, isRestricted: 1, restrictedReason: 1, restrictedAt: 1, uploader: 1, createdAt: 1,
+  };
+  const order = { createdAt: -1, _id: -1 };
+  const pageQuery = closest ? quizzesCollection.aggregate([
+    { $match: filter }, { $set: { searchScore: closest.score } },
+    { $sort: { searchScore: -1, ...order } }, { $skip: skip }, { $limit: limit }, { $project: projection },
+  ], { maxTimeMS: 5000 }) : quizzesCollection.find(filter, { projection }).sort(order).skip(skip).limit(limit);
   const [items, total] = await Promise.all([
-    quizzesCollection
-      .find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .project({
-        title: 1,
-        quizCode: 1,
-        visibility: 1,
-        isChallenge: 1,
-        challengeStatus: 1,
-        deadlineAt: 1,
-        totalQuestions: 1,
-        totalAttempts: 1,
-        isRestricted: 1,
-        restrictedReason: 1,
-        restrictedAt: 1,
-        uploader: 1,
-        createdAt: 1,
-      })
-      .toArray(),
-    quizzesCollection.countDocuments(filter),
+    pageQuery.toArray(), quizzesCollection.countDocuments(filter, closest ? { maxTimeMS: 5000 } : {}),
   ]);
 
   // Optionally attach uploader usernames
@@ -122,8 +117,10 @@ export const getContentDetails = catchAsync(async (req, res) => {
   if (!quiz) throw new AppError('Quiz/Challenge not found', 404);
 
   const [reports, auditLogs] = await Promise.all([
-    ModerationReport.find({ targetId: String(quiz._id) }).sort({ createdAt: -1 }).lean(),
-    AdminAuditLog.find({ targetId: String(quiz._id) }).sort({ createdAt: -1 }).lean(),
+    hasAdminPermission(req.adminUser, 'manage_reports')
+      ? ModerationReport.find({ targetId: String(quiz._id) }).sort({ createdAt: -1 }).lean() : [],
+    hasAdminPermission(req.adminUser, 'view_audit_logs')
+      ? AdminAuditLog.find({ targetId: String(quiz._id) }).sort({ createdAt: -1 }).lean() : [],
   ]);
 
   res.json({

@@ -149,8 +149,15 @@ export function useQuizAttemptController({
           });
 
           activeAttempt = activeAttemptResponse.data.data.attempt;
+          if (activeAttempt) {
+            const frozen = await api.get(`/attempts/${activeAttempt._id}/questions`, { headers: getAttemptHeaders(clientSessionId, sharedSessionId) });
+            questionData = frozen.data.data.questions;
+          }
         } catch (requestError) {
-          if (!quizData || !questionData.length) {
+          if (activeAttempt) {
+            if (localSnapshot?.attemptId !== activeAttempt._id || !localSnapshot.questions?.length) throw requestError;
+            questionData = localSnapshot.questions;
+          } else if (!quizData || !questionData.length) {
             throw requestError;
           }
 
@@ -271,10 +278,11 @@ export function useQuizAttemptController({
         }
       );
 
+      const frozen = await api.get(`/attempts/${response.data.data.attempt._id}/questions`, { headers: getAttemptHeaders(clientSessionId, sharedSessionId) });
       startAttemptFromServer({
         attempt: response.data.data.attempt,
         quiz: loadedQuiz,
-        questions: loadedQuestions,
+        questions: frozen.data.data.questions,
         collaborationContext: attemptCollaborationContext,
       });
       setRecoveryNotice('');

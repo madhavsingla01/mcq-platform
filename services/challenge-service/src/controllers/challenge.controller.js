@@ -1,9 +1,29 @@
+import { validateChallengeMedia } from '../services/mediaValidation.service.js';
 import mongoose from 'mongoose';
 import Challenge, { generateChallengeCode } from '../models/Challenge.model.js';
 import Question from '../models/Question.model.js';
 import Attempt from '../models/Attempt.model.js';
 import env from '../config/env.js';
 import { AppError, catchAsync } from '../middleware/error.middleware.js';
+import { buildClosestSearch } from '../services/closestSearch.js';
+
+const deadlinePassedFor = challenge => Boolean(challenge.deadlineAt && new Date(challenge.deadlineAt) <= new Date());
+const editableDraft = {
+  $or: [
+    { challengeStatus: 'draft' },
+    { challengeStatus: { $in: [null, 'active'] }, 'metadata.savedAsDraft': true, isPublic: { $ne: true } },
+  ],
+};
+
+const participantMedia = clips => (clips || []).map(clip => ({
+  kind: clip.kind, assetId: clip.assetId, label: clip.label, transcript: clip.transcript,
+  language: clip.language, purpose: clip.purpose, signedLanguage: clip.signedLanguage,
+  captionAssetId: clip.captionAssetId, captionLanguage: clip.captionLanguage,
+  describedAssetId: clip.describedAssetId, describedCaptionAssetId: clip.describedCaptionAssetId,
+}));
+const withParticipantMedia = item => item.accessibilityMedia?.length
+  ? { ...item, accessibilityMedia: participantMedia(item.accessibilityMedia) }
+  : item;
 
 export const sanitizeQuestionsForContest = (questions = [], deadlinePassed = false) => {
   return questions.map((q) => {
@@ -16,13 +36,13 @@ export const sanitizeQuestionsForContest = (questions = [], deadlinePassed = fal
         raw.options = raw.options.map((opt) => {
           if (typeof opt === 'object' && opt !== null) {
             const { isCorrect, ...rest } = opt;
-            return rest;
+            return withParticipantMedia(rest);
           }
           return opt;
         });
       }
     }
-    return raw;
+    return withParticipantMedia(raw);
   });
 };
 
@@ -37,17 +57,26 @@ export const normalizeChallengeQuestionInput = (q, index) => {
   }
   const text = rawText.trim();
   const rawOptions = Array.isArray(q.options) ? q.options : [];
+  const questionType = q.questionType === 'true_false' ? 'multiple_choice' : q.questionType || 'multiple_choice';
+  if (!['multiple_choice', 'dropdown', 'checkboxes', 'short_answer'].includes(questionType)) {
+    throw new AppError(`Question #${index + 1} uses an unsupported question type.`, 400);
+  }
 
   let optionsForDoc = [];
   let optionStrings = [];
   let correctOptionIndex = -1;
   let correctAnswer = null;
 
-  if (rawOptions.length > 0 && typeof rawOptions[0] === 'object' && rawOptions[0] !== null) {
+  if (questionType === 'short_answer') {
+    if (typeof q.correctAnswer !== 'string' || !q.correctAnswer.trim() || q.correctAnswer.trim().length > 1000 || rawOptions.length) {
+      throw new AppError(`Question #${index + 1} needs a text answer of 1 to 1000 characters and no options.`, 400);
+    }
+    correctAnswer = q.correctAnswer.trim();
+  } else if (rawOptions.length > 0 && typeof rawOptions[0] === 'object' && rawOptions[0] !== null) {
     // UI ManualBuilder format: [{ label: 'A', text: '...', isCorrect: true }]
     optionsForDoc = rawOptions.map((opt, optIdx) => {
       const label = String.fromCharCode(65 + optIdx);
-      const rawOptionText = opt.text ?? opt.optionText;
+      const rawOptionText = opt?.text ?? opt?.optionText;
       if (typeof rawOptionText !== 'string') {
         throw new AppError(`Question #${index + 1} option #${optIdx + 1} text must be a string.`, 400);
       }
@@ -56,10 +85,14 @@ export const normalizeChallengeQuestionInput = (q, index) => {
       if (isCorrect && correctOptionIndex === -1) {
         correctOptionIndex = optIdx;
       }
-      return { label, text: optText, isCorrect };
+      return { label, text: optText, isCorrect, optionId: opt.optionId, accessibilityMedia: opt.accessibilityMedia || [] };
     });
     optionStrings = optionsForDoc.map((o) => o.text);
-    if (q.correctOption !== undefined) {
+    if (questionType === 'checkboxes') {
+      correctAnswer = optionsForDoc.filter(option => option.isCorrect).map(option => option.label);
+      if (!correctAnswer.length) throw new AppError(`Question #${index + 1} must mark at least one correct option.`, 400);
+      correctOptionIndex = -1;
+    } else if (q.correctOption !== undefined) {
       if (!['number', 'string'].includes(typeof q.correctOption) || q.correctOption === '') {
         throw new AppError(`Question #${index + 1} has an invalid correct option index.`, 400);
       }
@@ -74,10 +107,11 @@ export const normalizeChallengeQuestionInput = (q, index) => {
     } else if (optionsForDoc.filter((option) => option.isCorrect).length !== 1) {
       throw new AppError(`Question #${index + 1} must mark exactly one correct option.`, 400);
     }
-    if (correctOptionIndex >= 0 && correctOptionIndex < optionsForDoc.length) {
+    if (questionType !== 'checkboxes' && correctOptionIndex >= 0 && correctOptionIndex < optionsForDoc.length) {
       correctAnswer = optionsForDoc[correctOptionIndex].label;
     }
   } else {
+    if (questionType === 'checkboxes') throw new AppError(`Question #${index + 1} needs option objects with correct choices marked.`, 400);
     // Array of strings format: ['Opt1', 'Opt2']
     if (rawOptions.some((opt) => typeof opt !== 'string')) {
       throw new AppError(`Question #${index + 1} options must be strings or option objects.`, 400);
@@ -111,6 +145,8 @@ export const normalizeChallengeQuestionInput = (q, index) => {
 
   return {
     questionText: text,
+    questionType,
+    accessibilityMedia: q.accessibilityMedia || [],
     optionsForDoc,
     optionStrings,
     correctOption: correctOptionIndex,
@@ -164,9 +200,10 @@ const saveChallengeDraft = async (req, res) => {
       _id: body.draftId,
       uploader: req.user._id,
       isChallenge: true,
-      challengeStatus: 'draft',
+      ...editableDraft,
     }).select('+draftData');
     if (!challenge) throw new AppError('Challenge draft not found.', 404);
+    challenge.$where = editableDraft;
   } else {
     challenge = new Challenge({
       title,
@@ -194,7 +231,12 @@ const saveChallengeDraft = async (req, res) => {
     questions: [],
   });
   challenge.set('draftData', draftData);
-  await challenge.save();
+  try {
+    await challenge.save();
+  } catch (error) {
+    if (error instanceof mongoose.Error.DocumentNotFoundError) throw new AppError('This challenge draft changed while saving. Reopen it from Dashboard.', 409);
+    throw error;
+  }
 
   res.status(body.draftId ? 200 : 201).json({
     success: true,
@@ -216,6 +258,7 @@ export const createChallenge = catchAsync(async (req, res) => {
   }
 
   if (req.body.isDraft === true) {
+    await validateChallengeMedia(req, true);
     await saveChallengeDraft(req, res);
     return;
   }
@@ -231,7 +274,9 @@ export const createChallenge = catchAsync(async (req, res) => {
     if (existingDraft.challengeStatus === 'publishing') {
       throw new AppError('Challenge publication is already in progress.', 409);
     }
-    if (existingDraft.challengeStatus !== 'draft') {
+    const legacyDraft = [undefined, null, 'active'].includes(existingDraft.challengeStatus)
+      && existingDraft.metadata?.savedAsDraft === true && !existingDraft.isPublic;
+    if (existingDraft.challengeStatus !== 'draft' && !legacyDraft) {
       res.json({
         success: true,
         message: 'Challenge was already published.',
@@ -241,6 +286,8 @@ export const createChallenge = catchAsync(async (req, res) => {
     }
     req.body = { ...(existingDraft.draftData || {}), ...req.body };
   }
+
+  await validateChallengeMedia(req, false);
 
   const {
     title,
@@ -308,16 +355,17 @@ export const createChallenge = catchAsync(async (req, res) => {
 
   for (let i = 0; i < normalizedList.length; i++) {
     const nq = normalizedList[i];
-    if (!nq.questionText) {
+    if (!nq.questionText && !nq.accessibilityMedia?.length) {
       throw new AppError(`Question #${i + 1} is missing questionText.`, 400);
     }
+    if (nq.questionType === 'short_answer') continue;
     if (nq.optionsForDoc.length < 2 || nq.optionsForDoc.length > 8) {
       throw new AppError(`Question #${i + 1} must have between 2 and 8 options.`, 400);
     }
-    if (nq.optionsForDoc.some((option) => !option.text)) {
+    if (nq.optionsForDoc.some((option) => !option.text && !option.accessibilityMedia?.length)) {
       throw new AppError(`Question #${i + 1} options cannot be empty.`, 400);
     }
-    if (!Number.isInteger(nq.correctOption) || nq.correctOption < 0 || nq.correctOption >= nq.optionsForDoc.length) {
+    if (nq.questionType !== 'checkboxes' && (!Number.isInteger(nq.correctOption) || nq.correctOption < 0 || nq.correctOption >= nq.optionsForDoc.length)) {
       throw new AppError(`Question #${i + 1} has an invalid correctOption selection.`, 400);
     }
   }
@@ -330,15 +378,17 @@ export const createChallenge = catchAsync(async (req, res) => {
   // Embedded question format for Challenge document
   const embeddedQuestions = normalizedList.map((nq) => ({
     questionText: nq.questionText,
-    options: nq.optionStrings,
-    correctOption: nq.correctOption,
+    questionType: nq.questionType,
+    accessibilityMedia: nq.accessibilityMedia,
+    options: nq.questionType === 'checkboxes' || nq.optionsForDoc.some(option => option.accessibilityMedia?.length) ? nq.optionsForDoc : nq.optionStrings,
+    ...(nq.correctOption < 0 ? { correctAnswer: nq.correctAnswer } : { correctOption: nq.correctOption }),
     explanation: nq.explanation,
     marks: nq.marks,
   }));
 
   if (existingDraft) {
     const claimedDraft = await Challenge.findOneAndUpdate(
-      { _id: existingDraft._id, uploader: req.user._id, challengeStatus: 'draft' },
+      { _id: existingDraft._id, uploader: req.user._id, ...editableDraft },
       { $set: { challengeStatus: 'publishing' } },
       { new: true }
     ).select('+draftData');
@@ -359,6 +409,9 @@ export const createChallenge = catchAsync(async (req, res) => {
 
   const challenge = existingDraft || new Challenge();
   const draftDataToRestore = existingDraft?.draftData;
+  const draftMetadata = existingDraft?.metadata;
+  let legacyQuestions = [];
+  let writingQuestions = false;
   Object.assign(challenge, {
     title: title.trim(),
     challengeCode,
@@ -394,7 +447,8 @@ export const createChallenge = catchAsync(async (req, res) => {
     quizId: challenge._id,
     questionNumber: idx + 1,
     questionText: nq.questionText,
-    questionType: 'multiple_choice',
+    accessibilityMedia: nq.accessibilityMedia,
+    questionType: nq.questionType,
     options: nq.optionsForDoc,
     correctAnswer: nq.correctAnswer,
     explanation: nq.explanation,
@@ -405,16 +459,22 @@ export const createChallenge = catchAsync(async (req, res) => {
   }));
 
   try {
+    if (existingDraft) legacyQuestions = await Question.find({ quizId: challenge._id }).lean();
     await challenge.save();
+    writingQuestions = true;
+    if (legacyQuestions.length) await Question.deleteMany({ quizId: challenge._id });
     await Question.insertMany(questionDocs);
     challenge.challengeStatus = 'active';
     challenge.isPublic = accessType === 'public';
+    if (draftMetadata?.savedAsDraft) challenge.metadata = { ...draftMetadata, savedAsDraft: false };
     await challenge.save();
   } catch (error) {
-    await Question.deleteMany({ quizId: challenge._id });
+    if (writingQuestions) await Question.deleteMany({ quizId: challenge._id });
     if (existingDraft) {
+      if (writingQuestions && legacyQuestions.length) await Question.insertMany(legacyQuestions);
       challenge.challengeStatus = 'draft';
       challenge.questions = [];
+      challenge.metadata = draftMetadata;
       challenge.set('draftData', draftDataToRestore);
       await challenge.save();
     } else {
@@ -450,7 +510,11 @@ export const listChallenges = catchAsync(async (req, res) => {
   const status = String(req.query.status || 'active').toLowerCase();
   if (!['active', 'ended'].includes(status)) throw new AppError('Status must be active or ended.', 400);
   const category = req.query.category;
+  const difficulty = req.query.difficulty;
   const search = String(req.query.search || req.query.q || '').trim();
+  const closest = search && req.query.match === 'closest' ? buildClosestSearch(search, {
+    primary: 'title', arrays: ['tags'], literalFields: ['challengeCode'], literalOnly: /^!?qz-/i.test(search),
+  }) : null;
 
   const filter = {
     isChallenge: true,
@@ -473,29 +537,45 @@ export const listChallenges = catchAsync(async (req, res) => {
     const escapedCategory = String(category).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     filter.category = new RegExp(`^${escapedCategory}$`, 'i');
   }
+  if (['Beginner', 'Intermediate', 'Advanced'].includes(difficulty)) filter.difficulty = difficulty;
 
-  if (search) {
+  if (closest) {
+    additionalConditions.push(closest.filter);
+  } else if (search) {
     const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(escaped, 'i');
     additionalConditions.push({ $or: [{ title: regex }, { challengeCode: regex }, { tags: regex }] });
   }
   if (additionalConditions.length) filter.$and = additionalConditions;
 
-  const [challenges, total] = await Promise.all([
-    Challenge.find(filter)
-      .populate('uploader', 'name username avatar')
-      .sort({ deadlineAt: 1, createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .select('-questions.correctOption -questions.explanation')
-      .lean(),
-    Challenge.countDocuments(filter),
-  ]);
+  const order = { deadlineAt: status === 'ended' ? -1 : 1, createdAt: -1, _id: 1 };
+  const uploader = { path: 'uploader', select: 'name username avatar', options: { lean: true } };
+  const count = Challenge.countDocuments(filter);
+  const pageQuery = closest ? Challenge.aggregate([
+    { $match: filter },
+    { $project: { questions: 0, draftData: 0 } },
+    { $set: { searchScore: closest.score } },
+    { $sort: { searchScore: -1, ...order } }, { $skip: skip }, { $limit: limit },
+    { $unset: 'searchScore' },
+  ]).option({ maxTimeMS: 5000 }).then(rows => Challenge.populate(rows, uploader))
+    : Challenge.find(filter).populate(uploader).sort(order).skip(skip).limit(limit).select('-questions -draftData').lean();
+  if (closest) count.maxTimeMS(5000);
+  const [challenges, total] = await Promise.all([pageQuery, count]);
+
+  const challengeIds = challenges.map(challenge => challenge._id);
+  const bookmarks = req.user && challengeIds.length
+    ? await Challenge.db.collection('quizinteractions').find({ user: req.user._id, type: 'bookmark', quiz: { $in: challengeIds } }, { projection: { quiz: 1 } }).toArray()
+    : [];
+  const savedIds = new Set(bookmarks.map(bookmark => String(bookmark.quiz)));
 
   res.json({
     success: true,
     data: {
-      challenges,
+      challenges: challenges.map(challenge => ({
+        ...challenge,
+        avgScore: deadlinePassedFor(challenge) ? challenge.avgScore : 0,
+        isBookmarked: savedIds.has(String(challenge._id)),
+      })),
       pagination: {
         page,
         limit,
@@ -537,7 +617,7 @@ export const getChallengeByIdOrCode = catchAsync(async (req, res) => {
   if ((challenge.isRestricted || challenge.accessType !== 'public' || challenge.visibility !== 'public') && !isOwner && !isAdmin) {
     throw new AppError('Challenge not found', 404);
   }
-  const deadlinePassed = challenge.deadlineAt && new Date(challenge.deadlineAt) <= new Date();
+  const deadlinePassed = deadlinePassedFor(challenge);
   const shouldRevealAnswers = deadlinePassed || isOwner;
 
   let questions = [];
@@ -550,6 +630,7 @@ export const getChallengeByIdOrCode = catchAsync(async (req, res) => {
   }
 
   const sanitized = challenge.toObject();
+  if (!deadlinePassed) sanitized.avgScore = 0;
   sanitized.questions = questions;
   sanitized.questionCount = challenge.questionCount || sanitized.totalQuestions || questions.length;
   sanitized.deadlinePassed = Boolean(deadlinePassed);
@@ -622,7 +703,7 @@ export const updateChallenge = catchAsync(async (req, res) => {
   res.json({
     success: true,
     message: 'Challenge updated successfully.',
-    data: { challenge },
+    data: { challenge: deadlinePassedFor(challenge) ? challenge : { ...challenge.toObject(), avgScore: 0 } },
   });
 });
 

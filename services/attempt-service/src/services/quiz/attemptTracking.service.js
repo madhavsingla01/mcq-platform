@@ -99,7 +99,13 @@ const normalizeSelectedAnswer = (selectedAnswer, question) => {
     return null;
   }
 
+  if (question.questionType === 'short_answer') return trimmed.length <= 1000 ? trimmed : null;
   const validOptions = new Set((question.options || []).map((option) => option.label));
+  if (question.questionType === 'checkboxes') {
+    const labels = trimmed.split(',').map(label => label.trim());
+    if (new Set(labels).size !== labels.length || !labels.every(label => validOptions.has(label))) return null;
+    return labels.sort().join(',');
+  }
   return validOptions.has(trimmed) ? trimmed : null;
 };
 
@@ -314,7 +320,7 @@ const mergeAnswerState = ({
       appendFlag(
         flags,
         'invalid_answer_option',
-        `Question ${question.questionNumber} received an invalid answer label.`
+        `Question ${question.questionNumber} received an invalid answer.`
       );
     } else if (
       answer.isLocked &&
@@ -733,6 +739,7 @@ export const mergeAttemptTrackingPayload = ({ attempt, questions, payload = {}, 
       options: {
         negativeMarking: Boolean(getQuestionNegativeMarks(question)),
         negativeMarkValue: getQuestionNegativeMarks(question),
+        allowPartialCredit: false,
       },
     });
 

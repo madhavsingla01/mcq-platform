@@ -2,57 +2,38 @@
  * Auth controller — register, login, logout, refresh, me.
  */
 
-import jwt from 'jsonwebtoken';
+import { verifySessionToken } from '../utils/sessionToken.js';
+import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import User from '../models/User.model.js';
 import Follow from '../models/Follow.model.js';
 import env from '../config/env.js';
 import { AppError, catchAsync } from '../middleware/error.middleware.js';
-import { clearCsrfCookie, setCsrfCookie } from '../middleware/csrf.middleware.js';
-
-const authCookieOptions = {
-  httpOnly: true,
-  secure: env.isProd,
-  sameSite: env.isProd ? 'none' : 'lax',
-  path: '/',
-};
+import { setCsrfCookie } from '../middleware/csrf.middleware.js';
+import { activeSessionFilter, clearAuthCookies, endSession, issueSession, rotateSession } from '../services/session.service.js';
+import { validatePreferences, preferenceUpdates } from '../utils/preferences.js';
 
 const isMediaAssetUrl = (value) => (
   typeof value === 'string' &&
   /^\/media\/assets\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/image$/i.test(value)
 );
 
-const clearAuthCookies = (res) => {
-  res.clearCookie('accessToken', authCookieOptions);
-  res.clearCookie('refreshToken', authCookieOptions);
-  clearCsrfCookie(res);
+// A missing user takes the same bcrypt work as an incorrect password.
+const DUMMY_PASSWORD_HASH = '$2a$12$cI2i4CP66nRSFHnA6/edMOy0UJWBy5k12wBusX9mlL.fkSHxt8k7K';
+
+const auditSession = (req, event, outcome, userId) => {
+  const requestId = req.get('x-request-id');
+  console.info(JSON.stringify({
+    category: 'identity-security', event, outcome, at: new Date().toISOString(),
+    ...(userId ? { actorId: String(userId) } : {}),
+    ...(/^[\w.-]{1,100}$/.test(requestId || '') ? { requestId } : {}),
+  }));
 };
 
-/**
- * Generate access + refresh tokens and set as httpOnly cookies.
- */
-const generateTokens = (user, res) => {
-  const tokenVersion = user.tokenVersion || 0;
-  const accessToken = jwt.sign({ id: user._id, tokenVersion }, env.JWT_SECRET, {
-    expiresIn: env.JWT_EXPIRES_IN,
-  });
-  const refreshToken = jwt.sign({ id: user._id, tokenVersion }, env.JWT_REFRESH_SECRET, {
-    expiresIn: env.JWT_REFRESH_EXPIRES_IN,
-  });
-
-  res.cookie('accessToken', accessToken, {
-    ...authCookieOptions,
-    maxAge: 15 * 60 * 1000, // 15 minutes
-  });
-
-  res.cookie('refreshToken', refreshToken, {
-    ...authCookieOptions,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-  });
-
-  setCsrfCookie(res);
-
-  return { accessToken, refreshToken };
+const validateNewPassword = password => {
+  if (typeof password !== 'string' || Buffer.byteLength(password, 'utf8') > 72) {
+    throw new AppError('Password must be at most 72 UTF-8 bytes', 400);
+  }
 };
 
 /**
@@ -87,58 +68,20 @@ const generateUniqueUsername = async (name) => {
  * Returns the current session state without using 401 for anonymous users.
  */
 export const bootstrapSession = catchAsync(async (req, res) => {
-  const accessToken = req.cookies?.accessToken;
+  let claims;
+  try { claims = verifySessionToken(req.cookies?.accessToken, env.JWT_SECRET); }
+  catch { /* Try the refresh cookie if the access cookie has expired. */ }
 
-  if (accessToken) {
-    try {
-      const decoded = jwt.verify(accessToken, env.JWT_SECRET);
-      const user = await User.findById(decoded.id).select('-password -refreshToken');
-
-      if (user && !user.isDeleted && user.isActive !== false && !user.isSuspended &&
-          (decoded.tokenVersion === undefined || user.tokenVersion === undefined || decoded.tokenVersion === user.tokenVersion)) {
-        setCsrfCookie(res);
-        return res.json({
-          success: true,
-          data: { authenticated: true, user },
-        });
-      }
-    } catch {
-      // Fall through to refresh-token bootstrap.
-    }
+  let user = claims
+    ? await User.findOne(activeSessionFilter(claims.id, claims.tokenVersion ?? 0))
+    : null;
+  if (user) {
+    setCsrfCookie(res, /^[a-f\d]{64}$/i.test(req.cookies?.csrfToken || '') ? req.cookies.csrfToken : undefined);
+  } else {
+    user = await rotateSession(req, res);
   }
 
-  const token = req.cookies?.refreshToken;
-
-  if (token) {
-    try {
-      const decoded = jwt.verify(token, env.JWT_REFRESH_SECRET);
-      const user = await User.findById(decoded.id).select('+refreshToken');
-
-      if (user && !user.isDeleted && user.isActive !== false && !user.isSuspended &&
-          (decoded.tokenVersion === undefined || decoded.tokenVersion === user.tokenVersion) &&
-          user.refreshToken === token) {
-        const { refreshToken } = generateTokens(user, res);
-        user.refreshToken = refreshToken;
-        await user.save({ validateBeforeSave: false });
-
-        user.password = undefined;
-        user.refreshToken = undefined;
-
-        return res.json({
-          success: true,
-          data: { authenticated: true, user },
-        });
-      }
-    } catch {
-      // Anonymous response below is intentional for expired sessions.
-    }
-  }
-
-  clearAuthCookies(res);
-  return res.json({
-    success: true,
-    data: { authenticated: false, user: null },
-  });
+  res.json({ success: true, data: { authenticated: Boolean(user), user } });
 });
 
 /**
@@ -151,6 +94,8 @@ export const register = catchAsync(async (req, res, next) => {
     return next(new AppError('Please provide valid name, email, and password strings', 400));
   }
 
+  validateNewPassword(password);
+
   // Check if user exists
   const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
   if (existingUser) {
@@ -161,12 +106,7 @@ export const register = catchAsync(async (req, res, next) => {
 
   const user = await User.create({ name, email, password, username });
 
-  const { refreshToken } = generateTokens(user, res);
-
-  // Store refresh token
-  user.refreshToken = refreshToken;
-  await user.save({ validateBeforeSave: false });
-
+  await issueSession(user, req, res);
 
   res.status(201).json({
     success: true,
@@ -184,7 +124,7 @@ export const login = catchAsync(async (req, res, next) => {
 
   if (
     !idValue ||
-    !password ||
+    !password || password.length > 1024 ||
     typeof idValue !== 'string' ||
     typeof password !== 'string'
   ) {
@@ -199,16 +139,9 @@ export const login = catchAsync(async (req, res, next) => {
       : { username: queryIdentifier.toLowerCase() }
   ).select('+password');
   if (!user) {
+    await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+    auditSession(req, 'login', 'denied');
     return next(new AppError('Invalid email or password', 401));
-  }
-
-  // Prevent deleted accounts from logging in
-  if (user.isDeleted || user.isActive === false) {
-    return next(new AppError('This account has been deleted or deactivated.', 403));
-  }
-
-  if (user.isSuspended) {
-    return next(new AppError(`Account is suspended: ${user.suspensionReason || 'Please contact platform administration.'}`, 403));
   }
 
   // Account lockout protection against brute force
@@ -226,7 +159,17 @@ export const login = catchAsync(async (req, res, next) => {
     if (user.incrementLoginAttempts) {
       await user.incrementLoginAttempts();
     }
+    auditSession(req, 'login', 'denied');
     return next(new AppError('Invalid email or password', 401));
+  }
+
+  // Prevent deleted accounts from logging in
+  if (user.isDeleted || user.isActive === false) {
+    return next(new AppError('This account has been deleted or deactivated.', 403));
+  }
+
+  if (user.isSuspended) {
+    return next(new AppError(`Account is suspended: ${user.suspensionReason || 'Please contact platform administration.'}`, 403));
   }
 
   // Reset login attempts counter upon successful login
@@ -245,10 +188,8 @@ export const login = catchAsync(async (req, res, next) => {
     needsSave = true;
   }
 
-  const { refreshToken } = generateTokens(user, res);
-
-  user.refreshToken = refreshToken;
-  await user.save({ validateBeforeSave: false });
+  if (needsSave) await user.save({ validateBeforeSave: false });
+  await issueSession(user, req, res);
 
   // Remove password from response
   user.password = undefined;
@@ -264,73 +205,23 @@ export const login = catchAsync(async (req, res, next) => {
  * POST /api/auth/logout
  */
 export const logout = catchAsync(async (req, res) => {
-  // Invalidate all active tokens for this user by incrementing tokenVersion
-  if (req.user?._id) {
-    await User.findByIdAndUpdate(req.user._id, {
-      $inc: { tokenVersion: 1 },
-      $set: { refreshToken: null },
-    });
-  } else if (req.cookies?.refreshToken) {
-    try {
-      const decoded = jwt.verify(req.cookies.refreshToken, env.JWT_REFRESH_SECRET);
-      await User.findByIdAndUpdate(decoded.id, {
-        $inc: { tokenVersion: 1 },
-        $set: { refreshToken: null },
-      });
-    } catch {
-      // Ignored if expired
-    }
-  }
-
+  const userId = await endSession(req);
   clearAuthCookies(res);
-
-  res.json({
-    success: true,
-    message: 'Logged out successfully',
-  });
+  if (userId) auditSession(req, 'logout', 'revoked', userId);
+  res.json({ success: true, message: 'Logged out successfully' });
 });
 
 /**
  * POST /api/auth/refresh
  */
 export const refresh = catchAsync(async (req, res, next) => {
-  const token = req.cookies?.refreshToken;
-
-  if (!token) {
-    clearAuthCookies(res);
-    return next(new AppError('No refresh token', 401));
-  }
-
-  let decoded;
-  try {
-    decoded = jwt.verify(token, env.JWT_REFRESH_SECRET);
-  } catch {
-    clearAuthCookies(res);
+  const user = await rotateSession(req, res);
+  if (!user) {
+    // A stale response from another tab must not clear newly issued cookies.
+    auditSession(req, 'refresh', 'denied');
     return next(new AppError('Invalid refresh token', 401));
   }
-
-  const user = await User.findById(decoded.id).select('+refreshToken');
-
-  if (!user || user.isDeleted || user.isActive === false || user.isSuspended || user.refreshToken !== token) {
-    clearAuthCookies(res);
-    return next(new AppError('Invalid refresh token', 401));
-  }
-
-  // Session invalidation verification
-  if (decoded.tokenVersion !== undefined && user.tokenVersion !== undefined && decoded.tokenVersion !== user.tokenVersion) {
-    clearAuthCookies(res);
-    return next(new AppError('Session has been revoked or invalidated. Please log in again.', 401));
-  }
-
-  const { refreshToken: newRefreshToken } = generateTokens(user, res);
-
-  user.refreshToken = newRefreshToken;
-  await user.save({ validateBeforeSave: false });
-
-  res.json({
-    success: true,
-    message: 'Token refreshed',
-  });
+  res.json({ success: true, message: 'Token refreshed' });
 });
 
 /**
@@ -363,8 +254,22 @@ export const updateMe = catchAsync(async (req, res, next) => {
     return next(new AppError('No valid fields to update', 400));
   }
 
+  const preferencePatch = updates.preferences === undefined
+    ? null : preferenceUpdates(validatePreferences(updates.preferences));
+
+  // Preferences use atomic leaf updates: two tabs can change separate settings
+  // without replacing the entire preferences document with an older snapshot.
+  if (Object.keys(updates).every((key) => key === 'preferences')) {
+    const user = Object.keys(preferencePatch).length
+      ? await User.findByIdAndUpdate(req.user._id, { $set: preferencePatch }, { new: true, runValidators: true })
+      : await User.findById(req.user._id);
+    if (!user) return next(new AppError('User not found', 404));
+    return res.json({ success: true, message: 'Preferences updated', data: { user } });
+  }
+
   // Password change requires old password verification and confirmation
   if (updates.password !== undefined) {
+    validateNewPassword(updates.password);
     const oldPass = req.body.currentPassword || req.body.oldPassword;
     if (!oldPass) {
       return next(new AppError('Please enter your current (old) password first', 400));
@@ -374,7 +279,7 @@ export const updateMe = catchAsync(async (req, res, next) => {
     }
   }
 
-  const user = await User.findById(req.user._id).select('+password');
+  let user = await User.findById(req.user._id).select('+password');
   if (!user) return next(new AppError('User not found', 404));
 
   if (updates.password !== undefined) {
@@ -425,24 +330,54 @@ export const updateMe = catchAsync(async (req, res, next) => {
       .slice(0, 12);
   }
 
-  if (updates.preferences !== undefined && typeof updates.preferences === 'object') {
-    const existingPrefs = (user.preferences && typeof user.preferences.toObject === 'function')
-      ? user.preferences.toObject()
-      : (user.preferences || {});
-    user.preferences = { ...existingPrefs, ...updates.preferences };
-    user.markModified('preferences');
-  }
-
   if (updates.password !== undefined) {
+    const version = req.user.tokenVersion ?? 0;
+    user.$where = activeSessionFilter(user._id, version);
     user.password = updates.password;
+    user.tokenVersion = version + 1;
+    user.refreshToken = null;
   }
 
-  await user.save({ validateBeforeSave: true });
+  try {
+    await user.save({ validateBeforeSave: true });
+  } catch (error) {
+    if (updates.password !== undefined && error.name === 'DocumentNotFoundError') {
+      return next(new AppError('Session changed. Please sign in again.', 401));
+    }
+    throw error;
+  }
+  if (updates.password !== undefined) {
+    auditSession(req, 'password_change', 'revoked', user._id);
+    await issueSession(user, req, res);
+  }
+  if (preferencePatch && Object.keys(preferencePatch).length) {
+    user = await User.findByIdAndUpdate(user._id, { $set: preferencePatch }, { new: true, runValidators: true });
+  }
   // Ensure sensitive fields are not returned
   user.password = undefined;
   user.refreshToken = undefined;
 
   res.json({ success: true, message: 'Profile updated', data: { user } });
+});
+
+/** Revoke every older token while keeping the verified current browser signed in. */
+export const revokeOtherSessions = catchAsync(async (req, res, next) => {
+  const currentPassword = req.body?.currentPassword;
+  if (typeof currentPassword !== 'string' || !currentPassword) {
+    return next(new AppError('Current password is required', 400));
+  }
+  const user = await User.findById(req.user._id).select('+password');
+  if (!user || !(await user.comparePassword(currentPassword))) {
+    return next(new AppError('Incorrect current password', 400));
+  }
+  const version = req.user.tokenVersion ?? 0;
+  const refreshed = await User.findOneAndUpdate(activeSessionFilter(user._id, version), {
+    $set: { tokenVersion: version + 1, refreshToken: null },
+  }, { new: true });
+  if (!refreshed) return next(new AppError('Session changed. Please sign in again.', 401));
+  auditSession(req, 'session_revocation', 'revoked', refreshed._id);
+  await issueSession(refreshed, req, res);
+  res.json({ success: true, message: 'Other sessions signed out', data: { user: refreshed } });
 });
 
 export const deleteAccount = catchAsync(async (req, res, next) => {
@@ -482,7 +417,7 @@ export const deleteAccount = catchAsync(async (req, res, next) => {
     avatar: '',
     bio: '',
     refreshToken: null,
-    password: crypto.randomBytes(32).toString('hex'), // Invalidate password login completely
+    password: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
     followersCount: 0,
     followingCount: 0,
     userCode,

@@ -12,7 +12,8 @@ export default function QuestionWorkspace() {
   // Scroll to top when question changes
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollRef.current.querySelectorAll('.qf-media-player').forEach(player => player.pause());
+      scrollRef.current.scrollTo({ top: 0, behavior: 'auto' });
     }
   }, [currentIndex]);
 

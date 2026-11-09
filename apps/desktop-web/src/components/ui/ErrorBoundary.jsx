@@ -21,6 +21,10 @@ export default class ErrorBoundary extends Component {
   }
 
   handleRetry = () => {
+    if (/Failed to fetch dynamically imported module|Loading chunk .* failed|Importing a module script failed/i.test(this.state.error?.message || '')) {
+      window.location.reload();
+      return;
+    }
     this.setState({ hasError: false, error: null });
   };
 

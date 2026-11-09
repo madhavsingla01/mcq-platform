@@ -35,14 +35,12 @@ export const ChallengeService = {
   },
 
   /**
-   * Leaderboard with quarantine status.
-   * Returns quarantined: true with countdown if before deadline;
-   * returns ranked leaderboard array if deadline has passed.
+   * Competition standings and the signed-in viewer's submission receipt.
    * GET /api/v1/challenges/:idOrCode/leaderboard
    */
-  getLeaderboard: async (idOrCode) => {
-    const { data } = await api.get(`/challenges/${idOrCode}/leaderboard`);
-    return data?.data || { quarantined: true, leaderboard: [] };
+  getLeaderboard: async (idOrCode, signal) => {
+    const { data } = await api.get(`/challenges/${idOrCode}/leaderboard`, { signal });
+    return data.data;
   },
 
   /**

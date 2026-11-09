@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const conversationSchema = new mongoose.Schema(
   {
+    directKey: { type: String },
     participants: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -91,6 +92,7 @@ const conversationSchema = new mongoose.Schema(
 conversationSchema.index({ participants: 1 });
 conversationSchema.index({ participants: 1, lastMessageAt: -1 });
 conversationSchema.index({ lastMessageAt: -1 });
+conversationSchema.index({ directKey: 1 }, { unique: true, partialFilterExpression: { directKey: { $type: 'string' } } });
 
 const Conversation = mongoose.model('Conversation', conversationSchema);
 export default Conversation;

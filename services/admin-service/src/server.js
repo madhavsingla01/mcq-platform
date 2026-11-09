@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 /**
  * QuizFocus Admin Service
  * Microservice for platform operations, RBAC, content moderation,
@@ -9,7 +10,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import env from './config/env.js';
-import { connectDB } from './config/db.js';
+import { connectDB, getAuthDb, getQuizDb, getAttemptDb } from './config/db.js';
 import adminRoutes from './routes/admin.routes.js';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js';
 import AdminRole, { DEFAULT_ROLES } from './models/AdminRole.model.js';
@@ -38,9 +39,10 @@ if (env.isDev) {
 
 // Global Microservice Health Check
 app.get('/api/v1/health', (req, res) => {
-  res.json({
+  const healthy = [mongoose.connection, getAuthDb(), getQuizDb(), getAttemptDb()].every(db => db?.readyState === 1);
+  res.status(healthy ? 200 : 503).json({
     service: 'admin-service',
-    status: 'healthy',
+    status: healthy ? 'healthy' : 'degraded',
     port: env.PORT,
     timestamp: new Date().toISOString(),
   });

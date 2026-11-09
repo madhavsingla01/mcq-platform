@@ -4,6 +4,7 @@ import { Sun, Moon } from 'lucide-react';
 import { Button, Input } from '../../components/ui';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
+import { authRedirect } from '../../utils/authRedirect';
 import './Register.css';
 
 export default function Register() {
@@ -17,7 +18,7 @@ export default function Register() {
   const { register } = useAuthStore();
   const { theme, setTheme } = useUIStore();
 
-  const redirectTo = searchParams.get('redirect') || '/dashboard';
+  const redirectTo = authRedirect(searchParams.get('redirect'));
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -56,13 +57,12 @@ export default function Register() {
 
       <div className="auth-card-container">
         <div className="auth-standalone-card">
-          <h1 className="auth-card-title">Create account</h1>
-
-          {error && <div className="auth-card-error">{error}</div>}
+          {error && <div className="auth-card-error" role="alert">{error}</div>}
 
           <form onSubmit={handleSubmit} className="auth-card-form">
             <Input
               label="Full Name"
+              name="name"
               type="text"
               className="auth-input"
               autoComplete="name"
@@ -74,6 +74,7 @@ export default function Register() {
 
             <Input
               label="Email Address"
+              name="email"
               type="email"
               className="auth-input"
               autoComplete="email"
@@ -85,6 +86,7 @@ export default function Register() {
 
             <Input
               label="Password"
+              name="password"
               type="password"
               className="auth-input"
               autoComplete="new-password"

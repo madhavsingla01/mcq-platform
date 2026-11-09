@@ -1,18 +1,14 @@
+import { validateQuestionMedia } from '../services/questionMedia.service.js';
+import { catchAsync } from '../middleware/error.middleware.js';
 import { Router } from 'express';
 import {
   generateQuiz,
   getQuiz,
   getQuizByCode,
   getQuizQuestions,
-  startAttempt,
-  submitAttempt,
-  getResult,
-  getResultByAttemptId,
   getMyQuizzes,
   getQuizAnalytics,
   getQuizAttempts,
-  syncAttempt,
-  getActiveAttempt,
   deleteQuiz,
   saveManualDraft,
   updateQuiz,
@@ -35,6 +31,11 @@ const router = Router();
 router.post('/generate', optionalAuth, generateQuiz);
 router.post('/challenge', protect, createChallenge);
 router.post('/manual', protect, saveManualDraft);
+router.post('/media-validation', protect, catchAsync(async (req, res) => {
+  if (!Array.isArray(req.body.questions)) return res.status(400).json({ success: false, message: 'questions array is required' });
+  const questions = await validateQuestionMedia(req.body.questions, req, { draft: req.body.draft === true });
+  res.json({ success: true, data: { questions } });
+}));
 router.get('/my', protect, getMyQuizzes);
 
 // Dedicated Draft Management Endpoints
@@ -48,7 +49,6 @@ router.delete('/drafts/:id', validateObjectId('id'), protect, deleteDraft);
 // Lookup quiz directly by symbolic code (e.g., !QZ-XXXXXX, QZ-XXXXXX)
 router.get('/code/:quizCode', optionalAuth, getQuizByCode);
 
-router.get('/attempts/:attemptId/result', validateObjectId('attemptId'), optionalAuth, getResultByAttemptId);
 router.get('/:id', validateQuizIdentifier('id'), optionalAuth, getQuiz);
 router.get('/:id/leaderboard', validateQuizIdentifier('id'), optionalAuth, getChallengeLeaderboard);
 router.put('/:id', validateQuizIdentifier('id'), protect, updateQuiz);
@@ -58,11 +58,5 @@ router.delete('/:id', validateQuizIdentifier('id'), protect, deleteQuiz);
 router.get('/:id/analytics', validateQuizIdentifier('id'), optionalAuth, getQuizAnalytics);
 router.get('/:id/attempts', validateQuizIdentifier('id'), protect, getQuizAttempts);
 router.get('/:id/questions', validateQuizIdentifier('id'), optionalAuth, getQuizQuestions);
-router.get('/:id/attempt/active', validateQuizIdentifier('id'), optionalAuth, getActiveAttempt);
-router.post('/:id/attempt', validateQuizIdentifier('id'), optionalAuth, startAttempt);
-router.put('/:id/attempt/:attemptId', validateQuizIdentifier('id'), validateObjectId('attemptId'), optionalAuth, submitAttempt);
-router.put('/:id/attempt/:attemptId/sync-progress', validateQuizIdentifier('id'), validateObjectId('attemptId'), optionalAuth, syncAttempt);
-router.post('/:id/attempt/:attemptId/sync-progress', validateQuizIdentifier('id'), validateObjectId('attemptId'), optionalAuth, syncAttempt);
-router.get('/:id/attempt/:attemptId/result', validateQuizIdentifier('id'), validateObjectId('attemptId'), optionalAuth, getResult);
 
 export default router;

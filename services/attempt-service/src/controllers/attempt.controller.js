@@ -1,3 +1,4 @@
+import { createQuestionSnapshot, questionsForAttempt } from '../services/questionSnapshot.service.js';
 import crypto from 'crypto';
 import Quiz from '../models/Quiz.model.js';
 import Question from '../models/Question.model.js';
@@ -31,6 +32,8 @@ import memoryCache from '../services/cache/cache.service.js';
 import env from '../config/env.js';
 import { RankingService } from '../domain/services/RankingService.js';
 
+const resultsSealed = quiz => Boolean(quiz?.isChallenge && !(quiz.deadlineAt && new Date(quiz.deadlineAt) <= new Date()));
+
 const syncQuizAggregateFields = async (quizId) => {
   const [aggregate] = await Attempt.aggregate([
     {
@@ -55,11 +58,17 @@ const syncQuizAggregateFields = async (quizId) => {
   });
 };
 
-const getQuizQuestionsSorted = (quizId) => {
-  return Question.find({ quizId })
-    .select('-metadata -createdAt -updatedAt -__v')
-    .sort({ orderIndex: 1, questionNumber: 1 });
-};
+const getQuizQuestionsSorted = questionsForAttempt;
+
+const participantMedia = clips => (clips || []).map(clip => ({
+  kind: clip.kind, assetId: clip.assetId, label: clip.label, transcript: clip.transcript,
+  language: clip.language, purpose: clip.purpose, signedLanguage: clip.signedLanguage,
+  captionAssetId: clip.captionAssetId, captionLanguage: clip.captionLanguage,
+  describedAssetId: clip.describedAssetId, describedCaptionAssetId: clip.describedCaptionAssetId,
+}));
+const withParticipantMedia = item => item.accessibilityMedia?.length
+  ? { ...item, accessibilityMedia: participantMedia(item.accessibilityMedia) }
+  : item;
 
 export const sanitizeQuestionsForClient = (questions, { isOwner = false, isChallenge = false, deadlinePassed = false } = {}) => {
   const shouldRevealAnswers = isChallenge ? Boolean(deadlinePassed) : Boolean(isOwner);
@@ -77,20 +86,21 @@ export const sanitizeQuestionsForClient = (questions, { isOwner = false, isChall
       safeQuestion.options = safeQuestion.options.map((opt) => {
         const optObj = typeof opt?.toObject === 'function' ? opt.toObject() : { ...opt };
         delete optObj.isCorrect;
-        return optObj;
+        return withParticipantMedia(optObj);
       });
     }
 
-    return safeQuestion;
+    return withParticipantMedia(safeQuestion);
   });
 };
 
-export const sanitizeAttemptForClient = (attemptDoc, { isOwner = false, isChallenge = false, deadlinePassed = false } = {}) => {
+export const sanitizeAttemptForClient = (attemptDoc, { isChallenge = false, deadlinePassed = false, revealAnswers = false } = {}) => {
   if (!attemptDoc) return null;
   const attempt = typeof attemptDoc?.toObject === 'function' ? attemptDoc.toObject() : { ...attemptDoc };
+  delete attempt.questionSnapshot;
+  delete attempt.sessionId;
   const isCompleted = attempt.status === 'completed';
-  const revealChallengeResults = isChallenge && deadlinePassed;
-  const canRevealFullAnswers = isChallenge ? revealChallengeResults : isCompleted;
+  const canRevealFullAnswers = revealAnswers && (isChallenge ? deadlinePassed : isCompleted);
 
   if (Array.isArray(attempt.answers)) {
     attempt.answers = attempt.answers.map((ans) => {
@@ -100,10 +110,8 @@ export const sanitizeAttemptForClient = (attemptDoc, { isOwner = false, isChalle
         delete sanitized.correctOptionId;
       }
 
-      if (isChallenge && !deadlinePassed) {
-        sanitized.isCorrect = false;
-        sanitized.marksAwarded = 0;
-      } else if (!isCompleted && !attempt.instantFeedback) {
+      const instantFeedback = !isChallenge && !isCompleted && attempt.instantFeedback && sanitized.isLocked;
+      if (!canRevealFullAnswers && !instantFeedback) {
         sanitized.isCorrect = false;
         sanitized.marksAwarded = 0;
       }
@@ -722,7 +730,10 @@ export const startAttempt = catchAsync(async (req, res, next) => {
     });
   }
 
-  const questions = await getQuizQuestionsSorted(quiz._id);
+  const questions = createQuestionSnapshot(await getQuizQuestionsSorted(quiz._id), {
+    ...(quiz.settings?.toObject?.() ?? quiz.settings),
+    shuffleQuestions: quiz.settings?.shuffleQuestions === true || (!isChallenge && req.user?.preferences?.shuffleQuestions === true),
+  });
   const isQuickMode = !isChallenge && quiz.quickModeEnabled !== false && req.body.isQuickMode === true;
   const instantFeedback = !isChallenge && (quiz.settings?.instantFeedback === true || req.body.instantFeedback === true || isQuickMode);
 
@@ -754,6 +765,7 @@ export const startAttempt = catchAsync(async (req, res, next) => {
     quizId: quiz._id,
     userId: req.user?._id || null,
     sessionId: guestSessionId,
+    questionSnapshot: questions,
     answers: buildInitialAnswerStates(questions),
     totalQuestions: quiz.questionCount,
     totalMarks: quiz.totalMarks || getQuizTotalMarks(questions),
@@ -808,7 +820,7 @@ export const syncAttempt = catchAsync(async (req, res, next) => {
   if (attempt.status !== 'in_progress') {
     return next(new AppError('Attempt is no longer in progress', 400));
   }
-  const questions = await getQuizQuestionsSorted(attempt.quizId);
+  const questions = await getQuizQuestionsSorted(attempt.quizId, attempt);
   const { flags, answerChanges } = mergeAttemptTrackingPayload({
     attempt,
     questions,
@@ -848,7 +860,7 @@ export const submitAttempt = catchAsync(async (req, res, next) => {
   }
 
   assertAttemptWriteAccess(attempt, req);
-  const questions = await getQuizQuestionsSorted(attempt.quizId);
+  const questions = await getQuizQuestionsSorted(attempt.quizId, attempt);
 
   if (attempt.status === 'completed') {
     if (!attempt.analytics?.responseSpeed) {
@@ -901,7 +913,7 @@ export const submitAttempt = catchAsync(async (req, res, next) => {
   
   await syncQuizAggregateFields(attempt.quizId);
   const quiz = await Quiz.findById(attempt.quizId).select('uploader title visibility isPublic isChallenge deadlineAt');
-  if (req.user?._id && quiz && (quiz.visibility === 'public' || quiz.isPublic === true)) {
+  if (req.user?._id && quiz && !resultsSealed(quiz) && (quiz.visibility === 'public' || quiz.isPublic === true)) {
     await recordActivity({
       actorId: req.user._id,
       verb: 'quiz_attempted',
@@ -944,16 +956,17 @@ const getAttemptResultPayload = async ({ attemptId, req }) => {
     throw new AppError('Attempt not found', 404);
   }
 
+  if (!attempt.quizId) throw new AppError('Quiz not found', 404);
   assertAttemptReadAccess({
     attempt,
     req,
-    allowUploader: true,
+    allowUploader: !resultsSealed(attempt.quizId),
     quizUploaderId: attempt.quizId?.uploader,
   });
 
-  const questions = await getQuizQuestionsSorted(attempt.quizId?._id || attempt.quizId);
+  const questions = await getQuizQuestionsSorted(attempt.quizId?._id || attempt.quizId, attempt);
 
-  if (!attempt.analytics?.responseSpeed) {
+  if (attempt.status === 'completed' && !attempt.analytics?.responseSpeed) {
     attempt.analytics = buildAttemptAnalytics({ attempt, questions });
   }
 
@@ -963,26 +976,23 @@ const getAttemptResultPayload = async ({ attemptId, req }) => {
 
   const canReviewAnswers = isChallenge
     ? deadlinePassed
-    : (attempt.quizId?.settings?.allowReview !== false || isOwner);
+    : (attempt.status === 'completed' && (attempt.quizId?.settings?.allowReview !== false || isOwner));
 
   const hideExplanations = isChallenge
     ? !deadlinePassed
     : (attempt.quizId?.settings?.showExplanation === false && !isOwner);
 
-  const sanitizedQuestions = canReviewAnswers
-    ? (hideExplanations
-        ? questions.map((q) => {
-            const obj = q.toObject ? q.toObject() : { ...q };
-            obj.explanation = '';
-            return obj;
-          })
-        : questions)
-    : [];
+  const sanitizedQuestions = canReviewAnswers ? questions.map(q => {
+    const question = withParticipantMedia(q.toObject ? q.toObject() : { ...q });
+    question.options = question.options?.map(withParticipantMedia);
+    if (hideExplanations) question.explanation = '';
+    return question;
+  }) : [];
 
   const sanitizedAttempt = sanitizeAttemptForClient(attempt, {
-    isOwner,
     isChallenge,
     deadlinePassed,
+    revealAnswers: canReviewAnswers,
   });
 
   return {
@@ -1239,17 +1249,19 @@ export const saveManualDraft = catchAsync(async (req, res, next) => {
   if (!effectiveDraft) {
     const unsupportedQuestion = questions.find((q) => {
       const questionType = q.questionType || q.type || 'multiple_choice';
-      return !['multiple_choice', 'dropdown'].includes(questionType);
+      return !['multiple_choice', 'dropdown', 'checkboxes', 'short_answer'].includes(questionType);
     });
 
     if (unsupportedQuestion) {
-      return next(new AppError('Only multiple choice and dropdown questions can be published in quiz mode right now.', 400));
+      return next(new AppError('Choose a supported quiz question type.', 400));
     }
 
     const questionMissingAnswer = questions.find((q) => {
       const options = Array.isArray(q.options) ? q.options : [];
       const hasMarkedAnswer = options.some((option) => option.isCorrect === true);
-      return !q.correctAnswer && !hasMarkedAnswer;
+      const answer = q.correctAnswer ?? q.correctAnswers;
+      const hasAnswer = Array.isArray(answer) ? answer.length > 0 : Boolean(String(answer ?? '').trim());
+      return !hasAnswer && !hasMarkedAnswer;
     });
 
     if (questionMissingAnswer) {
@@ -1511,7 +1523,7 @@ export const answerAttempt = catchAsync(async (req, res) => {
     throw new AppError('questionId is required', 400);
   }
 
-  const questions = await getQuizQuestionsSorted(attempt.quizId);
+  const questions = await getQuizQuestionsSorted(attempt.quizId, attempt);
   const question = questions.find((item) => toObjectIdString(item._id) === toObjectIdString(questionId));
 
   if (!question) {
@@ -1593,7 +1605,7 @@ export const syncAttemptTime = catchAsync(async (req, res) => {
     throw new AppError('Attempt is no longer in progress', 400);
   }
 
-  const questions = await getQuizQuestionsSorted(attempt.quizId);
+  const questions = await getQuizQuestionsSorted(attempt.quizId, attempt);
   const { flags, answerChanges } = mergeAttemptTrackingPayload({
     attempt,
     questions,
@@ -1648,7 +1660,9 @@ export const getInProgressAttempts = catchAsync(async (req, res) => {
   res.status(200).json({
     success: true,
     data: {
-      attempts: attempts.filter(a => a.quizId),
+      attempts: attempts.filter(a => a.quizId).map(attempt => sanitizeAttemptForClient(attempt, {
+        isChallenge: attempt.quizId.isChallenge,
+      })),
     },
   });
 });
@@ -1671,6 +1685,7 @@ export const getUserAttempts = catchAsync(async (req, res) => {
     filter.userId = req.user._id;
   } else if (guestSessionId) {
     filter.sessionId = guestSessionId;
+    filter.userId = null;
   } else {
     return res.status(200).json({
       success: true,
@@ -1685,18 +1700,41 @@ export const getUserAttempts = catchAsync(async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate('quizId', 'title questionCount settings isChallenge')
+      .populate('quizId', 'title questionCount settings isChallenge deadlineAt')
       .lean(),
   ]);
 
   res.status(200).json({
     success: true,
-    data: attempts,
+    data: attempts.map(attempt => sanitizeAttemptForClient(attempt, {
+      isChallenge: !attempt.quizId || attempt.quizId.isChallenge,
+      deadlinePassed: attempt.quizId?.deadlineAt ? Date.now() >= new Date(attempt.quizId.deadlineAt).getTime() : false,
+    })),
     pagination: {
       total,
       page,
       pages: Math.ceil(total / limit),
       limit,
+    },
+  });
+});
+
+export const getSubmissionCalendar = catchAsync(async (req, res) => {
+  const end = new Date();
+  end.setUTCHours(0, 0, 0, 0);
+  const start = new Date(end);
+  start.setUTCDate(start.getUTCDate() - 363);
+  const days = await Attempt.aggregate([
+    { $match: { userId: req.user._id, status: 'completed', completedAt: { $gte: start, $lte: new Date() } } },
+    { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$completedAt', timezone: 'UTC' } }, count: { $sum: 1 } } },
+    { $sort: { _id: 1 } },
+  ]);
+  res.set('Cache-Control', 'private, no-store').json({
+    success: true,
+    data: {
+      start: start.toISOString().slice(0, 10),
+      end: end.toISOString().slice(0, 10),
+      days: days.map(({ _id, count }) => ({ date: _id, count })),
     },
   });
 });
@@ -1709,7 +1747,7 @@ export const submitAttemptById = catchAsync(async (req, res) => {
   }
 
   assertAttemptWriteAccess(attempt, req);
-  const questions = await getQuizQuestionsSorted(attempt.quizId);
+  const questions = await getQuizQuestionsSorted(attempt.quizId, attempt);
 
   let quiz = null;
   if (attempt.status !== 'completed') {
@@ -1724,7 +1762,7 @@ export const submitAttemptById = catchAsync(async (req, res) => {
     
     await syncQuizAggregateFields(attempt.quizId);
     quiz = await Quiz.findById(attempt.quizId).select('uploader visibility isPublic isChallenge deadlineAt');
-    if (req.user?._id && quiz && (quiz.visibility === 'public' || quiz.isPublic === true)) {
+    if (req.user?._id && quiz && !resultsSealed(quiz) && (quiz.visibility === 'public' || quiz.isPublic === true)) {
       await recordActivity({
         actorId: req.user._id,
         verb: 'quiz_attempted',
@@ -1772,10 +1810,11 @@ export const getAttemptById = catchAsync(async (req, res) => {
     throw new AppError('Attempt not found', 404);
   }
 
+  if (!attempt.quizId) throw new AppError('Quiz not found', 404);
   assertAttemptReadAccess({
     attempt,
     req,
-    allowUploader: true,
+    allowUploader: !resultsSealed(attempt.quizId),
     quizUploaderId: attempt.quizId?.uploader,
   });
 
@@ -2079,4 +2118,15 @@ export const getChallengeLeaderboard = catchAsync(async (req, res, next) => {
     success: true,
     data: payload,
   });
+});
+
+export const getAttemptQuestions = catchAsync(async (req, res) => {
+  const attempt = await Attempt.findById(req.params.id);
+  if (!attempt) throw new AppError('Attempt not found', 404);
+  assertAttemptReadAccess({ attempt, req, allowUploader: false });
+  const quiz = await Quiz.findById(attempt.quizId);
+  if (!quiz) throw new AppError('Quiz not found', 404);
+  if (quiz.isRestricted && String(quiz.uploader) !== String(req.user?._id)) throw new AppError('Quiz is restricted', 403);
+  const questions = await questionsForAttempt(attempt.quizId, attempt);
+  res.json({ success: true, data: { questions: sanitizeQuestionsForClient(questions), contentRevision: attempt.contentRevision || 1 } });
 });

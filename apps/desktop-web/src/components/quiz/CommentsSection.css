@@ -55,7 +55,7 @@
   color: var(--color-text);
   font-size: 14px;
   outline: none;
-  transition: all 0.15s ease;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
 .new-comment-input:focus {
@@ -75,12 +75,20 @@
   font-size: 13px;
   font-weight: 650;
   cursor: pointer;
-  transition: all 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease;
 }
 
-.btn-submit-comment:hover:not(:disabled) {
-  background: var(--color-primary-hover);
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .btn-submit-comment:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+    transform: translateY(-1px);
+  }
+}
+
+.btn-submit-comment:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .btn-submit-comment:disabled {
@@ -184,10 +192,13 @@
   font-weight: 700;
   color: var(--color-text);
   text-decoration: none;
+  transition: color 140ms ease;
 }
 
-.comment-author-link:hover {
-  color: var(--color-primary);
+@media (hover: hover) and (pointer: fine) {
+  .comment-author-link:hover {
+    color: var(--color-primary);
+  }
 }
 
 .comment-handle {
@@ -237,17 +248,25 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), color 140ms ease, background-color 140ms ease;
 }
 
-.btn-comment-action:hover {
-  color: var(--color-text);
-  background: var(--color-surface-alt);
+.btn-comment-action:active {
+  transform: scale(0.97);
 }
 
-.btn-comment-action.text-danger:hover {
-  color: #EF4444;
-  background: rgba(239, 68, 68, 0.12);
+@media (hover: hover) and (pointer: fine) {
+  .btn-comment-action:hover {
+    color: var(--color-text);
+    background: var(--color-surface-alt);
+  }
+
+  .btn-comment-action.text-danger:hover {
+    color: #EF4444;
+    background: rgba(239, 68, 68, 0.12);
+  }
 }
 
 .comment-body {
@@ -280,20 +299,28 @@
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.12s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), color 140ms ease, background-color 140ms ease;
 }
 
-.comment-pill-action:hover {
-  color: var(--color-text);
-  background: var(--color-surface-alt);
+.comment-pill-action:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .comment-pill-action:hover {
+    color: var(--color-text);
+    background: var(--color-surface-alt);
+  }
+
+  .comment-pill-action.like.active:hover {
+    background: rgba(255, 69, 0, 0.1);
+  }
 }
 
 .comment-pill-action.like.active {
   color: #FF4500;
-}
-
-.comment-pill-action.like.active:hover {
-  background: rgba(255, 69, 0, 0.1);
 }
 
 /* Inline reply box */
@@ -344,11 +371,20 @@
   align-items: center;
   justify-content: center;
   border-radius: 4px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), color 140ms ease, background-color 140ms ease;
 }
 
-.btn-cancel-reply-x:hover {
-  color: var(--color-text);
-  background: var(--color-surface);
+.btn-cancel-reply-x:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-cancel-reply-x:hover {
+    color: var(--color-text);
+    background: var(--color-surface);
+  }
 }
 
 .inline-reply-input-row {
@@ -383,11 +419,19 @@
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease;
 }
 
-.btn-submit-reply:hover:not(:disabled) {
-  background: var(--color-primary-hover);
+.btn-submit-reply:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-submit-reply:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+  }
 }
 
 .btn-submit-reply:disabled {
@@ -416,10 +460,19 @@
   cursor: pointer;
   padding: 4px 0;
   align-self: flex-start;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), opacity 140ms ease;
 }
 
-.btn-toggle-thread:hover {
-  text-decoration: underline;
+.btn-toggle-thread:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-toggle-thread:hover {
+    text-decoration: underline;
+  }
 }
 
 .replies-nested-list {

@@ -7,13 +7,15 @@ import mongoose from 'mongoose';
 
 const optionSchema = new mongoose.Schema(
   {
+    optionId: { type: String, default: () => new mongoose.Types.ObjectId().toHexString() },
+    accessibilityMedia: { type: [mongoose.Schema.Types.Mixed], default: [] },
     label: {
       type: String,
       required: true, // A, B, C, D...
     },
     text: {
       type: String,
-      required: true,
+      required: function () { return !this.accessibilityMedia?.length; },
     },
     isCorrect: {
       type: Boolean,
@@ -26,6 +28,7 @@ const optionSchema = new mongoose.Schema(
 
 const questionSchema = new mongoose.Schema(
   {
+    accessibilityMedia: { type: [mongoose.Schema.Types.Mixed], default: [] },
     quizId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Quiz',
@@ -38,7 +41,7 @@ const questionSchema = new mongoose.Schema(
     },
     questionText: {
       type: String,
-      required: [true, 'Question text is required'],
+      required: function () { return !this.accessibilityMedia?.length; },
       trim: true,
     },
     questionType: {

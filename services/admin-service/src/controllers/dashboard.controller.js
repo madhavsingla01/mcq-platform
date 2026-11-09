@@ -2,6 +2,7 @@ import { getAuthDb, getQuizDb, getAttemptDb } from '../config/db.js';
 import ModerationReport from '../models/ModerationReport.model.js';
 import AdminAuditLog from '../models/AdminAuditLog.model.js';
 import { catchAsync } from '../middleware/error.middleware.js';
+import { hasAdminPermission } from '../middleware/auth.middleware.js';
 
 export const getDashboardOverview = catchAsync(async (req, res) => {
   const authDb = getAuthDb();
@@ -42,7 +43,8 @@ export const getDashboardOverview = catchAsync(async (req, res) => {
           : attemptsCollection.countDocuments({}))
       : 0,
     ModerationReport.countDocuments({ status: { $in: ['pending', 'in_review'] } }),
-    AdminAuditLog.find({}).sort({ createdAt: -1 }).limit(8).lean(),
+    hasAdminPermission(req.adminUser, 'view_audit_logs')
+      ? AdminAuditLog.find({}).sort({ createdAt: -1 }).limit(8).lean() : [],
   ]);
 
   // Aggregation: Last 7 days user registrations

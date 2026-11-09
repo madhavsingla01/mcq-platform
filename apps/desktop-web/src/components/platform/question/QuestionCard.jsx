@@ -1,10 +1,12 @@
-import { memo, useMemo } from 'react';
+import AccessibleMedia from '../../media/AccessibleMedia';
+import { memo, useMemo, useEffect, useRef, useId, useState } from 'react';
 import { useQuizStore } from '../../../store/quizStore';
 import { useSettingsStore } from '../../../store/settingsStore';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import OptionCard from '../options/OptionCard';
+import { Button } from '../../ui';
 import 'katex/dist/katex.min.css';
 import { CheckCircle2, XCircle } from 'lucide-react';
 
@@ -20,6 +22,11 @@ const MarkdownView = memo(function MarkdownView({ content, className = '' }) {
 });
 
 function QuestionCard({ question, questionNumber }) {
+  const headingRef = useRef(null), headingId = useId();
+  const advanceTimer = useRef(null);
+  const attemptId = useQuizStore(state => state.attemptId);
+  useEffect(() => { headingRef.current?.focus({ preventScroll: true }); }, [question._id]);
+  useEffect(() => () => clearTimeout(advanceTimer.current), [question._id]);
   const answers = useQuizStore((state) => state.answers);
   const selectAnswer = useQuizStore((state) => state.selectAnswer);
   const instantFeedback = useQuizStore((state) => state.instantFeedback);
@@ -31,18 +38,23 @@ function QuestionCard({ question, questionNumber }) {
   const answerState = answers[question._id] || {};
   const selectedAnswer = answerState.selectedAnswer;
   const isLocked = answerState.isLocked;
+  const multiple = question.questionType === 'checkboxes';
+  const shortAnswer = question.questionType === 'short_answer';
+  const dropdown = question.questionType === 'dropdown';
+  const [pendingAnswer, setPendingAnswer] = useState(selectedAnswer || '');
+  useEffect(() => setPendingAnswer(selectedAnswer || ''), [question._id, selectedAnswer]);
 
   const options = useMemo(() => Array.isArray(question.options) ? question.options : [], [question.options]);
   const correctAnswer = question.correctAnswer;
   const showExplanation = quiz?.settings?.showExplanation !== false;
 
-  const isCorrectSelection = Boolean(selectedAnswer) && selectedAnswer === correctAnswer;
-  const shouldRevealFeedback = instantFeedback && isLocked && Boolean(selectedAnswer);
+  const isCorrectSelection = answerState.feedbackCorrect === true;
+  const shouldRevealFeedback = instantFeedback && isLocked && typeof answerState.feedbackCorrect === 'boolean';
 
-  const handleSelect = (label) => {
-    if (!isLocked) {
-      selectAnswer(question._id, label);
-      if (localStorage.getItem('mcq.sound.enabled') !== 'false') {
+  const saveAnswer = (value) => {
+    if (!isLocked && value) {
+      selectAnswer(question._id, value);
+      if (useSettingsStore.getState().soundCues === true) {
         try {
           const AudioContext = window.AudioContext || window.webkitAudioContext;
           if (AudioContext) {
@@ -57,14 +69,27 @@ function QuestionCard({ question, questionNumber }) {
             gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
             osc.start();
             osc.stop(ctx.currentTime + 0.08);
+            osc.onended = () => { ctx.close().catch(() => {}); };
           }
         } catch (_) {}
       }
-      if (localStorage.getItem('mcq.quiz.autoAdvance') === 'true') {
-        setTimeout(() => {
-          useQuizStore.getState().nextQuestion?.();
+      if (useSettingsStore.getState().autoAdvance) {
+        clearTimeout(advanceTimer.current);
+        advanceTimer.current = setTimeout(() => {
+          if (useSettingsStore.getState().autoAdvance) useQuizStore.getState().nextQuestion();
         }, 350);
       }
+    }
+  };
+
+  const handleSelect = (optionId) => {
+    const option = options.find(item => (item.optionId || item._id || item.label) === optionId);
+    if (isLocked || !option) return;
+    if (multiple) {
+      const labels = pendingAnswer ? pendingAnswer.split(',') : [];
+      setPendingAnswer((labels.includes(option.label) ? labels.filter(label => label !== option.label) : [...labels, option.label]).sort().join(','));
+    } else {
+      saveAnswer(option.label);
     }
   };
 
@@ -80,10 +105,12 @@ function QuestionCard({ question, questionNumber }) {
   };
 
   return (
-    <div className={`flex flex-col ${spacingClasses[density] || 'gap-6'} animate-fade-in`}>
+    <section aria-labelledby={headingId} className={`flex flex-col ${spacingClasses[density] || 'gap-6'} animate-fade-in`}>
+      <h2 id={headingId} ref={headingRef} tabIndex={-1} className="qf-question-heading">Question {questionNumber}</h2>
       {/* Header / Question Text */}
-      <div className="flex items-start gap-3.5">
+      {question.questionText && <div className="flex items-start gap-3.5">
         <span
+          aria-hidden="true"
           className={`font-black mt-0.5 ${fontClasses[fontSize] || 'text-lg'}`}
           style={{
             color: 'var(--color-primary, #FF4500)',
@@ -102,24 +129,47 @@ function QuestionCard({ question, questionNumber }) {
         >
           <MarkdownView content={question.questionText} />
         </div>
-      </div>
+      </div>}
 
-      {/* Options List */}
-      <div className={`flex flex-col ${density === 'compact' ? 'gap-2.5' : 'gap-3'} mt-1`}>
-        {options.map((option, idx) => (
+      <AccessibleMedia clips={question.accessibilityMedia || []} text={question.questionText} quizId={quiz?._id} attemptId={attemptId} />
+      <p className="sr-only" role="status">{selectedAnswer ? (multiple || shortAnswer ? 'Answer saved.' : `Answer ${selectedAnswer} selected.`) : ''}</p>
+      {shortAnswer ? <label className="ws-written-answer">
+        Your answer
+        <input value={pendingAnswer} maxLength={1000} readOnly={isLocked}
+          onChange={event => setPendingAnswer(event.target.value)} />
+      </label> : dropdown ? <div className="ws-written-answer">
+        <label htmlFor={`${headingId}-answer`}>Choose one answer</label>
+        <select id={`${headingId}-answer`} value={selectedAnswer || ''} disabled={isLocked} onChange={event => saveAnswer(event.target.value)}>
+          <option value="" disabled>Select an answer</option>
+          {options.map(option => <option key={option.label} value={option.label}>
+            {option.label}. {option.text || option.accessibilityMedia?.[0]?.label || 'Media answer choice'}
+          </option>)}
+        </select>
+        {options.filter(option => option.accessibilityMedia?.length).map(option => <AccessibleMedia key={option.label}
+          clips={option.accessibilityMedia} text={option.text} quizId={quiz?._id} attemptId={attemptId} />)}
+      </div> : <fieldset className={`qf-answer-fieldset flex flex-col ${density === 'compact' ? 'gap-2.5' : 'gap-3'} mt-1`}>
+        <legend className={multiple ? '' : 'sr-only'}>{multiple ? 'Choose all that apply' : 'Choose one answer'}</legend>
+        {options.map(option => (
           <OptionCard
-            key={option.label}
+            key={option.optionId || option._id || option.label}
+            questionId={question._id} quizId={quiz?._id} attemptId={attemptId}
             option={option}
-            index={idx}
-            isSelected={selectedAnswer === option.label}
-            isCorrect={correctAnswer === option.label}
+            multiple={multiple}
+            isSelected={multiple ? pendingAnswer.split(',').includes(option.label) : selectedAnswer === option.label}
+            isCorrect={multiple ? correctAnswer?.includes(option.label) || (isCorrectSelection && selectedAnswer?.split(',').includes(option.label))
+              : correctAnswer === option.label || (isCorrectSelection && selectedAnswer === option.label)}
             shouldRevealFeedback={shouldRevealFeedback}
             isLocked={isLocked}
-            onSelect={() => handleSelect(option.label)}
+            onSelect={handleSelect}
             fontSize={fontSize}
           />
         ))}
-      </div>
+      </fieldset>}
+      {(shortAnswer || multiple) && !isLocked && <div className="ws-save-answer">
+        <Button type="button" variant="secondary" disabled={!pendingAnswer.trim() || pendingAnswer.trim() === selectedAnswer}
+          onClick={() => saveAnswer(pendingAnswer.trim())}>Save answer</Button>
+        {pendingAnswer.trim() !== (selectedAnswer || '') && <span>Save this answer before moving on.</span>}
+      </div>}
 
       {/* Instant Feedback & Explanation */}
       {shouldRevealFeedback && (
@@ -151,7 +201,7 @@ function QuestionCard({ question, questionNumber }) {
               >
                 {isCorrectSelection ? 'Correct Answer!' : 'Incorrect'}
               </h4>
-              {!isCorrectSelection && (
+              {!isCorrectSelection && correctAnswer && (
                 <p className="text-sm mb-3" style={{ color: 'var(--text-secondary, #818181)' }}>
                   The correct answer was <strong style={{ color: 'var(--success, #46D160)' }}>{correctAnswer}</strong>.
                 </p>
@@ -180,7 +230,7 @@ function QuestionCard({ question, questionNumber }) {
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }
 

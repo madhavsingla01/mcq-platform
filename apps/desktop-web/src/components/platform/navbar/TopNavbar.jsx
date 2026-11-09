@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import SubmitConfirmationModal from '../../quiz/SubmitConfirmationModal';
 import QuizTimer from '../../quiz/QuizTimer';
-import { CheckCircle, Settings } from 'lucide-react';
+import { CheckCircle, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import { useQuizStore } from '../../../store/quizStore';
 import { useSettingsStore } from '../../../store/settingsStore';
 import { getGuestSessionId } from '../../../utils/quizSession';
@@ -10,8 +10,8 @@ import { showCustomDialog, toast } from '../../ui';
 import './TopNavbar.css';
 
 export default function TopNavbar() {
-  const { questions, answers, submitAttempt, submitting, isSubmitted } = useQuizStore();
-  const { isDrawerOpen, toggleDrawer } = useSettingsStore();
+  const { questions, answers, submitAttempt, submitting, isSubmitted, currentIndex, nextQuestion, prevQuestion, quiz } = useQuizStore();
+  const { isDrawerOpen, toggleDrawer, timerVisibility } = useSettingsStore();
 
   const answeredCount = useMemo(
     () => questions.filter((q) => Boolean(answers[q._id]?.selectedAnswer)).length,
@@ -62,11 +62,13 @@ export default function TopNavbar() {
     <>
       <header className="ws-navbar-minimal">
         <div className="ws-nav-meta-minimal">
-          Question {(useQuizStore.getState().currentIndex || 0) + 1} of {questions.length}
+          {questions.length > 1 && <button type="button" aria-label="Previous question" onClick={prevQuestion} disabled={currentIndex === 0}><ChevronLeft size={18} /></button>}
+          <span>Question {currentIndex + 1} of {questions.length}</span>
+          {questions.length > 1 && <button type="button" aria-label="Next question" onClick={nextQuestion} disabled={currentIndex === questions.length - 1}><ChevronRight size={18} /></button>}
         </div>
 
         <div className="ws-nav-actions-minimal">
-          <QuizTimer compact onExpired={handleConfirmSubmit} />
+          <QuizTimer compact hidden={timerVisibility === 'hidden' && !quiz?.isChallenge} onExpired={handleConfirmSubmit} />
 
           <button
             className="ws-settings-btn"

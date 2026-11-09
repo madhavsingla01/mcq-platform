@@ -64,7 +64,7 @@
   -webkit-corner-shape: squircle;
   padding: 0 10px;
   height: 36px;
-  transition: all 0.15s ease;
+  transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
 }
 
 .settings-sidebar-search-wrap:focus-within {
@@ -231,13 +231,22 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), color 150ms ease, background-color 150ms ease;
 }
 
-.settings-breadcrumb-btn:hover {
+.settings-breadcrumb-btn:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-breadcrumb-btn:hover {
   color: #ffffff;
   background: rgba(255, 255, 255, 0.06);
 }
+}
+
 
 .settings-breadcrumb-sep {
   color: #475569;
@@ -280,14 +289,23 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), color 150ms ease, background-color 150ms ease, border-color 150ms ease;
 }
 
-.settings-nav-arrow-btn:hover:not(:disabled) {
+.settings-nav-arrow-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-nav-arrow-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.18);
 }
+}
+
 
 .settings-nav-arrow-btn:disabled {
   opacity: 0.3;
@@ -382,15 +400,24 @@
   color: #94a3b8;
   padding: 6px;
   border-radius: 8px;
-  transition: all 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), color 150ms var(--ease-out), background-color 150ms var(--ease-out);
   display: flex;
   align-items: center;
 }
 
-.settings-sidebar-profile-link:hover {
+.settings-sidebar-profile-link:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-sidebar-profile-link:hover {
   color: #FF4500;
   background: rgba(255, 69, 0, 0.1);
 }
+}
+
 
 /* Sidebar Navigation Items */
 .settings-sidebar-nav {
@@ -413,13 +440,22 @@
   font-weight: 600;
   cursor: pointer;
   text-align: left;
-  transition: all 0.18s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), color 150ms var(--ease-out), background-color 150ms var(--ease-out), border-color 150ms var(--ease-out);
 }
 
-.settings-nav-item:hover {
+.settings-nav-item:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-nav-item:hover {
   color: #ffffff;
   background: rgba(255, 255, 255, 0.05);
 }
+}
+
 
 .settings-nav-item.active {
   color: #ffffff;
@@ -437,13 +473,16 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: all 0.18s ease;
+  transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
 }
 
-.settings-nav-item:hover .settings-nav-item-icon-box {
+@media (hover: hover) and (pointer: fine) {
+  .settings-nav-item:hover .settings-nav-item-icon-box {
   background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
 }
+}
+
 
 .settings-nav-item.active .settings-nav-item-icon-box {
   background: #FF4500;
@@ -468,10 +507,13 @@
   transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
-.settings-nav-item:hover .settings-nav-chevron {
+@media (hover: hover) and (pointer: fine) {
+  .settings-nav-item:hover .settings-nav-chevron {
   opacity: 0.8;
   transform: translateX(2px);
 }
+}
+
 
 .settings-nav-item.active .settings-nav-chevron {
   opacity: 1;
@@ -560,10 +602,15 @@
   cursor: help;
 }
 
-.settings-info-button:hover,
 .settings-info-button:focus-visible {
   color: var(--color-text, #FFFFFF);
 }
+@media (hover: hover) and (pointer: fine) {
+  .settings-info-button:hover {
+  color: var(--color-text, #FFFFFF);
+}
+}
+
 
 .settings-info-button:focus-visible {
   outline: 2px solid var(--color-primary, #FF4500);
@@ -593,12 +640,19 @@
   transform: translate(-50%, 3px);
 }
 
-.settings-info-wrap:hover .settings-info-tooltip,
 .settings-info-wrap:focus-within .settings-info-tooltip {
   opacity: 1;
   visibility: visible;
   transform: translate(-50%, 0);
 }
+@media (hover: hover) and (pointer: fine) {
+  .settings-info-wrap:hover .settings-info-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+}
+
 
 .settings-section-desc {
   font-size: 13px;
@@ -768,9 +822,23 @@
 
 .settings-switch-input {
   position: absolute;
+  inset: 0;
+  z-index: 1;
   opacity: 0;
-  width: 0;
-  height: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: inherit;
+}
+
+.settings-switch-label {
+  position: relative;
+  min-height: 44px;
+}
+
+.settings-switch-input:focus-visible + .settings-switch-slider {
+  outline: 2px solid #FF4500;
+  outline-offset: 3px;
 }
 
 .settings-switch-slider {
@@ -781,7 +849,7 @@
   border-radius: 9999px;
   background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.2s var(--ease-out);
+  transition: background-color 200ms var(--ease-out), border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
 }
 
 .settings-switch-thumb {
@@ -830,13 +898,16 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23FF4500' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
-  transition: all 0.15s ease;
+  transition: border-color 150ms var(--ease-out), background-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
 }
 
-.settings-select-element:hover {
+@media (hover: hover) and (pointer: fine) {
+  .settings-select-element:hover {
   border-color: #3F3F46;
   background-color: #19191C;
 }
+}
+
 
 .settings-select-element:focus {
   outline: none;
@@ -877,7 +948,13 @@
   border-radius: 12px;
   cursor: pointer;
   text-align: left;
-  transition: all 0.18s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.settings-radio-card:active {
+  transform: scale(0.97);
 }
 
 .theme-mode-row .settings-radio-card {
@@ -894,10 +971,13 @@
   min-width: 0;
 }
 
-.settings-radio-card:hover {
+@media (hover: hover) and (pointer: fine) {
+  .settings-radio-card:hover {
   background: #19191C;
   border-color: #38383B;
 }
+}
+
 
 .settings-radio-card.selected {
   background: rgba(255, 69, 0, 0.08);
@@ -914,7 +994,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: all 0.15s ease;
+  transition: border-color 150ms var(--ease-out), background-color 150ms var(--ease-out);
 }
 
 .settings-radio-card.selected .settings-radio-indicator {
@@ -929,7 +1009,7 @@
   background: #FF4500;
   opacity: 0;
   transform: scale(0.5);
-  transition: all 0.15s ease;
+  transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out);
 }
 
 .settings-radio-card.selected .settings-radio-dot {
@@ -1076,10 +1156,13 @@
   transition: transform 0.28s var(--ease-out), opacity 0.25s ease;
 }
 
-.settings-banner-preview-wrap:hover .settings-banner-preview-img {
+@media (hover: hover) and (pointer: fine) {
+  .settings-banner-preview-wrap:hover .settings-banner-preview-img {
   transform: scale(1.02);
   opacity: 0.98;
 }
+}
+
 
 .settings-banner-fade {
   position: absolute;
@@ -1150,13 +1233,22 @@
   cursor: pointer;
   padding: 6px;
   border-radius: 6px;
-  transition: all 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), color 150ms var(--ease-out), background-color 150ms var(--ease-out);
 }
 
-.settings-link-delete-btn:hover {
+.settings-link-delete-btn:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-link-delete-btn:hover {
   color: #ef4444;
   background: rgba(239, 68, 68, 0.1);
 }
+}
+
 
 .settings-empty-links-hint {
   padding: 16px 0;
@@ -1178,15 +1270,24 @@
   border-radius: 8px !important;
   font-weight: 700 !important;
   box-shadow: 0 2px 8px rgba(255, 69, 0, 0.25) !important;
-  transition: all 0.18s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease !important;
 }
 
-.settings-save-btn:hover:not(:disabled) {
+.settings-save-btn:active:not(:disabled) {
+  transform: scale(0.97) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-save-btn:hover:not(:disabled) {
   background: #FF571A !important;
   border-color: #FF571A !important;
   box-shadow: 0 4px 16px rgba(255, 69, 0, 0.4) !important;
   transform: translateY(-1px);
 }
+}
+
 
 /* Activity Stats Grid */
 .settings-stats-grid {
@@ -1230,14 +1331,23 @@
   font-size: 12px;
   font-weight: 600;
   text-decoration: none;
-  transition: all 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out), border-color 150ms var(--ease-out), color 150ms var(--ease-out);
 }
 
-.settings-link-pill:hover {
+.settings-link-pill:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-link-pill:hover {
   background: rgba(255, 69, 0, 0.15);
   color: #FF4500;
   border-color: rgba(255, 69, 0, 0.3);
 }
+}
+
 
 /* Badges & Chips */
 .settings-badge-pill {
@@ -1306,6 +1416,13 @@
   font-weight: 700;
   cursor: pointer;
   text-align: left;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out);
+}
+
+.settings-faq-question-btn:active {
+  transform: scale(0.97);
 }
 
 .settings-faq-chevron {
@@ -1519,6 +1636,13 @@
     font-size: 12.5px;
     font-weight: 700;
     cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out);
+  }
+
+  .settings-mobile-back-btn:active {
+    transform: scale(0.97);
   }
 
   .settings-mobile-subscreen-title-wrap {
@@ -1594,14 +1718,23 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
-  transition: all 0.2s var(--ease-out);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 160ms var(--ease-out), border-color 160ms var(--ease-out);
 }
 
-.settings-activity-stat-card:hover {
+.settings-activity-stat-card:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-activity-stat-card:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.16);
   transform: translateY(-2px);
 }
+}
+
 
 .settings-activity-stat-top {
   display: flex;
@@ -1679,7 +1812,7 @@
   flex: 1;
   min-width: 180px;
   max-width: 320px;
-  transition: all 0.15s ease;
+  transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
 }
 
 .settings-activity-search-box:focus-within {
@@ -1733,18 +1866,26 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-lg, 16px);
   corner-shape: squircle;
-  -webkit-corner-shape: squircle;
-  transition: all 0.2s var(--ease-out);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 160ms var(--ease-out), border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
   text-decoration: none;
   color: inherit;
 }
 
-.settings-activity-card:hover {
+.settings-activity-card:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-activity-card:hover {
   background: #111114;
   border-color: rgba(255, 255, 255, 0.18);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   transform: translateY(-1px);
 }
+}
+
 
 .settings-activity-main {
   display: flex;
@@ -1781,9 +1922,9 @@
 }
 
 .settings-activity-icon-box.like {
-  background: rgba(244, 63, 94, 0.12);
-  border-color: rgba(244, 63, 94, 0.3);
-  color: #f43f5e;
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #EF4444;
 }
 
 .settings-activity-icon-box.comment {
@@ -1903,14 +2044,23 @@
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out), border-color 150ms var(--ease-out), color 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
 }
 
-.settings-activity-action-btn:hover {
+.settings-activity-action-btn:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-activity-action-btn:hover {
   background: rgba(255, 69, 0, 0.15);
   border-color: rgba(255, 69, 0, 0.3);
   color: #FF4500;
 }
+}
+
 
 .settings-activity-action-btn.primary {
   background: #FF4500;
@@ -1918,10 +2068,13 @@
   color: #ffffff;
 }
 
-.settings-activity-action-btn.primary:hover {
+@media (hover: hover) and (pointer: fine) {
+  .settings-activity-action-btn.primary:hover {
   background: #FF571A;
   box-shadow: 0 2px 10px rgba(255, 69, 0, 0.35);
 }
+}
+
 
 .settings-activity-empty-state {
   display: flex;
@@ -1999,13 +2152,22 @@
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms ease, border-color 150ms ease, color 150ms ease;
 }
 
-.settings-preset-btn:hover {
+.settings-preset-btn:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-preset-btn:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
 }
+}
+
 
 .settings-preset-btn.active {
   background: rgba(255, 69, 0, 0.15);
@@ -2123,13 +2285,22 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out), color 150ms var(--ease-out);
 }
 
-.settings-drawer-close:hover {
+.settings-drawer-close:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-drawer-close:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
 }
+}
+
 
 .settings-drawer-body {
   flex: 1;
@@ -2224,12 +2395,21 @@
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
-  transition: all 0.18s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out), color 150ms var(--ease-out), border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
 }
 
-.settings-drawer-segmented-button:hover {
+.settings-drawer-segmented-button:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-drawer-segmented-button:hover {
   color: #edf2f7;
 }
+}
+
 
 .settings-drawer-segmented-button.active {
   background: linear-gradient(180deg, #ff7b40 0%, #ff5a1f 100%);
@@ -2249,6 +2429,14 @@
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #e2e8f0;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 150ms var(--ease-out), border-color 150ms var(--ease-out);
+}
+
+.settings-drawer-inline-button:active {
+  transform: scale(0.97);
 }
 
 .settings-drawer-shortcut-grid {
@@ -2285,4 +2473,98 @@
   font-weight: 800;
   font-size: 10.5px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* Single settings workspace with shared navigation at every viewport. */
+.settings-redesign { --settings-gap: clamp(14px, 2vw, 28px); padding: clamp(14px, 2.2vw, 34px) clamp(12px, 2vw, 32px) 48px; }
+.settings-redesign-header { margin-bottom: 20px; }
+.settings-redesign-grid { display: grid; grid-template-columns: minmax(200px, 260px) minmax(0, 1fr); gap: var(--settings-gap); align-items: start; }
+.settings-redesign .settings-stacked-sidebar-card {
+  width: 100%; top: 16px; max-height: calc(var(--app-screen-height) - 36px); box-shadow: none; border-radius: 14px;
+  border-color: var(--color-border); background: var(--color-surface); padding: 14px;
+}
+.settings-redesign .settings-sidebar-user-card { border-radius: 10px; background: var(--color-surface-alt); }
+.settings-redesign-content { min-width: 0; }
+.settings-submission-calendar {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-container, 14px);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: .875rem;
+}
+.settings-submission-calendar h3 { margin: 0; color: var(--color-text); font-size: 1rem; }
+.settings-submission-calendar p { margin-block: 6px; }
+.settings-calendar-streak strong { color: var(--color-text); }
+.settings-calendar-scroll { overflow-x: auto; padding: 6px 1px; }
+.settings-calendar-scroll:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.settings-calendar-chart { --calendar-cell: 12px; --calendar-gap: 3px; width: max-content; }
+.settings-calendar-months, .settings-calendar-days { display: grid; gap: var(--calendar-gap); }
+.settings-calendar-months { grid-auto-columns: var(--calendar-cell); font-size: .75rem; margin-bottom: 4px; }
+.settings-calendar-months span { grid-row: 1; }
+.settings-calendar-days {
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, var(--calendar-cell));
+  grid-auto-columns: var(--calendar-cell);
+}
+.settings-calendar-day {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+}
+.settings-calendar-day[data-level='padding'] { visibility: hidden; }
+.settings-calendar-day[data-level='1'] { background: color-mix(in srgb, var(--color-primary) 30%, var(--color-surface)); }
+.settings-calendar-day[data-level='2'] { background: color-mix(in srgb, var(--color-primary) 52%, var(--color-surface)); }
+.settings-calendar-day[data-level='3'] { background: color-mix(in srgb, var(--color-primary) 75%, var(--color-surface)); }
+.settings-calendar-day[data-level='4'] { background: var(--color-primary); }
+.settings-calendar-legend { display: flex; align-items: center; gap: 4px; }
+.settings-submission-calendar summary { width: fit-content; padding-block: 5px; cursor: pointer; }
+.settings-redesign .settings-tab-panel { max-width: none; width: 100%; padding: 0; }
+.settings-redesign .settings-panel-hero { margin: 0 0 14px; }
+.settings-redesign .settings-panel-title { font-size: clamp(1.35rem, 2vw, 1.8rem); color: var(--color-text); }
+.settings-redesign .settings-section-card {
+  background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px;
+  padding: 0; margin-bottom: 14px; box-shadow: none;
+}
+.settings-redesign .settings-section-header { padding: 14px 18px; border-bottom: 1px solid var(--color-border); }
+.settings-redesign .settings-section-title { color: var(--color-text); }
+.settings-redesign .settings-section-body { padding: 0 18px; }
+.settings-redesign .settings-row-item { min-height: 60px; padding: 10px 0; gap: 14px; border-color: var(--color-border); }
+.settings-redesign .settings-row-title { color: var(--color-text); }
+.settings-redesign :is(.settings-select-element, .settings-radio-card, .settings-input-control) {
+  background-color: var(--color-surface-alt); border-color: var(--color-border-strong); color: var(--color-text);
+}
+.settings-redesign .settings-radio-card.selected { background: var(--color-primary-light); border-color: var(--color-primary); }
+.settings-redesign .settings-radio-label { color: var(--color-text); }
+.settings-redesign .settings-radio-desc { color: var(--color-text-secondary); }
+.settings-row-description, .settings-section-desc { margin: 4px 0 0; font-size: .8125rem; color: var(--color-text-secondary); line-height: 1.4; }
+.settings-redesign .settings-supporting-note { margin: 12px 0; }
+.settings-redesign .settings-session-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-bottom: 16px; }
+.settings-session-form label { width: 100%; font-size: .875rem; }
+.settings-session-form input, .settings-session-form button {
+  min-height: 40px; padding: 8px 12px; border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control, 8px); background: var(--color-surface-alt); color: var(--color-text);
+}
+.settings-session-form button:not(:disabled) { border-color: var(--color-primary); cursor: pointer; }
+.settings-save-status, .settings-redesign-back { display: inline-flex; align-items: center; gap: 7px; font-size: .875rem; color: var(--color-text-secondary); }
+.settings-save-status button { color: var(--color-primary); cursor: pointer; }
+.settings-redesign-back { display: none; margin-bottom: 14px; }
+html[data-density="compact"] .settings-redesign .settings-row-item { min-height: 48px; padding-block: 7px; }
+@media (max-width: 860px) {
+  .settings-redesign-grid { display: block; }
+  .settings-redesign .settings-stacked-sidebar-card { display: flex; position: static; max-height: none; }
+  .settings-redesign:not(.settings-has-category) .settings-redesign-content,
+  .settings-redesign.settings-has-category .settings-stacked-sidebar-card { display: none; }
+  .settings-redesign.settings-searching .settings-stacked-sidebar-card { display: flex; }
+  .settings-redesign.settings-searching .settings-redesign-content { display: none; }
+  .settings-redesign-back { display: inline-flex; }
+}
+@media (max-width: 520px) {
+  .settings-redesign .settings-row-item { align-items: start; flex-wrap: wrap; }
+  .settings-redesign .settings-row-info { min-width: 10rem; }
+  .settings-redesign .settings-section-header, .settings-redesign .settings-section-body { padding-inline: 12px; }
 }

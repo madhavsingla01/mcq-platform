@@ -3,7 +3,6 @@
   .filter-pill-group,
   .explore-filter-pills-row,
   .challenges-filter-pills,
-  .global-search-tabs,
   .yt-nav-tabs,
   .profile-activity-filter-bar,
   .floating-network-tabs,
@@ -36,7 +35,6 @@
   .filter-pill-group,
   .explore-filter-pills-row,
   .challenges-filter-pills,
-  .global-search-tabs,
   .yt-nav-tabs,
   .profile-activity-filter-bar,
   .floating-network-tabs,
@@ -64,7 +62,6 @@
   .pill-btn,
   .explore-pill,
   .filter-pill,
-  .global-search-tab,
   .yt-nav-tab,
   .activity-filter-pill,
   .floating-network-tab-btn,
@@ -84,8 +81,8 @@
   corner-shape: squircle;
   -webkit-corner-shape: squircle;
   box-shadow: none;
-  white-space: nowrap;
-  transition: color 140ms ease, background-color 140ms ease;
+  touch-action: manipulation;
+  transition: transform var(--duration-tap, 120ms) var(--ease-out), color 140ms ease, background-color 140ms ease;
 }
 
 .App :is(
@@ -93,7 +90,6 @@
   .pill-btn,
   .explore-pill,
   .filter-pill,
-  .global-search-tab,
   .yt-nav-tab,
   .activity-filter-pill,
   .floating-network-tab-btn,
@@ -103,10 +99,30 @@
   .qf-rules-subpill,
   .window-tab,
   .c-window-tab
-):hover {
-  color: #FFFFFF;
-  background: rgba(255, 255, 255, 0.08);
-  border-color: transparent;
+):active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .App :is(
+    .main-tab-btn,
+    .pill-btn,
+    .explore-pill,
+    .filter-pill,
+    .yt-nav-tab,
+    .activity-filter-pill,
+    .floating-network-tab-btn,
+    .q-tab-btn,
+    .c-q-tab-btn,
+    .qf-rules-pill,
+    .qf-rules-subpill,
+    .window-tab,
+    .c-window-tab
+  ):hover {
+    color: #FFFFFF;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: transparent;
+  }
 }
 
 .App :is(
@@ -114,7 +130,6 @@
   .pill-btn.active,
   .explore-pill.active,
   .filter-pill.active,
-  .global-search-tab.active,
   .yt-nav-tab.active,
   .activity-filter-pill.active,
   .floating-network-tab-btn.active,
@@ -131,8 +146,7 @@
   box-shadow: none;
 }
 
-.App :is(.global-search-tab.active, .yt-nav-tab.active)::after,
-.App .tab-active-indicator {
+.App .yt-nav-tab.active::after {
   display: none;
 }
 

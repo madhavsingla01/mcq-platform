@@ -17,7 +17,7 @@ const FAQS = [
   },
   {
     q: 'Can I import questions from spreadsheets?',
-    a: 'Yes! Navigate to Create Quiz > Upload and drop your CSV or Excel file. Our smart column mapper will automatically detect questions, options, and correct answers.',
+    a: 'Choose Import Sheet under Create for CSV or Excel files, or Import PDFs for PDFs with selectable text. Review questions and answers before publishing.',
   },
   {
     q: 'Are my private quizzes accessible to other users?',

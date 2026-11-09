@@ -223,7 +223,13 @@ const quizSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    toJSON: { virtuals: true },
+    toJSON: {
+      virtuals: true,
+      transform: (_doc, quiz) => {
+        if (quiz.isChallenge && !(quiz.deadlineAt && new Date(quiz.deadlineAt) <= new Date())) quiz.avgScore = 0;
+        return quiz;
+      },
+    },
     toObject: { virtuals: true },
   }
 );

@@ -13,16 +13,19 @@ export const generateChallengeCode = () => {
 
 const challengeQuestionSchema = new mongoose.Schema(
   {
-    questionText: { type: String, required: true, trim: true },
+    accessibilityMedia: { type: [mongoose.Schema.Types.Mixed], default: [] },
+    questionText: { type: String, required: function () { return !this.accessibilityMedia?.length; }, trim: true },
+    questionType: { type: String, enum: ['multiple_choice', 'dropdown', 'checkboxes', 'short_answer'], default: 'multiple_choice' },
     options: {
-      type: [String],
+      type: [mongoose.Schema.Types.Mixed],
       required: true,
       validate: [
-        (val) => Array.isArray(val) && val.length >= 2,
+        function validateOptions(val) { return this.questionType === 'short_answer' ? val.length === 0 : val.length >= 2; },
         'Each challenge question requires at least 2 options.',
       ],
     },
-    correctOption: { type: Number, required: true, min: 0 },
+    correctOption: { type: Number, required: function requireCorrectOption() { return !['checkboxes', 'short_answer'].includes(this.questionType); }, min: 0 },
+    correctAnswer: { type: mongoose.Schema.Types.Mixed },
     explanation: { type: String, default: '', trim: true },
     marks: { type: Number, default: 1, min: 0 },
     imageUrl: { type: String, default: null, trim: true },
@@ -107,6 +110,7 @@ const challengeSchema = new mongoose.Schema(
       default: undefined,
       select: false,
     },
+    metadata: { type: mongoose.Schema.Types.Mixed, default: undefined },
     accessType: {
       type: String,
       enum: ['public', 'invite_only'],

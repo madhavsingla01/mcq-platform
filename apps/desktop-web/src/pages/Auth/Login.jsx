@@ -4,6 +4,7 @@ import { Sun, Moon } from 'lucide-react';
 import { Button, Input } from '../../components/ui';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
+import { authRedirect } from '../../utils/authRedirect';
 import './Login.css';
 
 export default function Login() {
@@ -13,10 +14,10 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login } = useAuthStore();
+  const { login, sessionNotice } = useAuthStore();
   const { theme, setTheme } = useUIStore();
 
-  const redirectTo = searchParams.get('redirect') || '/dashboard';
+  const redirectTo = authRedirect(searchParams.get('redirect'));
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -54,13 +55,12 @@ export default function Login() {
 
       <div className="auth-card-container">
         <div className="auth-standalone-card">
-          <h1 className="auth-card-title">Log in</h1>
-
-          {error && <div className="auth-card-error">{error}</div>}
+          {(error || sessionNotice) && <div className="auth-card-error" role="alert">{error || sessionNotice}</div>}
 
           <form onSubmit={handleSubmit} className="auth-card-form">
             <Input
               label="Email Address or Username"
+              name="username"
               type="text"
               className="auth-input"
               autoComplete="username"
@@ -72,6 +72,7 @@ export default function Login() {
 
             <Input
               label="Password"
+              name="password"
               type="password"
               className="auth-input"
               autoComplete="current-password"

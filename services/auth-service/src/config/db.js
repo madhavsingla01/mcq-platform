@@ -8,7 +8,11 @@ import env from './env.js';
 export const connectDB = async () => {
   try {
     const conn = await mongoose.connect(env.MONGO_URI, {
-      maxPoolSize: 10,
+      maxPoolSize: Number(process.env.MONGO_MAX_POOL_SIZE) || 10,
+      minPoolSize: 0,
+      maxIdleTimeMS: 30000,
+      waitQueueTimeoutMS: 5000,
+      bufferCommands: false,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
     });

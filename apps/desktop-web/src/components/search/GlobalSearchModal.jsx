@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Search,
@@ -30,6 +30,7 @@ export default function GlobalSearchModal() {
 
   const inputRef = useRef(null);
   const modalRef = useRef(null);
+  const [anchor, setAnchor] = useState(null);
 
   const [query, setQuery] = useState(searchInitialQuery || '');
   const [activeTab, setActiveTab] = useState(searchInitialTab || 'top'); // 'top' | 'quizzes' | 'accounts' | 'tags'
@@ -61,12 +62,36 @@ export default function GlobalSearchModal() {
     if (isSearchOpen) {
       setQuery(searchInitialQuery || '');
       setActiveTab(searchInitialTab || 'top');
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         inputRef.current?.focus();
         inputRef.current?.select();
       }, 50);
+      return () => clearTimeout(timer);
     }
   }, [isSearchOpen, searchInitialQuery, searchInitialTab]);
+
+  useLayoutEffect(() => {
+    if (!isSearchOpen) return;
+    const trigger = document.getElementById('app-page-search');
+    const previousFocus = document.activeElement;
+    if (!trigger) { setAnchor(null); return; }
+    const align = () => {
+      const rect = trigger.getBoundingClientRect();
+      const width = Math.min(600, document.documentElement.clientWidth - 24);
+      const left = Math.max(12, Math.min(rect.right - width, document.documentElement.clientWidth - width - 12));
+      setAnchor({ top: Math.max(8, rect.top), left, width });
+    };
+    align();
+    window.addEventListener('resize', align);
+    return () => {
+      window.removeEventListener('resize', align);
+      requestAnimationFrame(() => {
+        if (previousFocus instanceof HTMLElement && previousFocus !== document.body && previousFocus.isConnected) {
+          previousFocus.focus({ preventScroll: true });
+        } else if (trigger.isConnected) trigger.focus({ preventScroll: true });
+      });
+    };
+  }, [isSearchOpen]);
 
   // Fetch trending hashtags dynamically from DB (zero hardcoding)
   useEffect(() => {
@@ -81,12 +106,20 @@ export default function GlobalSearchModal() {
   }, [isSearchOpen]);
 
 
-  // Keyboard shortcut: Escape to close
   useEffect(() => {
     if (!isSearchOpen) return;
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         closeSearch();
+      }
+      if (e.key !== 'Tab') return;
+      const focusable = Array.from(modalRef.current?.querySelectorAll('button:not([disabled]), input:not([disabled]), a[href]') || [])
+        .filter(element => element.tabIndex >= 0 && element.getClientRects().length);
+      const target = e.shiftKey ? focusable.at(-1) : focusable[0];
+      const boundary = e.shiftKey ? focusable[0] : focusable.at(-1);
+      if (target && (document.activeElement === boundary || !modalRef.current.contains(document.activeElement))) {
+        e.preventDefault();
+        target.focus();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -96,7 +129,7 @@ export default function GlobalSearchModal() {
   // Debounced search query
   useEffect(() => {
     const trimmed = query.trim();
-    if (!trimmed) {
+    if (!isSearchOpen || !trimmed) {
       setResults({ quizzes: [], creators: [], tags: [] });
       setLoading(false);
       return;
@@ -136,7 +169,7 @@ export default function GlobalSearchModal() {
       clearTimeout(handler);
       controller.abort();
     };
-  }, [query, activeTab]);
+  }, [isSearchOpen, query, activeTab]);
 
   const saveRecentSearch = useCallback((term) => {
     if (!term || !term.trim()) return;
@@ -271,16 +304,17 @@ export default function GlobalSearchModal() {
       aria-modal="true"
       aria-label="Universal Search Window"
     >
-      <div className="global-search-container" ref={modalRef}>
+      <div className={`global-search-container ${anchor ? 'global-search-anchored' : ''}`} style={anchor || undefined} ref={modalRef}>
         {/* ── Top Bar: Search Input ── */}
-        <form onSubmit={handleSubmit} className="global-search-input-row consistent-search-field">
+        <form onSubmit={handleSubmit} className="global-search-input-row" role="search">
           <Search size={18} className="global-search-input-icon" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search @users, !quiz codes, #topics, or titles..."
+            placeholder="Search"
+            aria-label="Universal search"
             className="global-search-input consistent-search-input"
             autoComplete="off"
             spellCheck="false"
@@ -299,9 +333,9 @@ export default function GlobalSearchModal() {
               <X size={15} />
             </button>
           )}
-          <div className="global-search-esc-badge" onClick={closeSearch} title="Press Escape to close">
-            ESC
-          </div>
+          <button type="button" className="global-search-icon-btn" onClick={closeSearch} aria-label="Close universal search">
+            <X size={16} />
+          </button>
         </form>
 
         {/* ── Fast Search Prefix Filter Chips ── */}

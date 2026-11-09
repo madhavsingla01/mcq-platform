@@ -29,6 +29,10 @@
   }
 }
 
+.opt-card:active:not(.opt-card--locked) {
+  transform: scale(0.97);
+}
+
 .opt-card--selected {
   border-color: var(--accent-primary, #FF4500);
   background: rgba(255, 69, 0, 0.12);
@@ -53,6 +57,16 @@
 
 .opt-card--locked { cursor: default; }
 
+.opt-card.opt-card--accessible { display:block; cursor:default; user-select:text; -webkit-user-select:text; }
+.opt-card.opt-card--accessible:active { transform:none; }
+.opt-card--accessible.opt-card--dimmed { opacity:1; }
+.opt-choice-label { display:flex; align-items:center; gap:12px; cursor:pointer; min-height:40px; }
+.opt-native-choice { flex:0 0 auto; width:20px; height:20px; accent-color:#ff4500; }
+.opt-card--accessible:focus-within { outline:3px solid #ff713d; outline-offset:3px; }
+.qf-answer-fieldset { border:0; margin:0; padding:0; min-width:0; }
+.qf-question-heading { color:#ededf0; font-size:16px; font-weight:650; margin:0; }
+.qf-question-heading:focus { outline:2px solid #ff713d; outline-offset:5px; }
+
 /* ── Pill ── */
 .opt-pill {
   width: 36px;
@@ -61,7 +75,7 @@
   corner-shape: round;
   border: 1px solid var(--border-default, #343536);
   background: var(--bg-elevated, #272729);
-  color: var(--text-secondary, #818181);
+  color: var(--text-primary, #ededf0);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -71,27 +85,29 @@
   transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
-.opt-card:hover:not(.opt-card--locked) .opt-pill {
-  border-color: var(--accent-primary, #FF4500);
-  color: var(--text-primary, #FFFFFF);
+@media (hover: hover) and (pointer: fine) {
+  .opt-card:hover:not(.opt-card--locked) .opt-pill:not(.opt-pill--selected) {
+    border-color: var(--accent-primary, #FF4500);
+    color: var(--text-primary, #FFFFFF);
+  }
 }
 
 .opt-pill--selected {
   background: var(--accent-primary, #FF4500);
   border-color: var(--accent-primary, #FF4500);
-  color: #ffffff;
+  color: #151515;
 }
 
 .opt-pill--correct {
   background: var(--success, #46D160);
   border-color: var(--success, #46D160);
-  color: #ffffff;
+  color: #151515;
 }
 
 .opt-pill--wrong {
   background: var(--error, #FF4F40);
   border-color: var(--error, #FF4F40);
-  color: #ffffff;
+  color: #151515;
 }
 
 /* ── Text ── */
