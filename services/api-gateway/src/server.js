@@ -14,6 +14,7 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 import http from 'http';
 import { createHealthMonitor, integerSetting, isSocketPath, requestContext } from './runtime.js';
 import { errorBody, proxyFailure, sanitizeProxyRequest } from './contracts.js';
+import { socialServiceForPath } from './social-routing.js';
 
 dotenv.config();
 
@@ -36,10 +37,14 @@ const SERVICES = {
   parser: requiredSetting('PARSER_SERVICE_URL'),
   attempt: requiredSetting('ATTEMPT_SERVICE_URL'),
   social: requiredSetting('SOCIAL_SERVICE_URL'),
+  socialFeed: requiredSetting('SOCIAL_FEED_SERVICE_URL'),
+  socialInteractions: requiredSetting('SOCIAL_INTERACTIONS_SERVICE_URL'),
+  socialComments: requiredSetting('SOCIAL_COMMENTS_SERVICE_URL'),
   message: requiredSetting('MESSAGE_SERVICE_URL'),
   media: requiredSetting('MEDIA_SERVICE_URL'),
   admin: requiredSetting('ADMIN_SERVICE_URL'),
   challenge: requiredSetting('CHALLENGE_SERVICE_URL'),
+  marketplace: process.env.MARKETPLACE_SERVICE_URL || 'http://127.0.0.1:5013',
 };
 
 for (const [name, value] of Object.entries(SERVICES)) {
@@ -203,8 +208,17 @@ app.use('/uploads/covers', makeProxy(SERVICES.quiz, '/uploads/covers'));
 app.use('/uploads', makeProxy(SERVICES.parser, '/uploads'));
 
 // 5. Social & Community
-app.use('/api/v1/social', makeProxy(SERVICES.social, '/api/v1/social'));
-app.use('/api/v1/notifications', makeProxy(SERVICES.social, '/api/v1/social/notifications'));
+const socialDomainProxies = {
+  feedProfile: makeProxy(SERVICES.socialFeed, '/api/v1/social'),
+  interactions: makeProxy(SERVICES.socialInteractions, '/api/v1/social'),
+  comments: makeProxy(SERVICES.socialComments, '/api/v1/social'),
+};
+const legacySocialProxy = makeProxy(SERVICES.social, '/api/v1/social');
+app.use('/api/v1/social', (req, res, next) => {
+  const domain = socialServiceForPath(req.path);
+  return (domain ? socialDomainProxies[domain] : legacySocialProxy)(req, res, next);
+});
+app.use('/api/v1/notifications', makeProxy(SERVICES.socialFeed, '/api/v1/social/notifications'));
 
 // 6. Direct Messaging & Real-Time WebSockets
 const socketProxy = makeProxy(SERVICES.message);
@@ -219,6 +233,15 @@ app.use('/api/v1/admin', makeProxy(SERVICES.admin, '/api/v1/admin'));
 
 // 8. Competitive Challenges Arena
 app.use('/api/v1/challenges', makeProxy(SERVICES.challenge, '/api/v1/challenges'));
+
+// 9. Marketplace Service & Phase 1 Route Isolation
+const marketplaceProxy = makeProxy(SERVICES.marketplace, '/api/v1/marketplace');
+app.use('/api/v1/marketplace', (req, res, next) => {
+  if (req.path === '/health' || req.path === '/ready') {
+    return marketplaceProxy(req, res, next);
+  }
+  return res.status(404).json(errorBody(404, 'Marketplace business routes are not yet implemented in Phase 1', req.requestId));
+});
 
 // Fallback 404
 app.use('*', (req, res) => {
@@ -282,11 +305,15 @@ server.listen(PORT, () => {
   console.log(`   - Quiz Service:     ${SERVICES.quiz}`);
   console.log(`   - Parser Service:   ${SERVICES.parser}`);
   console.log(`   - Attempt Service:  ${SERVICES.attempt}`);
-  console.log(`   - Social Service:   ${SERVICES.social}`);
+  console.log(`   - Social Feed/Profile Service: ${SERVICES.socialFeed}`);
+  console.log(`   - Social Interactions Service: ${SERVICES.socialInteractions}`);
+  console.log(`   - Social Comments Service:     ${SERVICES.socialComments}`);
+  console.log(`   - Legacy Social Fallback:      ${SERVICES.social}`);
   console.log(`   - Message Service:  ${SERVICES.message}`);
   console.log(`   - Media Service:    ${SERVICES.media}`);
   console.log(`   - Admin Service:    ${SERVICES.admin}`);
   console.log(`   - Challenge Service:${SERVICES.challenge}`);
+  console.log(`   - Marketplace Service: ${SERVICES.marketplace}`);
   console.log(`   - Real-Time WS:     /socket.io -> ${SERVICES.message}`);
 });
 

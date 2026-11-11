@@ -575,7 +575,7 @@ export default function PublicProfile() {
           {/* YouTube Single-Line Metadata Row */}
           <div className="yt-metadata-line">
             <span className="yt-handle">@{profile.username}</span>
-            <span className="yt-meta-dot">â€¢</span>
+            <span className="yt-meta-dot">•</span>
             <button
               type="button"
               className="yt-meta-link-btn"
@@ -583,7 +583,7 @@ export default function PublicProfile() {
             >
               {followersCount.toLocaleString()} {followersCount === 1 ? 'follower' : 'followers'}
             </button>
-            <span className="yt-meta-dot">â€¢</span>
+            <span className="yt-meta-dot">•</span>
             <button
               type="button"
               className="yt-meta-link-btn"
@@ -591,7 +591,7 @@ export default function PublicProfile() {
             >
               {(profile.followingCount || 0).toLocaleString()} following
             </button>
-            <span className="yt-meta-dot">â€¢</span>
+            <span className="yt-meta-dot">•</span>
             <span className="yt-meta-stat">{quizzes.length} public {quizzes.length === 1 ? 'quiz' : 'quizzes'}</span>
             {showRank && (
               <>

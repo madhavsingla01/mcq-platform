@@ -26,6 +26,15 @@ export function getGuestId() {
 api.interceptors.request.use((config) => {
   const guestId = getGuestId();
   config.headers = config.headers || {};
+  if (typeof navigator !== 'undefined') {
+    if (navigator.language) config.headers['x-client-locale'] = navigator.language.slice(0, 35);
+    try {
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (timeZone) config.headers['x-client-timezone'] = timeZone.slice(0, 80);
+    } catch {
+      // Time zone metadata is optional.
+    }
+  }
   if (!config.headers['x-client-session-id']) {
     config.headers['x-client-session-id'] = guestId;
   }
@@ -47,7 +56,13 @@ api.interceptors.response.use(
 // Endpoints mapped to microservices via API Gateway
 export const authApi = {
   getMe: () => api.get('/auth/bootstrap'),
-  login: (credentials) => api.post('/auth/login', credentials),
+  login: (credentials, location) => api.post('/auth/login', credentials, {
+    headers: location ? {
+      'x-client-location-latitude': String(location.latitude),
+      'x-client-location-longitude': String(location.longitude),
+      'x-client-location-accuracy': String(location.accuracy),
+    } : undefined,
+  }),
   register: (userData) => api.post('/auth/register', userData),
   logout: () => api.post('/auth/logout'),
 };

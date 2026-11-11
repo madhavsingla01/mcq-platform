@@ -92,30 +92,59 @@ export default function QuizDetailsModal({ quizId, onClose }) {
       setSelectedAttemptId(null);
 
       try {
-        const [quizResult, analyticsResult, attemptsResult] = await Promise.allSettled([
-          api.get(`/quiz/${quizId}`),
-          api.get(`/quiz/${quizId}/analytics`),
-          api.get(`/quiz/${quizId}/attempts`, { params: { limit: DEFAULT_PAGINATION.limit } }),
-        ]);
-
+        const quizResponse = await api.get(`/quiz/${quizId}`);
         if (cancelled) return;
 
-        if (quizResult.status === 'rejected') {
-          throw quizResult.reason;
+        const quizData = quizResponse.data?.data?.quiz || quizResponse.data?.quiz;
+        setQuiz(quizData);
+
+        const isChallengeSealed = Boolean(
+          quizData?.isChallenge &&
+          !(quizData.deadlineAt && new Date(quizData.deadlineAt) <= new Date())
+        );
+        setResultsSealed(isChallengeSealed);
+
+        const secondaryPromises = [];
+
+        if (!isChallengeSealed) {
+          secondaryPromises.push(
+            api.get(`/quiz/${quizId}/analytics`)
+              .then((res) => {
+                if (cancelled) return;
+                const analyticsData = res.data?.data?.analytics || res.data?.analytics;
+                setAnalytics(analyticsData);
+              })
+              .catch((err) => {
+                if (cancelled) return;
+                const status = err.response?.status;
+                if (status !== 403 && status !== 401) {
+                  console.warn('Quiz analytics unavailable:', err);
+                }
+              })
+          );
         }
 
-        setQuiz(quizResult.value.data?.data?.quiz || quizResult.value.data?.quiz);
+        secondaryPromises.push(
+          api.get(`/quiz/${quizId}/attempts`, { params: { limit: DEFAULT_PAGINATION.limit } })
+            .then((res) => {
+              if (cancelled) return;
+              const attemptsData = res.data?.data || res.data;
+              setAttempts(attemptsData?.attempts || []);
+              setPagination(attemptsData?.pagination || DEFAULT_PAGINATION);
+              if (attemptsData?.quarantined === true) {
+                setResultsSealed(true);
+              }
+            })
+            .catch((err) => {
+              if (cancelled) return;
+              const status = err.response?.status;
+              if (status !== 401 && status !== 403) {
+                console.warn('Quiz attempts unavailable:', err);
+              }
+            })
+        );
 
-        if (analyticsResult.status === 'fulfilled') {
-          setAnalytics(analyticsResult.value.data?.data?.analytics || analyticsResult.value.data?.analytics);
-        }
-
-        if (attemptsResult.status === 'fulfilled') {
-          const attemptsData = attemptsResult.value.data?.data || attemptsResult.value.data;
-          setAttempts(attemptsData?.attempts || []);
-          setPagination(attemptsData?.pagination || DEFAULT_PAGINATION);
-          setResultsSealed(attemptsData?.quarantined === true);
-        }
+        await Promise.allSettled(secondaryPromises);
       } catch (requestError) {
         if (!cancelled) {
           setError(requestError.response?.data?.message || 'Failed to load quiz details');
@@ -184,7 +213,7 @@ export default function QuizDetailsModal({ quizId, onClose }) {
 
   const stats = useMemo(() => {
     const totalAttempts = Number(quiz?.totalAttempts || pagination.total || attempts.length || 0);
-    const averageScore = Number(quiz?.avgScore ?? analytics?.averageScore ?? 0);
+    const averageScore = Number(quiz?.avgScore ?? analytics?.avgScore ?? analytics?.averageScore ?? 0);
     const highestScore = attempts.reduce((max, attempt) => Math.max(max, Number(attempt.percentage || 0)), 0);
     const completedAttempts = attempts.filter((attempt) => attempt.status === 'completed').length;
 
@@ -525,6 +554,17 @@ export default function QuizDetailsModal({ quizId, onClose }) {
                     </Link>
                   </div>
                 </div>
+
+                {!resultsSealed && (
+                  <div className="quiz-stat-grid">
+                    {stats.map((stat) => (
+                      <div key={stat.label} className="quiz-stat-card">
+                        <span>{stat.label}</span>
+                        <strong>{stat.value}</strong>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 <section className="quiz-attempts-section">
                   <div className="quiz-attempts-header">

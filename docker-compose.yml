@@ -31,20 +31,28 @@ services:
       - PARSER_SERVICE_URL=http://parser-service:5003
       - ATTEMPT_SERVICE_URL=http://attempt-service:5004
       - SOCIAL_SERVICE_URL=http://social-service:5005
+      - SOCIAL_FEED_SERVICE_URL=http://social-feed-service:5010
+      - SOCIAL_INTERACTIONS_SERVICE_URL=http://social-interactions-service:5011
+      - SOCIAL_COMMENTS_SERVICE_URL=http://social-comments-service:5012
       - MESSAGE_SERVICE_URL=http://message-service:5006
       - MEDIA_SERVICE_URL=http://media-service:5007
       - ADMIN_SERVICE_URL=http://admin-service:5008
       - CHALLENGE_SERVICE_URL=http://challenge-service:5009
+      - MARKETPLACE_SERVICE_URL=http://marketplace-service:5013
     depends_on:
       - auth-service
       - quiz-service
       - parser-service
       - attempt-service
       - social-service
+      - social-feed-service
+      - social-interactions-service
+      - social-comments-service
       - message-service
       - media-service
       - admin-service
       - challenge-service
+      - marketplace-service
     restart: unless-stopped
 
   # ── Service 1: Auth & User Profiles ──
@@ -177,7 +185,79 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # ── Service 6: Direct Messaging ──
+  # ── Service 6: Social Feed, Profiles, Relationships & Notifications ──
+  social-feed-service:
+    build:
+      context: .
+      dockerfile: services/social-feed-service/Dockerfile
+    container_name: mcq-social-feed-service
+    expose:
+      - "5010"
+    environment:
+      - PORT=5010
+      - NODE_ENV=production
+      - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
+      - MONGO_URI=mongodb://mongo:27017/mcq-platform
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in the root .env file}
+      - MAX_FILE_SIZE_GUEST=20480
+      - MAX_FILE_SIZE_AUTH=10485760
+      - MAX_IMPORT_ROWS=${MAX_IMPORT_ROWS:?Set MAX_IMPORT_ROWS in the root .env file}
+      - CACHE_DEFAULT_TTL_MS=${CACHE_DEFAULT_TTL_MS:?Set CACHE_DEFAULT_TTL_MS in the root .env file}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Service 7: Quiz Likes, Bookmarks & Shares ──
+  social-interactions-service:
+    build:
+      context: .
+      dockerfile: services/social-interactions-service/Dockerfile
+    container_name: mcq-social-interactions-service
+    expose:
+      - "5011"
+    environment:
+      - PORT=5011
+      - NODE_ENV=production
+      - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
+      - MONGO_URI=mongodb://mongo:27017/mcq-platform
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in the root .env file}
+      - MESSAGE_SERVICE_URL=http://message-service:5006
+      - MAX_FILE_SIZE_GUEST=20480
+      - MAX_FILE_SIZE_AUTH=10485760
+      - MAX_IMPORT_ROWS=${MAX_IMPORT_ROWS:?Set MAX_IMPORT_ROWS in the root .env file}
+      - CACHE_DEFAULT_TTL_MS=${CACHE_DEFAULT_TTL_MS:?Set CACHE_DEFAULT_TTL_MS in the root .env file}
+    depends_on:
+      mongo:
+        condition: service_healthy
+      message-service:
+        condition: service_started
+    restart: unless-stopped
+
+  # ── Service 8: Quiz Comments & Replies ──
+  social-comments-service:
+    build:
+      context: .
+      dockerfile: services/social-comments-service/Dockerfile
+    container_name: mcq-social-comments-service
+    expose:
+      - "5012"
+    environment:
+      - PORT=5012
+      - NODE_ENV=production
+      - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
+      - MONGO_URI=mongodb://mongo:27017/mcq-platform
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in the root .env file}
+      - MAX_FILE_SIZE_GUEST=20480
+      - MAX_FILE_SIZE_AUTH=10485760
+      - MAX_IMPORT_ROWS=${MAX_IMPORT_ROWS:?Set MAX_IMPORT_ROWS in the root .env file}
+      - CACHE_DEFAULT_TTL_MS=${CACHE_DEFAULT_TTL_MS:?Set CACHE_DEFAULT_TTL_MS in the root .env file}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Service 9: Direct Messaging ──
   message-service:
     build:
       context: ./services/message-service
@@ -197,7 +277,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # ── Service 7: Image Processing & Delivery ──
+  # ── Service 10: Image Processing & Delivery ──
   media-service:
     build:
       context: ./services/media-service
@@ -221,7 +301,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # ── Service 8: Administrative Control Center ──
+  # ── Service 11: Administrative Control Center ──
   admin-service:
     build:
       context: ./services/admin-service
@@ -254,7 +334,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # ── Service 9: Competitive Challenges ──
+  # ── Service 12: Competitive Challenges ──
   challenge-service:
     build:
       context: ./services/challenge-service
@@ -275,6 +355,21 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
+    restart: unless-stopped
+
+  # ── Service 13: Marketplace Service ──
+  marketplace-service:
+    build:
+      context: ./services/marketplace-service
+      dockerfile: Dockerfile
+    container_name: mcq-marketplace-service
+    expose:
+      - "5013"
+    environment:
+      - PORT=5013
+      - NODE_ENV=production
+      - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in the root .env file}
     restart: unless-stopped
 
 volumes:

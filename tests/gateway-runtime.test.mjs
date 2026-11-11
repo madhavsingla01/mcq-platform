@@ -5,6 +5,7 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { fileURLToPath } from 'node:url';
 import { createHealthMonitor, integerSetting, isSocketPath, requestContext } from '../services/api-gateway/src/runtime.js';
+import { SERVICE_PORTS, readServicePort } from '../scripts/service-launch-config.js';
 
 test('health probes share in-flight work, expire, and redact downstream data', async () => {
   let calls = 0;
@@ -80,7 +81,7 @@ test('gateway proxies bodies/cookies/correlation and distinguishes readiness fro
   const port = reserve.address().port;
   await new Promise(resolve => reserve.close(resolve));
   const upstreamUrl = `http://127.0.0.1:${upstream.address().port}`;
-  const serviceEnv = Object.fromEntries(['AUTH','QUIZ','PARSER','ATTEMPT','SOCIAL','MESSAGE','MEDIA','ADMIN','CHALLENGE'].map(name => [`${name}_SERVICE_URL`, upstreamUrl]));
+  const serviceEnv = Object.fromEntries(['AUTH','QUIZ','PARSER','ATTEMPT','SOCIAL','SOCIAL_FEED','SOCIAL_INTERACTIONS','SOCIAL_COMMENTS','MESSAGE','MEDIA','ADMIN','CHALLENGE','MARKETPLACE'].map(name => [`${name}_SERVICE_URL`, upstreamUrl]));
   const child = spawn(process.execPath, ['src/server.js'], {
     cwd: fileURLToPath(new URL('../services/api-gateway/', import.meta.url)),
     env: { ...process.env, ...serviceEnv, PORT: String(port), NODE_ENV: 'test', CLIENT_URL: 'http://localhost:5173', HEALTH_CACHE_TTL_MS: '1', PROXY_TIMEOUT_MS: '100' },
@@ -111,6 +112,30 @@ test('gateway proxies bodies/cookies/correlation and distinguishes readiness fro
   assert.equal(echoed.spoofedUser, undefined);
   delete echoed.forwardedFor;
   assert.deepEqual(echoed, { url: '/api/v1/messages/start', body: '{"text":"hello"}', requestId: 'trace-1234', cookie: 'session=test' });
+  for (const [path, expectedUrl] of [
+    ['/api/v1/social/feed', '/api/v1/social/feed'],
+    ['/api/v1/social/quizzes/0123456789abcdef01234567/like', '/api/v1/social/quizzes/0123456789abcdef01234567/like'],
+    ['/api/v1/social/quizzes/0123456789abcdef01234567/comments', '/api/v1/social/quizzes/0123456789abcdef01234567/comments'],
+    ['/api/v1/notifications/unread-count', '/api/v1/social/notifications/unread-count'],
+  ]) {
+    const routed = await fetch(`${base}${path}`);
+    assert.equal(routed.status, 200);
+    assert.equal((await routed.json()).url, expectedUrl);
+  }
+  for (const probe of ['/api/v1/marketplace/health', '/api/v1/marketplace/ready']) {
+    const probeRes = await fetch(`${base}${probe}`);
+    assert.equal(probeRes.status, 200);
+    assert.equal((await probeRes.json()).url, probe);
+  }
+  for (const bizPath of ['/api/v1/marketplace', '/api/v1/marketplace/listings', '/api/v1/marketplace/orders']) {
+    const bizRes = await fetch(`${base}${bizPath}`);
+    assert.equal(bizRes.status, 404);
+    const bizBody = await bizRes.json();
+    assert.equal(bizBody.success, false);
+    assert.equal(bizBody.message, 'Marketplace business routes are not yet implemented in Phase 1');
+    assert.equal(bizBody.error.code, 'RESOURCE_NOT_FOUND');
+    assert.ok(bizBody.requestId);
+  }
   healthy = false;
   await new Promise(resolve => setTimeout(resolve, 5));
   assert.equal((await fetch(`${base}/api/v1/readyz`)).status, 503);
@@ -128,4 +153,11 @@ test('gateway proxies bodies/cookies/correlation and distinguishes readiness fro
   const failure = await unavailable.json();
   assert.equal(failure.error.code, 'DEPENDENCY_UNAVAILABLE');
   assert.equal(failure.message.includes(upstreamUrl), false);
+});
+
+test('marketplace-service launch config registers port 5013 and is isolated at gateway', async () => {
+  const root = fileURLToPath(new URL('../', import.meta.url));
+  assert.equal(SERVICE_PORTS['marketplace-service'], 5013);
+  const resolvedPort = readServicePort('marketplace-service', root);
+  assert.equal(resolvedPort, 5013);
 });

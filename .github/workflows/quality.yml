@@ -1,0 +1,92 @@
+name: Quality gates
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Tests, builds, integration, and dependency audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            apps/desktop-web/package-lock.json
+            apps/mobile-web/package-lock.json
+            services/admin-service/package-lock.json
+            services/api-gateway/package-lock.json
+            services/attempt-service/package-lock.json
+            services/auth-service/package-lock.json
+            services/challenge-service/package-lock.json
+            services/media-service/package-lock.json
+            services/message-service/package-lock.json
+            services/parser-service/package-lock.json
+            services/quiz-service/package-lock.json
+            services/social-service/package-lock.json
+
+      - name: Install locked dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          for package in \
+            apps/desktop-web \
+            apps/mobile-web \
+            services/admin-service \
+            services/api-gateway \
+            services/attempt-service \
+            services/auth-service \
+            services/challenge-service \
+            services/media-service \
+            services/message-service \
+            services/parser-service \
+            services/quiz-service \
+            services/social-service
+          do
+            (cd "$package" && npm ci)
+          done
+
+      - name: Run unit, component, accessibility, and build checks
+        run: npm run test:ci
+
+      - name: Install isolated MongoDB test binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc \
+            | sudo gpg --dearmor --batch --yes -o /usr/share/keyrings/mongodb-server-8.0.gpg
+          echo "deb [ arch=amd64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" \
+            | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends mongodb-org-server ffmpeg
+          /usr/bin/mongod --version
+          ffmpeg -version
+
+      - name: Run isolated API and database integration suites
+        env:
+          MONGOD_BINARY: /usr/bin/mongod
+        run: npm run test:integration
+
+      - name: Run isolated media upload and access integration suite
+        env:
+          MONGOD_BINARY: /usr/bin/mongod
+        run: npm run test:media
+
+      - name: Audit locked dependencies
+        run: npm run security:audit

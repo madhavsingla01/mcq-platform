@@ -4,6 +4,7 @@ import {
   createChallenge,
   deleteQuiz,
   getQuiz,
+  getQuizAnalytics,
   getQuizAttempts,
   getQuizQuestions,
   listQuizzes,
@@ -24,6 +25,7 @@ router.put('/:id', validateQuizIdentifier('id'), protect, updateQuiz);
 router.put('/:id/settings', validateQuizIdentifier('id'), protect, updateQuiz);
 router.delete('/:id', validateQuizIdentifier('id'), protect, deleteQuiz);
 router.get('/:id/questions', validateQuizIdentifier('id'), optionalAuth, getQuizQuestions);
+router.get('/:id/analytics', validateQuizIdentifier('id'), optionalAuth, getQuizAnalytics);
 router.get('/:id/attempts', validateQuizIdentifier('id'), protect, getQuizAttempts);
 
 export default router;

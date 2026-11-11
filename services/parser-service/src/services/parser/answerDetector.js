@@ -63,8 +63,13 @@ export const normalizeAnswer = (answer, options) => {
       return value;
     }
 
-    case 'boolean':
+    case 'boolean': {
+      const matchIndex = matchAnswerToOption(answer, options);
+      if (matchIndex >= 0) {
+        return options[matchIndex].label;
+      }
       return value;
+    }
 
     default:
       return String(answer).trim();

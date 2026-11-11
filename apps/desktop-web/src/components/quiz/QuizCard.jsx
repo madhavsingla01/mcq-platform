@@ -423,15 +423,17 @@ function StandardQuizCard({
     { label: 'Bookmarks', value: bookmarkCount },
     { label: 'Shares', value: shareCount },
     { label: 'Visibility', value: isPublic ? 'Public' : 'Private' },
-    { label: 'Quiz ID', value: quiz.quizCode ? (
-      <button type="button" className="clean-quiz-code-badge" onClick={handleCopyCode} title="Copy quiz ID">
-        <span className="code-symbol">!</span>
-        <span className="code-value">{quiz.quizCode.replace(/^!/, '')}</span>
-        {copiedCode
-          ? <Check size={11} className="code-copy-icon success" />
-          : <Copy size={11} className="code-copy-icon" />}
-      </button>
-    ) : null },
+    {
+      label: 'Quiz ID', value: quiz.quizCode ? (
+        <button type="button" className="clean-quiz-code-badge" onClick={handleCopyCode} title="Copy quiz ID">
+          <span className="code-symbol">!</span>
+          <span className="code-value">{quiz.quizCode.replace(/^!/, '')}</span>
+          {copiedCode
+            ? <Check size={11} className="code-copy-icon success" />
+            : <Copy size={11} className="code-copy-icon" />}
+        </button>
+      ) : null
+    },
     { label: 'Tags', value: tags.length > 0 ? tags.join(', ') : null },
     { label: 'Creator', value: uploader.name || uploader.username || null },
     {

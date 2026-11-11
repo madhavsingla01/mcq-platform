@@ -518,10 +518,10 @@ describe('Tier 1: Feature Coverage (F1 through F12)', () => {
       expect([200, 404]).toContain(res.status);
     });
 
-    it('F12-4: api-gateway unit tests exist in services/api-gateway/tests', () => {
-      const csrfTest = readFileSafe(PATHS.root + '/services/api-gateway/tests/csrf.test.js') || '';
-      expect(csrfTest.length).toBeGreaterThan(0);
-      expect(csrfTest).toContain('csrfProtection');
+    it('F12-4: api-gateway contract tests cover proxy sanitization', () => {
+      const contractTest = readFileSafe(PATHS.root + '/services/api-gateway/tests/contracts.test.js') || '';
+      expect(contractTest.length).toBeGreaterThan(0);
+      expect(contractTest).toContain('sanitizeProxyRequest');
     });
 
     it('F12-5: Gateway error handler responds with 502 Bad Gateway if downstream is unavailable', () => {

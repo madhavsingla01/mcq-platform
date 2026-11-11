@@ -22,6 +22,7 @@ export const parseExcel = (filePath, options = {}) => {
       type: 'file',
       cellText: true,
       cellDates: true,
+      sheetRows: maxRows + 1,
     });
     const sheetNames = workbook.SheetNames || [];
 

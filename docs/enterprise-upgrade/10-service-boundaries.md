@@ -2,16 +2,19 @@
 
 Reviewed November 8, 2026 in the existing dirty `main` checkout based on `70e285e`. Step 01 evidence exists in [01](01-current-state-audit.md), [05](05-security-and-risk-register.md), [06](06-migration-roadmap.md) and [07](07-step-01-verification-report.md). Its Step 02 handoff focused on messaging. The new user brief supersedes that sequencing with application architecture work. Staging backups, capacity measurements and production rollout prerequisites remain unverified. Implementation and tests use disposable local data.
 
-The runtime has ten independently runnable Express processes, two React/Vite clients, shared MongoDB collections, filesystem media and in-process timers. Compose defines deployment units, not evidence that they are deployed in production. There is no broker, dedicated notification service, search cluster or separately deployed worker. The outer extractor's SQLite database is a different application.
+The runtime has thirteen independently runnable Express processes, two React/Vite clients, shared MongoDB collections, filesystem media and in-process timers. Compose defines deployment units, not evidence that they are deployed in production. There is no broker, dedicated search cluster or separately deployed worker. The outer extractor's SQLite database is a different application.
 
 | Component | Directory | Owner and public API under `/api/v1` | Runtime dependencies | Data authority and exceptions | Deployment evidence |
 |---|---|---|---|---|---|
-| Gateway | `services/api-gateway` | Edge routing, `/health`, `/livez`, `/readyz`, all domain proxies | Nine HTTP services, Message Socket.IO | No application data. Fourteen copied model files are unused by the server graph | Dockerfile, Compose port 5000 |
+| Gateway | `services/api-gateway` | Edge routing, `/health`, `/livez`, `/readyz`, all domain proxies | Twelve HTTP services, Message Socket.IO | No application data. Fourteen copied model files are unused by the server graph | Dockerfile, Compose port 5000 |
 | Identity | `services/auth-service` | Accounts, sessions and preferences, `/auth`, `/users` | MongoDB, JWT signing and verification | Users. Legacy follow/profile aliases also write/read Social data | Dockerfile, Compose internal 5001 |
 | Quiz | `services/quiz-service` | Authoring, questions, publish, `/quiz`, `/quizzes`, `/search` | MongoDB, local cache, Attempt HTTP relay | Quiz/question content. Legacy challenge authoring, user counters and import projections remain exceptions | Dockerfile, Compose internal 5002 |
 | Parser | `services/parser-service` | Structured upload, parse, mapping, `/upload`, `/parser`, `/uploads` | MongoDB, XLSX/PapaParse, filesystem | Upload parse state and mapping. Reads shared quiz duplicates | Dockerfile, Compose internal 5003 |
 | Attempt | `services/attempt-service` | Attempt state, timing, scoring, `/attempts`, attempt aliases under `/quiz` | MongoDB, in-process finalizer | Sole routed attempt mutation/finalization authority. Writes derived quiz aggregates and activity/notification records as compatibility exceptions | Dockerfile, Compose internal 5004 |
-| Social | `services/social-service` | Feed, relationships, comments, `/social`, `/notifications` alias | MongoDB, Message HTTP for direct-share alias | Follows, interactions, posts/activity, comments, shares, notifications. Updates user/quiz counters | Dockerfile, Compose internal 5005 |
+| Social compatibility | `services/social-service` | Legacy `/social` fallback and shared Social implementation | MongoDB, Message HTTP for direct-share alias | Original controllers/models remain as transitional implementation; keep until fallback and admin compatibility consumers are migrated | Dockerfile, Compose internal 5005 |
+| Social feed/profile | `services/social-feed-service` | Feed, explore, profiles, follows, activity, notifications | MongoDB, shared Social implementation source | Reads/writes profile/follow/activity/notification records and existing counters | Dockerfile, Compose internal 5010 |
+| Social interactions | `services/social-interactions-service` | Bookmarks, quiz likes, shares and contacts | MongoDB, Message HTTP for direct-share alias | Writes interaction/share records and existing quiz counters | Dockerfile, Compose internal 5011 |
+| Social comments | `services/social-comments-service` | Comment list/create/edit/delete and comment likes | MongoDB, shared Social implementation source | Writes comments and existing quiz/user counters plus activity/notifications | Dockerfile, Compose internal 5012 |
 | Messaging | `services/message-service` | DMs, `/messages`, `/socket.io` | MongoDB, process-local Socket.IO | Conversations and messages. Reads user/follow/content projections and updates share counts | Dockerfile, Compose internal 5006 |
 | Media | `services/media-service` | Image validation, variants and delivery, `/media` | MongoDB, Sharp, filesystem | MediaAsset and image variants. Asset delivery authorization needs Step 13 review | Dockerfile, Compose internal 5007 |
 | Administration | `services/admin-service` | RBAC, moderation, reports, audits, `/admin` | Main DB, optional auth/quiz/attempt DB connections, service health HTTP | RBAC, reports, audit. Raw cross-domain account/content moderation writes remain explicit exceptions | Dockerfile, Compose internal 5008 |
@@ -51,8 +54,14 @@ flowchart LR
   A --> AT[(attempts)]
   G --> C[Challenge definitions and rank projection]
   C -->|read| AT
-  G --> O[Identity / Parser / Social / Message / Media / Admin]
+  G --> O[Identity / Parser / Legacy Social / Message / Media / Admin]
+  G --> SF[Social Feed/Profile]
+  G --> SI[Social Interactions]
+  G --> SC[Social Comments]
   O --> DB[(Existing shared MongoDB)]
+  SF --> DB
+  SI --> DB
+  SC --> DB
   Q --> DB
   A --> DB
   C --> DB
@@ -94,3 +103,9 @@ Dashed edges are proposed contracts, not deployed event infrastructure. Keep que
 | Admin raw collection access; local caches; process-local presence | Shared mutation and consistency assumptions | Explicit exceptions and future contracts in [13](13-service-communication.md) and [14](14-database-ownership.md) |
 
 Generate reproducible source evidence with `node scripts/architecture-inventory.mjs`. [Inventory JSON](architecture-inventory.json) records models, operations, route registrations, network references and timers. Detection is a lower bound and does not prove that every exported function is reachable.
+
+## Social deployment split (2026-11-09)
+
+The Gateway preserves `/api/v1/social/*` and routes feed/profile/relationships/notifications to `social-feed-service`, quiz bookmarks/likes/shares to `social-interactions-service`, and comment operations to `social-comments-service`. `/api/v1/notifications/*` remains an alias to feed/profile. Unclassified Social routes use the old Social service as a temporary compatibility fallback. The three services have separate entry points, ports, Docker images, Compose services and local verification-stack entries.
+
+This is a **deployment and route ownership split, not database or implementation ownership isolation**. Domain handlers are currently re-exported from the legacy Social source tree, and the processes connect to the existing shared MongoDB and schemas. The old service remains required by the fallback and Admin's `SOCIAL_SERVICE_URL` setting. Keep it until route coverage, consumers and compatibility tests justify removal. Next, extract each controller and its exclusive helpers/models into its owning service, then introduce explicit write ownership for shared counters, activity and notifications before considering separate credentials/databases. No collection migration or user-data rewrite is part of this change.

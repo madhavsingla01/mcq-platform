@@ -72,8 +72,13 @@ export const useAuthStore = create((set, get) => ({
     return checkAuthPromise;
   },
 
-  login: async (email, password) => {
-    const { data } = await api.post('/auth/login', { email, password }, { skipAuthRefresh: true });
+  login: async (email, password, location) => {
+    const headers = location ? {
+      'x-client-location-latitude': String(location.latitude),
+      'x-client-location-longitude': String(location.longitude),
+      'x-client-location-accuracy': String(location.accuracy),
+    } : undefined;
+    const { data } = await api.post('/auth/login', { email, password }, { skipAuthRefresh: true, headers });
     sessionRevision += 1;
     setSessionHint();
     disconnectSocket();
@@ -83,8 +88,13 @@ export const useAuthStore = create((set, get) => ({
     return data;
   },
 
-  register: async (name, email, password) => {
-    const { data } = await api.post('/auth/register', { name, email, password }, { skipAuthRefresh: true });
+  register: async (name, email, password, location) => {
+    const headers = location ? {
+      'x-client-location-latitude': String(location.latitude),
+      'x-client-location-longitude': String(location.longitude),
+      'x-client-location-accuracy': String(location.accuracy),
+    } : undefined;
+    const { data } = await api.post('/auth/register', { name, email, password }, { skipAuthRefresh: true, headers });
     sessionRevision += 1;
     setSessionHint();
     disconnectSocket();
@@ -122,6 +132,16 @@ export const useAuthStore = create((set, get) => ({
     if (!userId || get().user?._id !== userId) return data;
     disconnectSocket();
     set({ user: data.data.user });
+    return data;
+  },
+  getSessions: async () => {
+    const { data } = await api.get('/auth/me/sessions');
+    return data.data.sessions;
+  },
+  revokeSession: async (sessionId, currentPassword) => {
+    const { data } = await api.post(`/auth/me/sessions/${encodeURIComponent(sessionId)}/revoke`, {
+      currentPassword,
+    });
     return data;
   },
   deleteAccount: async () => {

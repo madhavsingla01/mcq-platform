@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:quizfocus:contracts:marketplace-events:v1",
+  "version": "1.0.0",
+  "producer": "marketplace-service",
+  "title": "QuizFocus Marketplace Event Specification v1",
+  "description": "Versioned asynchronous event schemas for QuizFocus Marketplace domain lifecycle events",
+  "events": {
+    "marketplace.listing.created.v1": { "$ref": "#/$defs/ListingCreatedEvent" },
+    "marketplace.listing.updated.v1": { "$ref": "#/$defs/ListingUpdatedEvent" },
+    "marketplace.order.completed.v1": { "$ref": "#/$defs/OrderCompletedEvent" },
+    "marketplace.entitlement.granted.v1": { "$ref": "#/$defs/EntitlementGrantedEvent" },
+    "marketplace.entitlement.revoked.v1": { "$ref": "#/$defs/EntitlementRevokedEvent" }
+  },
+  "$defs": {
+    "BaseEventEnvelope": {
+      "type": "object",
+      "required": ["eventId", "eventType", "version", "timestamp", "producer", "data"],
+      "properties": {
+        "eventId": { "type": "string", "pattern": "^[0-9a-fA-F-]{36}$" },
+        "eventType": { "type": "string" },
+        "version": { "type": "string", "const": "1.0.0" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "producer": { "type": "string", "const": "marketplace-service" },
+        "traceId": { "type": "string" },
+        "data": { "type": "object" }
+      }
+    },
+    "ListingCreatedEvent": {
+      "allOf": [
+        { "$ref": "#/$defs/BaseEventEnvelope" },
+        {
+          "properties": {
+            "eventType": { "const": "marketplace.listing.created.v1" },
+            "data": {
+              "type": "object",
+              "required": [
+                "listingId",
+                "quizId",
+                "sellerId",
+                "price",
+                "currency",
+                "licenseType",
+                "status",
+                "createdAt"
+              ],
+              "properties": {
+                "listingId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "quizId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "sellerId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "title": { "type": "string" },
+                "price": { "type": "number", "minimum": 0 },
+                "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+                "licenseType": { "type": "string", "enum": ["single_user", "team", "institutional", "subscription"] },
+                "status": { "type": "string", "enum": ["draft", "active", "archived"] },
+                "previewQuestionsCount": { "type": "integer", "minimum": 0 },
+                "createdAt": { "type": "string", "format": "date-time" }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      ]
+    },
+    "ListingUpdatedEvent": {
+      "allOf": [
+        { "$ref": "#/$defs/BaseEventEnvelope" },
+        {
+          "properties": {
+            "eventType": { "const": "marketplace.listing.updated.v1" },
+            "data": {
+              "type": "object",
+              "required": [
+                "listingId",
+                "quizId",
+                "sellerId",
+                "status",
+                "updatedAt",
+                "changedFields"
+              ],
+              "properties": {
+                "listingId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "quizId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "sellerId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "price": { "type": "number", "minimum": 0 },
+                "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+                "status": { "type": "string", "enum": ["draft", "active", "archived", "suspended"] },
+                "changedFields": { "type": "array", "items": { "type": "string" } },
+                "updatedAt": { "type": "string", "format": "date-time" }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      ]
+    },
+    "OrderCompletedEvent": {
+      "allOf": [
+        { "$ref": "#/$defs/BaseEventEnvelope" },
+        {
+          "properties": {
+            "eventType": { "const": "marketplace.order.completed.v1" },
+            "data": {
+              "type": "object",
+              "required": [
+                "orderId",
+                "listingId",
+                "quizId",
+                "buyerId",
+                "sellerId",
+                "amount",
+                "currency",
+                "idempotencyKey",
+                "completedAt"
+              ],
+              "properties": {
+                "orderId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "listingId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "quizId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "buyerId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "sellerId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "amount": { "type": "number", "minimum": 0 },
+                "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+                "licenseType": { "type": "string", "enum": ["single_user", "team", "institutional", "subscription"] },
+                "idempotencyKey": { "type": "string" },
+                "transactionId": { "type": "string" },
+                "completedAt": { "type": "string", "format": "date-time" }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      ]
+    },
+    "EntitlementGrantedEvent": {
+      "allOf": [
+        { "$ref": "#/$defs/BaseEventEnvelope" },
+        {
+          "properties": {
+            "eventType": { "const": "marketplace.entitlement.granted.v1" },
+            "data": {
+              "type": "object",
+              "required": [
+                "entitlementId",
+                "userId",
+                "quizId",
+                "listingId",
+                "orderId",
+                "licenseType",
+                "grantedAt"
+              ],
+              "properties": {
+                "entitlementId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "userId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "quizId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "listingId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "orderId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "licenseType": { "type": "string", "enum": ["single_user", "team", "institutional", "subscription"] },
+                "grantedAt": { "type": "string", "format": "date-time" },
+                "expiresAt": { "type": ["string", "null"], "format": "date-time" }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      ]
+    },
+    "EntitlementRevokedEvent": {
+      "allOf": [
+        { "$ref": "#/$defs/BaseEventEnvelope" },
+        {
+          "properties": {
+            "eventType": { "const": "marketplace.entitlement.revoked.v1" },
+            "data": {
+              "type": "object",
+              "required": [
+                "entitlementId",
+                "userId",
+                "quizId",
+                "reason",
+                "revokedAt",
+                "revokedBy"
+              ],
+              "properties": {
+                "entitlementId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "userId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "quizId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "reason": { "type": "string", "enum": ["refund", "dispute", "administrative", "expired", "license_transferred"] },
+                "revokedAt": { "type": "string", "format": "date-time" },
+                "revokedBy": { "type": "string", "pattern": "^[a-f0-9]{24}$" }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      ]
+    }
+  }
+}

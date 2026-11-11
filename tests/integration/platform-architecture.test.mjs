@@ -75,14 +75,39 @@ test('Step 02 gateway, domain ownership and real product lifecycle contracts', a
   await t.test('challenge attempts remain quarantined and ranked after the deadline with creator practice excluded', async () => {
     const created=await author.post('/api/v1/challenges',{title:'Architecture competition',durationMinutes:5,deadlineAt:new Date(Date.now()+600000).toISOString(),questions:[{questionText:'2 plus 2?',options:['4','5'],correctOption:0}]});
     check(created,201);challengeId=created.data.data.challengeId;
-    const participate=await player.post(`/api/v1/quiz/${challengeId}/attempt`,{});check(participate,201);
-    const id=participate.data.data.attempt._id;
+    const concurrentStarts = await Promise.all(
+      Array.from({ length: 3 }, () => player.post(`/api/v1/quiz/${challengeId}/attempt`, {})),
+    );
+    assert.ok(
+      concurrentStarts.every(response => [200, 201, 403].includes(response.status)),
+      JSON.stringify(concurrentStarts.map(response => ({ status: response.status, data: response.data }))),
+    );
+    const startedIds = new Set(
+      concurrentStarts
+        .filter(response => [200, 201].includes(response.status))
+        .map(response => response.data.data.attempt._id),
+    );
+    assert.equal(startedIds.size, 1, 'concurrent challenge starts must resolve to one ranked attempt');
+    const id = [...startedIds][0];
+    assert.equal(
+      await db.collection('attempts').countDocuments({
+        quizId: new ObjectId(challengeId),
+        userId: new ObjectId(p.userId),
+        challengeAttempt: true,
+      }),
+      1,
+      'the unique database invariant must persist exactly one ranked attempt',
+    );
     const practice=await author.post(`/api/v1/quiz/${challengeId}/attempt`,{});check(practice,201);
     assert.equal(practice.data.data.attempt.isPractice,true);
     const practiceId = practice.data.data.attempt._id;
     check(await author.put(`/api/v1/quiz/${challengeId}/attempt/${practiceId}`, {}), 200);
     const submitted=await player.put(`/api/v1/quiz/${challengeId}/attempt/${id}`,{});check(submitted,200);
     assert.equal(submitted.data.data.score,null);
+    const repeatedSubmission = await player.put(`/api/v1/quiz/${challengeId}/attempt/${id}`, {});
+    check(repeatedSubmission, 200);
+    assert.equal(repeatedSubmission.data.data.attempt._id, id);
+    assert.equal(repeatedSubmission.data.data.attempt.completedAt, submitted.data.data.attempt.completedAt);
     const sealed=await player.get(`/api/v1/challenges/${challengeId}/leaderboard`);check(sealed,200);
     assert.equal(sealed.data.data.quarantined,true);assert.deepEqual(sealed.data.data.leaderboard,[]);
     assert.equal(sealed.data.data.title, 'Architecture competition');

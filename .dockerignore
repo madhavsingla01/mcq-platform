@@ -1,0 +1,12 @@
+**/node_modules
+**/.env
+**/.env.*
+!**/.env.example
+.git
+**/*.log
+**/coverage
+**/src/uploads
+**/media-storage
+.mongo_data
+docker-data
+.runtime

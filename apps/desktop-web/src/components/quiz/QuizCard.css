@@ -60,13 +60,13 @@
   top: 0;
   right: 0;
   bottom: 0;
-  width: 74%;
+  width: 52%;
   overflow: hidden;
   pointer-events: none;
   z-index: 0;
   border-top-right-radius: 14px;
   border-bottom-right-radius: 14px;
-  mask-image: linear-gradient(to right, transparent, #000 88%);
+  mask-image: linear-gradient(to right, transparent, #000 92%);
 }
 
 .clean-quiz-cover-img {
@@ -78,13 +78,18 @@
   transition: transform 0.28s var(--ease-out);
 }
 
-/* Blur only the transition, leaving the right edge sharp. */
+/* Keep the dark fade while leaving the image unblurred. */
 .clean-quiz-cover-fade {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, var(--color-surface, #121214), transparent 65%);
-  backdrop-filter: blur(9px);
-  mask-image: linear-gradient(to right, #000 14%, transparent 74%);
+  background: linear-gradient(
+    to right,
+    rgba(18, 18, 20, 0.96) 0%,
+    rgba(18, 18, 20, 0.75) 30%,
+    rgba(18, 18, 20, 0.28) 46%,
+    rgba(18, 18, 20, 0) 100%
+  );
+  mask-image: linear-gradient(to right, #000 0%, #000 46%, transparent 100%);
   pointer-events: none;
 }
 
@@ -884,4 +889,3 @@
 .btn-circle-play:active {
   transform: scale(0.97);
 }
-

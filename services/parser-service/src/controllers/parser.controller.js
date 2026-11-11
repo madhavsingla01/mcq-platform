@@ -6,6 +6,7 @@ import Upload from '../models/Upload.model.js';
 import { catchAsync, AppError } from '../middleware/error.middleware.js';
 import { ParserRegistry } from '../services/parser/strategies/ParserRegistry.js';
 import { smartMapColumns } from '../services/parser/smartColumnMapper.js';
+import { validateColumnMapping } from '../services/parser/validateColumnMapping.js';
 import { logger } from '../utils/logger.js';
 import { assertUploadAccess } from '../utils/authorizeUpload.js';
 
@@ -112,18 +113,24 @@ export const applyMapping = catchAsync(async (req, res, next) => {
 
   const { question, options, answer, explanation, serial, media, topic, difficulty } = req.body;
 
-  // Validate required mappings
-  if (!question) {
-    return next(new AppError('Question column mapping is required', 400));
-  }
-  if (!options || options.length < 2) {
-    return next(new AppError('At least 2 option columns are required', 400));
+  const mappingError = validateColumnMapping(upload.parsedData.headers, {
+    question,
+    options,
+    answer,
+    explanation,
+    serial,
+    media,
+    topic,
+    difficulty,
+  });
+  if (mappingError) {
+    return next(new AppError(mappingError, 400));
   }
 
   upload.columnMapping = {
     question,
     options,
-    answer: answer || null,
+    answer,
     explanation: explanation || null,
     serial: serial || null,
     media: media || null,

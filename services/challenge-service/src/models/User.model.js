@@ -67,6 +67,17 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    sessions: {
+      type: [{
+        sessionId: { type: String, required: true },
+        device: { type: String, required: true, maxlength: 120 },
+        createdAt: { type: Date, required: true },
+        lastActiveAt: { type: Date, required: true },
+        expiresAt: { type: Date, required: true },
+      }],
+      default: [],
+      select: false,
+    },
     failedLoginAttempts: {
       type: Number,
       default: 0,

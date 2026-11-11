@@ -13,7 +13,6 @@ import {
   CornerDownRight,
   ChevronDown,
   ChevronUp,
-  Copy,
 } from 'lucide-react';
 import api from '../../api/axios';
 import { Spinner } from '../ui';
@@ -21,6 +20,12 @@ import ConfirmDeleteModal from '../ui/ConfirmDeleteModal';
 import ShareModal from '../social/ShareModal';
 import { useAuthStore } from '../../store/authStore';
 import { toast } from 'sonner';
+import {
+  appendCommentReply,
+  countCommentTree,
+  getCommentAncestorIds,
+  updateCommentTree,
+} from '../../utils/commentTree';
 import './CommentsSection.css';
 
 const timeAgo = (value) => {
@@ -36,6 +41,291 @@ const timeAgo = (value) => {
   return new Date(value).toLocaleDateString();
 };
 
+const getExpandedThreadIds = (comments) => {
+  const expanded = {};
+  for (const comment of comments) {
+    if (comment.replies?.length) {
+      expanded[comment._id] = true;
+      Object.assign(expanded, getExpandedThreadIds(comment.replies));
+    }
+  }
+  return expanded;
+};
+
+function CommentNode({
+  comment,
+  depth,
+  user,
+  isAuthenticated,
+  editingId,
+  editBody,
+  setEditBody,
+  onStartEdit,
+  onCancelEdit,
+  onSaveEdit,
+  onDelete,
+  onLike,
+  onReply,
+  onShare,
+  replyingTo,
+  replyBody,
+  setReplyBody,
+  submittingReply,
+  onSubmitReply,
+  replyInputRef,
+  expandedThreads,
+  onToggleThread,
+}) {
+  const author = comment.author || {};
+  const authorId = author._id || comment.author;
+  const isOwner = Boolean(user?._id && authorId && String(user._id) === String(authorId));
+  const isDeleted = comment.status === 'deleted';
+  const isEditing = editingId === comment._id;
+  const authorName = author.name || author.username || 'User';
+  const authorUsername = author.username ? `@${author.username}` : '';
+  const authorProfile = author.username ? `/@${author.username}` : null;
+  const replies = comment.replies || [];
+  const isThreadExpanded = Boolean(expandedThreads[comment._id]);
+  const isReplyingHere = replyingTo?.parentCommentId === comment._id;
+  const targetUser = replyingTo?.targetUser;
+  const isRoot = depth === 0;
+
+  return (
+    <div
+      className={isRoot ? 'comment-thread-block' : 'nested-comment-node'}
+      id={`comment-${comment._id}`}
+      style={{ '--comment-depth': Math.min(depth, 5) }}
+    >
+      <div className={`comment-item${isRoot ? '' : ' reply-item'}`}>
+        <div className="comment-avatar-slot">
+          {author.avatar ? (
+            <img
+              src={author.avatar}
+              alt={authorName}
+              className={`comment-avatar${isRoot ? '' : ' small'}`}
+              loading="lazy"
+              decoding="async"
+              width={isRoot ? 36 : 28}
+              height={isRoot ? 36 : 28}
+            />
+          ) : (
+            <div className={`comment-avatar-placeholder${isRoot ? '' : ' small'}`}>
+              <User size={isRoot ? 14 : 12} />
+            </div>
+          )}
+        </div>
+
+        <div className="comment-content">
+          <div className="comment-meta">
+            {authorProfile ? (
+              <Link to={authorProfile} className="comment-author-link">
+                {authorName}
+              </Link>
+            ) : (
+              <span className="comment-author-name">{authorName}</span>
+            )}
+            {authorUsername && <span className="comment-handle">{authorUsername}</span>}
+            {!isRoot && comment.replyToUser && (
+              <span className="reply-to-tag">
+                replied to @{comment.replyToUser.username || comment.replyToUser.name}
+              </span>
+            )}
+            <span className="comment-dot">•</span>
+            <span className="comment-timestamp">{timeAgo(comment.createdAt)}</span>
+            {!isDeleted && comment.editedAt && <span className="comment-edited">(edited)</span>}
+
+            {isOwner && !isEditing && !isDeleted && (
+              <div className="comment-actions-right">
+                <button
+                  type="button"
+                  className="btn-comment-action"
+                  onClick={() => onStartEdit(comment)}
+                  title={isRoot ? 'Edit comment' : 'Edit reply'}
+                  aria-label={isRoot ? 'Edit comment' : 'Edit reply'}
+                >
+                  <Edit2 size={isRoot ? 12 : 11} />
+                </button>
+                <button
+                  type="button"
+                  className="btn-comment-action text-danger"
+                  onClick={() => onDelete(comment)}
+                  title={isRoot ? 'Delete comment' : 'Delete reply'}
+                  aria-label={isRoot ? 'Delete comment' : 'Delete reply'}
+                >
+                  <Trash2 size={isRoot ? 12 : 11} />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {isEditing ? (
+            <div className="comment-edit-wrap">
+              <textarea
+                className="comment-edit-textarea"
+                value={editBody}
+                onChange={(event) => setEditBody(event.target.value)}
+                rows={2}
+                maxLength={1000}
+              />
+              <div className="comment-edit-buttons">
+                <button
+                  type="button"
+                  className="btn-edit-save"
+                  onClick={() => onSaveEdit(comment._id)}
+                >
+                  <Check size={14} />
+                  <span>Save</span>
+                </button>
+                <button type="button" className="btn-edit-cancel" onClick={onCancelEdit}>
+                  <X size={14} />
+                  <span>Cancel</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className={`comment-body${isRoot ? '' : ' reply-body'}${isDeleted ? ' deleted-comment-body' : ''}`}>
+              {isDeleted ? 'Comment is deleted' : comment.body}
+            </div>
+          )}
+
+          <div className="comment-interactions-row">
+            {!isDeleted && (
+              <>
+                <button
+                  type="button"
+                  className={`comment-pill-action like ${comment.isLiked ? 'active' : ''}`}
+                  onClick={() => onLike(comment)}
+                  title={comment.isLiked ? 'Unlike comment' : 'Like comment'}
+                >
+                  <Heart
+                    size={isRoot ? 13 : 12}
+                    fill={comment.isLiked ? '#FF4500' : 'none'}
+                    color={comment.isLiked ? '#FF4500' : 'currentColor'}
+                  />
+                  <span>{(comment.likeCount || 0) > 0 ? comment.likeCount : 'Like'}</span>
+                </button>
+                <button
+                  type="button"
+                  className="comment-pill-action share"
+                  onClick={() => onShare(comment)}
+                  title={isRoot ? 'Share comment' : 'Share reply'}
+                >
+                  <Share2 size={isRoot ? 13 : 12} />
+                  <span>Share</span>
+                </button>
+              </>
+            )}
+            <button
+              type="button"
+              className="comment-pill-action"
+              onClick={() => onReply(comment)}
+              title={isRoot ? 'Reply to comment' : 'Reply to user'}
+            >
+              <CornerDownRight size={isRoot ? 13 : 12} />
+              <span>Reply</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {isReplyingHere && (
+        <form onSubmit={onSubmitReply} className="inline-reply-box">
+          <div className="reply-header-info">
+            <CornerDownRight size={13} className="reply-icon" />
+            <span>
+              Replying to{' '}
+              <strong>@{targetUser?.username || targetUser?.name || 'comment'}</strong>
+            </span>
+            <button
+              type="button"
+              className="btn-cancel-reply-x"
+              onClick={() => onReply(null)}
+              title="Cancel reply"
+              aria-label="Cancel reply"
+            >
+              <X size={12} />
+            </button>
+          </div>
+
+          <div className="inline-reply-input-row">
+            <input
+              ref={replyInputRef}
+              type="text"
+              className="inline-reply-input"
+              placeholder={`Write your reply to @${targetUser?.username || targetUser?.name || 'comment'}...`}
+              value={replyBody}
+              onChange={(event) => setReplyBody(event.target.value)}
+              maxLength={1000}
+              disabled={submittingReply}
+            />
+            <button
+              type="submit"
+              className="btn-submit-reply"
+              disabled={!replyBody.trim() || submittingReply}
+              title="Post reply"
+            >
+              {submittingReply ? <Spinner size={13} /> : <Send size={13} />}
+              <span>Reply</span>
+            </button>
+          </div>
+        </form>
+      )}
+
+      {replies.length > 0 && (
+        <div
+          className="comment-replies-container"
+          style={{ marginLeft: isRoot ? 48 : 24 }}
+        >
+          <button
+            type="button"
+            className="btn-toggle-thread"
+            onClick={() => onToggleThread(comment._id)}
+            aria-expanded={isThreadExpanded}
+          >
+            {isThreadExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            <span>
+              {isThreadExpanded
+                ? `Hide ${replies.length} ${replies.length === 1 ? 'reply' : 'replies'}`
+                : `View ${replies.length} ${replies.length === 1 ? 'reply' : 'replies'}`}
+            </span>
+          </button>
+          {isThreadExpanded && (
+            <div className="replies-nested-list">
+              {replies.map((reply) => (
+                <CommentNode
+                  key={reply._id}
+                  comment={reply}
+                  depth={depth + 1}
+                  user={user}
+                  isAuthenticated={isAuthenticated}
+                  editingId={editingId}
+                  editBody={editBody}
+                  setEditBody={setEditBody}
+                  onStartEdit={onStartEdit}
+                  onCancelEdit={onCancelEdit}
+                  onSaveEdit={onSaveEdit}
+                  onDelete={onDelete}
+                  onLike={onLike}
+                  onReply={onReply}
+                  onShare={onShare}
+                  replyingTo={replyingTo}
+                  replyBody={replyBody}
+                  setReplyBody={setReplyBody}
+                  submittingReply={submittingReply}
+                  onSubmitReply={onSubmitReply}
+                  replyInputRef={replyInputRef}
+                  expandedThreads={expandedThreads}
+                  onToggleThread={onToggleThread}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CommentsSection({ quizId, quiz = null, initialCount = 0, onCommentCountChange }) {
   const { user, isAuthenticated } = useAuthStore();
   const [comments, setComments] = useState([]);
@@ -45,27 +335,14 @@ export default function CommentsSection({ quizId, quiz = null, initialCount = 0,
   const [editingId, setEditingId] = useState(null);
   const [editBody, setEditBody] = useState('');
   const [error, setError] = useState('');
-
-  // Replying state: { parentCommentId, targetUser }
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyBody, setReplyBody] = useState('');
   const [submittingReply, setSubmittingReply] = useState(false);
-
-  // Expanded replies map: { [commentId]: boolean }
   const [expandedThreads, setExpandedThreads] = useState({});
-
-  // Share modal state for sharing a comment
   const [sharingComment, setSharingComment] = useState(null);
-
-  // Delete modal state: { id, isReply, parentId }
   const [commentToDelete, setCommentToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
-
   const replyInputRef = useRef(null);
-
-  const calculateTotalComments = (commentList) => {
-    return commentList.reduce((acc, c) => acc + 1 + (c.replies?.length || 0), 0);
-  };
 
   const fetchComments = async () => {
     if (!quizId) return;
@@ -74,10 +351,10 @@ export default function CommentsSection({ quizId, quiz = null, initialCount = 0,
       const { data } = await api.get(`/social/quizzes/${quizId}/comments`, { params: { limit: 50 } });
       const fetched = data.data?.comments || [];
       setComments(fetched);
-      const total = data.data?.totalComments ?? calculateTotalComments(fetched);
-      if (onCommentCountChange) onCommentCountChange(total);
+      setExpandedThreads(getExpandedThreadIds(fetched));
+      onCommentCountChange?.(data.data?.totalComments ?? countCommentTree(fetched));
     } catch {
-      // Quiet fail if quiz not accessible
+      // Quiet fail if quiz is not accessible.
     } finally {
       setLoading(false);
     }
@@ -93,9 +370,8 @@ export default function CommentsSection({ quizId, quiz = null, initialCount = 0,
     }
   }, [replyingTo]);
 
-  // Post a new top-level comment
-  const handleSubmitTopLevel = async (e) => {
-    e.preventDefault();
+  const handleSubmitTopLevel = async (event) => {
+    event.preventDefault();
     if (!newComment.trim() || submitting) return;
     if (!isAuthenticated) {
       setError('Please log in to leave a comment.');
@@ -108,21 +384,19 @@ export default function CommentsSection({ quizId, quiz = null, initialCount = 0,
       const { data } = await api.post(`/social/quizzes/${quizId}/comments`, {
         body: newComment.trim(),
       });
-      const created = data.data.comment;
-      const updated = [created, ...comments];
+      const updated = [data.data.comment, ...comments];
       setComments(updated);
       setNewComment('');
-      if (onCommentCountChange) onCommentCountChange(calculateTotalComments(updated));
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to post comment.');
+      onCommentCountChange?.(countCommentTree(updated));
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Failed to post comment.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Post a reply (comment on comment)
-  const handleSubmitReply = async (e) => {
-    e.preventDefault();
+  const handleSubmitReply = async (event) => {
+    event.preventDefault();
     if (!replyBody.trim() || submittingReply || !replyingTo) return;
     if (!isAuthenticated) {
       toast.error('Please log in to reply.');
@@ -136,104 +410,51 @@ export default function CommentsSection({ quizId, quiz = null, initialCount = 0,
         parentComment: replyingTo.parentCommentId,
         replyToUser: replyingTo.targetUser?._id,
       });
-
-      const newReply = data.data.comment;
-
-      setComments((prev) =>
-        prev.map((c) => {
-          if (c._id === replyingTo.parentCommentId) {
-            const replies = c.replies || [];
-            return {
-              ...c,
-              replies: [...replies, newReply],
-              replyCount: (c.replyCount || replies.length) + 1,
-            };
-          }
-          return c;
-        })
-      );
-
-      // Auto expand thread so new reply is visible
-      setExpandedThreads((prev) => ({ ...prev, [replyingTo.parentCommentId]: true }));
+      const parentId = replyingTo.parentCommentId;
+      const ancestors = getCommentAncestorIds(comments, parentId) || [];
+      const updated = appendCommentReply(comments, parentId, data.data.comment);
+      setComments(updated);
+      setExpandedThreads((previous) => ({
+        ...previous,
+        ...Object.fromEntries([...ancestors, parentId].map((id) => [id, true])),
+      }));
       setReplyingTo(null);
       setReplyBody('');
-
-      if (onCommentCountChange) {
-        onCommentCountChange(calculateTotalComments(comments) + 1);
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to post reply.');
+      onCommentCountChange?.(countCommentTree(updated));
+    } catch (requestError) {
+      toast.error(requestError.response?.data?.message || 'Failed to post reply.');
     } finally {
       setSubmittingReply(false);
     }
   };
 
-  // Like or unlike a comment or reply
-  const handleToggleLike = async (comment, isReply = false, parentId = null) => {
+  const handleToggleLike = async (comment) => {
     if (!isAuthenticated) {
       window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
       return;
     }
 
     const nextLiked = !comment.isLiked;
-    const nextCount = nextLiked ? (comment.likeCount || 0) + 1 : Math.max((comment.likeCount || 0) - 1, 0);
-
-    // Optimistic state update
-    if (isReply && parentId) {
-      setComments((prev) =>
-        prev.map((p) => {
-          if (p._id === parentId) {
-            return {
-              ...p,
-              replies: (p.replies || []).map((r) =>
-                r._id === comment._id ? { ...r, isLiked: nextLiked, likeCount: nextCount } : r
-              ),
-            };
-          }
-          return p;
-        })
-      );
-    } else {
-      setComments((prev) =>
-        prev.map((c) => (c._id === comment._id ? { ...c, isLiked: nextLiked, likeCount: nextCount } : c))
-      );
-    }
+    const nextCount = nextLiked
+      ? (comment.likeCount || 0) + 1
+      : Math.max((comment.likeCount || 0) - 1, 0);
+    setComments((previous) => updateCommentTree(previous, comment._id, (item) => ({
+      ...item,
+      isLiked: nextLiked,
+      likeCount: nextCount,
+    })));
 
     try {
-      const method = nextLiked ? 'post' : 'delete';
-      await api[method](`/social/comments/${comment._id}/like`);
+      await api[nextLiked ? 'post' : 'delete'](`/social/comments/${comment._id}/like`);
     } catch {
-      // Revert on error
-      if (isReply && parentId) {
-        setComments((prev) =>
-          prev.map((p) => {
-            if (p._id === parentId) {
-              return {
-                ...p,
-                replies: (p.replies || []).map((r) =>
-                  r._id === comment._id ? { ...r, isLiked: !nextLiked, likeCount: comment.likeCount } : r
-                ),
-              };
-            }
-            return p;
-          })
-        );
-      } else {
-        setComments((prev) =>
-          prev.map((c) =>
-            c._id === comment._id ? { ...c, isLiked: !nextLiked, likeCount: comment.likeCount } : c
-          )
-        );
-      }
+      setComments((previous) => updateCommentTree(previous, comment._id, (item) => ({
+        ...item,
+        isLiked: !nextLiked,
+        likeCount: comment.likeCount,
+      })));
     }
   };
 
-  // Share a comment (open full share dialog)
-  const handleShareComment = (comment) => {
-    setSharingComment(comment);
-  };
-
-  // Edit comment
   const handleStartEdit = (comment) => {
     setEditingId(comment._id);
     setEditBody(comment.body);
@@ -244,94 +465,80 @@ export default function CommentsSection({ quizId, quiz = null, initialCount = 0,
     setEditBody('');
   };
 
-  const handleSaveEdit = async (commentId, isReply = false, parentId = null) => {
+  const handleSaveEdit = async (commentId) => {
     if (!editBody.trim()) return;
     try {
       const { data } = await api.patch(`/social/comments/${commentId}`, {
         body: editBody.trim(),
       });
-      const updated = data.data.comment;
-
-      if (isReply && parentId) {
-        setComments((prev) =>
-          prev.map((p) => {
-            if (p._id === parentId) {
-              return {
-                ...p,
-                replies: (p.replies || []).map((r) => (r._id === commentId ? { ...r, ...updated } : r)),
-              };
-            }
-            return p;
-          })
-        );
-      } else {
-        setComments((prev) =>
-          prev.map((c) => (c._id === commentId ? { ...c, ...updated } : c))
-        );
-      }
-      setEditingId(null);
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update comment.');
+      setComments((previous) => updateCommentTree(previous, commentId, (comment) => ({
+        ...comment,
+        ...data.data.comment,
+      })));
+      handleCancelEdit();
+    } catch (requestError) {
+      toast.error(requestError.response?.data?.message || 'Failed to update comment.');
     }
   };
 
-  // Delete comment via modal
   const handleConfirmDelete = async () => {
     if (!commentToDelete) return;
     setIsDeleting(true);
     try {
-      await api.delete(`/social/comments/${commentToDelete.id}`);
-
-      if (commentToDelete.isReply && commentToDelete.parentId) {
-        setComments((prev) =>
-          prev.map((p) => {
-            if (p._id === commentToDelete.parentId) {
-              const nextReplies = (p.replies || []).filter((r) => r._id !== commentToDelete.id);
-              return {
-                ...p,
-                replies: nextReplies,
-                replyCount: Math.max((p.replyCount || 1) - 1, 0),
-              };
-            }
-            return p;
-          })
-        );
-      } else {
-        setComments((prev) => prev.filter((c) => c._id !== commentToDelete.id));
-      }
-
+      await api.delete(`/social/comments/${commentToDelete._id}`);
+      setComments((previous) => updateCommentTree(previous, commentToDelete._id, (comment) => ({
+        ...comment,
+        body: 'Comment is deleted',
+        status: 'deleted',
+        likes: [],
+        likeCount: 0,
+        isLiked: false,
+        isOwner: false,
+      })));
       setCommentToDelete(null);
-
-      // Recalculate count
-      setTimeout(() => {
-        setComments((latest) => {
-          if (onCommentCountChange) onCommentCountChange(calculateTotalComments(latest));
-          return latest;
-        });
-      }, 50);
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to delete comment.');
+    } catch (requestError) {
+      toast.error(requestError.response?.data?.message || 'Failed to delete comment.');
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const toggleThread = (commentId) => {
-    setExpandedThreads((prev) => ({ ...prev, [commentId]: !prev[commentId] }));
+  const handleReply = (comment) => {
+    if (!comment) {
+      setReplyingTo(null);
+      return;
+    }
+    const author = comment.author?.name || comment.author?.username
+      ? comment.author
+      : null;
+    setReplyingTo({
+      parentCommentId: comment._id,
+      targetUser: comment.status === 'deleted' ? null : author,
+    });
   };
 
-  const totalCommentCount = calculateTotalComments(comments);
+  const handleDelete = (comment) => {
+    setCommentToDelete({
+      _id: comment._id,
+      isReply: Boolean(comment.parentComment),
+    });
+  };
+
+  const toggleThread = (commentId) => {
+    setExpandedThreads((previous) => ({ ...previous, [commentId]: !previous[commentId] }));
+  };
+
+  const totalCommentCount = countCommentTree(comments);
 
   return (
     <div className="quiz-comments-section" id="comments">
       <div className="quiz-comments-header">
         <div className="quiz-comments-title">
           <MessageSquare size={18} />
-          <h3>Discussion & Comments ({totalCommentCount})</h3>
+          <h3>Discussion &amp; Comments ({loading ? initialCount : totalCommentCount})</h3>
         </div>
       </div>
 
-      {/* New Top-Level Comment Input */}
       <form onSubmit={handleSubmitTopLevel} className="new-comment-form">
         {error && <div className="comment-error-alert">{error}</div>}
         <div className="new-comment-input-wrap">
@@ -344,7 +551,7 @@ export default function CommentsSection({ quizId, quiz = null, initialCount = 0,
                 : 'Log in to join the discussion...'
             }
             value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
+            onChange={(event) => setNewComment(event.target.value)}
             disabled={!isAuthenticated || submitting}
             maxLength={1000}
           />
@@ -360,7 +567,6 @@ export default function CommentsSection({ quizId, quiz = null, initialCount = 0,
         </div>
       </form>
 
-      {/* Comments List */}
       <div className="comments-list">
         {loading ? (
           <div className="comments-loading">
@@ -371,389 +577,35 @@ export default function CommentsSection({ quizId, quiz = null, initialCount = 0,
           <div className="comments-empty">
             <p>No comments yet. Be the first to share your thoughts on this quiz!</p>
           </div>
-        ) : (
-          comments.map((comment) => {
-            const author = comment.author || {};
-            const authorId = author._id || comment.author;
-            const isOwner = Boolean(user?._id && authorId && String(user._id) === String(authorId));
-            const isEditing = editingId === comment._id;
-            const authorName = author.name || author.username || 'User';
-            const authorUsername = author.username ? `@${author.username}` : '';
-            const authorProfile = author.username ? `/@${author.username}` : null;
-            const replies = comment.replies || [];
-            const isThreadExpanded = Boolean(expandedThreads[comment._id]);
-            const isReplyingHere = replyingTo?.parentCommentId === comment._id;
-
-            return (
-              <div key={comment._id} className="comment-thread-block" id={`comment-${comment._id}`}>
-                {/* Parent Comment Item */}
-                <div className="comment-item">
-                  <div className="comment-avatar-slot">
-                    {author.avatar ? (
-                      <img
-                        src={author.avatar}
-                        alt={authorName}
-                        className="comment-avatar"
-                        loading="lazy"
-                        decoding="async"
-                        width="28"
-                        height="28"
-                      />
-                    ) : (
-                      <div className="comment-avatar-placeholder">
-                        <User size={14} />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="comment-content">
-                    <div className="comment-meta">
-                      {authorProfile ? (
-                        <Link to={authorProfile} className="comment-author-link">
-                          {authorName}
-                        </Link>
-                      ) : (
-                        <span className="comment-author-name">{authorName}</span>
-                      )}
-                      {authorUsername && <span className="comment-handle">{authorUsername}</span>}
-                      <span className="comment-dot">•</span>
-                      <span className="comment-timestamp">{timeAgo(comment.createdAt)}</span>
-                      {comment.editedAt && <span className="comment-edited">(edited)</span>}
-
-                      {isOwner && !isEditing && (
-                        <div className="comment-actions-right">
-                          <button
-                            type="button"
-                            className="btn-comment-action"
-                            onClick={() => handleStartEdit(comment)}
-                            title="Edit comment"
-                          >
-                            <Edit2 size={12} />
-                          </button>
-                          <button
-                            type="button"
-                            className="btn-comment-action text-danger"
-                            onClick={() =>
-                              setCommentToDelete({ id: comment._id, isReply: false, parentId: null })
-                            }
-                            title="Delete comment"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {isEditing ? (
-                      <div className="comment-edit-wrap">
-                        <textarea
-                          className="comment-edit-textarea"
-                          value={editBody}
-                          onChange={(e) => setEditBody(e.target.value)}
-                          rows={2}
-                          maxLength={1000}
-                        />
-                        <div className="comment-edit-buttons">
-                          <button
-                            type="button"
-                            className="btn-edit-save"
-                            onClick={() => handleSaveEdit(comment._id, false)}
-                          >
-                            <Check size={14} />
-                            <span>Save</span>
-                          </button>
-                          <button
-                            type="button"
-                            className="btn-edit-cancel"
-                            onClick={handleCancelEdit}
-                          >
-                            <X size={14} />
-                            <span>Cancel</span>
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="comment-body">{comment.body}</div>
-                    )}
-
-                    {/* Interaction Buttons Row: Like, Reply, Share */}
-                    <div className="comment-interactions-row">
-                      <button
-                        type="button"
-                        className={`comment-pill-action like ${comment.isLiked ? 'active' : ''}`}
-                        onClick={() => handleToggleLike(comment, false)}
-                        title={comment.isLiked ? 'Unlike comment' : 'Like comment'}
-                      >
-                        <Heart
-                          size={13}
-                          fill={comment.isLiked ? '#FF4500' : 'none'}
-                          color={comment.isLiked ? '#FF4500' : 'currentColor'}
-                        />
-                        <span>{(comment.likeCount || 0) > 0 ? comment.likeCount : 'Like'}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        className="comment-pill-action"
-                        onClick={() => {
-                          setReplyingTo({
-                            parentCommentId: comment._id,
-                            targetUser: author,
-                          });
-                        }}
-                        title="Reply to comment"
-                      >
-                        <CornerDownRight size={13} />
-                        <span>Reply</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        className="comment-pill-action share"
-                        onClick={() => handleShareComment(comment)}
-                        title="Share comment"
-                      >
-                        <Share2 size={13} />
-                        <span>Share</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Inline Reply Form (when replying to parent or within thread) */}
-                {isReplyingHere && (
-                  <form onSubmit={handleSubmitReply} className="inline-reply-box">
-                    <div className="reply-header-info">
-                      <CornerDownRight size={13} className="reply-icon" />
-                      <span>
-                        Replying to{' '}
-                        <strong>
-                          @{replyingTo.targetUser?.username || replyingTo.targetUser?.name || 'user'}
-                        </strong>
-                      </span>
-                      <button
-                        type="button"
-                        className="btn-cancel-reply-x"
-                        onClick={() => setReplyingTo(null)}
-                        title="Cancel reply"
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-
-                    <div className="inline-reply-input-row">
-                      <input
-                        ref={replyInputRef}
-                        type="text"
-                        className="inline-reply-input"
-                        placeholder={`Write your reply to @${
-                          replyingTo.targetUser?.username || replyingTo.targetUser?.name || 'user'
-                        }...`}
-                        value={replyBody}
-                        onChange={(e) => setReplyBody(e.target.value)}
-                        maxLength={1000}
-                        disabled={submittingReply}
-                      />
-                      <button
-                        type="submit"
-                        className="btn-submit-reply"
-                        disabled={!replyBody.trim() || submittingReply}
-                        title="Post reply"
-                      >
-                        {submittingReply ? <Spinner size={13} /> : <Send size={13} />}
-                        <span>Reply</span>
-                      </button>
-                    </div>
-                  </form>
-                )}
-
-                {/* Collapsible Replies Sub-Thread */}
-                {replies.length > 0 && (
-                  <div className="comment-replies-container">
-                    <button
-                      type="button"
-                      className="btn-toggle-thread"
-                      onClick={() => toggleThread(comment._id)}
-                    >
-                      {isThreadExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                      <span>
-                        {isThreadExpanded
-                          ? `Hide ${replies.length} ${replies.length === 1 ? 'reply' : 'replies'}`
-                          : `View ${replies.length} ${replies.length === 1 ? 'reply' : 'replies'}`}
-                      </span>
-                    </button>
-
-                    {isThreadExpanded && (
-                      <div className="replies-nested-list">
-                        {replies.map((reply) => {
-                          const repAuthor = reply.author || {};
-                          const repAuthorId = repAuthor._id || reply.author;
-                          const repIsOwner = Boolean(user?._id && repAuthorId && String(user._id) === String(repAuthorId));
-                          const repIsEditing = editingId === reply._id;
-                          const repAuthorName = repAuthor.name || repAuthor.username || 'User';
-                          const repAuthorUsername = repAuthor.username ? `@${repAuthor.username}` : '';
-                          const repAuthorProfile = repAuthor.username ? `/@${repAuthor.username}` : null;
-                          const targetUser = reply.replyToUser;
-
-                          return (
-                            <div key={reply._id} className="reply-item" id={`comment-${reply._id}`}>
-                              <div className="comment-avatar-slot">
-                                {repAuthor.avatar ? (
-                                  <img
-                                    src={repAuthor.avatar}
-                                    alt={repAuthorName}
-                                    className="comment-avatar small"
-                                    loading="lazy"
-                                    decoding="async"
-                                    width="22"
-                                    height="22"
-                                  />
-                                ) : (
-                                  <div className="comment-avatar-placeholder small">
-                                    <User size={12} />
-                                  </div>
-                                )}
-                              </div>
-
-                              <div className="comment-content">
-                                <div className="comment-meta">
-                                  {repAuthorProfile ? (
-                                    <Link to={repAuthorProfile} className="comment-author-link">
-                                      {repAuthorName}
-                                    </Link>
-                                  ) : (
-                                    <span className="comment-author-name">{repAuthorName}</span>
-                                  )}
-                                  {repAuthorUsername && (
-                                    <span className="comment-handle">{repAuthorUsername}</span>
-                                  )}
-
-                                  {targetUser && (
-                                    <span className="reply-to-tag">
-                                      replied to @{targetUser.username || targetUser.name}
-                                    </span>
-                                  )}
-
-                                  <span className="comment-dot">•</span>
-                                  <span className="comment-timestamp">{timeAgo(reply.createdAt)}</span>
-                                  {reply.editedAt && <span className="comment-edited">(edited)</span>}
-
-                                  {repIsOwner && !repIsEditing && (
-                                    <div className="comment-actions-right">
-                                      <button
-                                        type="button"
-                                        className="btn-comment-action"
-                                        onClick={() => handleStartEdit(reply)}
-                                        title="Edit reply"
-                                      >
-                                        <Edit2 size={11} />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        className="btn-comment-action text-danger"
-                                        onClick={() =>
-                                          setCommentToDelete({
-                                            id: reply._id,
-                                            isReply: true,
-                                            parentId: comment._id,
-                                          })
-                                        }
-                                        title="Delete reply"
-                                      >
-                                        <Trash2 size={11} />
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {repIsEditing ? (
-                                  <div className="comment-edit-wrap">
-                                    <textarea
-                                      className="comment-edit-textarea"
-                                      value={editBody}
-                                      onChange={(e) => setEditBody(e.target.value)}
-                                      rows={2}
-                                      maxLength={1000}
-                                    />
-                                    <div className="comment-edit-buttons">
-                                      <button
-                                        type="button"
-                                        className="btn-edit-save"
-                                        onClick={() => handleSaveEdit(reply._id, true, comment._id)}
-                                      >
-                                        <Check size={14} />
-                                        <span>Save</span>
-                                      </button>
-                                      <button
-                                        type="button"
-                                        className="btn-edit-cancel"
-                                        onClick={handleCancelEdit}
-                                      >
-                                        <X size={14} />
-                                        <span>Cancel</span>
-                                      </button>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="comment-body reply-body">{reply.body}</div>
-                                )}
-
-                                {/* Reply Interaction Row */}
-                                <div className="comment-interactions-row">
-                                  <button
-                                    type="button"
-                                    className={`comment-pill-action like ${reply.isLiked ? 'active' : ''}`}
-                                    onClick={() => handleToggleLike(reply, true, comment._id)}
-                                    title={reply.isLiked ? 'Unlike reply' : 'Like reply'}
-                                  >
-                                    <Heart
-                                      size={12}
-                                      fill={reply.isLiked ? '#FF4500' : 'none'}
-                                      color={reply.isLiked ? '#FF4500' : 'currentColor'}
-                                    />
-                                    <span>{(reply.likeCount || 0) > 0 ? reply.likeCount : 'Like'}</span>
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    className="comment-pill-action"
-                                    onClick={() => {
-                                      setReplyingTo({
-                                        parentCommentId: comment._id,
-                                        targetUser: repAuthor,
-                                      });
-                                    }}
-                                    title="Reply to user"
-                                  >
-                                    <CornerDownRight size={12} />
-                                    <span>Reply</span>
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    className="comment-pill-action share"
-                                    onClick={() => handleShareComment(reply)}
-                                    title="Share reply"
-                                  >
-                                    <Share2 size={12} />
-                                    <span>Share</span>
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })
-        )}
+        ) : comments.map((comment) => (
+          <CommentNode
+            key={comment._id}
+            comment={comment}
+            depth={0}
+            user={user}
+            isAuthenticated={isAuthenticated}
+            editingId={editingId}
+            editBody={editBody}
+            setEditBody={setEditBody}
+            onStartEdit={handleStartEdit}
+            onCancelEdit={handleCancelEdit}
+            onSaveEdit={handleSaveEdit}
+            onDelete={handleDelete}
+            onLike={handleToggleLike}
+            onReply={handleReply}
+            onShare={setSharingComment}
+            replyingTo={replyingTo}
+            replyBody={replyBody}
+            setReplyBody={setReplyBody}
+            submittingReply={submittingReply}
+            onSubmitReply={handleSubmitReply}
+            replyInputRef={replyInputRef}
+            expandedThreads={expandedThreads}
+            onToggleThread={toggleThread}
+          />
+        ))}
       </div>
 
-      {/* Consistent Delete Warning Modal */}
       <ConfirmDeleteModal
         isOpen={Boolean(commentToDelete)}
         onClose={() => {
@@ -761,17 +613,12 @@ export default function CommentsSection({ quizId, quiz = null, initialCount = 0,
         }}
         onConfirm={handleConfirmDelete}
         title={commentToDelete?.isReply ? 'Delete Reply?' : 'Delete Comment?'}
-        message="Are you sure you want to permanently delete this comment?"
-        details={
-          commentToDelete?.isReply
-            ? 'This action cannot be undone. This reply will be permanently removed from the discussion.'
-            : 'This action cannot be undone. All replies and interactions under this comment will also be permanently deleted from the database.'
-        }
-        confirmText={isDeleting ? 'Deleting...' : 'Delete Permanently'}
+        message="Comment text will be replaced with “Comment is deleted”."
+        details="Replies and the rest of the discussion will stay in place."
+        confirmText={isDeleting ? 'Deleting...' : 'Delete Comment'}
         isDeleting={isDeleting}
       />
 
-      {/* Share Comment Dialog */}
       <ShareModal
         isOpen={Boolean(sharingComment)}
         onClose={() => setSharingComment(null)}

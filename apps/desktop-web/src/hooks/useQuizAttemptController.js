@@ -10,6 +10,7 @@ import {
   loadActiveAttemptRef,
   loadAttemptSnapshot,
 } from '../utils/quizSession';
+import { reconcileAttemptSnapshot } from '../utils/attemptSnapshot';
 
 const getAttemptHeaders = (clientSessionId, sharedSessionId) => {
   const headers = {
@@ -95,6 +96,7 @@ export function useQuizAttemptController({
       let localSnapshot = activeAttemptRef?.attemptId
         ? loadAttemptSnapshot(activeAttemptRef.attemptId)
         : null;
+      let discardedStaleSnapshot = false;
 
       if (localSnapshot && (localSnapshot.isSubmitted || (localSnapshot.sessionId && localSnapshot.sessionId !== clientSessionId))) {
         clearAttemptSnapshot({
@@ -149,6 +151,9 @@ export function useQuizAttemptController({
           });
 
           activeAttempt = activeAttemptResponse.data.data.attempt;
+          const reconciledSnapshot = reconcileAttemptSnapshot(localSnapshot, activeAttempt);
+          localSnapshot = reconciledSnapshot.snapshot;
+          discardedStaleSnapshot = reconciledSnapshot.stale;
           if (activeAttempt) {
             const frozen = await api.get(`/attempts/${activeAttempt._id}/questions`, { headers: getAttemptHeaders(clientSessionId, sharedSessionId) });
             questionData = frozen.data.data.questions;
@@ -186,6 +191,8 @@ export function useQuizAttemptController({
 
         if (recoveredOffline) {
           setRecoveryNotice('Recovered locally. Progress will sync when the connection returns.');
+        } else if (discardedStaleSnapshot) {
+          setRecoveryNotice('The saved attempt is no longer active for this account or session. Start a new attempt to continue.');
         } else if (activeAttempt) {
           setRecoveryNotice('Recovered active attempt.');
         }
@@ -342,7 +349,7 @@ export function useQuizAttemptController({
     setError('');
 
     try {
-      const clientSessionId = getGuestSessionId();
+      const clientSessionId = currentState.sessionId || getGuestSessionId();
       await syncWithBackend({ force: true });
       const payload = {
         ...getSubmitPayload(),

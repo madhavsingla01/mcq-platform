@@ -97,6 +97,10 @@ export const generateQuiz = async (uploadId, options = {}) => {
         errorReport.push({ row: rowNum, error: 'Missing answer mapping' });
         continue;
       }
+      if (!optionData.some((option) => option.label === correctAnswer[0])) {
+        errorReport.push({ row: rowNum, error: 'Correct answer could not be mapped to any option' });
+        continue;
+      }
 
       // 4. Extract explanation, topic, difficulty
       let explanation = '';
@@ -171,7 +175,7 @@ export const generateQuiz = async (uploadId, options = {}) => {
     logger.info(`Quiz generated: "${quiz.title}" with ${questions.length} questions [hash: ${fileHash.slice(0, 8)}...]`);
 
     return { quiz, questionCount: questions.length, errors: errorReport, isDuplicate: false };
-  });
+  }, { uploaderId: upload.userId || options.userId || null });
 };
 
 export default { generateQuiz };

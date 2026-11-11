@@ -13,6 +13,8 @@ import {
   checkUsername,
   searchUsers,
   bootstrapSession,
+  getSessions,
+  revokeSession,
   revokeOtherSessions,
 } from '../controllers/auth.controller.js';
 import { optionalAuth, protect } from '../middleware/auth.middleware.js';
@@ -47,6 +49,10 @@ router.post('/login', authAddressLimit, authRateLimit, validateBody({
 router.post('/logout', optionalAuth, logout);
 router.post('/refresh', authRateLimit, refresh);
 router.get('/me', protect, getMe);
+router.get('/me/sessions', protect, getSessions);
+router.post('/me/sessions/:sessionId/revoke', protect, authRateLimit, validateBody({
+  currentPassword: { required: true, type: 'string', max: 1024 },
+}), revokeSession);
 router.post('/me/sessions/revoke', protect, authRateLimit, validateBody({
   currentPassword: { required: true, type: 'string', max: 1024 },
 }), revokeOtherSessions);

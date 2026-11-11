@@ -63,3 +63,30 @@
 **Migration** Owner API/event parity first, then credential narrowing and deployment separation only when justified. Version any future shared package and test local/container packaging.
 
 **Rollback** No schema split, renamed collection or new persistent infrastructure needs reversal.
+
+## ADR-006 — Marketplace Service Ownership Boundaries, Content References, and Entitlements Architecture
+
+**Status** Accepted for Step 02 / Phase 1 architecture foundation; establishes service ownership boundaries, data isolation invariants, security boundary controls, and versioned contract prerequisites for Phase 2 implementation. Standalone record documented at [ADR-006](../adr/ADR-006-marketplace-architecture.md).
+
+**Context and problem** QuizFocus is expanding from free, community, and competitive challenge quizzes to an enterprise creator marketplace. Without explicit architectural boundaries, marketplace features risk content duplication (stale question copies, desynchronized answers/explanations, media bloat), split attempt execution authority (violating ADR-002), unauthorized seller monetization or creator spoofing, media copyright leakage, and financial transaction replay vulnerabilities.
+
+**Alternatives** Monolithic extension of `quiz-service` (bloats quiz service with billing and e-commerce concerns); duplicated question snapshots in marketplace (causes question errata divergence and bypasses `media-service`); client-asserted payment receipts (vulnerable to forgery, tampering, and replay); synchronous question-by-question entitlement polling (creates high latency and single points of failure during quiz attempts).
+
+**Decision and reasons** Establish strict domain ownership boundaries:
+1. `marketplace-service` (port 5013) owns listings, catalog metadata, pricing models, commercial licenses, learner entitlements, and order/checkout lifecycles. Listings store a reference `quizId` (or `contentId` with `contentType: 'quiz'`) pointing to `quiz-service`. Zero Duplication Invariant: marketplace collections never store or duplicate quiz questions, option choices, correct answers, explanations, or question media files.
+2. `quiz-service` (port 5002) retains exclusive ownership of quiz authoring, question banks, choices, explanations, drafts, and categories. Exposes author verification so `marketplace-service` confirms seller ownership.
+3. `attempt-service` (port 5004) retains exclusive ownership of quiz execution, progress synchronization, timing, and scoring (per ADR-002). For paid/restricted quizzes, `attempt-service` verifies an active, unexpired entitlement with `marketplace-service` prior to initializing an attempt (`POST /api/v1/quiz/:id/attempt`). If the user lacks an active entitlement, attempt initialization is rejected with HTTP 403 (`ENTITLEMENT_REQUIRED`).
+4. Formalized Security Boundary Controls:
+   - Server-side authorization & JWT claims verification: `marketplace-service` independently verifies access tokens (`HS256`, checking claims `id`, `exp`, structure). Gateway strips privileged client headers (`x-user-id`, `x-role`, `x-internal-token`) per ADR-003.
+   - Creator ownership verification: seller must be the verified author or organization owner of the referenced quiz.
+   - Safe file/media access: all preview media is referenced via `media-service` without raw file duplication or exposing protected question assets.
+   - Immutable audit logging: append-only audit trail for listing mutations, pricing changes, order transitions, and entitlement transactions.
+   - Replay protection via client-supplied `Idempotency-Key` headers (RFC 7231 / UUIDv4) with TTL expiration on financial and order endpoints.
+5. Versioned future contracts: HTTP endpoints governed by `contracts/marketplace-api.v1.json` (`/api/v1/marketplace/*`); asynchronous events governed by `contracts/marketplace-events.v1.json` (`marketplace.*.v1`).
+
+**Consequences** Decouples authoring, execution, and commerce cleanly. Zero question duplication overhead. Low-latency single entitlement check at attempt initialization. Gateway isolates unimplemented business routes with HTTP 404 during Phase 1 while routing `/health` and `/ready` probes to port 5013.
+
+**Migration** Deploy standalone ADR-006, versioned contract schemas, and scaffold `marketplace-service` on port 5013. Reserve `/api/v1/marketplace` in `api-gateway`. Phase 2 implements MongoDB persistence, seller verification RPC, payment webhooks, and `attempt-service` entitlement interceptor.
+
+**Rollback** No database rollback or data migrations needed. Revert `/api/v1/marketplace` proxying in `api-gateway` and stop `marketplace-service`.
+

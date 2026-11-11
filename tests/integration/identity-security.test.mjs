@@ -219,6 +219,64 @@ test('Step 03 identity and privacy controls through the gateway and direct servi
     assert.deepEqual(Object.keys(marked.data.data.notification).sort(), ['_id', 'readAt']);
   });
 
+  await t.test('nested comment deletion preserves the thread and renders a tombstone', async () => {
+    const author = new ApiClient();
+    await author.registerTestUser('nestedcommentauthor');
+    const quiz = await author.post('/api/v1/quiz/manual', {
+      title: 'Nested comment deletion fixture',
+      isDraft: true,
+      questions: [{
+        questionText: 'Which is one?',
+        options: [{ label: 'A', text: 'One' }, { label: 'B', text: 'Two' }],
+        correctAnswer: 'A',
+      }],
+    });
+    status(quiz, 201);
+    const quizId = quiz.data.data.quizId;
+    status(await author.post(`/api/v1/quiz/drafts/${quizId}/publish`, { visibility: 'public' }), 200);
+
+    const root = await client.post(`/api/v1/social/quizzes/${quizId}/comments`, { body: 'Root comment' });
+    status(root, 201);
+    const rootId = root.data.data.comment._id;
+    const reply = await author.post(`/api/v1/social/quizzes/${quizId}/comments`, {
+      body: 'First-level reply',
+      parentComment: rootId,
+    });
+    status(reply, 201);
+    const replyId = reply.data.data.comment._id;
+    const nestedReply = await client.post(`/api/v1/social/quizzes/${quizId}/comments`, {
+      body: 'Nested reply',
+      parentComment: replyId,
+    });
+    status(nestedReply, 201);
+
+    status(await author.delete(`/api/v1/social/comments/${replyId}`), 200);
+    let listing = await client.get(`/api/v1/social/quizzes/${quizId}/comments`);
+    status(listing, 200);
+    let thread = listing.data.data.comments.find((comment) => comment._id === rootId);
+    assert.equal(thread.replies.length, 1);
+    assert.equal(thread.replies[0].status, 'deleted');
+    assert.equal(thread.replies[0].body, 'Comment is deleted');
+    assert.equal(thread.replies[0].replies[0].body, 'Nested reply');
+    assert.equal(listing.data.data.totalComments, 3);
+
+    status(await client.delete(`/api/v1/social/comments/${rootId}`), 200);
+    listing = await client.get(`/api/v1/social/quizzes/${quizId}/comments`);
+    status(listing, 200);
+    thread = listing.data.data.comments.find((comment) => comment._id === rootId);
+    assert.equal(thread.status, 'deleted');
+    assert.equal(thread.body, 'Comment is deleted');
+    assert.equal(thread.replies[0].status, 'deleted');
+    assert.equal(thread.replies[0].replies[0].body, 'Nested reply');
+    assert.equal(listing.data.data.totalComments, 3);
+
+    const storedCount = await db.collection('quizzes').findOne(
+      { _id: new ObjectId(quizId) },
+      { projection: { commentCount: 1 } },
+    );
+    assert.equal(storedCount.commentCount, 3);
+  });
+
   await t.test('account deletion replaces the password hash and revokes browser credentials', async () => {
     const oldAccess = client.token;
     const before = await users.findOne({ _id: userId }, { projection: { password: 1 } });

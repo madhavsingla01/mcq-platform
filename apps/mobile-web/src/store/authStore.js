@@ -25,10 +25,10 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  login: async (credentials) => {
+  login: async (credentials, location) => {
     try {
       set({ isLoading: true, error: null });
-      const res = await authApi.login(credentials);
+      const res = await authApi.login(credentials, location);
       const data = res.data?.data || res.data;
       if (data.token) {
         localStorage.setItem('token', data.token);

@@ -37,6 +37,9 @@ Start here for local setup. See the [modernization documentation](docs/README.md
      ```bash
      mongod --dbpath .mongo_data
      ```
+     This directory contains local database files and is intentionally excluded from Git. Do not upload it to GitHub.
+
+Binary images, audio, and video are ignored by Git. Keep user uploads in external/local media storage; test audio/video samples are generated in the system temporary directory when needed.
 
 ### Configure Authentication Secrets
 

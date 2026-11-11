@@ -10,7 +10,18 @@ import net from 'node:net';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const names = ['api-gateway','auth-service','quiz-service','parser-service','attempt-service','social-service','message-service','media-service','admin-service','challenge-service'];
+const names = ['api-gateway','auth-service','quiz-service','parser-service','attempt-service','social-service','social-feed-service','social-interactions-service','social-comments-service','message-service','media-service','admin-service','challenge-service'];
+const serviceUrlKeys = {
+  'api-gateway': 'GATEWAY_URL',
+  'social-feed-service': 'SOCIAL_FEED_SERVICE_URL',
+  'social-interactions-service': 'SOCIAL_INTERACTIONS_SERVICE_URL',
+  'social-comments-service': 'SOCIAL_COMMENTS_SERVICE_URL',
+};
+const entrypoints = {
+  'social-feed-service': 'src/index.js',
+  'social-interactions-service': 'src/index.js',
+  'social-comments-service': 'src/index.js',
+};
 const children = [];
 const logs = new Map();
 const keepServing = process.argv.includes('--serve');
@@ -81,13 +92,13 @@ try {
     HEALTH_CACHE_TTL_MS: '200', MONGO_MAX_POOL_SIZE: '5',
   };
   for (const name of names) {
-    const key = name === 'api-gateway' ? 'GATEWAY_URL' : `${name.replace('-service','').toUpperCase()}_SERVICE_URL`;
+    const key = serviceUrlKeys[name] || `${name.replace('-service','').toUpperCase()}_SERVICE_URL`;
     env[key] = `http://127.0.0.1:${ports[name]}`;
   }
   env.API_GATEWAY_URL = env.GATEWAY_URL;
   for (const name of names) {
     const mode = testProductionAuth && name === 'auth-service' ? 'production' : name === 'media-service' ? 'development' : 'test';
-    launch(name, process.execPath, ['src/server.js'], { cwd: path.join(root, 'services', name), env: { ...env, NODE_ENV: mode, PORT: String(ports[name]) } });
+    launch(name, process.execPath, [entrypoints[name] || 'src/server.js'], { cwd: path.join(root, 'services', name), env: { ...env, NODE_ENV: mode, PORT: String(ports[name]) } });
   }
   let ready = false;
   for (let tries = 0; tries < 240; tries++) {

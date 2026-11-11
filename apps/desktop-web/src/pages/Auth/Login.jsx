@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { Sun, Moon } from 'lucide-react';
 import { Button, Input } from '../../components/ui';
 import { useAuthStore } from '../../store/authStore';
-import { useUIStore } from '../../store/uiStore';
 import { authRedirect } from '../../utils/authRedirect';
 import './Login.css';
 
@@ -15,13 +13,8 @@ export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { login, sessionNotice } = useAuthStore();
-  const { theme, setTheme } = useUIStore();
 
   const redirectTo = authRedirect(searchParams.get('redirect'));
-
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,19 +33,6 @@ export default function Login() {
 
   return (
     <div className="auth-standalone-wrapper">
-      {/* Standalone Theme Toggle */}
-      <div className="auth-corner-controls">
-        <button
-          type="button"
-          className="auth-theme-btn"
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-        >
-          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-      </div>
-
       <div className="auth-card-container">
         <div className="auth-standalone-card">
           {(error || sessionNotice) && <div className="auth-card-error" role="alert">{error || sessionNotice}</div>}

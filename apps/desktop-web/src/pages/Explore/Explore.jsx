@@ -153,7 +153,7 @@ export default function Explore() {
         <div className="explore-active-filter-banner">
           <span>
             Filtering by hashtag: <strong>#{selectedTag}</strong>
-            {pagination?.total !== undefined ? ` â€¢ ${pagination.total} ${pagination.total === 1 ? 'quiz' : 'quizzes'} available` : ''}
+            {pagination?.total !== undefined ? ` • ${pagination.total} ${pagination.total === 1 ? 'quiz' : 'quizzes'} available` : ''}
           </span>
           <button
             type="button"
@@ -172,7 +172,7 @@ export default function Explore() {
         <div className="explore-active-filter-banner">
           <span>
             Search results for: <strong>"{searchQuery}"</strong>
-            {pagination?.total !== undefined ? ` â€¢ ${pagination.total} ${pagination.total === 1 ? 'quiz' : 'quizzes'} found` : ''}
+            {pagination?.total !== undefined ? ` • ${pagination.total} ${pagination.total === 1 ? 'quiz' : 'quizzes'} found` : ''}
           </span>
           <button
             type="button"

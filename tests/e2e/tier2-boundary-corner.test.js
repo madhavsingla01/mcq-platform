@@ -554,10 +554,10 @@ describe('Tier 2: Boundary & Corner Cases (F1 through F12)', () => {
       expect([400, 404]).toContain(res.status);
     });
 
-    it('F12-B4: api-gateway unit tests in services/api-gateway/tests are syntactically valid JS', () => {
-      const csrfTest = readFileSafe(PATHS.root + '/services/api-gateway/tests/csrf.test.js') || '';
-      expect(csrfTest.length).toBeGreaterThan(0);
-      expect(csrfTest).toContain('describe');
+    it('F12-B4: api-gateway contract tests assert stable dependency errors', () => {
+      const contractTest = readFileSafe(PATHS.root + '/services/api-gateway/tests/contracts.test.js') || '';
+      expect(contractTest.length).toBeGreaterThan(0);
+      expect(contractTest).toContain('DEPENDENCY_UNAVAILABLE');
     });
 
     it('F12-B5: Gateway health endpoint includes all required services in its status payload', async () => {

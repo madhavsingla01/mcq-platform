@@ -22,12 +22,32 @@ const refreshClient = axios.create({
 
 let refreshPromise;
 
+const getClientMetadata = () => {
+  if (typeof navigator === 'undefined') return {};
+  const metadata = {};
+  if (navigator.language) metadata['x-client-locale'] = navigator.language.slice(0, 35);
+  try {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (timeZone) metadata['x-client-timezone'] = timeZone.slice(0, 80);
+  } catch {
+    // Time zone metadata is optional.
+  }
+  return metadata;
+};
+
 api.interceptors.request.use((config) => {
   const sessionId = getGuestSessionId();
   config.headers = config.headers || {};
+  Object.assign(config.headers, getClientMetadata());
   if (sessionId && !config.headers['x-client-session-id'] && !config.headers['x-quiz-session-id']) {
     config.headers['x-client-session-id'] = sessionId;
   }
+  return config;
+});
+
+refreshClient.interceptors.request.use((config) => {
+  config.headers = config.headers || {};
+  Object.assign(config.headers, getClientMetadata());
   return config;
 });
 

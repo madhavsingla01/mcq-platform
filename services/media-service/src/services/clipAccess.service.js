@@ -18,10 +18,18 @@ const database = () => {
   if (!db) throw new AppError('Media authorization is temporarily unavailable', 503);
   return db;
 };
-const currentUser = async (userId, tokenVersion) => {
-  const user = await database().collection('users').findOne({ _id: oid(userId) }, { projection: { role: 1, isActive: 1, isDeleted: 1, isSuspended: 1, tokenVersion: 1 } });
-  if (!user || user.isDeleted || user.isActive === false || user.isSuspended || (tokenVersion ?? 0) !== (user.tokenVersion ?? 0)) throw new AppError('Authentication session is unavailable', 401);
-  return { id: id(user._id), role: user.role, tokenVersion: user.tokenVersion || 0 };
+const currentUser = async (userId, claims) => {
+  const user = await database().collection('users').findOne({ _id: oid(userId) }, {
+    projection: { role: 1, isActive: 1, isDeleted: 1, isSuspended: 1, tokenVersion: 1, 'sessions.sessionId': 1, 'sessions.expiresAt': 1 },
+  });
+  const sessionIsCurrent = !claims.sid || user?.sessions?.some(session =>
+    session.sessionId === claims.sid && new Date(session.expiresAt).getTime() > Date.now()
+  );
+  if (!user || user.isDeleted || user.isActive === false || user.isSuspended ||
+      (claims.tokenVersion ?? 0) !== (user.tokenVersion ?? 0) || !sessionIsCurrent) {
+    throw new AppError('Authentication session is unavailable', 401);
+  }
+  return { id: id(user._id), role: user.role, tokenVersion: user.tokenVersion || 0, sessionId: claims.sid || null };
 };
 
 export async function mediaViewer(req) {
@@ -30,7 +38,7 @@ export async function mediaViewer(req) {
     let decoded;
     try { decoded = verifySessionToken(token, env.JWT_SECRET); } catch { throw new AppError('Authentication session expired', 401); }
     if (!decoded.id || decoded.aud || decoded.scope) throw new AppError('Invalid authentication token', 401);
-    return currentUser(String(decoded.id), decoded.tokenVersion);
+    return currentUser(String(decoded.id), decoded);
   }
   const sessionId = req.headers['x-quiz-session-id'] || req.headers['x-client-session-id'];
   return { sessionId: typeof sessionId === 'string' && sessionId.length >= 8 && sessionId.length <= 200 ? sessionId : null };

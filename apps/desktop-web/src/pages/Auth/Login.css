@@ -11,40 +11,6 @@
   box-sizing: border-box;
 }
 
-.auth-corner-controls {
-  position: absolute;
-  top: 24px;
-  right: 24px;
-}
-
-.auth-theme-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-control, 8px);
-  corner-shape: squircle;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  transition: transform var(--duration-tap, 120ms) var(--ease-out), color 140ms ease, border-color 140ms ease;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .auth-theme-btn:hover {
-    color: var(--color-text);
-    border-color: var(--color-primary);
-  }
-}
-
-.auth-theme-btn:active {
-  transform: scale(0.97);
-}
-
 .auth-card-container {
   width: 100%;
   max-width: 430px;

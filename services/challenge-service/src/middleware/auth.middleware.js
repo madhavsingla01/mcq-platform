@@ -1,4 +1,4 @@
-import { verifySessionToken } from '../utils/sessionToken.js';
+import { verifySessionToken, isCurrentSession } from '../utils/sessionToken.js';
 import env from '../config/env.js';
 import User from '../models/User.model.js';
 import { AppError } from './error.middleware.js';
@@ -15,7 +15,7 @@ export const protect = async (req, res, next) => {
     }
 
     const decoded = verifySessionToken(token, env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password -refreshToken');
+    const user = await User.findById(decoded.id).select('-password -refreshToken +sessions');
 
     if (!user || user.isDeleted || user.isActive === false) {
       return next(new AppError('User account not found or has been deactivated.', 401));
@@ -25,10 +25,12 @@ export const protect = async (req, res, next) => {
       return next(new AppError(`Account is suspended: ${user.suspensionReason || 'Contact support'}`, 403));
     }
 
-    if ((decoded.tokenVersion ?? 0) !== (user.tokenVersion ?? 0)) {
+    if (!isCurrentSession(user, decoded)) {
       return next(new AppError('Session has been revoked. Please log in again.', 401));
     }
 
+    req.authSessionId = decoded.sid;
+    user.sessions = undefined;
     req.user = user;
     next();
   } catch (error) {
@@ -45,9 +47,10 @@ export const optionalAuth = async (req, res, next) => {
 
     if (token) {
       const decoded = verifySessionToken(token, env.JWT_SECRET);
-      const user = await User.findById(decoded.id).select('-password -refreshToken');
+      const user = await User.findById(decoded.id).select('-password -refreshToken +sessions');
       if (user && !user.isDeleted && user.isActive !== false && !user.isSuspended &&
-          (decoded.tokenVersion ?? 0) === (user.tokenVersion ?? 0)) {
+          isCurrentSession(user, decoded)) {
+        user.sessions = undefined;
         req.user = user;
       }
     }

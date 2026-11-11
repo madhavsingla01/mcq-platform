@@ -252,6 +252,7 @@ export default function AppRouter() {
   const match = matchRoutes(routes, location)?.at(-1);
   const title = match?.route.handle || 'QuizFocus';
   const path = match?.route.path;
+  const isStandaloneAuthPage = path === '/login' || path === '/register';
   const advancedSearch = path === 'explore' || path === 'quizzes';
   const searchLabel = path === 'settings/:tab' && ['activity', 'data'].includes(match.params.tab?.toLowerCase())
     ? 'Search your activity' : searchLabels[path];
@@ -261,7 +262,7 @@ export default function AppRouter() {
 
   return (
     <PageSearchContext.Provider value={{ query: search.query, setQuery }}>
-      <PageHeader title={title} searchLabel={searchLabel} advancedSearch={advancedSearch} />
+      {!isStandaloneAuthPage && <PageHeader title={title} searchLabel={searchLabel} advancedSearch={advancedSearch} />}
       <Suspense fallback={<LoadingFallback />}><RoutedContent /></Suspense>
       {advancedSearch && <GlobalSearchModal />}
     </PageSearchContext.Provider>

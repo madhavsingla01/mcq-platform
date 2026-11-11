@@ -1,5 +1,5 @@
 import { Server } from 'socket.io';
-import { verifySessionToken } from '../utils/sessionToken.js';
+import { verifySessionToken, isCurrentSession } from '../utils/sessionToken.js';
 import env from '../config/env.js';
 import User from '../models/User.model.js';
 import Conversation from '../models/Conversation.model.js';
@@ -12,9 +12,9 @@ let io;
 const onlineUsers = new Map();
 const lastSeen = new Map();
 const activeUser = user => user && !user.isDeleted && !user.isSuspended && user.isActive !== false;
-const userSelect = 'name username avatar isDeleted isSuspended isActive tokenVersion preferences';
+const userSelect = 'name username avatar isDeleted isSuspended isActive tokenVersion preferences sessions.sessionId sessions.expiresAt';
 const sessionIsCurrent = (user, session) =>
-  activeUser(user) && (user.tokenVersion ?? 0) === (session.tokenVersion ?? 0) && session.exp * 1000 > Date.now();
+  activeUser(user) && isCurrentSession(user, session) && session.exp * 1000 > Date.now();
 
 export const initSocketServer = server => {
   io = new Server(server, {
@@ -29,6 +29,7 @@ export const initSocketServer = server => {
       const decoded = verifySessionToken(token, env.JWT_SECRET);
       const user = await User.findById(decoded.id).select(userSelect).lean();
       if (!sessionIsCurrent(user, decoded)) throw new Error('Revoked session');
+      delete user.sessions;
       socket.user = user;
       socket.session = decoded;
       next();
@@ -43,7 +44,9 @@ export const initSocketServer = server => {
     const sockets = [...connected.values()];
     try {
       const ids = [...new Set(sockets.map(socket => toId(socket.user._id)))];
-      const users = await User.find({ _id: { $in: ids } }).select('isDeleted isSuspended isActive tokenVersion').lean();
+      const users = await User.find({ _id: { $in: ids } })
+        .select('isDeleted isSuspended isActive tokenVersion sessions.sessionId sessions.expiresAt')
+        .lean();
       const current = new Map(users.map(user => [toId(user._id), user]));
       for (const socket of sockets) {
         if (!sessionIsCurrent(current.get(toId(socket.user._id)), socket.session)) socket.disconnect(true);

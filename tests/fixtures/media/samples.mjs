@@ -1,12 +1,71 @@
 import { randomUUID } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { mkdir, readFile } from 'node:fs/promises';
+import { promisify } from 'node:util';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
-const types = { wav: 'audio/wav', mp4: 'video/mp4', vtt: 'text/vtt', csv: 'text/csv' };
+const execFileAsync = promisify(execFile);
+const generatedMediaDirectory = path.join(tmpdir(), `quizfocus-media-test-fixtures-${process.pid}`);
+const generatedMedia = new Set([
+  'spoken-question.wav',
+  'choice-a.wav',
+  'choice-b.wav',
+  'choice-c.wav',
+  'choice-d.wav',
+  'gesture-prompt.mp4',
+  'gesture-a.mp4',
+  'gesture-b.mp4',
+  'gesture-c.mp4',
+  'gesture-d.mp4',
+  'spoken-video.mp4',
+  'spoken-video-described.mp4',
+]);
+const mediaGenerations = new Map();
+
+const types = {
+  wav: 'audio/wav',
+  mp4: 'video/mp4',
+  vtt: 'text/vtt',
+  csv: 'text/csv',
+  json: 'application/json',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+};
+
+async function ensureGeneratedMedia(name) {
+  if (!mediaGenerations.has(name)) {
+    mediaGenerations.set(name, (async () => {
+      await mkdir(generatedMediaDirectory, { recursive: true });
+      const ffmpeg = process.env.MEDIA_FFMPEG_PATH || 'ffmpeg';
+      const index = [...generatedMedia].indexOf(name);
+      const output = path.join(generatedMediaDirectory, name);
+      const input = name.endsWith('.wav')
+        ? ['-f', 'lavfi', '-i', `sine=frequency=${440 + index * 40}:duration=2`]
+        : [
+            '-f', 'lavfi', '-i', `color=c=${['white', 'gray', 'blue', 'green'][index % 4]}:s=320x240:r=24:d=2`,
+            '-f', 'lavfi', '-i', `sine=frequency=${440 + index * 40}:duration=2`,
+          ];
+      const encoding = name.endsWith('.wav')
+        ? ['-c:a', 'pcm_s16le', '-ar', '44100', '-ac', '1']
+        : ['-shortest', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-movflags', '+faststart'];
+
+      await execFileAsync(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-nostdin', '-y', ...input, ...encoding, output], {
+        windowsHide: true,
+        timeout: 30000,
+      });
+    })());
+  }
+
+  await mediaGenerations.get(name);
+}
 
 export async function uploadFixture(client, name, { kind, key = randomUUID(), endpoint = '/api/v1/media/clips', bytes } = {}) {
   const form = new FormData();
-  form.append('file', new Blob([bytes ?? await readFile(new URL(name, import.meta.url))], {
+  const fixturePath = generatedMedia.has(name)
+    ? (await ensureGeneratedMedia(name), path.join(generatedMediaDirectory, name))
+    : new URL(name, import.meta.url);
+  form.append('file', new Blob([bytes ?? await readFile(fixturePath)], {
     type: types[name.split('.').at(-1)],
   }), name);
   if (kind) {

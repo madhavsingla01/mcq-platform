@@ -11,19 +11,37 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
-import { SettingsInfo, SettingsSection, SettingsRow, SettingsToggle } from './SettingsSection';
-import { Button, Input, Label, CustomSelect, showCustomDialog } from '../../../components/ui';
+import { SettingsInfo, SettingsSection, SettingsRow } from './SettingsSection';
+import { Button, Input, CustomSelect, showCustomDialog } from '../../../components/ui';
 import { compressAvatar, compressImage } from '../../../utils/imageCompressor';
 import api from '../../../api/axios';
 import { runWithUploadPanel } from '../../../store/uploadPanelStore';
 import { MediaService } from '../../../services/media.service';
+import { isProfilePrivate, profilePrivacyUpdate } from '../../../utils/profilePrivacy';
 
 const PREDEFINED_PLATFORMS = ['Website', 'GitHub', 'LinkedIn', 'Twitter', 'YouTube', 'Other'];
+
+const normalizeSocialLinks = (links) => {
+  if (Array.isArray(links)) {
+    return links
+      .map((link) => ({ platform: link.platform, url: (link.url || '').trim() }))
+      .filter((link) => link.url);
+  }
+  if (links && typeof links === 'object') {
+    return [
+      links.website && { platform: 'Website', url: links.website.trim() },
+      links.personalId && { platform: 'Other', url: links.personalId.trim() },
+    ].filter(Boolean);
+  }
+  return [];
+};
 
 export function AccountSettings() {
   const { user, updateProfile } = useAuthStore();
   const fileRef = useRef(null);
   const bannerFileRef = useRef(null);
+  const profileHydratedRef = useRef(false);
+  const profileUserIdRef = useRef(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -42,12 +60,20 @@ export function AccountSettings() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
+  const [privacySaving, setPrivacySaving] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
   const [statusMessage, setStatusMessage] = useState({ type: '', text: '' });
   const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
 
   useEffect(() => {
-    if (user) {
+    if (!user) {
+      profileHydratedRef.current = false;
+      profileUserIdRef.current = null;
+      return;
+    }
+
+    const userId = user._id || user.id || null;
+    if (!profileHydratedRef.current || profileUserIdRef.current !== userId) {
       setFormData({
         name: user.name || '',
         username: user.username || '',
@@ -67,12 +93,30 @@ export function AccountSettings() {
         if (user.socialLinks.personalId) migrated.push({ platform: 'Other', url: user.socialLinks.personalId });
         setSocialLinks(migrated);
       }
+      profileHydratedRef.current = true;
+      profileUserIdRef.current = userId;
     }
   }, [user]);
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setStatusMessage({ type: '', text: '' });
+  };
+
+  const handleProfilePrivacyChange = async (isPrivate) => {
+    setPrivacySaving(true);
+    setStatusMessage({ type: '', text: '' });
+    try {
+      await updateProfile(profilePrivacyUpdate(isPrivate));
+      setStatusMessage({ type: 'success', text: 'Profile privacy updated.' });
+    } catch (error) {
+      setStatusMessage({
+        type: 'error',
+        text: error.response?.data?.message || error.message || 'Could not update profile privacy.',
+      });
+    } finally {
+      setPrivacySaving(false);
+    }
   };
 
   const handleAvatarFile = async (file) => {
@@ -92,7 +136,12 @@ export function AccountSettings() {
         MediaService.uploadImage(avatarFile, 'profile-avatar', onUploadProgress)
           .then((asset) => api.post('/auth/me/avatar', { imageUrl: asset.url }))
       ));
-      setFormData((prev) => ({ ...prev, avatar: response.data?.data?.avatar || '' }));
+      const avatar = response.data?.data?.avatar || '';
+      setFormData((prev) => ({ ...prev, avatar }));
+      if (user) {
+        useAuthStore.setState({ user: { ...user, avatar } });
+      }
+      setStatusMessage({ type: 'success', text: 'Profile photo updated.' });
     } catch (error) {
       showCustomDialog({
         title: 'Avatar Upload Failed',
@@ -176,14 +225,17 @@ export function AccountSettings() {
       });
       return;
     }
+    setStatusMessage({ type: '', text: '' });
     setSocialLinks([...socialLinks, { platform: 'Website', url: '' }]);
   };
 
   const handleRemoveSocialLink = (index) => {
+    setStatusMessage({ type: '', text: '' });
     setSocialLinks(socialLinks.filter((_, i) => i !== index));
   };
 
   const handleSocialLinkChange = (index, field, value) => {
+    setStatusMessage({ type: '', text: '' });
     const updated = [...socialLinks];
     updated[index] = { ...updated[index], [field]: value };
     setSocialLinks(updated);
@@ -195,18 +247,10 @@ export function AccountSettings() {
     setStatusMessage({ type: '', text: '' });
 
     try {
-      const cleanUsername = formData.username.trim().toLowerCase().replace(/^@/, '');
-      if (cleanUsername.length < 3) {
-        throw new Error('Username must be at least 3 characters');
-      }
-
-      const filteredLinks = socialLinks
-        .map((l) => ({ platform: l.platform, url: l.url.trim() }))
-        .filter((l) => l.url);
+      const filteredLinks = normalizeSocialLinks(socialLinks);
 
       const payload = {
         name: formData.name.trim(),
-        username: cleanUsername,
         email: formData.email.trim(),
         phone: formData.phone.trim(),
         bio: formData.bio.trim(),
@@ -217,7 +261,7 @@ export function AccountSettings() {
       };
 
       await updateProfile(payload);
-      setStatusMessage({ type: 'success', text: 'Profile changes saved successfully!' });
+      setStatusMessage({ type: 'success', text: 'Profile changes saved automatically.' });
       setTimeout(() => setStatusMessage({ type: '', text: '' }), 4000);
     } catch (err) {
       console.error('Failed to update profile:', err);
@@ -229,6 +273,25 @@ export function AccountSettings() {
       setProfileSaving(false);
     }
   };
+
+  useEffect(() => {
+    if (!user || profileSaving || statusMessage.type === 'error') return undefined;
+
+    const hasUnsavedChanges = formData.name.trim() !== (user.name || '').trim()
+      || formData.bio.trim() !== (user.bio || '').trim()
+      || formData.gender !== (user.gender || 'prefer_not_to_say')
+      || formData.avatar !== (user.avatar || '')
+      || JSON.stringify(normalizeSocialLinks(socialLinks))
+        !== JSON.stringify(normalizeSocialLinks(user.socialLinks));
+
+    if (!hasUnsavedChanges) return undefined;
+
+    const timeoutId = setTimeout(() => {
+      handleSaveProfile();
+    }, 700);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.name, formData.bio, formData.gender, formData.avatar, socialLinks, user, profileSaving, statusMessage.type]);
 
   const handleSavePassword = async (e) => {
     e?.preventDefault();
@@ -291,19 +354,21 @@ export function AccountSettings() {
         </div>
       )}
 
-      {/* 1. Profile Picture & Core Identity */}
+      {/* 1. Profile Images */}
       <SettingsSection
-        title="Public Profile & Identity"
-        description="Your avatar and public details are visible to other learners and creators across QuizFocus."
+        title="Profile images"
+        description="Customize the images shown on your public profile."
         icon={User}
+        className="settings-profile-images-section"
       >
-        {/* Avatar Row */}
-        <SettingsRow
-          title="Profile Avatar"
-          description="Supports PNG, JPG, or WEBP up to 5MB."
-          align="start"
-        >
-          <div className="settings-avatar-edit-box">
+        <div className="settings-profile-images-grid">
+          <div className="settings-profile-image-item">
+            <div className="settings-profile-image-copy">
+              <span className="settings-profile-image-title">Profile photo</span>
+              <span className="settings-profile-image-description">
+                PNG, JPG, or WEBP. Up to 8MB.
+              </span>
+            </div>
             <input
               type="file"
               ref={fileRef}
@@ -311,57 +376,65 @@ export function AccountSettings() {
               style={{ display: 'none' }}
               onChange={(e) => {
                 if (e.target.files?.[0]) handleAvatarFile(e.target.files[0]);
+                e.target.value = '';
               }}
             />
-            <div className="settings-avatar-preview-wrap">
-              {formData.avatar ? (
-                <img
-                  src={formData.avatar}
-                  alt="Avatar"
-                  className="settings-avatar-preview-img"
-                  loading="lazy"
-                  decoding="async"
-                  width="60"
-                  height="60"
-                />
-              ) : (
-                <span className="settings-avatar-initial">
-                  {(formData.name?.[0] || formData.username?.[0] || 'U').toUpperCase()}
+            <div className="settings-profile-image-control">
+              <div className="settings-avatar-preview-wrap">
+                {formData.avatar ? (
+                  <img
+                    src={formData.avatar}
+                    alt="Profile"
+                    className="settings-avatar-preview-img"
+                    loading="lazy"
+                    decoding="async"
+                    width="60"
+                    height="60"
+                  />
+                ) : (
+                  <span className="settings-avatar-initial">
+                    {(formData.name?.[0] || formData.username?.[0] || 'U').toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="settings-profile-image-actions">
+                <span className="settings-profile-image-status">
+                  {formData.avatar ? 'Photo uploaded' : 'No photo uploaded'}
                 </span>
-              )}
-            </div>
-            <div className="settings-avatar-btn-group">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => fileRef.current?.click()}
-                className="settings-btn-upload-avatar"
-              >
-                <Camera size={14} />
-                <span>Upload New</span>
-              </Button>
-              {formData.avatar && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleInputChange('avatar', '')}
-                  className="settings-btn-remove-avatar"
-                >
-                  <Trash2 size={13} />
-                  <span>Remove</span>
-                </Button>
-              )}
+                <div className="settings-banner-btn-group">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => fileRef.current?.click()}
+                    className="settings-btn-upload-avatar"
+                  >
+                    <Camera size={14} />
+                    <span>{formData.avatar ? 'Change photo' : 'Upload photo'}</span>
+                  </Button>
+                  {formData.avatar && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleInputChange('avatar', '')}
+                      className="settings-btn-remove-avatar"
+                      aria-label="Remove profile photo"
+                    >
+                      <Trash2 size={13} />
+                      <span>Remove</span>
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-        </SettingsRow>
 
-        {/* Profile Banner */}
-        <SettingsRow
-          title="Profile Banner"
-          description="Panoramic banner for your profile. 1920x600 recommended."
-          align="start"
-        >
-          <div className="settings-banner-edit-box">
+          <div className="settings-profile-image-item">
+            <div className="settings-profile-image-copy">
+              <span className="settings-profile-image-title">Profile banner</span>
+              <span className="settings-profile-image-description">
+                Wide image for your profile. 1920 × 600 recommended.
+              </span>
+            </div>
             <input
               type="file"
               ref={bannerFileRef}
@@ -369,125 +442,161 @@ export function AccountSettings() {
               style={{ display: 'none' }}
               onChange={(e) => {
                 if (e.target.files?.[0]) handleBannerFile(e.target.files[0]);
+                e.target.value = '';
               }}
             />
-            <div className="settings-banner-preview-wrap">
-              {formData.banner ? (
-                <>
+            <div className="settings-profile-banner-control">
+              <div className="settings-banner-preview-wrap">
+                {formData.banner ? (
                   <img
                     src={formData.banner}
-                    alt="Profile Banner Preview"
+                    alt="Profile banner"
                     className="settings-banner-preview-img"
                     loading="lazy"
                     decoding="async"
                   />
-                  <div className="settings-banner-fade" />
-                </>
-              ) : (
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: '100%',
-                  color: 'var(--color-text-muted)',
-                  fontSize: '12px',
-                  gap: '6px'
-                }}>
-                  <Camera size={20} />
-                  <span>No banner uploaded</span>
-                </div>
-              )}
-            </div>
-            <div className="settings-banner-btn-group">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => bannerFileRef.current?.click()}
-                disabled={bannerUploading}
-                className="settings-btn-upload-avatar"
-              >
-                <Camera size={14} />
-                <span>{bannerUploading ? 'Uploading...' : 'Change Banner'}</span>
-              </Button>
-              {formData.banner && (
+                ) : (
+                  <div className="settings-banner-empty">
+                    <Camera size={18} />
+                    <span>No banner uploaded</span>
+                  </div>
+                )}
+              </div>
+              <div className="settings-profile-banner-actions">
+                <span className="settings-profile-image-status">
+                  {formData.banner ? 'Banner uploaded' : 'No banner uploaded'}
+                </span>
+                <div className="settings-banner-btn-group">
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
-                  onClick={handleRemoveBanner}
+                  onClick={() => bannerFileRef.current?.click()}
                   disabled={bannerUploading}
-                  className="settings-btn-remove-avatar"
+                  className="settings-btn-upload-avatar"
                 >
-                  <Trash2 size={13} />
-                  <span>Remove</span>
+                  <Camera size={14} />
+                  <span>{bannerUploading ? 'Uploading...' : formData.banner ? 'Change banner' : 'Upload banner'}</span>
                 </Button>
-              )}
+                {formData.banner && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveBanner}
+                    disabled={bannerUploading}
+                    className="settings-btn-remove-avatar"
+                    aria-label="Remove profile banner"
+                  >
+                    <Trash2 size={13} />
+                    <span>Remove</span>
+                  </Button>
+                )}
+                </div>
+              </div>
             </div>
           </div>
-        </SettingsRow>
-
-        {/* Display Name */}
-        <SettingsRow
-          title="Display Name"
-          description="Your public full name shown on leaderboards and quizzes."
-        >
-          <Input
-            value={formData.name}
-            onChange={(e) => handleInputChange('name', e.target.value)}
-            placeholder="e.g. Alex Morgan"
-            className="settings-input-control"
-          />
-        </SettingsRow>
-
-        {/* Username */}
-        <SettingsRow
-          title="Username"
-          description="Your unique @handle for profile links and mentions."
-        >
-          <div className="settings-username-input-wrap">
-            <span className="settings-at-prefix">@</span>
-            <input
-              type="text"
-              value={formData.username}
-              onChange={(e) => handleInputChange('username', e.target.value)}
-              placeholder="username"
-              className="settings-username-input"
-            />
-          </div>
-        </SettingsRow>
-
-        {/* Bio */}
-        <SettingsRow
-          title="Bio"
-          description="Tell the community about your expertise and learning interests (max 2000 chars)."
-          align="start"
-        >
-          <textarea
-            value={formData.bio}
-            onChange={(e) => handleInputChange('bio', e.target.value)}
-            placeholder="Write a brief intro about yourself..."
-            rows={3}
-            className="settings-textarea-control"
-            maxLength={2000}
-          />
-        </SettingsRow>
-
-        {/* Profile Privacy */}
-        <SettingsRow
-          title="Profile Privacy"
-          description={formData.isPrivate
-            ? "Your profile and quizzes are restricted and hidden from public explore."
-            : "Your profile is public. Anyone can view your profile and public quizzes."}
-        >
-          <SettingsToggle
-            checked={formData.isPrivate}
-            onChange={(checked) => handleInputChange('isPrivate', checked)}
-            label={formData.isPrivate ? 'Private Profile' : 'Public Profile'}
-          />
-        </SettingsRow>
+        </div>
       </SettingsSection>
 
-      {/* 2. Public Links */}
+      {/* 2. Profile Details */}
+      <SettingsSection
+        title="Edit profile"
+        description="Manage the public information shown on your profile."
+        icon={User}
+        className="settings-edit-profile-section"
+      >
+        <div className="settings-profile-fields-grid">
+          <label className="settings-profile-field">
+            <span className="settings-profile-field-label">Display name</span>
+            <Input
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
+              placeholder="e.g. Alex Morgan"
+              className="settings-input-control"
+            />
+          </label>
+
+          <label className="settings-profile-field">
+            <span className="settings-profile-field-label">Username</span>
+            <div className="settings-username-input-wrap settings-username-readonly">
+              <span className="settings-at-prefix">@</span>
+              <input
+                type="text"
+                value={user?.username || ''}
+                placeholder="username"
+                className="settings-username-input"
+                readOnly
+                aria-describedby="settings-username-note"
+              />
+            </div>
+            <span id="settings-username-note" className="settings-profile-image-description">
+              Usernames are permanent and cannot be changed.
+            </span>
+          </label>
+
+          <label className="settings-profile-field">
+            <span className="settings-profile-field-label">Gender</span>
+            <select
+              value={formData.gender}
+              onChange={(e) => handleInputChange('gender', e.target.value)}
+              className="settings-input-control settings-profile-gender-select"
+            >
+              <option value="prefer_not_to_say">Prefer not to say</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+
+          <label className="settings-profile-field settings-profile-bio-field">
+            <span className="settings-profile-field-label">Bio</span>
+            <textarea
+              value={formData.bio}
+              onChange={(e) => handleInputChange('bio', e.target.value)}
+              placeholder="Write a brief intro about yourself..."
+              rows={4}
+              className="settings-textarea-control"
+              maxLength={2000}
+            />
+          </label>
+        </div>
+
+        <div className="settings-profile-visibility">
+          <div>
+            <span className="settings-profile-field-label">Profile visibility</span>
+            <p className="settings-profile-image-description">
+              {isProfilePrivate(user)
+                ? 'Your profile and quizzes are hidden from public explore.'
+                : 'Anyone can view your profile and public quizzes.'}
+            </p>
+          </div>
+          <div className="settings-profile-visibility-options" role="group" aria-label="Profile visibility">
+            <Button
+              variant={!isProfilePrivate(user) ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() => handleProfilePrivacyChange(false)}
+              disabled={privacySaving || profileSaving || !isProfilePrivate(user)}
+              aria-pressed={!isProfilePrivate(user)}
+            >
+              Public
+            </Button>
+            <Button
+              variant={isProfilePrivate(user) ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() => handleProfilePrivacyChange(true)}
+              disabled={privacySaving || profileSaving || isProfilePrivate(user)}
+              aria-pressed={isProfilePrivate(user)}
+            >
+              Private
+            </Button>
+          </div>
+        </div>
+
+        <div className="settings-autosave-status" role="status" aria-live="polite">
+          {profileSaving ? 'Saving changes...' : 'Your profile changes save automatically.'}
+        </div>
+      </SettingsSection>
+
+      {/* 3. Public Links */}
       <SettingsSection
         title="Social & Website Links"
         description="Add links to your portfolio, GitHub, LinkedIn, or social profiles."
@@ -534,19 +643,9 @@ export function AccountSettings() {
           </div>
         )}
 
-        <div className="settings-actions-footer">
-          <Button
-            variant="primary"
-            onClick={handleSaveProfile}
-            disabled={profileSaving}
-            className="settings-save-btn"
-          >
-            {profileSaving ? 'Saving Changes...' : 'Save Profile Changes'}
-          </Button>
-        </div>
       </SettingsSection>
 
-      {/* 3. Password & Security Credentials */}
+      {/* 4. Password & Security Credentials */}
       <SettingsSection
         title="Change Password"
         description="Update your account login password to keep your profile secure."

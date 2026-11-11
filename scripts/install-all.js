@@ -20,10 +20,14 @@ const packages = [
   'services/parser-service',
   'services/attempt-service',
   'services/social-service',
+  'services/social-feed-service',
+  'services/social-interactions-service',
+  'services/social-comments-service',
   'services/message-service',
   'services/media-service',
   'services/admin-service',
   'services/challenge-service',
+  'services/marketplace-service',
 ];
 
 console.log('📦 Installing dependencies across all web apps and microservices...\n');

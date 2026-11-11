@@ -86,6 +86,32 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    sessions: {
+      type: [{
+        sessionId: { type: String, required: true },
+        refreshToken: { type: String, select: false },
+        device: { type: String, required: true, maxlength: 120 },
+        deviceType: { type: String, enum: ['Desktop', 'Mobile', 'Tablet'], default: 'Desktop' },
+        browser: { type: String, maxlength: 80 },
+        operatingSystem: { type: String, maxlength: 80 },
+        ipAddress: { type: String, maxlength: 64 },
+        locale: { type: String, maxlength: 35 },
+        timeZone: { type: String, maxlength: 80 },
+        language: { type: String, maxlength: 120 },
+        location: {
+          latitude: { type: Number, min: -90, max: 90 },
+          longitude: { type: Number, min: -180, max: 180 },
+          accuracy: { type: Number, min: 0 },
+          capturedAt: { type: Date },
+        },
+        userAgent: { type: String, maxlength: 300 },
+        createdAt: { type: Date, required: true },
+        lastActiveAt: { type: Date, required: true },
+        expiresAt: { type: Date, required: true },
+      }],
+      default: [],
+      select: false,
+    },
     failedLoginAttempts: {
       type: Number,
       default: 0,
@@ -186,6 +212,7 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.index({ username: 1, isProfilePublic: 1 });
+userSchema.index({ 'sessions.expiresAt': 1 });
 userSchema.index({ isProfilePublic: 1, followersCount: -1, quizCount: -1, createdAt: -1 });
 userSchema.index({ isProfilePublic: 1, quizCount: -1, followersCount: -1 });
 userSchema.index({ isProfilePublic: 1, createdAt: -1 });

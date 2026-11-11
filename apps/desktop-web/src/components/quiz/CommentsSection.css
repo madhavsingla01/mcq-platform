@@ -281,6 +281,11 @@
   font-size: 13.5px;
 }
 
+.deleted-comment-body {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
 .comment-interactions-row {
   display: flex;
   align-items: center;
@@ -487,6 +492,10 @@
 .reply-item {
   display: flex;
   gap: 10px;
+}
+
+.nested-comment-node {
+  min-width: 0;
 }
 
 .comment-edit-wrap {

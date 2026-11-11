@@ -1,10 +1,10 @@
 # Multimedia verification fixtures
 
-These local fixtures contain synthetic speech and original drawings. The WAV files were generated with Windows System.Speech. The gesture clips were built from an illustrated hand and encoded with FFmpeg. The spoken and described MP4 files use a neutral circle and synthetic narration. The VTT files contain timed cues for their respective spoken tracks.
+Audio and video samples are generated at test runtime with FFmpeg in the operating system's temporary directory; binary media is not stored in the repository. The generated audio uses synthetic tones, and the short video samples use simple color frames with synthetic audio. The VTT files are text fixtures kept alongside this README.
 
 | Sample | Prompt | Choices and text alternatives |
 |---|---|---|
-| Spoken arithmetic | “What is two plus two?” | Four audio files with “Two,” “Four,” “Six,” and “Eight” as transcripts |
-| Match a hand motion | “Which option repeats the same hand-motion sequence as the prompt?” | Four six-second hand-motion videos and descriptions of fingers bending, pausing, and straightening in sequence |
+| Spoken arithmetic | “What is two plus two?” | Four generated audio files with “Two,” “Four,” “Six,” and “Eight” as transcripts |
+| Match a hand motion | “Which option repeats the same hand-motion sequence as the prompt?” | Five generated video files; the test validates the text alternatives and media workflow |
 
-The gesture illustration is a motion exercise. Its text describes the sequence without naming an answer. See [the media implementation and sample preview commands](../../../docs/enterprise-upgrade/20-accessible-media-worklog.md).
+The media test suite requires FFmpeg and FFprobe. See [the media implementation and sample preview commands](../../../docs/enterprise-upgrade/20-accessible-media-worklog.md).

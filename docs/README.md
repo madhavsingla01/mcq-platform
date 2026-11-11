@@ -28,3 +28,7 @@ Step 02 architecture implementation and evidence:
 [Accessible audio and video quizzes, API, and verification](enterprise-upgrade/20-accessible-media-worklog.md)
 
 [Step 03 identity, authorization, privacy and Step 04 handoff](enterprise-upgrade/29-step-03-report.md)
+
+[Social service split and repository redundancy audit](enterprise-upgrade/33-redundancy-audit.md)
+
+[Full project audit and prioritized findings](enterprise-upgrade/34-full-project-audit.md)

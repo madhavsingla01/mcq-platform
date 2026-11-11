@@ -40,5 +40,45 @@ coverage/
 # Docker
 docker-data/
 
-# Disposable verification data and local operational reports
+# Local MongoDB database files and disposable verification data
+.mongo_data/
 .runtime/
+
+# Locally uploaded media
+/services/media-service/media-storage/
+/services/*/src/uploads/
+
+# Binary media is stored outside the repository
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.avif
+*.bmp
+*.tif
+*.tiff
+*.ico
+*.svg
+*.mp4
+*.m4v
+*.mov
+*.webm
+*.avi
+*.mkv
+*.mp3
+*.wav
+*.ogg
+*.oga
+*.m4a
+*.aac
+*.flac
+*.wma
+*.aiff
+*.aif
+*.opus
+*.mid
+*.midi
+*.3gp
+*.mpeg
+*.mpg

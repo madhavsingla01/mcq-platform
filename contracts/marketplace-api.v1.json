@@ -1,0 +1,309 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:quizfocus:contracts:marketplace-api:v1",
+  "version": "1.0.0",
+  "title": "QuizFocus Marketplace API Specification v1",
+  "description": "Versioned request and response JSON schemas for QuizFocus Marketplace HTTP endpoints",
+  "endpoints": {
+    "catalogSearch": {
+      "path": "/api/v1/marketplace/catalog",
+      "method": "GET",
+      "summary": "Search and filter published marketplace quiz listings",
+      "query": { "$ref": "#/$defs/CatalogSearchQuery" },
+      "response": { "$ref": "#/$defs/CatalogSearchResponse" }
+    },
+    "listingDetails": {
+      "path": "/api/v1/marketplace/listings/:id",
+      "method": "GET",
+      "summary": "Retrieve public details for a specific marketplace listing",
+      "params": { "$ref": "#/$defs/ListingDetailsParams" },
+      "response": { "$ref": "#/$defs/ListingDetailsResponse" }
+    },
+    "orderCreate": {
+      "path": "/api/v1/marketplace/orders",
+      "method": "POST",
+      "summary": "Create a purchase order for a quiz license with replay protection",
+      "headers": { "$ref": "#/$defs/IdempotentRequestHeaders" },
+      "requestBody": { "$ref": "#/$defs/OrderCreateRequest" },
+      "response": { "$ref": "#/$defs/OrderCreateResponse" }
+    },
+    "licenseCheckout": {
+      "path": "/api/v1/marketplace/checkout",
+      "method": "POST",
+      "summary": "Process payment transaction and grant entitlement for an order",
+      "headers": { "$ref": "#/$defs/IdempotentRequestHeaders" },
+      "requestBody": { "$ref": "#/$defs/CheckoutRequest" },
+      "response": { "$ref": "#/$defs/CheckoutResponse" }
+    },
+    "userEntitlements": {
+      "path": "/api/v1/marketplace/entitlements",
+      "method": "GET",
+      "summary": "Query active and historical quiz entitlements for the authenticated user",
+      "query": { "$ref": "#/$defs/UserEntitlementsQuery" },
+      "response": { "$ref": "#/$defs/UserEntitlementsResponse" }
+    }
+  },
+  "$defs": {
+    "IdempotentRequestHeaders": {
+      "type": "object",
+      "required": ["Idempotency-Key"],
+      "properties": {
+        "Idempotency-Key": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F-]{16,64}$"
+        }
+      }
+    },
+    "CatalogSearchQuery": {
+      "type": "object",
+      "properties": {
+        "q": { "type": "string" },
+        "category": { "type": "string" },
+        "tags": { "type": "string" },
+        "priceMin": { "type": "number", "minimum": 0 },
+        "priceMax": { "type": "number", "minimum": 0 },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "page": { "type": "integer", "minimum": 1, "default": 1 },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
+        "sortBy": { "type": "string", "enum": ["createdAt", "price", "rating", "popularity"], "default": "createdAt" },
+        "sortOrder": { "type": "string", "enum": ["asc", "desc"], "default": "desc" }
+      }
+    },
+    "CatalogItem": {
+      "type": "object",
+      "required": [
+        "listingId",
+        "quizId",
+        "title",
+        "description",
+        "sellerId",
+        "price",
+        "currency",
+        "licenseType",
+        "status",
+        "previewQuestionsCount",
+        "createdAt",
+        "updatedAt"
+      ],
+      "properties": {
+        "listingId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+        "quizId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 2000 },
+        "summary": { "type": "string", "maxLength": 500 },
+        "sellerId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+        "price": { "type": "number", "minimum": 0 },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "licenseType": { "type": "string", "enum": ["single_user", "team", "institutional", "subscription"] },
+        "status": { "type": "string", "enum": ["draft", "active", "archived", "suspended"] },
+        "previewQuestionsCount": { "type": "integer", "minimum": 0 },
+        "rating": { "type": "number", "minimum": 0, "maximum": 5 },
+        "reviewCount": { "type": "integer", "minimum": 0 },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+    "CatalogSearchResponse": {
+      "type": "object",
+      "required": ["success", "message", "data"],
+      "properties": {
+        "success": { "type": "boolean", "const": true },
+        "message": { "type": "string" },
+        "data": {
+          "type": "object",
+          "required": ["items", "pagination"],
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/CatalogItem" }
+            },
+            "pagination": {
+              "type": "object",
+              "required": ["page", "limit", "total", "totalPages"],
+              "properties": {
+                "page": { "type": "integer", "minimum": 1 },
+                "limit": { "type": "integer", "minimum": 1 },
+                "total": { "type": "integer", "minimum": 0 },
+                "totalPages": { "type": "integer", "minimum": 0 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "ListingDetailsParams": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-f0-9]{24}$" }
+      }
+    },
+    "ListingDetailsResponse": {
+      "type": "object",
+      "required": ["success", "message", "data"],
+      "properties": {
+        "success": { "type": "boolean", "const": true },
+        "message": { "type": "string" },
+        "data": {
+          "type": "object",
+          "required": ["listing"],
+          "properties": {
+            "listing": {
+              "$ref": "#/$defs/CatalogItem"
+            }
+          }
+        }
+      }
+    },
+    "OrderCreateRequest": {
+      "type": "object",
+      "required": ["listingId", "paymentMethod", "currency"],
+      "properties": {
+        "listingId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+        "paymentMethod": { "type": "string", "enum": ["card", "stripe", "wallet", "invoice"] },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "billingEmail": { "type": "string", "format": "email" },
+        "discountCode": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "OrderCreateResponse": {
+      "type": "object",
+      "required": ["success", "message", "data"],
+      "properties": {
+        "success": { "type": "boolean", "const": true },
+        "message": { "type": "string" },
+        "data": {
+          "type": "object",
+          "required": ["order"],
+          "properties": {
+            "order": {
+              "type": "object",
+              "required": [
+                "orderId",
+                "listingId",
+                "quizId",
+                "buyerId",
+                "sellerId",
+                "amount",
+                "currency",
+                "status",
+                "idempotencyKey",
+                "createdAt"
+              ],
+              "properties": {
+                "orderId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "listingId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "quizId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "buyerId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "sellerId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "amount": { "type": "number", "minimum": 0 },
+                "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+                "status": { "type": "string", "enum": ["pending", "processing", "completed", "failed", "cancelled"] },
+                "idempotencyKey": { "type": "string" },
+                "clientSecret": { "type": "string" },
+                "expiresAt": { "type": "string", "format": "date-time" },
+                "createdAt": { "type": "string", "format": "date-time" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "CheckoutRequest": {
+      "type": "object",
+      "required": ["orderId", "paymentToken"],
+      "properties": {
+        "orderId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+        "paymentToken": { "type": "string", "minLength": 1 },
+        "returnUrl": { "type": "string", "format": "uri" }
+      },
+      "additionalProperties": false
+    },
+    "CheckoutResponse": {
+      "type": "object",
+      "required": ["success", "message", "data"],
+      "properties": {
+        "success": { "type": "boolean", "const": true },
+        "message": { "type": "string" },
+        "data": {
+          "type": "object",
+          "required": ["checkout"],
+          "properties": {
+            "checkout": {
+              "type": "object",
+              "required": [
+                "orderId",
+                "transactionId",
+                "status",
+                "entitlementId",
+                "completedAt"
+              ],
+              "properties": {
+                "orderId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "transactionId": { "type": "string" },
+                "status": { "type": "string", "enum": ["succeeded", "failed", "requires_action"] },
+                "entitlementId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+                "receiptUrl": { "type": "string" },
+                "completedAt": { "type": "string", "format": "date-time" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "UserEntitlementsQuery": {
+      "type": "object",
+      "properties": {
+        "quizId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+        "status": { "type": "string", "enum": ["active", "expired", "revoked"] }
+      }
+    },
+    "EntitlementItem": {
+      "type": "object",
+      "required": [
+        "entitlementId",
+        "userId",
+        "quizId",
+        "listingId",
+        "licenseType",
+        "status",
+        "validFrom",
+        "createdAt"
+      ],
+      "properties": {
+        "entitlementId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+        "userId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+        "quizId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+        "listingId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+        "orderId": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+        "licenseType": { "type": "string", "enum": ["single_user", "team", "institutional", "subscription"] },
+        "status": { "type": "string", "enum": ["active", "expired", "revoked"] },
+        "validFrom": { "type": "string", "format": "date-time" },
+        "validUntil": { "type": ["string", "null"], "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+    "UserEntitlementsResponse": {
+      "type": "object",
+      "required": ["success", "message", "data"],
+      "properties": {
+        "success": { "type": "boolean", "const": true },
+        "message": { "type": "string" },
+        "data": {
+          "type": "object",
+          "required": ["entitlements"],
+          "properties": {
+            "entitlements": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/EntitlementItem" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

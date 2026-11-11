@@ -7,6 +7,28 @@ const { build } = require('esbuild');
 import { authRedirect } from '../apps/desktop-web/src/utils/authRedirect.js';
 import { isCompletePdfQuestion, parsePdfQuestions, toDraftPdfQuestion } from '../apps/desktop-web/src/pages/Create/pdfQuestions.js';
 import { rankSearchResults } from '../apps/desktop-web/src/components/search/rankSearchResults.js';
+import { reconcileAttemptSnapshot } from '../apps/desktop-web/src/utils/attemptSnapshot.js';
+
+test('attempt recovery only reuses a local snapshot that matches the server active attempt', () => {
+  const snapshot = { attemptId: 'attempt-a', answers: { question: { selectedAnswer: 'A' } } };
+
+  assert.deepEqual(reconcileAttemptSnapshot(snapshot, { _id: 'attempt-a' }), {
+    snapshot,
+    stale: false,
+  });
+  assert.deepEqual(reconcileAttemptSnapshot(snapshot, null), {
+    snapshot: null,
+    stale: true,
+  });
+  assert.deepEqual(reconcileAttemptSnapshot(snapshot, { _id: 'attempt-b' }), {
+    snapshot: null,
+    stale: true,
+  });
+  assert.deepEqual(reconcileAttemptSnapshot(null, null), {
+    snapshot: null,
+    stale: false,
+  });
+});
 
 test('normal search ranks exact and partial matches ahead of typos and retains the default order for an empty query', () => {
   const titles = ['Botany', 'Geograpyh', 'Geography practice', 'Geography'];

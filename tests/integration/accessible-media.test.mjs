@@ -7,6 +7,9 @@ import { audioQuestion, clip, gestureQuestion, publishSample, readyFixture, uplo
 
 const require = createRequire(new URL('../../services/auth-service/package.json', import.meta.url));
 const { MongoClient, ObjectId } = require('mongoose').mongo;
+const { utils: xlsxUtils, write: writeXlsx } = createRequire(
+  new URL('../../services/parser-service/package.json', import.meta.url)
+)('xlsx');
 const media = '/api/v1/media/clips';
 const check = (res, status) => assert.equal(res.status, status, res.data?.message || '');
 const start = (actor, quizId) => actor.post('/api/v1/attempts/start', { quizId }, { expectedStatus: 201 });
@@ -292,5 +295,132 @@ test('Accessible clips through the Gateway with isolated creator and participant
     check(submitted,200);assert.equal(submitted.data.data.score,1);
     const review = (await player.get(`/api/v1/attempts/${attempt._id}/result`,{expectedStatus:200})).data.data;
     assert.equal(review.questions[0].correctAnswer,'A');
+  });
+
+  await t.test('CSV duplicate suggestions and generation results stay owner-scoped', async subtest => {
+    const bytes = Buffer.from('Question,Option A,Option B,Correct Answer\nIs the sky blue?,Yes,No,A\n');
+    const ownedUpload = await uploadFixture(author, 'private-duplicate.csv', {
+      endpoint: '/api/v1/upload',
+      bytes,
+    });
+    check(ownedUpload, 201);
+    const ownedUploadId = ownedUpload.data.data.upload.id;
+    subtest.after(() => author.delete(`/api/v1/upload/${ownedUploadId}`, { expectedStatus: 200 }));
+
+    check(await author.post(`/api/v1/parser/parse/${ownedUploadId}`, {}), 200);
+    check(await author.post(`/api/v1/parser/map/${ownedUploadId}`, {
+      question: 'Question',
+      options: ['Option A', 'Option B'],
+      answer: 'missing-header',
+    }), 400);
+    check(await author.post(`/api/v1/parser/map/${ownedUploadId}`, {
+      question: 'Question',
+      options: ['Option A', 'Option B'],
+      answer: 'Correct Answer',
+    }), 200);
+
+    const ownedQuizResponse = await author.post('/api/v1/quiz/generate', {
+      uploadId: ownedUploadId,
+      title: 'Private imported quiz',
+      visibility: 'private',
+    }, { expectedStatus: 201 });
+    const ownedQuizId = ownedQuizResponse.data.data.quiz._id;
+
+    const sameOwnerUpload = await uploadFixture(author, 'same-owner-duplicate.csv', {
+      endpoint: '/api/v1/upload',
+      bytes,
+    });
+    check(sameOwnerUpload, 201);
+    const sameOwnerUploadId = sameOwnerUpload.data.data.upload.id;
+    subtest.after(() => author.delete(`/api/v1/upload/${sameOwnerUploadId}`, { expectedStatus: 200 }));
+    assert.equal(sameOwnerUpload.data.data.duplicateQuiz.id, ownedQuizId);
+
+    const otherOwnerUpload = await uploadFixture(stranger, 'other-owner-duplicate.csv', {
+      endpoint: '/api/v1/upload',
+      bytes,
+    });
+    check(otherOwnerUpload, 201);
+    const otherOwnerUploadId = otherOwnerUpload.data.data.upload.id;
+    subtest.after(() => stranger.delete(`/api/v1/upload/${otherOwnerUploadId}`, { expectedStatus: 200 }));
+    assert.equal(otherOwnerUpload.data.data.duplicateQuiz, null);
+    check(await stranger.post(`/api/v1/parser/parse/${otherOwnerUploadId}`, {}), 200);
+    check(await stranger.post(`/api/v1/parser/map/${otherOwnerUploadId}`, {
+      question: 'Question',
+      options: ['Option A', 'Option B'],
+      answer: 'Correct Answer',
+    }), 200);
+
+    const otherOwnerQuizResponse = await stranger.post('/api/v1/quiz/generate', {
+      uploadId: otherOwnerUploadId,
+      title: 'Other owner imported quiz',
+      visibility: 'private',
+    }, { expectedStatus: 201 });
+    const otherOwnerQuizId = otherOwnerQuizResponse.data.data.quiz._id;
+    assert.notEqual(otherOwnerQuizId, ownedQuizId);
+    check(await stranger.get(`/api/v1/quiz/${ownedQuizId}`), 403);
+  });
+
+  await t.test('JSON and Excel uploads parse, map, generate and score through the service APIs', async subtest => {
+    const workbook = xlsxUtils.book_new();
+    xlsxUtils.book_append_sheet(workbook, xlsxUtils.aoa_to_sheet([
+      ['Question', 'Option A', 'Option B', 'Correct Answer'],
+      ['Which planet is nearest the Sun?', 'Earth', 'Mercury', 'B'],
+    ]), 'Questions');
+    const imports = [
+      {
+        name: 'questions.json',
+        bytes: Buffer.from(JSON.stringify({
+          questions: [{
+            Question: 'Which planet is nearest the Sun?',
+            'Option A': 'Earth',
+            'Option B': 'Mercury',
+            'Correct Answer': 'B',
+          }],
+        })),
+      },
+      {
+        name: 'questions.xlsx',
+        bytes: writeXlsx(workbook, { type: 'buffer', bookType: 'xlsx' }),
+      },
+    ];
+
+    for (const fixture of imports) {
+      await subtest.test(`${fixture.name} completes the import lifecycle`, async importTest => {
+        const uploaded = await uploadFixture(author, fixture.name, {
+          endpoint: '/api/v1/upload',
+          bytes: fixture.bytes,
+        });
+        check(uploaded, 201);
+        const uploadId = uploaded.data.data.upload.id;
+        importTest.after(() => author.delete(`/api/v1/upload/${uploadId}`, { expectedStatus: 200 }));
+
+        const parsed = await author.post(`/api/v1/parser/parse/${uploadId}`, {}, { expectedStatus: 200 });
+        assert.deepEqual(parsed.data.data.headers, ['Question', 'Option A', 'Option B', 'Correct Answer']);
+        assert.equal(parsed.data.data.rowCount, 1);
+        check(await author.post(`/api/v1/parser/map/${uploadId}`, {
+          question: 'Question',
+          options: ['Option A', 'Option B'],
+          answer: 'Correct Answer',
+        }), 200);
+
+        const generated = await author.post('/api/v1/quiz/generate', {
+          uploadId,
+          title: `Imported ${fixture.name}`,
+          visibility: 'public',
+        }, { expectedStatus: 201 });
+        const quizId = generated.data.data.quiz._id;
+        assert.equal(generated.data.data.questionCount, 1);
+
+        const attempt = (await start(player, quizId)).data.data.attempt;
+        const [question] = await questions(player, attempt._id);
+        assert.equal(question.questionText, 'Which planet is nearest the Sun?');
+        const submitted = await player.put(`/api/v1/quiz/${quizId}/attempt/${attempt._id}`, {
+          questionStates: [{ questionId: question._id, selectedAnswer: 'B' }],
+        });
+        check(submitted, 200);
+        assert.equal(submitted.data.data.score, 1);
+
+      });
+    }
   });
 });

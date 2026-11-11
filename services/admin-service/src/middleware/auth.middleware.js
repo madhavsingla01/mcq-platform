@@ -1,4 +1,4 @@
-import { verifySessionToken } from '../utils/sessionToken.js';
+import { verifySessionToken, isCurrentSession } from '../utils/sessionToken.js';
 import mongoose from 'mongoose';
 import env from '../config/env.js';
 import { getAuthDb } from '../config/db.js';
@@ -41,7 +41,7 @@ export const protectAdmin = catchAsync(async (req, res, next) => {
     return next(new AppError(`Account is suspended: ${user.suspensionReason || 'Contact platform administration'}`, 403));
   }
 
-  if ((decoded.tokenVersion ?? 0) !== (user.tokenVersion ?? 0)) {
+  if (!isCurrentSession(user, decoded)) {
     return next(new AppError('Session invalidated. Please log in again.', 401));
   }
 
@@ -127,7 +127,7 @@ export const optionalAuth = async (req, res, next) => {
       !user.isDeleted &&
       user.isActive !== false &&
       !user.isSuspended &&
-      ((decoded.tokenVersion ?? 0) === (user.tokenVersion ?? 0))
+      isCurrentSession(user, decoded)
     ) {
       req.user = {
         _id: user._id,
@@ -143,4 +143,3 @@ export const optionalAuth = async (req, res, next) => {
     return next();
   }
 };
-

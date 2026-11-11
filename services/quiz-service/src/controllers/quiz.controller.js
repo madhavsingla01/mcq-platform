@@ -13,6 +13,7 @@ import { TimerStrategyFactory } from '../services/quiz/timer/TimerStrategyFactor
 import { ParserRegistry } from '../services/parser/strategies/ParserRegistry.js';
 import { calculateFileHash, findDuplicateQuiz, withGenerationLock } from '../services/upload/fileHash.service.js';
 import { assertUploadAccess } from '../services/upload/authorizeUpload.js';
+import { persistGeneratedQuestions } from '../services/quiz/persistGeneratedQuestions.js';
 import {
   assertAttemptReadAccess,
   assertAttemptWriteAccess,
@@ -420,10 +421,11 @@ export const generateQuiz = catchAsync(async (req, res, next) => {
 
   // Duplicate check before quiz generation unless explicitly forced/allowed
   const shouldBypassDuplicate = Boolean(forceGenerate || allowDuplicate);
+  const uploaderId = upload.userId || req.user?._id || null;
   if (!shouldBypassDuplicate) {
     const existingQuiz = await findDuplicateQuiz({
       fileHash,
-      uploaderId: upload.userId || req.user?._id || null,
+      uploaderId,
     });
 
     if (existingQuiz) {
@@ -468,6 +470,11 @@ export const generateQuiz = catchAsync(async (req, res, next) => {
 
       if (columnMapping.answer) {
         correctAnswer = normalizeAnswer(row[columnMapping.answer], options);
+      }
+
+      if (!correctAnswer || !options.some((option) => option.label === correctAnswer)) {
+        skipped += 1;
+        continue;
       }
 
       let explanation = '';
@@ -533,12 +540,7 @@ export const generateQuiz = catchAsync(async (req, res, next) => {
       columnMapping,
     });
 
-    await Question.insertMany(
-      questions.map((question) => ({
-        ...question,
-        quizId: quiz._id,
-      }))
-    );
+    await persistGeneratedQuestions(quiz, questions);
 
     upload.status = 'generated';
     upload.quizId = quiz._id;
@@ -553,7 +555,7 @@ export const generateQuiz = catchAsync(async (req, res, next) => {
       questionCount: questions.length,
       skipped,
     };
-  });
+  }, { uploaderId });
 
   if (generationResult.isDuplicate) {
     return res.status(200).json({

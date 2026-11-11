@@ -1,11 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
+import { createHash } from 'node:crypto';
 import { ApiClient } from '../e2e/helpers/api-client.js';
 
 const requireAuth = createRequire(new URL('../../services/auth-service/package.json', import.meta.url));
 const requireWeb = createRequire(new URL('../../apps/desktop-web/package.json', import.meta.url));
 const { MongoClient, ObjectId } = requireAuth('mongoose').mongo;
+const jwt = requireAuth('jsonwebtoken');
 const { io } = requireWeb('socket.io-client');
 
 test('real HTTP, MongoDB and socket messaging/settings contracts', async t => {
@@ -316,6 +318,85 @@ test('real HTTP, MongoDB and socket messaging/settings contracts', async t => {
     assert.ok(!unavailable.data.data.messages.some(message => message._id === preview._id));
     assert.equal(preview.quiz, null);
     assert.equal(preview.quizMetadata, null);
+  });
+
+  await t.test('active sessions can be listed and one device can be signed out', async () => {
+    const secondDevice = new ApiClient();
+    expectStatus(await secondDevice.post('/api/v1/auth/login', {
+      email: users[0].email,
+      password: users[0].password,
+    }, { headers: {
+      'x-client-location-latitude': '37.7749',
+      'x-client-location-longitude': '-122.4194',
+      'x-client-location-accuracy': '30',
+      'x-client-locale': 'en-US',
+      'x-client-timezone': 'America/Los_Angeles',
+    } }), 200);
+
+    const sessionList = await alice.get('/api/v1/auth/me/sessions');
+    expectStatus(sessionList, 200);
+    const activeSessions = sessionList.data.data.sessions;
+    assert.equal(activeSessions.length, 2);
+    assert.equal(activeSessions.filter(session => session.isCurrent).length, 1);
+
+    const secondDeviceSessionId = JSON.parse(Buffer.from(secondDevice.token.split('.')[1], 'base64url').toString()).sid;
+    const secondDeviceSession = activeSessions.find(session => session.sessionId === secondDeviceSessionId);
+    assert.ok(secondDeviceSession);
+    assert.equal(secondDeviceSession.isCurrent, false);
+    assert.equal(secondDeviceSession.location.latitude, 37.7749);
+    assert.equal(secondDeviceSession.location.longitude, -122.4194);
+    assert.equal(secondDeviceSession.location.accuracy, 30);
+    assert.ok(Date.parse(secondDeviceSession.location.capturedAt));
+    assert.equal(secondDeviceSession.locale, 'en-US');
+    assert.equal(secondDeviceSession.timeZone, 'America/Los_Angeles');
+
+    expectStatus(await alice.post(`/api/v1/auth/me/sessions/${secondDeviceSessionId}/revoke`, {
+      currentPassword: 'wrong-password',
+    }), 400);
+    assert.equal((await alice.get('/api/v1/auth/me/sessions')).data.data.sessions.length, 2);
+    expectStatus(await alice.post(`/api/v1/auth/me/sessions/${secondDeviceSessionId}/revoke`, {
+      currentPassword: users[0].password,
+    }), 200);
+    expectStatus(await secondDevice.get('/api/v1/auth/me'), 401);
+    expectStatus(await alice.get('/api/v1/auth/me'), 200);
+    assert.equal((await alice.get('/api/v1/auth/me/sessions')).data.data.sessions.length, 1);
+  });
+
+  await t.test('bootstrap upgrades an existing legacy browser into a tracked session', async () => {
+    const legacy = new ApiClient();
+    const legacyUser = await legacy.registerTestUser('legacy_session');
+    const legacyRefreshToken = jwt.sign(
+      { id: legacyUser.userId, tokenVersion: 0 },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: '7d' }
+    );
+    const legacyAccessToken = jwt.sign(
+      { id: legacyUser.userId, tokenVersion: 0 },
+      process.env.JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+    await db.collection('users').updateOne(
+      { _id: new ObjectId(legacyUser.userId) },
+      {
+        $set: {
+          tokenVersion: 0,
+          refreshToken: `sha256:${createHash('sha256').update(legacyRefreshToken).digest('hex')}`,
+          sessions: [],
+        },
+      }
+    );
+    legacy.clearSession();
+    legacy.setToken(legacyAccessToken);
+    legacy.setCookie('refreshToken', legacyRefreshToken);
+
+    const bootstrap = await legacy.get('/api/v1/auth/bootstrap');
+    expectStatus(bootstrap, 200);
+    assert.equal(bootstrap.data.data.authenticated, true);
+    const active = await legacy.get('/api/v1/auth/me/sessions');
+    expectStatus(active, 200);
+    assert.equal(active.data.data.sessions.length, 1);
+    assert.equal(active.data.data.sessions[0].isCurrent, true);
+    assert.ok(JSON.parse(Buffer.from(legacy.token.split('.')[1], 'base64url').toString()).sid);
   });
 
   await t.test('session revocation requires password and invalidates HTTP and existing sockets', async () => {

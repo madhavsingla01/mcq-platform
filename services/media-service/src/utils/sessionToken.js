@@ -6,6 +6,7 @@ export function verifySessionToken(token, key) {
   if (!claims || typeof claims.id !== 'string' || !/^[a-f\d]{24}$/i.test(claims.id) ||
       !Number.isSafeInteger(claims.exp) || claims.aud !== undefined || claims.scope !== undefined ||
       claims.iss !== undefined ||
+      (claims.sid !== undefined && (typeof claims.sid !== 'string' || !/^[a-f\d]{8}-[a-f\d]{4}-[1-8][a-f\d]{3}-[89ab][a-f\d]{3}-[a-f\d]{12}$/i.test(claims.sid))) ||
       (claims.tokenVersion !== undefined && (!Number.isSafeInteger(claims.tokenVersion) || claims.tokenVersion < 0))) {
     throw new Error('Invalid session claims');
   }

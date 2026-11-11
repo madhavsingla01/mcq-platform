@@ -19,11 +19,13 @@ import {
   publicQuizFilter,
   recordActivity,
 } from '../services/social/activity.service.js';
+import { buildCommentTree } from '../services/social/commentTree.js';
 
 const USER_PUBLIC_SELECT = 'name username avatar banner bio quizCount followersCount followingCount activityCount isProfilePublic createdAt socialLinks';
 const USER_LIST_SELECT = 'name username avatar bio quizCount followersCount followingCount';
 const QUIZ_FEED_SELECT = 'title description category difficulty thumbnail visibility isPublic uploader questionCount totalAttempts avgScore likeCount commentCount bookmarkCount shareCount lastSocialActivityAt createdAt tags isChallenge deadlineAt';
 const resultsSealed = quiz => Boolean(quiz?.isChallenge && !(quiz.deadlineAt && new Date(quiz.deadlineAt) <= new Date()));
+const MAX_COMMENT_DEPTH = 5;
 
 const toIdString = (value) => (value?._id ? String(value._id) : String(value || ''));
 const normalizeUsername = (username = '') => String(username).replace(/^@/, '').toLowerCase().trim();
@@ -1619,7 +1621,7 @@ export const listComments = catchAsync(async (req, res) => {
   const [topLevelComments, totalTopLevel, totalAll] = await Promise.all([
     QuizComment.find({
       quiz: req.params.quizId,
-      status: 'active',
+      status: { $in: ['active', 'deleted'] },
       $or: [{ parentComment: null }, { parentComment: { $exists: false } }],
     })
       .sort({ createdAt: -1 })
@@ -1629,24 +1631,25 @@ export const listComments = catchAsync(async (req, res) => {
       .lean(),
     QuizComment.countDocuments({
       quiz: req.params.quizId,
-      status: 'active',
       $or: [{ parentComment: null }, { parentComment: { $exists: false } }],
     }),
-    QuizComment.countDocuments({ quiz: req.params.quizId, status: 'active' }),
+    QuizComment.countDocuments({ quiz: req.params.quizId }),
   ]);
 
-  const topLevelIds = topLevelComments.map((c) => c._id);
-  const replies = topLevelIds.length > 0
-    ? await QuizComment.find({
-        quiz: req.params.quizId,
-        status: 'active',
-        parentComment: { $in: topLevelIds },
-      })
-        .sort({ createdAt: 1 })
-        .populate('author', USER_LIST_SELECT)
-        .populate('replyToUser', 'name username')
-        .lean()
-    : [];
+  let parentIds = topLevelComments.map((comment) => comment._id);
+  const replies = [];
+  for (let depth = 1; depth <= MAX_COMMENT_DEPTH && parentIds.length; depth += 1) {
+    const children = await QuizComment.find({
+      quiz: req.params.quizId,
+      parentComment: { $in: parentIds },
+    })
+      .sort({ createdAt: 1 })
+      .populate('author', USER_LIST_SELECT)
+      .populate('replyToUser', 'name username')
+      .lean();
+    replies.push(...children);
+    parentIds = children.map((comment) => comment._id);
+  }
 
   const viewerId = req.user?._id;
 
@@ -1657,22 +1660,10 @@ export const listComments = catchAsync(async (req, res) => {
     isOwner: viewerId ? toIdString(c.author?._id || c.author) === toIdString(viewerId) : false,
   });
 
-  const replyMap = new Map();
-  for (const r of replies) {
-    const parentIdStr = toIdString(r.parentComment);
-    if (!replyMap.has(parentIdStr)) {
-      replyMap.set(parentIdStr, []);
-    }
-    replyMap.get(parentIdStr).push(decorateComment(r));
-  }
-
-  const paginatedTop = topLevelComments.map((c) => {
-    const decorated = decorateComment(c);
-    const itemReplies = replyMap.get(toIdString(c._id)) || [];
-    decorated.replies = itemReplies;
-    decorated.replyCount = decorated.replyCount ?? itemReplies.length;
-    return decorated;
-  });
+  const paginatedTop = buildCommentTree(
+    topLevelComments.map(decorateComment),
+    replies.map(decorateComment)
+  );
 
   const totalPages = Math.ceil(totalTopLevel / limit) || 1;
 
@@ -1713,20 +1704,33 @@ export const createComment = catchAsync(async (req, res) => {
     const parent = await QuizComment.findOne({
       _id: req.body.parentComment,
       quiz: quiz._id,
-      status: 'active',
     });
-    if (parent) {
-      parentCommentId = parent.parentComment ? parent.parentComment : parent._id;
-      replyToUserId = parent.author;
-      const requestedUser = req.body.replyToUser;
-      if (mongoose.isObjectIdOrHexString(requestedUser) && await QuizComment.exists({
-        quiz: quiz._id, parentComment: parentCommentId, author: requestedUser, status: 'active',
-      })) {
-        replyToUserId = requestedUser;
-      }
-
-      await QuizComment.findByIdAndUpdate(parentCommentId, { $inc: { replyCount: 1 } });
+    if (!parent) {
+      throw new AppError('Parent comment not found', 404);
     }
+
+    let parentDepth = 0;
+    let ancestor = parent;
+    const visited = new Set([toIdString(parent._id)]);
+    while (ancestor.parentComment) {
+      const ancestorId = toIdString(ancestor.parentComment);
+      if (visited.has(ancestorId)) {
+        throw new AppError('Invalid comment thread', 400);
+      }
+      visited.add(ancestorId);
+      ancestor = await QuizComment.findOne({ _id: ancestorId, quiz: quiz._id });
+      if (!ancestor) {
+        throw new AppError('Invalid comment thread', 400);
+      }
+      parentDepth += 1;
+    }
+    if (parentDepth >= MAX_COMMENT_DEPTH) {
+      throw new AppError(`Replies can be nested up to ${MAX_COMMENT_DEPTH} levels`, 400);
+    }
+
+    parentCommentId = parent._id;
+    replyToUserId = parent.status === 'active' ? parent.author : null;
+    await QuizComment.findByIdAndUpdate(parentCommentId, { $inc: { replyCount: 1 } });
   }
 
   const comment = await QuizComment.create({
@@ -1868,31 +1872,26 @@ export const deleteComment = catchAsync(async (req, res) => {
     throw new AppError('Not authorized to delete this comment', 403);
   }
 
-  // Find all child replies if this is a parent comment
-  const childReplies = await QuizComment.find({ parentComment: comment._id, status: 'active' }).select('_id').lean();
-  const allCommentIds = [comment._id, ...childReplies.map((r) => r._id)];
-  const totalCountToRemove = allCommentIds.length;
+  comment.status = 'deleted';
+  comment.body = 'Comment is deleted';
+  comment.likes = [];
+  comment.likeCount = 0;
+  await comment.save();
 
-  // Delete all comments and replies permanently
-  await QuizComment.deleteMany({ _id: { $in: allCommentIds } });
-
-  // Cascade clean up all activities and notifications referencing these comments
   await Promise.all([
-    Activity.deleteMany({ comment: { $in: allCommentIds } }),
-    Notification.deleteMany({ comment: { $in: allCommentIds } }),
+    Activity.deleteMany({ comment: comment._id }),
+    Notification.deleteMany({ comment: comment._id }),
   ]);
-
-  // If this was a reply itself, decrement the parent's replyCount
-  if (comment.parentComment) {
-    await QuizComment.findByIdAndUpdate(comment.parentComment, { $inc: { replyCount: -1 } });
-  }
-
-  await Quiz.findByIdAndUpdate(comment.quiz?._id || comment.quiz, { $inc: { commentCount: -totalCountToRemove } });
-  await syncNonNegativeQuizCounters(comment.quiz?._id || comment.quiz);
 
   res.json({
     success: true,
-    data: null,
+    data: {
+      comment: {
+        _id: comment._id,
+        status: comment.status,
+        body: comment.body,
+      },
+    },
   });
 });
 

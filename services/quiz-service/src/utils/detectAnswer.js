@@ -57,9 +57,12 @@ export const matchAnswerToOption = (answer, options) => {
     }
     case 'boolean': {
       const boolStr = value === 'true' || value === 'yes' ? 'true' : 'false';
-      return options.findIndex(
-        (opt) => opt.text.toLowerCase().trim() === boolStr
-      );
+      return options.findIndex((opt) => {
+        const optionText = opt.text.toLowerCase().trim();
+        return boolStr === 'true'
+          ? optionText === 'true' || optionText === 'yes'
+          : optionText === 'false' || optionText === 'no';
+      });
     }
     case 'text': {
       // Exact match first

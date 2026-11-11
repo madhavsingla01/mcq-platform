@@ -3,7 +3,7 @@
  * Reads tokens from httpOnly cookies.
  */
 
-import { verifySessionToken } from '../utils/sessionToken.js';
+import { verifySessionToken, isCurrentSession } from '../utils/sessionToken.js';
 import crypto from 'crypto';
 import { AppError } from './error.middleware.js';
 import env from '../config/env.js';
@@ -24,7 +24,7 @@ export const protect = async (req, res, next) => {
     }
 
     const decoded = verifySessionToken(token, env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password -refreshToken');
+    const user = await User.findById(decoded.id).select('-password -refreshToken +sessions');
 
     if (!user || user.isDeleted || user.isActive === false) {
       return next(new AppError('User no longer exists or account has been deleted.', 401));
@@ -41,10 +41,13 @@ export const protect = async (req, res, next) => {
     }
 
     // Check token version to invalidate revoked sessions
-    if ((decoded.tokenVersion ?? 0) !== (user.tokenVersion ?? 0)) {
+    if (!isCurrentSession(user, decoded)) {
       return next(new AppError('Session invalidated. Please log in again.', 401));
     }
 
+    req.authSessionId = decoded.sid;
+    req.activeSessions = user.sessions || [];
+    user.sessions = undefined;
     req.user = user;
     next();
   } catch (error) {
@@ -68,10 +71,12 @@ export const optionalAuth = async (req, res, next) => {
     }
 
     const decoded = verifySessionToken(token, env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password -refreshToken');
+    const user = await User.findById(decoded.id).select('-password -refreshToken +sessions');
 
     if (user && !user.isDeleted && user.isActive !== false && !user.isSuspended &&
-        (decoded.tokenVersion ?? 0) === (user.tokenVersion ?? 0)) {
+        isCurrentSession(user, decoded)) {
+      req.authSessionId = decoded.sid;
+      user.sessions = undefined;
       req.user = user;
     }
 

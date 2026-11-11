@@ -2,7 +2,7 @@
  * Auth controller — register, login, logout, refresh, me.
  */
 
-import { verifySessionToken } from '../utils/sessionToken.js';
+import { verifySessionToken, isCurrentSession } from '../utils/sessionToken.js';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import User from '../models/User.model.js';
@@ -73,10 +73,12 @@ export const bootstrapSession = catchAsync(async (req, res) => {
   catch { /* Try the refresh cookie if the access cookie has expired. */ }
 
   let user = claims
-    ? await User.findOne(activeSessionFilter(claims.id, claims.tokenVersion ?? 0))
+    ? await User.findOne(activeSessionFilter(claims.id, claims.tokenVersion ?? 0)).select('+sessions')
     : null;
+  if (user && (!isCurrentSession(user, claims) || (!claims.sid && req.cookies?.refreshToken))) user = null;
   if (user) {
     setCsrfCookie(res, /^[a-f\d]{64}$/i.test(req.cookies?.csrfToken || '') ? req.cookies.csrfToken : undefined);
+    user.sessions = undefined;
   } else {
     user = await rotateSession(req, res);
   }
@@ -290,13 +292,8 @@ export const updateMe = catchAsync(async (req, res, next) => {
     }
   }
 
-  // Check username uniqueness
   if (updates.username !== undefined && updates.username !== user.username) {
-    const existing = await User.findOne({ username: updates.username });
-    if (existing) {
-      return next(new AppError('Username is already taken', 400));
-    }
-    user.username = updates.username;
+    return next(new AppError('Username cannot be changed after it is assigned', 400));
   }
 
   if (updates.name !== undefined) user.name = updates.name;
@@ -336,6 +333,7 @@ export const updateMe = catchAsync(async (req, res, next) => {
     user.password = updates.password;
     user.tokenVersion = version + 1;
     user.refreshToken = null;
+    user.sessions = [];
   }
 
   try {
@@ -348,7 +346,7 @@ export const updateMe = catchAsync(async (req, res, next) => {
   }
   if (updates.password !== undefined) {
     auditSession(req, 'password_change', 'revoked', user._id);
-    await issueSession(user, req, res);
+    await issueSession(user, req, res, { preserveVersion: true });
   }
   if (preferencePatch && Object.keys(preferencePatch).length) {
     user = await User.findByIdAndUpdate(user._id, { $set: preferencePatch }, { new: true, runValidators: true });
@@ -360,7 +358,77 @@ export const updateMe = catchAsync(async (req, res, next) => {
   res.json({ success: true, message: 'Profile updated', data: { user } });
 });
 
-/** Revoke every older token while keeping the verified current browser signed in. */
+/** Return the authenticated user's active, per-device sessions. */
+export const getSessions = catchAsync(async (req, res) => {
+  if (!req.authSessionId) await rotateSession(req, res);
+  const now = Date.now();
+  const sessions = (req.activeSessions || [])
+    .filter(session => new Date(session.expiresAt).getTime() > now)
+    .map(session => ({
+      sessionId: session.sessionId,
+      device: session.device,
+      deviceType: session.deviceType,
+      browser: session.browser,
+      operatingSystem: session.operatingSystem,
+      ipAddress: session.ipAddress,
+      location: session.location ? {
+        latitude: session.location.latitude,
+        longitude: session.location.longitude,
+        accuracy: session.location.accuracy,
+        capturedAt: session.location.capturedAt,
+      } : null,
+      locale: session.locale,
+      timeZone: session.timeZone,
+      language: session.language,
+      userAgent: session.userAgent,
+      createdAt: session.createdAt,
+      lastActiveAt: session.lastActiveAt,
+      expiresAt: session.expiresAt,
+      isCurrent: session.sessionId === req.authSessionId,
+    }))
+    .sort((a, b) => new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime());
+
+  if (!req.authSessionId) {
+    sessions.unshift({
+      sessionId: null,
+      device: 'This browser (legacy session)',
+      createdAt: null,
+      lastActiveAt: new Date(),
+      expiresAt: null,
+      isCurrent: true,
+      legacy: true,
+    });
+  }
+  res.json({ success: true, data: { sessions, currentSessionId: req.authSessionId || null } });
+});
+
+export const revokeSession = catchAsync(async (req, res, next) => {
+  const { sessionId } = req.params;
+  const currentPassword = req.body?.currentPassword;
+  if (typeof sessionId !== 'string' ||
+      !/^[a-f\d]{8}-[a-f\d]{4}-[1-8][a-f\d]{3}-[89ab][a-f\d]{3}-[a-f\d]{12}$/i.test(sessionId)) {
+    return next(new AppError('Invalid session ID', 400));
+  }
+  if (typeof currentPassword !== 'string' || !currentPassword) {
+    return next(new AppError('Current password is required', 400));
+  }
+  if (sessionId === req.authSessionId) {
+    return next(new AppError('Use sign out to end the current session.', 400));
+  }
+  const user = await User.findById(req.user._id).select('+password');
+  if (!user || !(await user.comparePassword(currentPassword))) {
+    return next(new AppError('Incorrect current password', 400));
+  }
+  const result = await User.updateOne(
+    { _id: req.user._id, tokenVersion: req.user.tokenVersion, 'sessions.sessionId': sessionId },
+    { $pull: { sessions: { sessionId } } }
+  );
+  if (!result.modifiedCount) return next(new AppError('Session not found or already signed out', 404));
+  auditSession(req, 'session_revocation', 'revoked', req.user._id);
+  res.json({ success: true, message: 'Session signed out' });
+});
+
+/** Revoke every other session while keeping this browser signed in. */
 export const revokeOtherSessions = catchAsync(async (req, res, next) => {
   const currentPassword = req.body?.currentPassword;
   if (typeof currentPassword !== 'string' || !currentPassword) {
@@ -372,11 +440,11 @@ export const revokeOtherSessions = catchAsync(async (req, res, next) => {
   }
   const version = req.user.tokenVersion ?? 0;
   const refreshed = await User.findOneAndUpdate(activeSessionFilter(user._id, version), {
-    $set: { tokenVersion: version + 1, refreshToken: null },
+    $set: { tokenVersion: version + 1, refreshToken: null, sessions: [] },
   }, { new: true });
   if (!refreshed) return next(new AppError('Session changed. Please sign in again.', 401));
   auditSession(req, 'session_revocation', 'revoked', refreshed._id);
-  await issueSession(refreshed, req, res);
+  await issueSession(refreshed, req, res, { preserveVersion: true });
   res.json({ success: true, message: 'Other sessions signed out', data: { user: refreshed } });
 });
 
@@ -417,6 +485,7 @@ export const deleteAccount = catchAsync(async (req, res, next) => {
     avatar: '',
     bio: '',
     refreshToken: null,
+    sessions: [],
     password: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
     followersCount: 0,
     followingCount: 0,

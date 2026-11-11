@@ -219,7 +219,10 @@ export default function Mapping() {
 
   const handleConfirm = async ({ forceGenerate = false } = {}) => {
     if (!mapping.question) return setError('Question column is required');
-    if (mapping.options.length < 2) return setError('At least 2 option columns are required');
+    if (!Array.isArray(mapping.options) || mapping.options.length < 2) {
+      return setError('At least 2 option columns are required');
+    }
+    if (!mapping.answer) return setError('Correct answer column is required');
 
     setError('');
     setIsSubmitting(true);
@@ -505,10 +508,10 @@ export default function Mapping() {
                     </span>
                   </div>
                   <p className="qf-settings-banner-summary">
-                    {visibility.charAt(0).toUpperCase() + visibility.slice(1)} â€¢ {difficulty} â€¢ {category}
-                    {instantFeedback ? ' â€¢ Instant Feedback' : ''}
-                    {shuffleQuestions ? ' â€¢ Shuffled' : ''}
-                    {coverImage ? ' â€¢ Cover set' : ''}
+                    {visibility.charAt(0).toUpperCase() + visibility.slice(1)} • {difficulty} • {category}
+                    {instantFeedback ? ' • Instant Feedback' : ''}
+                    {shuffleQuestions ? ' • Shuffled' : ''}
+                    {coverImage ? ' • Cover set' : ''}
                   </p>
                 </div>
               </div>
@@ -866,7 +869,7 @@ export default function Mapping() {
             {/* Window Footer Actions */}
             <div className="window-footer">
               <span className="footer-summary-text">
-                {parsedData?.rowCount || 0} questions â€¢ {difficulty} â€¢ {visibility} â€¢ {timerMode === 'none' ? 'Untimed' : `${timeLimit}m`}
+                {parsedData?.rowCount || 0} questions • {difficulty} • {visibility} • {timerMode === 'none' ? 'Untimed' : `${timeLimit}m`}
               </span>
               <button
                 type="button"

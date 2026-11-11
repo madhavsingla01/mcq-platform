@@ -14,6 +14,7 @@ import { errorHandler, notFoundHandler } from './middleware/error.middleware.js'
 import { csrfProtection } from './middleware/csrf.middleware.js';
 import authRoutes from './routes/auth.routes.js';
 import profileRoutes from './routes/profile.routes.js';
+import { pruneExpiredSessions } from './services/session.service.js';
 
 const allowedOrigins = env.CLIENT_URL;
 
@@ -60,6 +61,17 @@ app.use(errorHandler);
 const start = async () => {
   try {
     await connectDB();
+    const cleanupExpiredSessions = async () => {
+      try {
+        const result = await pruneExpiredSessions();
+        if (result.modifiedCount) logger.info(`Removed expired sessions from ${result.modifiedCount} accounts`);
+      } catch (error) {
+        logger.error('Failed to remove expired sessions:', error.message);
+      }
+    };
+    void cleanupExpiredSessions();
+    const sessionCleanupTimer = setInterval(cleanupExpiredSessions, 60 * 60 * 1000);
+    sessionCleanupTimer.unref();
     app.listen(env.PORT, () => {
       logger.info(`🚀 Auth Service running on port ${env.PORT} [${env.NODE_ENV}]`);
     });
