@@ -15,11 +15,11 @@ process.env.CLIENT_URL = 'http://localhost:5173';
 const jwt = (await import('../services/auth-service/node_modules/jsonwebtoken/index.js')).default;
 
 // Import domain modules under test
-const { verifySessionToken } = await import('../services/auth-service/src/utils/sessionToken.js');
-const { sanitizeQuestionsForContest, normalizeChallengeQuestionInput } = await import('../services/challenge-service/src/controllers/challenge.controller.js');
-const { RankingService } = await import('../services/challenge-service/src/services/ranking.service.js');
-const { SubmitAttemptUseCase } = await import('../services/attempt-service/src/application/use-cases/SubmitAttemptUseCase.js');
-const { StartAttemptUseCase } = await import('../services/attempt-service/src/application/use-cases/StartAttemptUseCase.js');
+const { verifySessionToken } = await import('../services/auth-service/dist/utils/sessionToken.js');
+const { sanitizeQuestionsForContest, normalizeChallengeQuestionInput } = await import('../services/challenge-service/dist/controllers/challenge.controller.js');
+const { RankingService } = await import('../services/challenge-service/dist/services/ranking.service.js');
+const { SubmitAttemptUseCase } = await import('../services/attempt-service/dist/application/use-cases/SubmitAttemptUseCase.js');
+const { StartAttemptUseCase } = await import('../services/attempt-service/dist/application/use-cases/StartAttemptUseCase.js');
 
 const TEST_SECRET = 'adversarial-auth-test-secret-key-at-least-32-chars-long!';
 const TEST_REFRESH_SECRET = 'adversarial-refresh-test-secret-key-at-least-32-chars!';

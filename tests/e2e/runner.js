@@ -2,10 +2,11 @@
 
 /**
  * QuizFocus E2E Test Suite Runner
- * Executes Tier 1 through Tier 4 end-to-end tests across features F1 through F12.
+ * Executes Tier 1 through Tier 5 end-to-end tests across features F1 through F15 and adversarial hardening.
  * Usage:
  *   node tests/e2e/runner.js
  *   node tests/e2e/runner.js --tier=1
+ *   node tests/e2e/runner.js --tier=5
  *   node tests/e2e/runner.js --grep="F1"
  *   node tests/e2e/runner.js --verbose
  */
@@ -31,7 +32,7 @@ for (const arg of args) {
 console.log('\x1b[1m\x1b[35m=================================================================\x1b[0m');
 console.log('\x1b[1m\x1b[35m             QuizFocus MCQ Platform — E2E Test Runner            \x1b[0m');
 console.log('\x1b[1m\x1b[35m=================================================================\x1b[0m');
-console.log(`\x1b[90mConfiguration: Tier Filter: ${tierFilter || 'ALL (1-4)'} | Grep: ${grepFilter || 'NONE'} | Verbose: ${verbose}\x1b[0m\n`);
+console.log(`\x1b[90mConfiguration: Tier Filter: ${tierFilter || 'ALL (1-5)'} | Grep: ${grepFilter || 'NONE'} | Verbose: ${verbose}\x1b[0m\n`);
 
 async function main() {
   const startTime = performance.now();
@@ -48,6 +49,9 @@ async function main() {
   }
   if (!tierFilter || tierFilter === '4') {
     await import('./tier4-application-scenarios.test.js');
+  }
+  if (!tierFilter || tierFilter === '5') {
+    await import('./tier5-adversarial-hardening.test.js');
   }
 
   const overallResults = {

@@ -7,7 +7,8 @@
     "build": "tsc -p tsconfig.json",
     "dev": "npm run build && node dist/main.js",
     "start": "node dist/main.js",
-    "test": "npm run build && node --test tests/service.test.mjs"
+    "test": "npm run build && node tests/service.test.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "cors": "^2.8.5",

@@ -1,16 +1,16 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { CreateChallengeUseCase } from '../src/application/use-cases/CreateChallengeUseCase.js';
-import { UpdateQuizUseCase } from '../src/application/use-cases/UpdateQuizUseCase.js';
-import { DeleteQuizUseCase } from '../src/application/use-cases/DeleteQuizUseCase.js';
-import { GetLeaderboardUseCase } from '../src/application/use-cases/GetLeaderboardUseCase.js';
-import { StartAttemptUseCase } from '../src/application/use-cases/StartAttemptUseCase.js';
-import { SubmitAttemptUseCase } from '../src/application/use-cases/SubmitAttemptUseCase.js';
+import { CreateChallengeUseCase } from '../dist/application/use-cases/CreateChallengeUseCase.js';
+import { UpdateQuizUseCase } from '../dist/application/use-cases/UpdateQuizUseCase.js';
+import { DeleteQuizUseCase } from '../dist/application/use-cases/DeleteQuizUseCase.js';
+import { GetLeaderboardUseCase } from '../dist/application/use-cases/GetLeaderboardUseCase.js';
+import { StartAttemptUseCase } from '../dist/application/use-cases/StartAttemptUseCase.js';
+import { SubmitAttemptUseCase } from '../dist/application/use-cases/SubmitAttemptUseCase.js';
 import {
   QuestionLimitExceededError,
   InvalidChallengeTimeError,
   ChallengeImmutabilityError,
   CancellationNotAllowedError,
-} from '../src/domain/errors/DomainError.js';
+} from '../dist/domain/errors/DomainError.js';
 
 describe('Application Layer - Use Cases (Pure Mock Tests without MongoDB)', () => {
   let mockQuizRepo;

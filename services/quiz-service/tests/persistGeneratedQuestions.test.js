@@ -5,17 +5,17 @@ const deleteMany = jest.fn();
 const deleteOne = jest.fn();
 const loggerError = jest.fn();
 
-jest.unstable_mockModule('../src/models/Question.model.js', () => ({
+jest.unstable_mockModule('../dist/models/Question.model.js', () => ({
   default: { insertMany, deleteMany },
 }));
-jest.unstable_mockModule('../src/models/Quiz.model.js', () => ({
+jest.unstable_mockModule('../dist/models/Quiz.model.js', () => ({
   default: { deleteOne },
 }));
-jest.unstable_mockModule('../src/utils/logger.js', () => ({
+jest.unstable_mockModule('../dist/utils/logger.js', () => ({
   logger: { error: loggerError },
 }));
 
-const { persistGeneratedQuestions } = await import('../src/services/quiz/persistGeneratedQuestions.js');
+const { persistGeneratedQuestions } = await import('../dist/services/quiz/persistGeneratedQuestions.js');
 
 describe('persist generated quiz questions', () => {
   const quiz = { _id: 'quiz-1' };

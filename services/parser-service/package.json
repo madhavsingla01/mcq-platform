@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --forceExit --detectOpenHandles"
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --forceExit --detectOpenHandles",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -23,7 +24,9 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@types/node": "22.19.0",
     "jest": "30.3.0",
-    "nodemon": "^3.1.0"
+    "nodemon": "^3.1.0",
+    "typescript": "5.9.3"
   }
 }

@@ -14,13 +14,13 @@ process.env.NODE_ENV = 'test';
 process.env.PORT = '5099';
 process.env.CLIENT_URL = 'http://localhost:5173';
 
-const env = (await import('../src/config/env.js')).default;
-const MediaAsset = (await import('../src/models/MediaAsset.model.js')).default;
+const env = (await import('../dist/config/env.js')).default;
+const MediaAsset = (await import('../dist/models/MediaAsset.model.js')).default;
 const {
   canTransition,
   validateTransition,
   LIFECYCLE_STATES,
-} = await import('../src/services/educationalStateMachine.js');
+} = await import('../dist/services/educationalStateMachine.js');
 const {
   checkCreatorQuota,
   createSignedUploadToken,
@@ -32,8 +32,8 @@ const {
   updateEducationalAssetStatus,
   getEducationalAssetAccess,
   streamEducationalAssetContent,
-} = await import('../src/services/educationalAsset.service.js');
-const app = (await import('../src/server.js')).default;
+} = await import('../dist/services/educationalAsset.service.js');
+const app = (await import('../dist/server.js')).default;
 
 describe('Educational Resource Asset Storage & Lifecycle State Machine', () => {
   let server;

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SubmitAttemptUseCase } from '../../services/attempt-service/src/application/use-cases/SubmitAttemptUseCase.js';
-import { StartAttemptUseCase } from '../../services/attempt-service/src/application/use-cases/StartAttemptUseCase.js';
+import { SubmitAttemptUseCase } from '../../services/attempt-service/dist/application/use-cases/SubmitAttemptUseCase.js';
+import { StartAttemptUseCase } from '../../services/attempt-service/dist/application/use-cases/StartAttemptUseCase.js';
 
 test('attempt invariant: completed attempt immutability prevents re-submission or score tampering', async () => {
   const attemptId = 'att-completed-123';

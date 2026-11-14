@@ -75,7 +75,7 @@ test('Empirical Adversarial Challenge: Gateway /api/v1/marketplace Routing & Iso
     serviceNames.map((name) => [`${name}_SERVICE_URL`, upstreamUrl])
   );
 
-  const child = spawn(process.execPath, ['src/server.js'], {
+  const child = spawn(process.execPath, ['dist/server.js'], {
     cwd: fileURLToPath(new URL('../services/api-gateway/', import.meta.url)),
     env: {
       ...process.env,

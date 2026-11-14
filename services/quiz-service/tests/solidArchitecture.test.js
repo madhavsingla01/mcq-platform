@@ -1,12 +1,12 @@
 import { describe, it, expect } from '@jest/globals';
-import { ParserRegistry } from '../src/services/parser/strategies/ParserRegistry.js';
-import { BaseParserStrategy } from '../src/services/parser/strategies/BaseParserStrategy.js';
-import { QuestionEvaluationRegistry } from '../src/services/quiz/scoring/QuestionEvaluationRegistry.js';
-import { BaseQuestionEvaluator } from '../src/services/quiz/scoring/BaseQuestionEvaluator.js';
-import { TimerStrategyFactory } from '../src/services/quiz/timer/TimerStrategyFactory.js';
-import { StrictTimerStrategy } from '../src/services/quiz/timer/StrictTimerStrategy.js';
-import { SoftTimerStrategy } from '../src/services/quiz/timer/SoftTimerStrategy.js';
-import { NoTimerStrategy } from '../src/services/quiz/timer/NoTimerStrategy.js';
+import { ParserRegistry } from '../dist/services/parser/strategies/ParserRegistry.js';
+import { BaseParserStrategy } from '../dist/services/parser/strategies/BaseParserStrategy.js';
+import { QuestionEvaluationRegistry } from '../dist/services/quiz/scoring/QuestionEvaluationRegistry.js';
+import { BaseQuestionEvaluator } from '../dist/services/quiz/scoring/BaseQuestionEvaluator.js';
+import { TimerStrategyFactory } from '../dist/services/quiz/timer/TimerStrategyFactory.js';
+import { StrictTimerStrategy } from '../dist/services/quiz/timer/StrictTimerStrategy.js';
+import { SoftTimerStrategy } from '../dist/services/quiz/timer/SoftTimerStrategy.js';
+import { NoTimerStrategy } from '../dist/services/quiz/timer/NoTimerStrategy.js';
 
 describe('SOLID Architecture Verification', () => {
   describe('Open/Closed Principle (OCP) - Parser Strategy Engine', () => {

@@ -1,4 +1,4 @@
-import { normalizeAnswer } from '../src/services/parser/answerDetector.js';
+import { normalizeAnswer } from '../dist/services/parser/answerDetector.js';
 
 describe('answer normalization', () => {
   const options = [

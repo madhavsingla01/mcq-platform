@@ -1,4 +1,5 @@
-import { defineConfig } from 'vite';
+import { fileURLToPath } from 'node:url';
+import { defineConfig, searchForWorkspaceRoot } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
@@ -6,6 +7,7 @@ export default defineConfig({
   server: {
     port: 5174,
     host: true,
+    fs: { allow: [searchForWorkspaceRoot(process.cwd()), fileURLToPath(new URL('../../contracts', import.meta.url))] },
     proxy: {
       '/api': {
         target: 'http://localhost:5000',

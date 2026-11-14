@@ -2,14 +2,26 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { readFileSync } from 'node:fs';
-import { errorBody, proxyFailure, sanitizeProxyRequest } from '../services/api-gateway/src/contracts.js';
-import { createAttemptRelay } from '../services/quiz-service/src/infrastructure/attemptClient.js';
-import { apiFailure } from '../apps/desktop-web/src/api/errorContract.js';
+import { errorBody, proxyFailure, sanitizeProxyRequest } from '../services/api-gateway/dist/contracts.js';
+import { buildClosestSearch as adminSearch } from '../services/admin-service/dist/services/closestSearch.js';
+import { buildClosestSearch as socialSearch } from '../services/social-service/src/services/closestSearch.js';
+import { createAttemptRelay } from '../services/quiz-service/dist/infrastructure/attemptClient.js';
+import { GatewayError, readApiFailure as apiFailure } from '../contracts/dist/v1/http.js';
 
 test('independently packaged services use the same closest-match rules', () => {
   const source = service => readFileSync(new URL(`../services/${service}/src/services/closestSearch.js`, import.meta.url), 'utf8').replace(/\r\n/g, '\n');
-  for (const service of ['challenge-service', 'admin-service', 'message-service']) {
+  for (const service of ['challenge-service', 'message-service']) {
     assert.equal(source(service), source('social-service'), service);
+  }
+  const searchOptions = [
+    { primary: 'title', arrays: ['tags'], literalFields: ['quizCode'] },
+    { primary: 'name', fields: ['username'], literalOnly: true },
+    { primary: 'title', wordFields: ['category'] },
+  ];
+  for (const options of searchOptions) {
+    for (const query of ['Biochemstry', 'Biochemistry practice', 'qz-123', '数学 [a+b]', 'a '.repeat(51)]) {
+      assert.deepEqual(adminSearch(query, options), socialSearch(query, options));
+    }
   }
 });
 
@@ -18,6 +30,7 @@ test('gateway errors preserve legacy clients and expose a classified, correlated
     const body = errorBody(status, 'Safe message', 'request-123');
     assert.equal(body.success, false);
     assert.equal(body.message, body.error.message);
+    assert.deepEqual(GatewayError.parse(body), body);
     assert.equal(apiFailure({ response: { status, data: body } }).code, body.error.code);
     assert.equal(body.requestId, 'request-123');
   }

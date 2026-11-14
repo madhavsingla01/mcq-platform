@@ -213,3 +213,12 @@ export class ApiClient {
 }
 
 export const defaultApiClient = new ApiClient();
+
+export async function authenticateTestAdmin() {
+  const { QUIZFOCUS_TEST_ADMIN_EMAIL: email, QUIZFOCUS_TEST_ADMIN_PASSWORD: password } = process.env;
+  if (!email || !password) throw new Error('Run the isolated integration suite or configure a dedicated test administrator');
+  const client = new ApiClient();
+  const response = await client.post('/api/v1/auth/login', { email, password });
+  if (!response.ok) throw new Error(`Test administrator login failed (HTTP ${response.status})`);
+  return client;
+}

@@ -1,4 +1,4 @@
-import { buildAttemptAnalytics } from '../src/services/quiz/attemptTracking.service.js';
+import { buildAttemptAnalytics } from '../dist/services/quiz/attemptTracking.service.js';
 
 describe('Attempt Tracking Service - Scoring and Analytics', () => {
   it('should correctly build attempt analytics', () => {

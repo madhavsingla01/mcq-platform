@@ -28,7 +28,7 @@ const { build } = require('esbuild');
 const dom = new JSDOM('<!doctype html><html lang="en"><title>Quiz accessibility check</title><body></body></html>', {
   url: 'http://localhost:5173', pretendToBeVisual: true, runScripts: 'outside-only',
 });
-for (const [name, value] of Object.entries({ window: dom.window, document: dom.window.document, navigator: dom.window.navigator })) {
+for (const [name, value] of Object.entries({ window: dom.window, document: dom.window.document, navigator: dom.window.navigator, HTMLMediaElement: dom.window.HTMLMediaElement })) {
   Object.defineProperty(globalThis, name, { configurable: true, value });
 }
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
@@ -77,7 +77,7 @@ async function loadComponent(relativePath) {
 }
 
 const [OptionCard, MediaEditor] = await Promise.all([
-  loadComponent('src/components/platform/options/OptionCard.jsx'),
+  loadComponent('src/components/platform/options/OptionCard.tsx'),
   loadComponent('src/components/media/MediaEditor.jsx'),
 ]);
 dom.window.eval(await readFile(require.resolve('axe-core/axe.min.js'), 'utf8'));

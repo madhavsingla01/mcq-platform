@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import jwt from '../../services/auth-service/node_modules/jsonwebtoken/index.js';
 import crypto from 'node:crypto';
-import { verifySessionToken, isCurrentSession } from '../../services/auth-service/src/utils/sessionToken.js';
+import { verifySessionToken, isCurrentSession } from '../../services/auth-service/dist/utils/sessionToken.js';
 
 const TEST_SECRET = 'super-secret-auth-invariants-key-at-least-32-chars!';
 const TEST_REFRESH_SECRET = 'super-secret-refresh-invariants-key-at-least-32-chars!';

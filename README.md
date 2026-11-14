@@ -125,6 +125,8 @@ npm run media:dev      # Media Processing Service on :5007
 
 ## Verification
 
+The [TypeScript migration checklist](docs/typescript-migration.md) tracks strict compiler coverage and the remaining JavaScript. Run `npm run typecheck`, `npm run lint:types`, and `npm run contracts:test` from this directory. Both web apps use the repo's `contracts` directory at build time. The Gateway, Auth, Attempt, Challenge, Media, Admin, Quiz, and AI Integration services build inside their own directories and run the emitted JavaScript from `dist`.
+
 Microservices health:
 
 ```bash

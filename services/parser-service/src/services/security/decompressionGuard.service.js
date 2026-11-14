@@ -199,6 +199,19 @@ export function inspectZipHeaders(buffer) {
   const effectiveCompressed = totalCompressed > 0 ? totalCompressed : Math.max(fileSize, 1);
   const ratio = totalUncompressed / effectiveCompressed;
 
+  // Guard against truncated or corrupted archives (e.g. 4-byte PK\x03\x04 or missing headers)
+  if (entryCount === 0 && (eocdOffset === -1 || (buffer.length >= 4 && buffer.readUInt32LE(0) === 0x04034b50))) {
+    return {
+      ok: false,
+      uncompressedSize: 0,
+      compressedSize: effectiveCompressed,
+      ratio: 0,
+      entryCount: 0,
+      error: 'File rejected: Corrupted or truncated ZIP archive.',
+      failureCode: 'CORRUPT_ARCHIVE',
+    };
+  }
+
   // Boundary checks:
   // 1. Max Entry Count check
   if (entryCount > MAX_ENTRY_COUNT) {

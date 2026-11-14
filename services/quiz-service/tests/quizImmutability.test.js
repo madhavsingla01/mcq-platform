@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { UpdateQuizUseCase } from '../src/application/use-cases/UpdateQuizUseCase.js';
-import { DeleteQuizUseCase } from '../src/application/use-cases/DeleteQuizUseCase.js';
-import { RankingService } from '../src/domain/services/RankingService.js';
+import { UpdateQuizUseCase } from '../dist/application/use-cases/UpdateQuizUseCase.js';
+import { DeleteQuizUseCase } from '../dist/application/use-cases/DeleteQuizUseCase.js';
+import { RankingService } from '../dist/domain/services/RankingService.js';
 import {
   ChallengeImmutabilityError,
   CancellationNotAllowedError,
-} from '../src/domain/errors/DomainError.js';
+} from '../dist/domain/errors/DomainError.js';
 
 describe('Quiz Service — Immutability, Cancellation & Ranking Vertical Slices', () => {
   let mockQuizRepo;

@@ -4,7 +4,7 @@ import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { fileURLToPath } from 'node:url';
-import { createHealthMonitor, integerSetting, isSocketPath, requestContext } from '../services/api-gateway/src/runtime.js';
+import { createHealthMonitor, integerSetting, isSocketPath, requestContext } from '../services/api-gateway/dist/runtime.js';
 import { SERVICE_PORTS, readServicePort } from '../scripts/service-launch-config.js';
 
 test('health probes share in-flight work, expire, and redact downstream data', async () => {
@@ -82,7 +82,7 @@ test('gateway proxies bodies/cookies/correlation and distinguishes readiness fro
   await new Promise(resolve => reserve.close(resolve));
   const upstreamUrl = `http://127.0.0.1:${upstream.address().port}`;
   const serviceEnv = Object.fromEntries(['AUTH','QUIZ','PARSER','ATTEMPT','SOCIAL','SOCIAL_FEED','SOCIAL_INTERACTIONS','SOCIAL_COMMENTS','MESSAGE','MEDIA','ADMIN','CHALLENGE','AI_INTEGRATION','MARKETPLACE'].map(name => [`${name}_SERVICE_URL`, upstreamUrl]));
-  const child = spawn(process.execPath, ['src/server.js'], {
+  const child = spawn(process.execPath, ['dist/server.js'], {
     cwd: fileURLToPath(new URL('../services/api-gateway/', import.meta.url)),
     env: { ...process.env, ...serviceEnv, PORT: String(port), NODE_ENV: 'test', CLIENT_URL: 'http://localhost:5173', HEALTH_CACHE_TTL_MS: '1', PROXY_TIMEOUT_MS: '100' },
     stdio: 'pipe', windowsHide: true,

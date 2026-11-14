@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { normalizeTags } from '../src/controllers/search.controller.js';
+import { normalizeTags } from '../dist/controllers/search.controller.js';
 
 describe('Search Engine & Hashtag Normalization', () => {
   describe('normalizeTags', () => {

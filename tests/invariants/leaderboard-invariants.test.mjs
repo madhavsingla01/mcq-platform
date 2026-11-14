@@ -10,8 +10,8 @@ process.env.MONGO_URI = 'mongodb://127.0.0.1:27017/challenge-tests';
 process.env.JWT_SECRET = 'challenge-service-test-secret-at-least-32-chars!';
 process.env.CLIENT_URL = 'http://localhost:5173';
 
-const { RankingService } = await import('../../services/challenge-service/src/services/ranking.service.js');
-const { memoryCache } = await import('../../services/challenge-service/src/services/cache.service.js');
+const { RankingService } = await import('../../services/challenge-service/dist/services/ranking.service.js');
+const { memoryCache } = await import('../../services/challenge-service/dist/services/cache.service.js');
 
 test('leaderboard invariant: quarantined attempts and creator practice runs excluded from active challenge public leaderboards', () => {
   const challenge = {

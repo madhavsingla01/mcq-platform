@@ -12,6 +12,8 @@ const __dirname = path.dirname(__filename);
 const root = path.join(__dirname, '..');
 
 const packages = [
+  '.',
+  'contracts',
   'apps/desktop-web',
   'apps/mobile-web',
   'services/api-gateway',
@@ -35,7 +37,7 @@ console.log('📦 Installing dependencies across all web apps and microservices.
 
 for (const pkg of packages) {
   const dir = path.join(root, pkg);
-  if (fs.existsSync(path.join(dir, 'node_modules'))) {
+  if (fs.existsSync(path.join(dir, 'node_modules')) && process.argv.includes('--skip-installed')) {
     console.log(`⏩  Skipping (already installed): ${pkg}`);
     continue;
   }

@@ -26,6 +26,7 @@ const mediaGenerations = new Map();
 
 const types = {
   wav: 'audio/wav',
+  png: 'image/png',
   mp4: 'video/mp4',
   vtt: 'text/vtt',
   csv: 'text/csv',

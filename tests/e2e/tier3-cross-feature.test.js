@@ -1,548 +1,503 @@
 /**
- * QuizFocus Phase 4 — Tier 3: Cross-Feature Combinations E2E Test Suite
- * Covers 15 Pairwise & Cross-Feature Interactions (C1 through C15).
+ * QuizFocus E2E Test Suite — Tier 3: Cross-Feature Combinations (Pairwise Integration)
+ * Strictly OPAQUE-BOX: Interacts exclusively via public HTTP/REST endpoints against API Gateway.
+ * Zero internal Mongoose model imports or database queries.
+ * Validates external payloads against @quizfocus/contracts Zod schemas.
  * Authoritative source: ORIGINAL_REQUEST.md, PROJECT.md, and TEST_INFRA.md.
  */
 
-import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { describe as runnerDescribe, it as runnerIt, expect as runnerExpect } from './helpers/runner-core.js';
 import {
-  computeSha256,
-  buildPdfFixture,
-  buildExcelFixture,
-  buildCsvFixture,
-  buildJsonFixture,
-  buildMacroSpreadsheetFixture,
-  buildDecompressionBombFixture,
-  isFormulaInjection,
-  sanitizeFormulaPrefix,
-  redactMcqPreview,
-} from './helpers/resource-fixtures.js';
-import { PATHS, readFileSafe } from './helpers/static-checker.js';
+  describe as runnerDescribe,
+  it as runnerIt,
+  expect as runnerExpect,
+} from './helpers/runner-core.js';
+import { ApiClient, authenticateTestAdmin } from './helpers/api-client.js';
+import {
+  QuizSummary,
+  ChallengeSummary,
+  AttemptSummary,
+  AttemptResultSummary,
+  LeaderboardResponse,
+  CurrentUserResponse,
+} from '../../contracts/dist/v1/domain.js';
+import { ValidatedImageUrlResponse } from '../../contracts/dist/v1/media.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const platformRoot = path.resolve(__dirname, '..', '..');
+import { clip, uploadFixture } from '../fixtures/media/samples.mjs';
 
-// Set test environment variables
-process.env.PORT = process.env.PORT || '5002';
-process.env.NODE_ENV = process.env.NODE_ENV || 'test';
-process.env.MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/test';
-process.env.MEDIA_STORAGE_PATH = process.env.MEDIA_STORAGE_PATH || 'storage';
-process.env.MEDIA_MAX_FILE_SIZE = process.env.MEDIA_MAX_FILE_SIZE || '52428800';
-process.env.MEDIA_EDUCATIONAL_MAX_FILE_SIZE = process.env.MEDIA_EDUCATIONAL_MAX_FILE_SIZE || '52428800';
-process.env.MEDIA_CREATOR_MAX_STORAGE_BYTES = process.env.MEDIA_CREATOR_MAX_STORAGE_BYTES || '524288000';
-process.env.MEDIA_CREATOR_MAX_ASSET_COUNT = process.env.MEDIA_CREATOR_MAX_ASSET_COUNT || '100';
-process.env.JWT_SECRET = process.env.JWT_SECRET || 'a-secure-32-byte-test-secret-key-for-jwt-tokens!!';
+export function registerTier3Tests({
+  describe = runnerDescribe,
+  it = runnerIt,
+  expect = runnerExpect,
+} = {}) {
+  describe('Tier 3: Cross-Feature Combinations (Pairwise Integration)', () => {
 
-// Import domain models and services via pathToFileURL
-const mongoose = (await import(pathToFileURL(path.join(platformRoot, 'services/marketplace-service/node_modules/mongoose/index.js')))).default;
-const MediaAsset = (await import(pathToFileURL(path.join(platformRoot, 'services/media-service/src/models/MediaAsset.model.js')))).default;
-const { LIFECYCLE_STATES, canTransition, validateTransition } = await import(
-  pathToFileURL(path.join(platformRoot, 'services/media-service/src/services/educationalStateMachine.js'))
-);
-const { MarketplaceListing } = await import(
-  pathToFileURL(path.join(platformRoot, 'services/marketplace-service/src/models/MarketplaceListing.model.js'))
-);
-const {
-  checkCreatorQuota,
-  createSignedUploadToken,
-  verifySignedUploadToken,
-  createSignedAccessGrant,
-  verifySignedAccessGrant,
-} = await import(
-  pathToFileURL(path.join(platformRoot, 'services/media-service/src/services/educationalAsset.service.js'))
-);
-const { verifyEducationalAssetOwnership, OwnershipError } = await import(
-  pathToFileURL(path.join(platformRoot, 'services/marketplace-service/src/services/ownership.service.js'))
-);
-const { sanitizeProxyRequest, errorCode, errorBody } = await import(
-  pathToFileURL(path.join(platformRoot, 'services/api-gateway/src/contracts.js'))
-);
+    // =========================================================================
+    // T3-1: Auth <-> Quiz Integration
+    // =========================================================================
+    it('T3-1: Auth <-> Quiz (register creator -> create & publish quiz -> verify profile shows quiz)', async () => {
+      const creator = new ApiClient();
+      const c = await creator.registerTestUser('t3_1_creator');
+      expect(c.userId).toBeDefined();
 
-const makeId = () => new mongoose.Types.ObjectId();
-const makeIdStr = () => new mongoose.Types.ObjectId().toString();
+      // Verify Authenticated User Contract
+      const meRes = await creator.get('/api/v1/auth/me');
+      expect(meRes.status).toBe(200);
+      const parsedUser = CurrentUserResponse.safeParse(meRes.data);
+      expect(parsedUser.success).toBe(true);
 
-export function registerTier3Tests({ describe = runnerDescribe, it = runnerIt, expect = runnerExpect } = {}) {
-  describe('Tier 3: Cross-Feature Combinations (15 Tests: C1 to C15)', () => {
-
-    it('C1 (F4 + F2 + F8): Multi-format PDF ingestion triggers lifecycle state machine through scanning to metadata extraction', () => {
-      const pdf = buildPdfFixture({ pageCount: 2 });
-      const hasSignature = pdf.subarray(0, 5).toString('utf8') === '%PDF-';
-      expect(hasSignature).toBeTruthy();
-
-      expect(canTransition(LIFECYCLE_STATES.INITIATED, LIFECYCLE_STATES.UPLOADED)).toBeTruthy();
-      expect(canTransition(LIFECYCLE_STATES.UPLOADED, LIFECYCLE_STATES.SCANNING)).toBeTruthy();
-      expect(canTransition(LIFECYCLE_STATES.SCANNING, LIFECYCLE_STATES.PROCESSING)).toBeTruthy();
-      expect(canTransition(LIFECYCLE_STATES.PROCESSING, LIFECYCLE_STATES.READY)).toBeTruthy();
-
-      const asset = new MediaAsset({
-        _id: makeIdStr(),
-        ownerId: makeIdStr(),
-        kind: 'document',
-        purpose: 'educational-resource',
-        originalName: 'lecture.pdf',
-        sourceMimeType: 'application/pdf',
-        sourceSize: pdf.length,
-        fileHash: computeSha256(pdf),
-        status: 'ready',
-        metadata: { pageCount: 2, format: 'PDF-1.4' },
-      });
-      const err = asset.validateSync();
-      expect(err).toBeUndefined();
-      expect(asset.metadata.pageCount).toBe(2);
-    });
-
-    it('C2 (F3 + F10 + F1): Upload quota check identifies duplicate checksum and executes storage deduplication without quota double-counting', async () => {
-      const fileSize = 5 * 1024 * 1024;
-      const fileBytes = 'Educational Content for Quota Check';
-      const hash = computeSha256(fileBytes);
-      const creatorId = makeIdStr();
-
-      // Existing asset in storage
-      const existingAsset = new MediaAsset({
-        _id: makeIdStr(),
-        ownerId: creatorId,
-        kind: 'document',
-        purpose: 'educational-resource',
-        originalName: 'original_lecture.pdf',
-        sourceMimeType: 'application/pdf',
-        sourceSize: fileSize,
-        fileHash: hash,
-        status: 'ready',
-      });
-      expect(existingAsset.validateSync()).toBeUndefined();
-
-      // Duplicate upload by same creator reuses hash and satisfies validation
-      const duplicateAsset = new MediaAsset({
-        _id: makeIdStr(),
-        ownerId: creatorId,
-        kind: 'document',
-        purpose: 'educational-resource',
-        originalName: 'duplicate_copy.pdf',
-        sourceMimeType: 'application/pdf',
-        sourceSize: fileSize,
-        fileHash: hash,
-        status: 'ready',
-      });
-      expect(duplicateAsset.validateSync()).toBeUndefined();
-      expect(duplicateAsset.fileHash).toBe(existingAsset.fileHash);
-
-      // Quota check with existing storage volume does not exceed limit
-      const origAggregate = MediaAsset.aggregate;
-      try {
-        MediaAsset.aggregate = async () => [{ _id: creatorId, totalBytes: fileSize, assetCount: 1 }];
-        const usage = await checkCreatorQuota(creatorId, 1024);
-        expect(usage.currentBytes).toBe(fileSize);
-      } finally {
-        MediaAsset.aggregate = origAggregate;
-      }
-    });
-
-    it('C3 (F5 + F2 + F15): Macro-enabled spreadsheet upload transitions to quarantined state and triggers gateway audit logging', () => {
-      const macroWorkbook = buildMacroSpreadsheetFixture();
-      const hasVba = macroWorkbook.includes(Buffer.from('xl/vbaProject.bin'));
-      expect(hasVba).toBeTruthy();
-
-      validateTransition(LIFECYCLE_STATES.UPLOADED, LIFECYCLE_STATES.QUARANTINED);
-      expect(canTransition(LIFECYCLE_STATES.QUARANTINED, LIFECYCLE_STATES.READY)).toBeFalsy();
-
-      let invalidTransitionThrew = false;
-      try {
-        validateTransition(LIFECYCLE_STATES.QUARANTINED, LIFECYCLE_STATES.READY);
-      } catch (err) {
-        invalidTransitionThrew = true;
-        expect(err.statusCode).toBe(409);
-      }
-      expect(invalidTransitionThrew).toBeTruthy();
-
-      const quarantinedAsset = new MediaAsset({
-        _id: makeIdStr(),
-        ownerId: makeIdStr(),
-        kind: 'spreadsheet',
-        purpose: 'educational-resource',
-        originalName: 'macro_test.xlsm',
-        sourceMimeType: 'application/vnd.ms-excel.sheet.macroEnabled.12',
-        sourceSize: macroWorkbook.length,
-        fileHash: computeSha256(macroWorkbook),
-        status: 'quarantined',
-        failureCode: 'MACRO_DETECTED',
-        failureReason: 'Embedded VBA binary detected in workbook container',
-      });
-      expect(quarantinedAsset.validateSync()).toBeUndefined();
-
-      // Ownership verification rejects listing quarantined assets
-      let threw = false;
-      try {
-        verifyEducationalAssetOwnership({ asset: quarantinedAsset, sellerId: quarantinedAsset.ownerId });
-      } catch (err) {
-        threw = true;
-        expect(err.code).toBe('FORBIDDEN_ASSET_NOT_READY');
-      }
-      expect(threw).toBeTruthy();
-    });
-
-    it('C4 (F6 + F7 + F9): Decompression bounds validation combined with formula neutralization yields sanitized spreadsheet preview', () => {
-      const csv = buildCsvFixture({
-        headers: ['Topic', 'Formula Column', 'Numeric Column'],
-        rows: [['Math', '=SUM(1+1)', '-42.5']],
-      });
-      const lines = csv.split('\n');
-      const formulaCell = lines[1].split(',')[1];
-      const numericCell = lines[1].split(',')[2];
-
-      expect(isFormulaInjection(formulaCell)).toBeTruthy();
-      expect(isFormulaInjection(numericCell)).toBeFalsy();
-
-      const sanitizedFormula = sanitizeFormulaPrefix(formulaCell);
-      expect(sanitizedFormula.startsWith("'")).toBeTruthy();
-      const sanitizedNumeric = sanitizeFormulaPrefix(numericCell);
-      expect(sanitizedNumeric).toBe('-42.5');
-
-      const safePreviews = redactMcqPreview([
-        { prompt: 'What is 1+1?', options: [sanitizedFormula, sanitizedNumeric], correctAnswer: 0, explanation: 'Basic addition' },
-      ]);
-      expect(safePreviews.length).toBe(1);
-      expect(safePreviews[0].correctAnswer).toBeUndefined();
-      expect(safePreviews[0].explanation).toBeUndefined();
-      expect(safePreviews[0].answerRedacted).toBe(true);
-    });
-
-    it('C5 (F8 + F9 + F1): Metadata extraction generates watermarked PDF preview stored under private storage lease', () => {
-      const pdf = buildPdfFixture({ pageCount: 4, watermark: 'SAMPLE' });
-      expect(pdf.toString('utf8')).toContain('SAMPLE');
-
-      const leaseUntil = new Date(Date.now() + 3600 * 1000);
-      const asset = new MediaAsset({
-        _id: makeIdStr(),
-        ownerId: makeIdStr(),
-        kind: 'document',
-        purpose: 'educational-resource',
-        originalName: 'course-syllabus.pdf',
-        sourceMimeType: 'application/pdf',
-        sourceSize: pdf.length,
-        status: 'ready',
-        fileHash: computeSha256(pdf),
-        referenceLeaseUntil: leaseUntil,
-      });
-      const err = asset.validateSync();
-      expect(err).toBeUndefined();
-      expect(asset.referenceLeaseUntil).toEqual(leaseUntil);
-    });
-
-    it('C6 (F10 + F12 + F11): Duplicate asset reuse verifies ownership before creating polymorphic marketplace listing', () => {
-      const creatorId = makeId();
-      const asset = new MediaAsset({
-        _id: makeIdStr(),
-        ownerId: creatorId.toString(),
-        kind: 'document',
-        purpose: 'educational-resource',
-        originalName: 'verified_course.pdf',
-        sourceMimeType: 'application/pdf',
-        sourceSize: 2048,
-        fileHash: computeSha256('Course Data'),
-        status: 'ready',
-      });
-      expect(asset.validateSync()).toBeUndefined();
-
-      const ownershipResult = verifyEducationalAssetOwnership({ asset, sellerId: creatorId });
-      expect(ownershipResult.allowed).toBe(true);
-
-      const listing = new MarketplaceListing({
-        slug: 'verified-owner-resource',
-        title: 'Verified Owner Resource',
-        sellerId: creatorId,
-        contentRef: {
-          contentType: 'educational_resource',
-          contentId: makeId(),
-        },
-        price: 9.99,
-      });
-      const err = listing.validateSync();
-      expect(err).toBeUndefined();
-      expect(listing.contentRef.contentType).toBe('educational_resource');
-    });
-
-    it('C7 (F3 + F15 + F13): Creator upload rate limit and quota exhaustion surfaces structured error state in Desktop UI', async () => {
-      const origAggregate = MediaAsset.aggregate;
-      try {
-        // Simulate storage volume near capacity
-        MediaAsset.aggregate = async () => [{ _id: 'creator_exhausted', totalBytes: 524288000, assetCount: 99 }];
-        let threw = false;
-        try {
-          await checkCreatorQuota('creator_exhausted', 10 * 1024 * 1024);
-        } catch (err) {
-          threw = true;
-          expect(err.statusCode).toBe(429);
-          expect(err.message).toContain('Creator storage volume quota exceeded');
-        }
-        expect(threw).toBeTruthy();
-
-        // Gateway error code mapping returns RATE_LIMITED for 429
-        expect(errorCode(429)).toBe('RATE_LIMITED');
-        const errPayload = errorBody(429, 'Upload rate limit exceeded. Please try again later.', 'req_quota_c7');
-        expect(errPayload.error.code).toBe('RATE_LIMITED');
-        expect(errPayload.requestId).toBe('req_quota_c7');
-      } finally {
-        MediaAsset.aggregate = origAggregate;
-      }
-    });
-
-    it('C8 (F9 + F1 + F3): Safe preview artifact delivery generates short-lived signed accessGrant token without original leak', () => {
-      const assetId = makeIdStr();
-      const viewerId = makeIdStr();
-      const token = createSignedAccessGrant(assetId, viewerId, 'user');
-      expect(typeof token).toBe('string');
-
-      // Valid token decodes correctly
-      const decoded = verifySignedAccessGrant(token, assetId);
-      expect(decoded.assetId).toBe(assetId);
-      expect(decoded.viewerId).toBe(viewerId);
-      expect(decoded.scope).toBe('educational-access');
-
-      // Tampered token throws 401
-      let tamperedThrew = false;
-      try {
-        verifySignedAccessGrant(`${token}_tampered`, assetId);
-      } catch (err) {
-        tamperedThrew = true;
-        expect(err.statusCode).toBe(401);
-      }
-      expect(tamperedThrew).toBeTruthy();
-
-      // Mismatched asset target throws 403
-      let mismatchedThrew = false;
-      try {
-        verifySignedAccessGrant(token, 'different_asset_id');
-      } catch (err) {
-        mismatchedThrew = true;
-        expect(err.statusCode).toBe(403);
-      }
-      expect(mismatchedThrew).toBeTruthy();
-    });
-
-    it('C9 (F11 + F12 + F1): Marketplace listing with polymorphic contentRef enforces Zero Duplication against media storage', () => {
-      const contentId = makeId();
-      const listing = new MarketplaceListing({
-        slug: 'zero-duplication-educational-ref',
-        title: 'Zero Duplication Educational Ref',
-        sellerId: makeId(),
-        contentRef: {
-          contentType: 'educational_resource',
-          contentId,
-        },
-        price: 15.0,
-      });
-      expect(listing.validateSync()).toBeUndefined();
-      expect(listing.get('questions')).toBeUndefined();
-      expect(listing.get('choices')).toBeUndefined();
-
-      // Enforce that storing questions or choices throws Zero Duplication Invariant violation
-      let threw = false;
-      try {
-        const duplicatedListing = new MarketplaceListing({
-          slug: 'violation-educational-listing',
-          title: 'Violation Educational Listing',
-          sellerId: makeId(),
-          contentRef: {
-            contentType: 'educational_resource',
-            contentId,
+      // Create Quiz Draft
+      const draftRes = await creator.post('/api/v1/quiz/manual', {
+        title: 'T3-1 Auth-Quiz Linked Test',
+        isDraft: true,
+        questions: [
+          {
+            questionText: 'What is the base currency for transactions?',
+            questionType: 'multiple_choice',
+            options: [
+              { label: 'A', text: 'Credits', isCorrect: true },
+              { label: 'B', text: 'Points' },
+            ],
+            correctAnswer: 'A',
+            marks: 1,
           },
-          price: 15.0,
-          questions: [{ prompt: 'Duplicated Question' }],
-        });
-        duplicatedListing.validateSync();
-      } catch (err) {
-        threw = true;
-        expect(err.message).toMatch(/questions|Zero Duplication/i);
-      }
-      expect(threw).toBeTruthy();
-    });
-
-    it('C10 (F14 + F2 + F13): Mobile native upload component polls 5-state lifecycle progression with animated progress bar', () => {
-      const states = [
-        LIFECYCLE_STATES.INITIATED,
-        LIFECYCLE_STATES.UPLOADED,
-        LIFECYCLE_STATES.SCANNING,
-        LIFECYCLE_STATES.PROCESSING,
-        LIFECYCLE_STATES.READY,
-      ];
-      expect(states.length).toBe(5);
-      for (let i = 0; i < states.length - 1; i++) {
-        expect(canTransition(states[i], states[i + 1])).toBeTruthy();
-      }
-      // Cannot jump from initiated directly to ready
-      expect(canTransition(LIFECYCLE_STATES.INITIATED, LIFECYCLE_STATES.READY)).toBeFalsy();
-    });
-
-    it('C11 (F7 + F8 + F4): CSV formula escaping preserves numeric columns while neutralizing malicious formulas during ingestion', () => {
-      const csv = buildCsvFixture({
-        headers: ['Item', 'Score', 'Malicious'],
-        rows: [['Student 1', '-42.5', '  =cmd|\' /C calc\'!A0']],
+        ],
       });
-      const lines = csv.split('\n');
-      const cells = lines[1].split(',');
-      const score = cells[1];
-      expect(isFormulaInjection(score)).toBeFalsy();
-      expect(sanitizeFormulaPrefix(score)).toBe('-42.5');
+      expect(draftRes.status).toBe(201);
+      const quizId = draftRes.data.data.quizId;
+      expect(quizId).toBeDefined();
 
-      const malicious = cells[2];
-      expect(isFormulaInjection(malicious)).toBeTruthy();
-      const sanitized = sanitizeFormulaPrefix(malicious);
-      expect(sanitized).toBe("  '=cmd|' /C calc'!A0");
+      // Publish Quiz
+      const pubRes = await creator.post(`/api/v1/quiz/drafts/${quizId}/publish`, {
+        visibility: 'public',
+      });
+      expect(pubRes.status).toBe(200);
+      const parsedQuiz = QuizSummary.safeParse(pubRes.data.data.quiz);
+      expect(parsedQuiz.success).toBe(true);
+      expect(parsedQuiz.data._id).toBe(quizId);
+
+      // Verify Creator Public Profile lists published quiz
+      const profileQuizzes = await creator.get(`/api/v1/users/${c.username}/quizzes`);
+      expect(profileQuizzes.status).toBe(200);
+      expect(profileQuizzes.data.success).toBe(true);
+      const quizzesList = profileQuizzes.data.data.quizzes || [];
+      const found = quizzesList.some((q) => q._id === quizId);
+      expect(found).toBe(true);
     });
 
-    it('C12 (F4 + F9 + F15): Multi-format PDF upload proxies through gateway, sanitizes headers, and outputs watermarked preview', () => {
-      const pdf = buildPdfFixture({ pageCount: 1, watermark: 'CONFIDENTIAL' });
-      expect(pdf.toString('utf8')).toContain('CONFIDENTIAL');
+    // =========================================================================
+    // T3-2: Auth <-> Attempt Integration
+    // =========================================================================
+    it('T3-2: Auth <-> Attempt (register student -> start attempt -> verify student ID and user metadata correctly linked)', async () => {
+      const creator = new ApiClient();
+      await creator.registerTestUser('t3_2_creator');
 
-      const removed = [];
-      const setHeaders = {};
-      const proxyReq = {
-        removeHeader: (h) => removed.push(h),
-        setHeader: (k, v) => { setHeaders[k] = v; },
-      };
-      const req = {
-        headers: {
-          'x-user-id': 'untrusted_client',
-          'x-role': 'admin',
-          authorization: 'Bearer valid_jwt',
-        },
-        requestId: 'req_pdf_c12',
-        ip: '10.0.0.1',
-      };
-      sanitizeProxyRequest(proxyReq, req);
-      expect(removed).toContain('x-user-id');
-      expect(removed).toContain('x-role');
-      expect(setHeaders['x-request-id']).toBe('req_pdf_c12');
-      expect(setHeaders['x-forwarded-for']).toBe('10.0.0.1');
+      const draftRes = await creator.post('/api/v1/quiz/manual', {
+        title: 'T3-2 Attempt Metadata Quiz',
+        isDraft: true,
+        questions: [
+          {
+            questionText: 'Is QuizFocus built with TypeScript?',
+            questionType: 'multiple_choice',
+            options: [
+              { label: 'A', text: 'Yes', isCorrect: true },
+              { label: 'B', text: 'No' },
+            ],
+            correctAnswer: 'A',
+            marks: 1,
+          },
+        ],
+      });
+      const quizId = draftRes.data.data.quizId;
+      await creator.post(`/api/v1/quiz/drafts/${quizId}/publish`, { visibility: 'public' });
+
+      // Register independent student
+      const student = new ApiClient();
+      const s = await student.registerTestUser('t3_2_student');
+
+      // Start Attempt
+      const startRes = await student.post('/api/v1/attempts/start', { quizId });
+      expect(startRes.status).toBe(201);
+      const attempt = startRes.data.data.attempt;
+
+      // Validate AttemptSummary schema
+      const parsedAttempt = AttemptSummary.safeParse(attempt);
+      expect(parsedAttempt.success).toBe(true);
+      expect(attempt.userId).toBe(s.userId);
+      expect(attempt.status).toBe('in_progress');
+      expect(attempt.answers.length).toBe(1);
     });
 
-    it('C13 (F4 + F2 + F13): Corrupted document upload transitions state to rejected and displays retry prompt in UI', () => {
-      const corrupted = buildPdfFixture({ corrupted: true });
-      const isValid = corrupted.subarray(0, 5).toString('utf8') === '%PDF-';
-      expect(isValid).toBeFalsy();
+    // =========================================================================
+    // T3-3: Quiz <-> Attempt <-> Scoring Integration
+    // =========================================================================
+    it('T3-3: Quiz <-> Attempt <-> Scoring (create quiz -> student answers correct/incorrect -> verify calculated score matches percentage)', async () => {
+      const creator = new ApiClient();
+      await creator.registerTestUser('t3_3_creator');
 
-      validateTransition(LIFECYCLE_STATES.SCANNING, LIFECYCLE_STATES.REJECTED);
-      expect(canTransition(LIFECYCLE_STATES.REJECTED, LIFECYCLE_STATES.PROCESSING)).toBeFalsy();
+      // Create a 2-question quiz (2 marks each, total 4 marks)
+      const draftRes = await creator.post('/api/v1/quiz/manual', {
+        title: 'T3-3 Scoring Verification Quiz',
+        isDraft: true,
+        questions: [
+          {
+            questionText: 'Select Option Alpha',
+            questionType: 'multiple_choice',
+            options: [
+              { label: 'A', text: 'Alpha', isCorrect: true },
+              { label: 'B', text: 'Beta' },
+            ],
+            correctAnswer: 'A',
+            marks: 2,
+          },
+          {
+            questionText: 'Select Option Delta',
+            questionType: 'multiple_choice',
+            options: [
+              { label: 'A', text: 'Gamma' },
+              { label: 'B', text: 'Delta', isCorrect: true },
+            ],
+            correctAnswer: 'B',
+            marks: 2,
+          },
+        ],
+      });
+      const quizId = draftRes.data.data.quizId;
+      await creator.post(`/api/v1/quiz/drafts/${quizId}/publish`, { visibility: 'public' });
 
-      const asset = new MediaAsset({
-        _id: makeIdStr(),
-        ownerId: makeIdStr(),
-        kind: 'document',
+      const student = new ApiClient();
+      await student.registerTestUser('t3_3_student');
+
+      const startRes = await student.post('/api/v1/attempts/start', { quizId });
+      const attempt = startRes.data.data.attempt;
+      const q1Id = attempt.answers[0].questionId;
+      const q2Id = attempt.answers[1].questionId;
+
+      // Answer Q1 correctly ('A') and Q2 incorrectly ('A')
+      const syncRes = await student.put(
+        `/api/v1/quiz/${quizId}/attempt/${attempt._id}/sync-progress`,
+        {
+          questionStates: [
+            { questionId: q1Id, selectedAnswer: 'A' },
+            { questionId: q2Id, selectedAnswer: 'A' },
+          ],
+        }
+      );
+      expect(syncRes.status).toBe(200);
+
+      // Submit attempt
+      const submitRes = await student.put(
+        `/api/v1/quiz/${quizId}/attempt/${attempt._id}`,
+        {}
+      );
+      expect(submitRes.status).toBe(200);
+      const submittedAttempt = submitRes.data.data.attempt;
+
+      expect(submittedAttempt.status).toBe('completed');
+      expect(submittedAttempt.score).toBe(2);
+      expect(submittedAttempt.totalMarks).toBe(4);
+      expect(submittedAttempt.percentage).toBe(50);
+      expect(submittedAttempt.correctCount).toBe(1);
+      expect(submittedAttempt.wrongCount).toBe(1);
+
+      // Verify Score Immutability Invariant: repeated submission retains original score
+      const resubmitRes = await student.put(
+        `/api/v1/quiz/${quizId}/attempt/${attempt._id}`,
+        {}
+      );
+      expect(resubmitRes.status).toBe(200);
+      expect(resubmitRes.data.data.score).toBe(2);
+    });
+
+    // =========================================================================
+    // T3-4: Challenge <-> Attempt <-> Leaderboard Integration
+    // =========================================================================
+    it('T3-4: Challenge <-> Attempt <-> Leaderboard (create challenge -> multiple students attempt -> verify leaderboard ranks higher score / faster time)', async () => {
+      const host = new ApiClient();
+      await host.registerTestUser('t3_4_host');
+
+      // Pre-register both competitors to avoid race conditions against deadline
+      const s1 = new ApiClient();
+      await s1.registerTestUser('t3_4_s1');
+      const s2 = new ApiClient();
+      await s2.registerTestUser('t3_4_s2');
+
+      // Create challenge with near deadline (3.5 seconds)
+      const deadlineIso = new Date(Date.now() + 3500).toISOString();
+      const chRes = await host.post('/api/v1/challenges', {
+        title: 'T3-4 Speed & Score Arena',
+        durationMinutes: 5,
+        deadlineAt: deadlineIso,
+        questions: [
+          { questionText: 'Is 10 greater than 5?', options: ['Yes', 'No'], correctOption: 0 },
+        ],
+      });
+      expect(chRes.status).toBe(201);
+      const challengeId = chRes.data.data.challengeId;
+
+      // Student 1 (Correct answer)
+      const a1 = await s1.post(`/api/v1/quiz/${challengeId}/attempt`, {});
+      expect(a1.status).toBe(201);
+      const a1Id = a1.data.data.attempt._id;
+      const q1Id = a1.data.data.attempt.answers[0].questionId;
+      await s1.put(`/api/v1/quiz/${challengeId}/attempt/${a1Id}/sync-progress`, {
+        questionStates: [{ questionId: q1Id, selectedAnswer: 'Yes' }],
+      });
+      await s1.put(`/api/v1/quiz/${challengeId}/attempt/${a1Id}`, {});
+
+      // Student 2 (Incorrect answer)
+      const a2 = await s2.post(`/api/v1/quiz/${challengeId}/attempt`, {});
+      expect(a2.status).toBe(201);
+      const a2Id = a2.data.data.attempt._id;
+      const q2Id = a2.data.data.attempt.answers[0].questionId;
+      await s2.put(`/api/v1/quiz/${challengeId}/attempt/${a2Id}/sync-progress`, {
+        questionStates: [{ questionId: q2Id, selectedAnswer: 'No' }],
+      });
+      await s2.put(`/api/v1/quiz/${challengeId}/attempt/${a2Id}`, {});
+
+      // Wait for deadline to elapse
+      const waitMs = Math.max(500, new Date(deadlineIso).getTime() - Date.now() + 500);
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
+
+      // Leaderboard inspection
+      const lbRes = await s1.get(`/api/v1/challenges/${challengeId}/leaderboard`);
+      expect(lbRes.status).toBe(200);
+      const parsedLb = LeaderboardResponse.safeParse(lbRes.data);
+      expect(parsedLb.success).toBe(true);
+      expect(lbRes.data.data.quarantined).toBe(false);
+
+      const rows = lbRes.data.data.leaderboard;
+      expect(rows.length).toBeGreaterThanOrEqual(2);
+
+      const r1 = rows.find((r) => r.rank === 1);
+      const r2 = rows.find((r) => r.rank === 2);
+      expect(r1).toBeDefined();
+      expect(r2).toBeDefined();
+      expect(r1.score >= r2.score).toBe(true);
+    });
+
+    // =========================================================================
+    // T3-5: Challenge <-> Quarantine <-> Results Integration
+    // =========================================================================
+    it('T3-5: Challenge <-> Quarantine <-> Results (challenge before deadline -> attempt results hide answers & explanations -> verify quarantined flag)', async () => {
+      const host = new ApiClient();
+      await host.registerTestUser('t3_5_host');
+
+      // Create challenge with far future deadline (10 minutes)
+      const farDeadline = new Date(Date.now() + 600000).toISOString();
+      const chRes = await host.post('/api/v1/challenges', {
+        title: 'T3-5 Active Quarantine Arena',
+        durationMinutes: 10,
+        deadlineAt: farDeadline,
+        questions: [
+          { questionText: 'Secret competition question', options: ['A', 'B'], correctOption: 0 },
+        ],
+      });
+      const challengeId = chRes.data.data.challengeId;
+
+      const student = new ApiClient();
+      await student.registerTestUser('t3_5_student');
+
+      const startRes = await student.post(`/api/v1/quiz/${challengeId}/attempt`, {});
+      const attemptId = startRes.data.data.attempt._id;
+      const qId = startRes.data.data.attempt.answers[0].questionId;
+
+      await student.put(`/api/v1/quiz/${challengeId}/attempt/${attemptId}/sync-progress`, {
+        questionStates: [{ questionId: qId, selectedAnswer: 'A' }],
+      });
+      const submitRes = await student.put(`/api/v1/quiz/${challengeId}/attempt/${attemptId}`, {});
+      expect(submitRes.status).toBe(200);
+      expect(submitRes.data.data.score).toBeNull();
+
+      // Verify Quarantine on Leaderboard
+      const lbRes = await student.get(`/api/v1/challenges/${challengeId}/leaderboard`);
+      expect(lbRes.status).toBe(200);
+      expect(lbRes.data.data.quarantined).toBe(true);
+      expect(lbRes.data.data.leaderboard.length).toBe(0);
+      expect(lbRes.data.data.viewerSubmission.kind).toBe('ranked');
+
+      // Verify Attempt Results Concealment
+      const resultRes = await student.get(`/api/v1/attempts/${attemptId}/result`);
+      expect(resultRes.status).toBe(200);
+      const parsedResult = AttemptResultSummary.safeParse(resultRes.data.data);
+      expect(parsedResult.success).toBe(true);
+      expect(resultRes.data.data.isChallenge).toBe(true);
+      expect(resultRes.data.data.deadlinePassed).toBe(false);
+      expect(resultRes.data.data.allowReview).toBe(false);
+      expect(resultRes.data.data.attempt.score).toBeNull();
+    });
+
+    // =========================================================================
+    // T3-6: Media <-> Quiz Integration
+    // =========================================================================
+    it('T3-6: Media <-> Quiz (upload media asset -> link asset in question -> retrieve quiz and verify asset format)', async () => {
+      const educator = new ApiClient();
+      await educator.registerTestUser('t3_6_educator');
+
+      // Step 1: Validate Secure Remote Diagram Asset URL
+      const mediaRes = await educator.post('/api/v1/media/validate-url', {
+        url: 'https://example.com/diagrams/cell-mitosis.png',
+      });
+      expect(mediaRes.status).toBe(200);
+      const parsedMedia = ValidatedImageUrlResponse.safeParse(mediaRes.data);
+      expect(parsedMedia.success).toBe(true);
+      expect(parsedMedia.data.data.valid).toBe(true);
+
+      // Step 2: Educational Asset Ingestion Initialization
+      const initRes = await educator.post('/api/v1/media/assets/initiate', {
+        filename: 'mitosis-guide.pdf',
+        mimeType: 'application/pdf',
+        fileSize: 4096,
         purpose: 'educational-resource',
-        originalName: 'corrupt.pdf',
-        sourceMimeType: 'application/pdf',
-        sourceSize: corrupted.length,
-        fileHash: computeSha256(corrupted),
-        status: 'rejected',
-        failureCode: 'CORRUPTED_DOCUMENT_HEADER',
-        failureReason: 'Missing valid %PDF- header magic bytes',
       });
-      expect(asset.validateSync()).toBeUndefined();
+      expect(initRes.status).toBe(201);
+      expect(initRes.data.data.assetId).toBeDefined();
+
+      const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAGUlEQVQokWP4n81AEmIY1ZA9Gkr/h2vSAABylWoQ952ytgAAAABJRU5ErkJggg==', 'base64');
+      const asset = await uploadFixture(educator, 'diagram.png', { kind: 'image', bytes: png });
+      expect(asset.status).toBe(201);
+
+      // Step 3: Author a quiz with a service-owned asset and a text alternative.
+      const draftRes = await educator.post('/api/v1/quiz/manual', {
+        title: 'T3-6 Biology Media Quiz',
+        isDraft: true,
+        questions: [
+          {
+            questionText: 'Identify the cell phase shown in the linked reference.',
+            questionType: 'multiple_choice',
+            options: [
+              { label: 'A', text: 'Anaphase', isCorrect: true },
+              { label: 'B', text: 'Telophase' },
+            ],
+            correctAnswer: 'A',
+            marks: 1,
+            accessibilityMedia: [
+              clip('image', asset.data.data.asset._id, 'Cell diagram', 'A diagram illustrating cell division.'),
+            ],
+          },
+        ],
+      });
+      expect(draftRes.status).toBe(201);
+      const quizId = draftRes.data.data.quizId;
+      await educator.post(`/api/v1/quiz/drafts/${quizId}/publish`, { visibility: 'public' }, { expectedStatus: 200 });
+
+      // Step 4: Retrieve Quiz and Verify Domain Contract
+      const getRes = await educator.get(`/api/v1/quiz/${quizId}`);
+      expect(getRes.status).toBe(200);
+      const parsedQuiz = QuizSummary.safeParse(getRes.data.data.quiz);
+      expect(parsedQuiz.success).toBe(true);
     });
 
-    it('C14 (F10 + F12 + F3): Multi-tenant duplicate detection preserves owner privacy and prevents unauthorized asset association', () => {
-      const ownerA = makeIdStr();
-      const ownerB = makeIdStr();
-      const hash = computeSha256('Private Content');
+    // =========================================================================
+    // T3-7: Social <-> Quiz Integration
+    // =========================================================================
+    it('T3-7: Social <-> Quiz (publish quiz -> student bookmarks/likes quiz -> verify social count & bookmark list)', async () => {
+      const author = new ApiClient();
+      await author.registerTestUser('t3_7_author');
 
-      const assetA = new MediaAsset({
-        _id: makeIdStr(),
-        ownerId: ownerA,
-        kind: 'document',
-        purpose: 'educational-resource',
-        originalName: 'OwnerA_Confidential.pdf',
-        sourceMimeType: 'application/pdf',
-        sourceSize: 1024,
-        fileHash: hash,
-        status: 'ready',
+      const draftRes = await author.post('/api/v1/quiz/manual', {
+        title: 'T3-7 Social Engagement Quiz',
+        isDraft: true,
+        questions: [
+          {
+            questionText: 'Do bookmarks persist across sessions?',
+            questionType: 'multiple_choice',
+            options: [
+              { label: 'A', text: 'Yes', isCorrect: true },
+              { label: 'B', text: 'No' },
+            ],
+            correctAnswer: 'A',
+            marks: 1,
+          },
+        ],
       });
-      const assetB = new MediaAsset({
-        _id: makeIdStr(),
-        ownerId: ownerB,
-        kind: 'document',
-        purpose: 'educational-resource',
-        originalName: 'OwnerB_Notes.pdf',
-        sourceMimeType: 'application/pdf',
-        sourceSize: 1024,
-        fileHash: hash,
-        status: 'ready',
-      });
+      const quizId = draftRes.data.data.quizId;
+      await author.post(`/api/v1/quiz/drafts/${quizId}/publish`, { visibility: 'public' });
 
-      expect(assetA.validateSync()).toBeUndefined();
-      expect(assetB.validateSync()).toBeUndefined();
-      expect(assetA.ownerId).not.toBe(assetB.ownerId);
+      const student = new ApiClient();
+      await student.registerTestUser('t3_7_student');
 
-      // User B cannot list User A's asset
-      let threw = false;
-      try {
-        verifyEducationalAssetOwnership({ asset: assetA, sellerId: ownerB });
-      } catch (err) {
-        threw = true;
-        expect(err.code).toBe('FORBIDDEN_CONTENT_NOT_OWNED');
-      }
-      expect(threw).toBeTruthy();
+      // Bookmark Quiz
+      const bmRes = await student.post(`/api/v1/social/quizzes/${quizId}/bookmark`, {});
+      expect(bmRes.status).toBe(200);
+      expect(bmRes.data.data.quiz.bookmarkCount).toBe(1);
+
+      // Like Quiz
+      const likeRes = await student.post(`/api/v1/social/quizzes/${quizId}/like`, {});
+      expect(likeRes.status).toBe(200);
+      expect(likeRes.data.data.quiz.likeCount).toBe(1);
+
+      // Verify Querying Bookmarks includes the quiz
+      const bookmarksRes = await student.get('/api/v1/social/bookmarks');
+      expect(bookmarksRes.status).toBe(200);
+      const quizzes = bookmarksRes.data.data.quizzes || [];
+      const found = quizzes.some((q) => q._id === quizId);
+      expect(found).toBe(true);
     });
 
-    it('C15 (F1-F12 Complete): Full end-to-end ingestion, scanning, processing, preview generation, duplicate check, and marketplace listing', () => {
-      const creatorId = makeId();
-      const pdf = buildPdfFixture({ pageCount: 3, watermark: 'SAMPLE' });
-      const checksum = computeSha256(pdf);
+    // =========================================================================
+    // T3-8: Social <-> Admin Moderation Integration
+    // =========================================================================
+    it('T3-8: Social <-> Admin (create post/comment -> second user flags moderation report -> admin resolves -> post is hidden/removed)', async () => {
+      const creator = new ApiClient();
+      await creator.registerTestUser('t3_8_creator');
 
-      // 1. Ingestion init
-      expect(canTransition(LIFECYCLE_STATES.INITIATED, LIFECYCLE_STATES.UPLOADED)).toBeTruthy();
-      // 2. Security scanning
-      expect(canTransition(LIFECYCLE_STATES.UPLOADED, LIFECYCLE_STATES.SCANNING)).toBeTruthy();
-      // 3. Processing & metadata extraction
-      expect(canTransition(LIFECYCLE_STATES.SCANNING, LIFECYCLE_STATES.PROCESSING)).toBeTruthy();
-      // 4. Preview generation & Ready
-      expect(canTransition(LIFECYCLE_STATES.PROCESSING, LIFECYCLE_STATES.READY)).toBeTruthy();
-
-      const asset = new MediaAsset({
-        _id: makeIdStr(),
-        ownerId: creatorId.toString(),
-        kind: 'document',
-        purpose: 'educational-resource',
-        originalName: 'ml-notes.pdf',
-        sourceMimeType: 'application/pdf',
-        sourceSize: pdf.length,
-        fileHash: checksum,
-        status: 'ready',
-        metadata: { pageCount: 3 },
+      const draftRes = await creator.post('/api/v1/quiz/manual', {
+        title: 'T3-8 Moderation Content Quiz',
+        isDraft: true,
+        questions: [
+          {
+            questionText: 'Content under community review',
+            questionType: 'multiple_choice',
+            options: [
+              { label: 'A', text: 'Acceptable', isCorrect: true },
+              { label: 'B', text: 'Flagged' },
+            ],
+            correctAnswer: 'A',
+            marks: 1,
+          },
+        ],
       });
-      expect(asset.validateSync()).toBeUndefined();
+      const quizId = draftRes.data.data.quizId;
+      await creator.post(`/api/v1/quiz/drafts/${quizId}/publish`, { visibility: 'public' });
 
-      // 5. Ownership verification
-      const ownership = verifyEducationalAssetOwnership({ asset, sellerId: creatorId });
-      expect(ownership.allowed).toBe(true);
+      // Second user reports the quiz
+      const reporter = new ApiClient();
+      await reporter.registerTestUser('t3_8_reporter');
 
-      // 6. Educational listing created with polymorphic contentRef
-      const listing = new MarketplaceListing({
-        slug: 'complete-educational-journey-listing',
-        title: 'Complete Educational Journey Listing',
-        sellerId: creatorId,
-        contentRef: {
-          contentType: 'educational_resource',
-          contentId: makeId(),
-        },
-        price: 29.99,
+      const reportRes = await reporter.post('/api/v1/admin/reports/submit', {
+        targetType: 'quiz',
+        targetId: quizId,
+        reason: 'Violates platform community standards',
+        category: 'inappropriate',
       });
-      const err = listing.validateSync();
-      expect(err).toBeUndefined();
-      expect(listing.contentRef.contentType).toBe('educational_resource');
+      expect(reportRes.status).toBe(201);
+      const reportId = reportRes.data.reportId;
+      expect(reportId).toBeDefined();
 
-      // 7. Signed access grant verification
-      const grantToken = createSignedAccessGrant(asset._id, makeIdStr(), 'user');
-      const verifiedGrant = verifySignedAccessGrant(grantToken, asset._id);
-      expect(verifiedGrant.scope).toBe('educational-access');
+      // Admin logs in and resolves report
+      const admin = await authenticateTestAdmin();
+      const resolveRes = await admin.post(`/api/v1/admin/reports/${reportId}/resolve`, {
+        status: 'action_taken',
+        action: 'restricted',
+        notes: 'Restricted following community flag review',
+      });
+      expect(resolveRes.status).toBe(200);
+      expect(resolveRes.data.data.report.status).toBe('action_taken');
+
+      // Verify content is restricted from public access
+      const accessRes = await reporter.get(`/api/v1/quiz/${quizId}`);
+      expect([403, 404].includes(accessRes.status)).toBe(true);
+
+      // Verify Audit Log entry
+      const auditRes = await admin.get('/api/v1/admin/audit-logs');
+      expect(auditRes.status).toBe(200);
+      const logs = auditRes.data.data.logs || [];
+      const hasLog = logs.some((l) => l.metadata?.reportId === reportId);
+      expect(hasLog).toBe(true);
     });
 
   });
 }
 
 // Auto-register when imported by runner.js or executed directly
-if (process.argv[1]?.endsWith('tier3-cross-feature.test.js') || process.argv[1]?.endsWith('runner.js')) {
-  registerTier3Tests();
-}
+registerTier3Tests();

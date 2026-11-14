@@ -36,8 +36,8 @@ function formatBytes(bytes, decimals = 1) {
   if (!bytes || bytes <= 0) return '0 B';
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }
 
@@ -97,7 +97,8 @@ export default function Upload() {
       setAutoMapping(autoMapping, confidence);
 
       // Extract and catalog metadata for 'ready' state
-      const ext = activeFile?.name ? activeFile.name.substring(activeFile.name.lastIndexOf('.')).toUpperCase() : 'DOCUMENT';
+      const lastDot = activeFile?.name ? activeFile.name.lastIndexOf('.') : -1;
+      const ext = lastDot !== -1 ? activeFile.name.substring(lastDot).toUpperCase() : 'DOCUMENT';
       setFileMetadata({
         originalName: activeFile?.name || metadata.originalName || 'Uploaded Resource',
         fileSize: activeFile?.size || metadata.fileSize || 0,

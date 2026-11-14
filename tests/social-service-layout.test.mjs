@@ -19,7 +19,7 @@ test('each Social domain has an independently startable app and image', async ()
 
 test('gateway and disposable verification stack are wired to all three domains', async () => {
   const [gateway, compose, verifier] = await Promise.all([
-    read('services/api-gateway/src/server.js'),
+    read('services/api-gateway/src/server.ts'),
     read('docker-compose.yml'),
     read('scripts/verify-stack.mjs'),
   ]);

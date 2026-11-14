@@ -1,14 +1,14 @@
 import { describe, it, expect } from '@jest/globals';
-import { Challenge } from '../src/domain/entities/Challenge.js';
-import { Quiz } from '../src/domain/entities/Quiz.js';
-import { Attempt } from '../src/domain/entities/Attempt.js';
-import { RankingService } from '../src/domain/services/RankingService.js';
+import { Challenge } from '../dist/domain/entities/Challenge.js';
+import { Quiz } from '../dist/domain/entities/Quiz.js';
+import { Attempt } from '../dist/domain/entities/Attempt.js';
+import { RankingService } from '../dist/domain/services/RankingService.js';
 import {
   QuestionLimitExceededError,
   InvalidChallengeTimeError,
   ChallengeImmutabilityError,
   CancellationNotAllowedError,
-} from '../src/domain/errors/DomainError.js';
+} from '../dist/domain/errors/DomainError.js';
 
 describe('OOP Domain Entities & Business Invariants', () => {
   describe('Challenge Entity Invariants', () => {

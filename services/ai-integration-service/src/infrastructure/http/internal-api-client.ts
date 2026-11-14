@@ -8,12 +8,12 @@ export class InternalApiClient {
     private readonly fetchImpl: typeof fetch = fetch,
   ) {}
 
-  async getJson<T>(
+  async getJson(
     origin: string,
     pathname: string,
     requestId: string,
     incomingHeaders: Record<string, string | string[] | undefined>,
-  ): Promise<T> {
+  ): Promise<unknown> {
     const url = new URL(pathname, origin);
     const headers = new Headers({ accept: 'application/json', 'x-request-id': requestId });
 
@@ -50,7 +50,8 @@ export class InternalApiClient {
     }
 
     try {
-      return await response.json() as T;
+      const payload: unknown = await response.json();
+      return payload;
     } catch {
       throw new InternalApiError(502, 'INVALID_DEPENDENCY_RESPONSE', 'Authentication service returned an invalid response');
     }

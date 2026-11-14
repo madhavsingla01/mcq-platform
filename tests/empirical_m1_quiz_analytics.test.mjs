@@ -76,13 +76,13 @@ async function runEmpiricalSuite() {
   const expressModule = await import('../services/quiz-service/node_modules/express/index.js');
   const express = expressModule.default;
 
-  const QuizModel = (await import('../services/quiz-service/src/models/Quiz.model.js')).default;
-  const QuestionModel = (await import('../services/quiz-service/src/models/Question.model.js')).default;
-  const AttemptModel = (await import('../services/quiz-service/src/models/Attempt.model.js')).default;
+  const QuizModel = (await import('../services/quiz-service/dist/models/Quiz.model.js')).default;
+  const QuestionModel = (await import('../services/quiz-service/dist/models/Question.model.js')).default;
+  const AttemptModel = (await import('../services/quiz-service/dist/models/Attempt.model.js')).default;
 
-  const { errorHandler, notFoundHandler } = await import('../services/quiz-service/src/middleware/error.middleware.js');
-  const quizRoutes = (await import('../services/quiz-service/src/routes/quiz.routes.js')).default;
-  const quizzesRoutes = (await import('../services/quiz-service/src/routes/quizzes.routes.js')).default;
+  const { errorHandler, notFoundHandler } = await import('../services/quiz-service/dist/middleware/error.middleware.js');
+  const quizRoutes = (await import('../services/quiz-service/dist/routes/quiz.routes.js')).default;
+  const quizzesRoutes = (await import('../services/quiz-service/dist/routes/quizzes.routes.js')).default;
 
   // Setup Mock Database State
   const mockQuizzes = new Map();

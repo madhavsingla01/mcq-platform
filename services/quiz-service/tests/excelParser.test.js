@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import XLSX from 'xlsx';
-import { parseExcel } from '../src/services/parser/excelParser.js';
+import { parseExcel } from '../dist/services/parser/excelParser.js';
 
 let tempDirectory;
 

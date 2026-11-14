@@ -38,9 +38,9 @@ process.env.JWT_SECRET = process.env.JWT_SECRET || 'a-secure-32-byte-test-secret
 
 // Import domain models and services via pathToFileURL
 const mongoose = (await import(pathToFileURL(path.join(platformRoot, 'services/marketplace-service/node_modules/mongoose/index.js')))).default;
-const MediaAsset = (await import(pathToFileURL(path.join(platformRoot, 'services/media-service/src/models/MediaAsset.model.js')))).default;
+const MediaAsset = (await import(pathToFileURL(path.join(platformRoot, 'services/media-service/dist/models/MediaAsset.model.js')))).default;
 const { LIFECYCLE_STATES, canTransition, validateTransition } = await import(
-  pathToFileURL(path.join(platformRoot, 'services/media-service/src/services/educationalStateMachine.js'))
+  pathToFileURL(path.join(platformRoot, 'services/media-service/dist/services/educationalStateMachine.js'))
 );
 const { MarketplaceListing } = await import(
   pathToFileURL(path.join(platformRoot, 'services/marketplace-service/src/models/MarketplaceListing.model.js'))
@@ -55,7 +55,7 @@ const {
   createSignedAccessGrant,
   verifySignedAccessGrant,
 } = await import(
-  pathToFileURL(path.join(platformRoot, 'services/media-service/src/services/educationalAsset.service.js'))
+  pathToFileURL(path.join(platformRoot, 'services/media-service/dist/services/educationalAsset.service.js'))
 );
 const { verifyEducationalAssetOwnership, OwnershipError } = await import(
   pathToFileURL(path.join(platformRoot, 'services/marketplace-service/src/services/ownership.service.js'))

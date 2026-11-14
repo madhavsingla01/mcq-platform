@@ -2,14 +2,14 @@ import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 
 const findOne = jest.fn();
 
-jest.unstable_mockModule('../src/models/Quiz.model.js', () => ({
+jest.unstable_mockModule('../dist/models/Quiz.model.js', () => ({
   default: { findOne },
 }));
-jest.unstable_mockModule('../src/utils/logger.js', () => ({
+jest.unstable_mockModule('../dist/utils/logger.js', () => ({
   logger: { info: jest.fn(), warn: jest.fn() },
 }));
 
-const { findDuplicateQuiz, withGenerationLock } = await import('../src/services/upload/fileHash.service.js');
+const { findDuplicateQuiz, withGenerationLock } = await import('../dist/services/upload/fileHash.service.js');
 
 const queryFor = (value) => {
   const query = {

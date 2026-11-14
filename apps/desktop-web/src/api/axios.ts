@@ -1,0 +1,129 @@
+import axios from 'axios';
+import type { ApiFailure } from '../../../../contracts/v1/http.js';
+import { getGuestSessionId } from '../utils/quizSession';
+import { apiFailure } from './errorContract';
+
+export const AUTH_SESSION_EXPIRED_EVENT = 'mcq:auth-session-expired';
+
+const api = axios.create({
+  baseURL: '/api/v1',
+  withCredentials: true,
+  headers: { 'Content-Type': 'application/json' },
+  xsrfCookieName: 'csrfToken',
+  xsrfHeaderName: 'x-csrf-token',
+});
+
+const refreshClient = axios.create({
+  baseURL: '/api/v1',
+  withCredentials: true,
+  headers: { 'Content-Type': 'application/json' },
+  xsrfCookieName: 'csrfToken',
+  xsrfHeaderName: 'x-csrf-token',
+});
+
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    skipAuthRefresh?: boolean;
+    _retry?: boolean;
+  }
+
+  interface AxiosError {
+    apiFailure?: ApiFailure;
+  }
+}
+
+let refreshPromise: Promise<void> | undefined;
+
+const getClientMetadata = () => {
+  if (typeof navigator === 'undefined') return {};
+  const metadata: Record<string, string> = {};
+  if (navigator.language) metadata['x-client-locale'] = navigator.language.slice(0, 35);
+  try {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (timeZone) metadata['x-client-timezone'] = timeZone.slice(0, 80);
+  } catch {
+    // Time zone metadata is optional.
+  }
+  return metadata;
+};
+
+api.interceptors.request.use((config) => {
+  const sessionId = getGuestSessionId();
+  Object.assign(config.headers, getClientMetadata());
+  if (sessionId && !config.headers['x-client-session-id'] && !config.headers['x-quiz-session-id']) {
+    config.headers['x-client-session-id'] = sessionId;
+  }
+  return config;
+});
+
+refreshClient.interceptors.request.use((config) => {
+  Object.assign(config.headers, getClientMetadata());
+  return config;
+});
+
+const normalizeUrl = (url = '') => {
+  if (!url) return '';
+
+  try {
+    const path = typeof window === 'undefined'
+      ? String(url).replace(/^https?:\/\/[^/]+/i, '')
+      : new URL(url, window.location.origin).pathname;
+    return (path.split(/[?#]/, 1)[0] ?? '').replace(/^\/api\/v1/, '');
+  } catch {
+    return url.replace(/^\/api\/v1/, '');
+  }
+};
+
+const sessionEndpoints = new Set(['/auth/login', '/auth/register', '/auth/bootstrap', '/auth/refresh', '/auth/logout']);
+
+const notifySessionExpired = () => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(AUTH_SESSION_EXPIRED_EVENT));
+  }
+};
+
+const refreshSession = () => {
+  if (!refreshPromise) {
+    refreshPromise = refreshClient.post<unknown>('/auth/refresh').then(() => undefined).catch(async (error: unknown) => {
+      if (!axios.isAxiosError<unknown, unknown>(error) || error.response?.status !== 401) throw error;
+      // Another tab may have already rotated the cookie successfully.
+      try {
+        await refreshClient.get('/auth/me');
+      } catch (verificationError) {
+        if (axios.isAxiosError<unknown, unknown>(verificationError) && verificationError.response?.status === 401) notifySessionExpired();
+        throw verificationError;
+      }
+    }).finally(() => { refreshPromise = undefined; });
+  }
+  return refreshPromise;
+};
+
+api.interceptors.response.use(
+  (res) => res,
+  async (error: unknown) => {
+    if (!axios.isAxiosError<unknown, unknown>(error)) throw error;
+    error.apiFailure = apiFailure(error);
+    const originalRequest = error.config;
+    const shouldRefresh =
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !originalRequest.skipAuthRefresh &&
+      !sessionEndpoints.has(normalizeUrl(originalRequest.url));
+
+    if (shouldRefresh) {
+      originalRequest._retry = true;
+      try {
+        await refreshSession();
+      } catch (refreshError) {
+        if (axios.isAxiosError<unknown, unknown>(refreshError)) refreshError.apiFailure = apiFailure(refreshError);
+        throw refreshError;
+      }
+      return api(originalRequest);
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+export default api;

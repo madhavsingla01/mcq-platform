@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { verifySessionToken, isCurrentSession } from '../src/utils/sessionToken.js';
-import { AppError } from '../src/middleware/error.middleware.js';
+import { verifySessionToken, isCurrentSession } from '../dist/utils/sessionToken.js';
+import { AppError } from '../dist/middleware/error.middleware.js';
 
 const TEST_SECRET = 'super-secret-auth-testing-key-at-least-32-chars!';
 

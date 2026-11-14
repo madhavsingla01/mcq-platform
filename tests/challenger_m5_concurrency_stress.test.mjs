@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { performance } from 'node:perf_hooks';
-import { rateLimit } from '../services/auth-service/src/middleware/rateLimit.middleware.js';
-import { sanitizeProxyRequest, errorBody } from '../services/api-gateway/src/contracts.js';
+import { rateLimit } from '../services/auth-service/dist/middleware/rateLimit.middleware.js';
+import { sanitizeProxyRequest, errorBody } from '../services/api-gateway/dist/contracts.js';
 
 // =============================================================================
 // SUITE 1: LOAD RUNNER MATHEMATICS, PERCENTILES & BOTTLENECK DETECTION ORACLES

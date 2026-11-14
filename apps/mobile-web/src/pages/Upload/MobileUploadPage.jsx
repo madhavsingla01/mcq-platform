@@ -88,7 +88,8 @@ export default function MobileUploadPage() {
       const parseData = parseRes?.data || {};
 
       // Stage 5: Ready
-      const ext = selectedFile.name.substring(selectedFile.name.lastIndexOf('.')).toUpperCase();
+      const lastDot = selectedFile.name.lastIndexOf('.');
+      const ext = lastDot !== -1 ? selectedFile.name.substring(lastDot).toUpperCase() : 'DOCUMENT';
       setMetadata({
         originalName: selectedFile.name,
         fileSize: selectedFile.size,

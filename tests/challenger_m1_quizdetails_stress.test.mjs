@@ -575,7 +575,7 @@ async function runAllSuites() {
 
     // 4.3: Real JSDOM Mounting & Client-Side Lifecycle Tests
     const { render, waitFor, cleanup } = require('@testing-library/react');
-    const apiMod = await viteServer.ssrLoadModule('/src/api/axios.js');
+    const apiMod = await viteServer.ssrLoadModule('/src/api/axios.ts');
     const api = apiMod.default;
 
     // Test 4.3.1: Mount active challenge -> sealed banner rendered, stat grid suppressed

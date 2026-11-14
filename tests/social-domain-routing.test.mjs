@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { socialServiceForPath } from '../services/api-gateway/src/social-routing.js';
+import { socialServiceForPath } from '../services/api-gateway/dist/social-routing.js';
 
 test('social feed and profile routes retain their gateway contract', () => {
   for (const pathname of [

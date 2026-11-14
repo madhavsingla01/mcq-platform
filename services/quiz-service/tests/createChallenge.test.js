@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { CreateChallengeUseCase } from '../src/application/use-cases/CreateChallengeUseCase.js';
-import { Challenge } from '../src/domain/entities/Challenge.js';
+import { CreateChallengeUseCase } from '../dist/application/use-cases/CreateChallengeUseCase.js';
+import { Challenge } from '../dist/domain/entities/Challenge.js';
 import {
   QuestionLimitExceededError,
   InvalidChallengeTimeError,
-} from '../src/domain/errors/DomainError.js';
+} from '../dist/domain/errors/DomainError.js';
 
 describe('Quiz Service — CreateChallenge Vertical Slice', () => {
   let mockQuizRepo;

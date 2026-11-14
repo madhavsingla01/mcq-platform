@@ -19,6 +19,13 @@ const serviceUrlKeys = {
   'ai-integration-service': 'AI_INTEGRATION_SERVICE_URL',
 };
 const entrypoints = {
+  'api-gateway': 'dist/server.js',
+  'admin-service': 'dist/server.js',
+  'quiz-service': 'dist/server.js',
+  'auth-service': 'dist/server.js',
+  'attempt-service': 'dist/server.js',
+  'challenge-service': 'dist/server.js',
+  'media-service': 'dist/server.js',
   'social-feed-service': 'src/index.js',
   'social-interactions-service': 'src/index.js',
   'social-comments-service': 'src/index.js',
@@ -73,14 +80,16 @@ process.once('SIGINT', async () => { await stop(); process.exit(130); });
 process.once('SIGTERM', async () => { await stop(); process.exit(143); });
 
 try {
-  const aiServiceDirectory = path.join(root, 'services', 'ai-integration-service');
-  const buildAiService = spawn(process.execPath, [
-    path.join(aiServiceDirectory, 'node_modules', 'typescript', 'bin', 'tsc'),
-    '-p',
-    path.join(aiServiceDirectory, 'tsconfig.json'),
-  ], { cwd: aiServiceDirectory, env: process.env, stdio: 'inherit', windowsHide: true });
-  const [buildCode] = await once(buildAiService, 'exit');
-  if (buildCode !== 0) throw new Error('Failed to build ai-integration-service before starting the isolated stack.');
+  for (const service of ['api-gateway', 'ai-integration-service', 'media-service', 'auth-service', 'challenge-service', 'attempt-service', 'admin-service', 'quiz-service']) {
+    const directory = path.join(root, 'services', service);
+    const build = spawn(process.execPath, [
+      path.join(directory, 'node_modules', 'typescript', 'bin', 'tsc'),
+      '-p',
+      path.join(directory, 'tsconfig.json'),
+    ], { cwd: directory, env: process.env, stdio: 'inherit', windowsHide: true });
+    const [buildCode] = await once(build, 'exit');
+    if (buildCode !== 0) throw new Error(`Failed to build ${service} before starting the isolated stack.`);
+  }
 
   await mkdir(path.join(temp, 'db'));
   const mongoPort = await availablePort();
@@ -144,6 +153,26 @@ try {
       : testMedia ? [['--test', 'tests/integration/accessible-media.test.mjs']]
       : testSecurity ? [['--test', securitySuite, 'tests/integration/platform-architecture.test.mjs']]
         : [['tests/e2e/runner.js'], ['--test', 'tests/integration/chat-settings.test.mjs', 'tests/integration/platform-architecture.test.mjs', securitySuite]];
+    if (!testProductionAuth && !testMedia && !testSecurity) {
+      const { ApiClient } = await import('../tests/e2e/helpers/api-client.js');
+      const { createRequire } = await import('node:module');
+      const authRequire = createRequire(new URL('../services/auth-service/package.json', import.meta.url));
+      const { MongoClient, ObjectId } = authRequire('mongoose').mongo;
+      const client = new ApiClient(env.GATEWAY_URL);
+      const testAdmin = await client.registerTestUser('isolated_admin');
+      const mongo = new MongoClient(mongoUri);
+      try {
+        await mongo.connect();
+        const update = await mongo.db().collection('users').updateOne(
+          { _id: new ObjectId(testAdmin.userId) }, { $set: { role: 'admin' } },
+        );
+        if (update.modifiedCount !== 1) throw new Error('Could not provision isolated test administrator');
+      } finally {
+        await mongo.close();
+      }
+      env.QUIZFOCUS_TEST_ADMIN_EMAIL = testAdmin.email;
+      env.QUIZFOCUS_TEST_ADMIN_PASSWORD = testAdmin.password;
+    }
     for (const args of suites) {
       const runner = spawn(process.execPath, args, { cwd: root, env, stdio: 'inherit', windowsHide: true });
       children.push(runner);

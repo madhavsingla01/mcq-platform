@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { normalizeManualQuestion } from '../src/controllers/quiz.controller.js';
+import { normalizeManualQuestion } from '../dist/controllers/quiz.controller.js';
 
 describe('Draft Documents Lifecycle & Business Logic', () => {
   describe('Draft Question Normalization', () => {

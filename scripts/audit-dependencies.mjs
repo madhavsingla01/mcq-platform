@@ -8,6 +8,8 @@ const npmCli = process.env.npm_execpath;
 if (!npmCli) throw new Error('Run dependency auditing with: npm run security:audit');
 
 const packages = [
+  '.',
+  'contracts',
   'apps/desktop-web',
   'apps/mobile-web',
   'services/admin-service',

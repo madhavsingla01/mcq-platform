@@ -4,8 +4,8 @@
  * while safely preserving legitimate numeric values.
  */
 
-// Formula trigger characters including tab, carriage return, and Unicode full-width equals
-const FORMULA_TRIGGERS = ['=', '+', '-', '@', '\t', '\r', '\uFF1D'];
+// Formula trigger characters including tab, carriage return, pipe, and Unicode full-width variants
+const FORMULA_TRIGGERS = ['=', '+', '-', '@', '\t', '\r', '|', '\uFF1D', '\uFF0B', '\uFF0D', '\uFF20'];
 
 // Regex matching pure numeric literals (integers, decimals, scientific notation)
 const NUMERIC_LITERAL_REGEX = /^[+-]?\d+(\.\d+)?([eE][+-]?\d+)?$/;
@@ -24,8 +24,12 @@ export function isFormulaInjection(val) {
   if (typeof val !== 'string') return false;
   if (val.length === 0) return false;
 
+  // Strip zero-width characters before inspection (\u200B, \uFEFF)
+  const stripped = val.replace(/[\u200B\uFEFF]/g, '');
+  if (stripped.length === 0) return false;
+
   // Trim leading whitespace for inspection
-  const trimmed = val.trim();
+  const trimmed = stripped.trim();
   if (trimmed.length === 0) return false;
 
   // Check numeric exemption: legitimate numbers are not formulas
@@ -35,7 +39,7 @@ export function isFormulaInjection(val) {
 
   // Check if string or trimmed string starts with any formula trigger character
   const startsWithTrigger = FORMULA_TRIGGERS.some(
-    (char) => val.startsWith(char) || trimmed.startsWith(char)
+    (char) => stripped.startsWith(char) || trimmed.startsWith(char)
   );
 
   return startsWithTrigger;

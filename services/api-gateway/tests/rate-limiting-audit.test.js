@@ -4,7 +4,7 @@ import {
   createRateLimiter,
   isUploadProcessingRequest,
   resetRateLimitStore,
-} from '../src/middleware/rateLimit.js';
+} from '../dist/middleware/rateLimit.js';
 import {
   createAuditLogMiddleware,
   recordAuditLog,
@@ -12,12 +12,12 @@ import {
   clearAuditLogs,
   extractUserIdFromAuth,
   resolveAuditEventAction,
-} from '../src/middleware/auditLog.js';
+} from '../dist/middleware/auditLog.js';
 import {
   pathTraversalGuard,
   sanitizeFilename,
-} from '../src/middleware/security.js';
-import { sanitizeProxyRequest, errorCode, errorBody } from '../src/contracts.js';
+} from '../dist/middleware/security.js';
+import { sanitizeProxyRequest, errorCode, errorBody } from '../dist/contracts.js';
 
 test('Rate Limiter: enforces max quota and returns standard 429 envelope and headers', () => {
   resetRateLimitStore();

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { validatePreferences, preferenceUpdates } from '../services/auth-service/src/utils/preferences.js';
+import { validatePreferences, preferenceUpdates } from '../services/auth-service/dist/utils/preferences.js';
 import { assertEditable, cursorCondition, deletionFields, paginationOptions, safeUrl, publicMessage } from '../services/message-service/src/services/messagePolicy.js';
 import { mergeMessages, deletedMessage, applyMessageDeletion, applyReadReceipt, canEditMessage, writeDraft, readDraft } from '../apps/desktop-web/src/pages/Messages/chatState.js';
 import { MemoryCache } from '../services/quiz-service/src/services/cache/memory-cache.js';

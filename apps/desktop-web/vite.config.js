@@ -1,4 +1,5 @@
-import { defineConfig, loadEnv } from 'vite';
+import { fileURLToPath } from 'node:url';
+import { defineConfig, loadEnv, searchForWorkspaceRoot } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
@@ -19,6 +20,7 @@ export default defineConfig(({ mode }) => {
     optimizeDeps: { include: ['react-markdown', 'remark-math', 'rehype-katex'] },
     server: {
       port,
+      fs: { allow: [searchForWorkspaceRoot(process.cwd()), fileURLToPath(new URL('../../contracts', import.meta.url))] },
       proxy: {
         '/api': { target: proxyTarget, changeOrigin: true },
         '/uploads': { target: proxyTarget, changeOrigin: true },

@@ -43,7 +43,7 @@ test('AI routes proxy through the gateway with authorization and request context
 
   let gateway;
   try {
-    ({ server: gateway } = await import('../src/server.js?ai-integration-routing-test'));
+    ({ server: gateway } = await import('../dist/server.js?ai-integration-routing-test'));
     if (!gateway.listening) await once(gateway, 'listening');
 
     const response = await fetch(`http://127.0.0.1:${gatewayPort}/api/v1/ai/status`, {

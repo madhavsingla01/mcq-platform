@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
+import { ClipAccessResponse, ClipCapabilitiesResponse, ClipResponse, SubmissionCalendarResponse } from '../../contracts/dist/v1/domain.js';
 import { ApiClient } from '../e2e/helpers/api-client.js';
 import { audioQuestion, clip, gestureQuestion, publishSample, readyFixture, uploadFixture } from '../fixtures/media/samples.mjs';
 
@@ -28,11 +29,11 @@ test('Accessible clips through the Gateway with isolated creator and participant
   const author = new ApiClient(), player = new ApiClient(), stranger = new ApiClient();
   await Promise.all([author.registerTestUser('clipauthor'), player.registerTestUser('clipviewer'), stranger.registerTestUser('clipstranger')]);
   const capabilities = await author.get('/api/v1/media/clip-capabilities', { expectedStatus: 200 });
-  assert.equal(capabilities.data.data.processorReady, true, 'Configure FFmpeg and FFprobe before running test:media');
+  assert.equal(ClipCapabilitiesResponse.parse(capabilities.data).data.processorReady, true, 'Configure FFmpeg and FFprobe before running test:media');
 
   await t.test('publish and score mixed quiz types and count the completed submission privately', async () => {
     const calendar = '/api/v1/attempts/submission-calendar';
-    const before = (await player.get(calendar, { expectedStatus: 200 })).data.data;
+    const before = SubmissionCalendarResponse.parse((await player.get(calendar, { expectedStatus: 200 })).data).data;
     const count = data => data.days.reduce((total, day) => total + day.count, 0);
     check(await new ApiClient().get(calendar), 401);
     const body = {
@@ -76,7 +77,7 @@ test('Accessible clips through the Gateway with isolated creator and participant
     check(await uploadFixture(author, 'vector.svg', { kind: 'image', bytes: svg }), 415);
     const uploaded = await uploadFixture(author, 'motion.gif', { kind: 'image', bytes: gif });
     check(uploaded, 201);
-    const asset = uploaded.data.data.asset;
+    const asset = ClipResponse.parse(uploaded.data).data.asset;
     assert.equal(asset.kind, 'image');
     assert.equal(asset.animated, true);
     check(await author.get(`/api/v1/media/assets/${asset._id}`), 404);
@@ -94,7 +95,8 @@ test('Accessible clips through the Gateway with isolated creator and participant
     check(await grants(stranger, [asset._id], { quizId }), 403);
     const ownerAccess = await grants(author, [asset._id], { quizId });
     check(ownerAccess, 200);
-    const url = ownerAccess.data.data.assets[asset._id].url;
+    const url = ClipAccessResponse.parse(ownerAccess.data).data.assets[asset._id]?.url;
+    assert.ok(url);
     check(await stranger.get(url), 403);
     assert.match((await author.request('HEAD', url, { expectedStatus: 200 })).headers.get('content-type'), /^image\/webp/);
     check(await author.put(`/api/v1/quiz/${quizId}`, { visibility: 'public' }), 200);

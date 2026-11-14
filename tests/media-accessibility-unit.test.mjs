@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeMediaClips, mediaIssues, stableOptionId } from '../services/quiz-service/src/services/questionMediaPolicy.js';
-import { parseRange, sanitizeWebVtt, referencedAssets } from '../services/media-service/src/services/clipPolicy.js';
+import { normalizeMediaClips, mediaIssues, stableOptionId } from '../services/quiz-service/dist/services/questionMediaPolicy.js';
+import { parseRange, sanitizeWebVtt, referencedAssets } from '../services/media-service/dist/services/clipPolicy.js';
 const audio='11111111-1111-4111-8111-111111111111',video='22222222-2222-4222-8222-222222222222',captions='33333333-3333-4333-8333-333333333333';
 
 test('audio/video references are allowlisted and do not carry creator correctness metadata',()=>{

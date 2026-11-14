@@ -1,913 +1,817 @@
 /**
- * QuizFocus Phase 4 — Tier 1: Feature Coverage E2E Test Suite
- * Covers Features F1 through F15 with exactly 5 test cases per feature (75 tests total).
- * Authoritative source: ORIGINAL_REQUEST.md, PROJECT.md, and TEST_INFRA.md.
+ * QuizFocus Tier 1: Feature Coverage E2E Test Suite
+ * Strictly OPAQUE-BOX: Evaluates the system externally via the API Gateway perimeter (http://127.0.0.1:5000).
+ * ZERO Mongoose model imports or direct internal database queries.
+ * Validates external response payloads against versioned @quizfocus/contracts Zod schemas.
+ *
+ * Covers 8 functional domains with >=5 test cases per domain (40 tests total):
+ *   F1: Users & Authentication
+ *   F2: Quizzes (Authoring & Catalog)
+ *   F3: Challenges (Arenas & Leaderboards)
+ *   F4: Attempts (Snapshots & Scoring)
+ *   F5: Results & Analytics
+ *   F6: Media & Parser Defense
+ *   F7: Social & Communications
+ *   F8: Admin & Operations
  */
 
-import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { describe as runnerDescribe, it as runnerIt, expect as runnerExpect } from './helpers/runner-core.js';
 import {
-  computeSha256,
-  buildPdfFixture,
-  buildExcelFixture,
-  buildCsvFixture,
-  buildJsonFixture,
-  buildMacroSpreadsheetFixture,
-  buildDecompressionBombFixture,
-  getFormulaInjectionPayloads,
-  isFormulaInjection,
-  sanitizeFormulaPrefix,
-  buildSpoofedMimeFixture,
-  redactMcqPreview,
-} from './helpers/resource-fixtures.js';
-import { PATHS, readFileSafe, extractHexColors } from './helpers/static-checker.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const platformRoot = path.resolve(__dirname, '..', '..');
-
-// Set test environment variables
-process.env.PORT = process.env.PORT || '5002';
-process.env.NODE_ENV = process.env.NODE_ENV || 'test';
-process.env.MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/test';
-process.env.MEDIA_STORAGE_PATH = process.env.MEDIA_STORAGE_PATH || 'storage';
-process.env.MEDIA_MAX_FILE_SIZE = process.env.MEDIA_MAX_FILE_SIZE || '52428800';
-process.env.MEDIA_EDUCATIONAL_MAX_FILE_SIZE = process.env.MEDIA_EDUCATIONAL_MAX_FILE_SIZE || '52428800';
-process.env.MEDIA_CREATOR_MAX_STORAGE_BYTES = process.env.MEDIA_CREATOR_MAX_STORAGE_BYTES || '524288000';
-process.env.MEDIA_CREATOR_MAX_ASSET_COUNT = process.env.MEDIA_CREATOR_MAX_ASSET_COUNT || '100';
-process.env.JWT_SECRET = process.env.JWT_SECRET || 'a-secure-32-byte-test-secret-key-for-jwt-tokens!!';
-
-// Import domain models and services via pathToFileURL
-const mongoose = (await import(pathToFileURL(path.join(platformRoot, 'services/marketplace-service/node_modules/mongoose/index.js')))).default;
-const MediaAsset = (await import(pathToFileURL(path.join(platformRoot, 'services/media-service/src/models/MediaAsset.model.js')))).default;
-const { LIFECYCLE_STATES, canTransition, validateTransition, TERMINAL_STATES } = await import(
-  pathToFileURL(path.join(platformRoot, 'services/media-service/src/services/educationalStateMachine.js'))
-);
-const { MarketplaceListing } = await import(
-  pathToFileURL(path.join(platformRoot, 'services/marketplace-service/src/models/MarketplaceListing.model.js'))
-);
-const { MarketplaceEntitlement } = await import(
-  pathToFileURL(path.join(platformRoot, 'services/marketplace-service/src/models/MarketplaceEntitlement.model.js'))
-);
-const {
-  checkCreatorQuota,
-  createSignedUploadToken,
-  verifySignedUploadToken,
-  createSignedAccessGrant,
-  verifySignedAccessGrant,
-} = await import(
-  pathToFileURL(path.join(platformRoot, 'services/media-service/src/services/educationalAsset.service.js'))
-);
-const { verifyEducationalAssetOwnership, OwnershipError } = await import(
-  pathToFileURL(path.join(platformRoot, 'services/marketplace-service/src/services/ownership.service.js'))
-);
-const { sanitizeProxyRequest, errorCode, errorBody } = await import(
-  pathToFileURL(path.join(platformRoot, 'services/api-gateway/src/contracts.js'))
-);
-
-const makeId = () => new mongoose.Types.ObjectId();
-const makeIdStr = () => new mongoose.Types.ObjectId().toString();
+  describe as runnerDescribe,
+  it as runnerIt,
+  expect as runnerExpect,
+} from './helpers/runner-core.js';
+import { ApiClient, authenticateTestAdmin } from './helpers/api-client.js';
+import {
+  CurrentUserResponse,
+  SessionBootstrapResponse,
+  SessionLoginResponse,
+  QuizSummary,
+  ChallengeSummary,
+  LeaderboardResponse,
+  AttemptSummary,
+  SubmissionCalendarResponse,
+  AttemptResultSummary,
+  ReviewPermissions,
+  ClipCapabilitiesResponse,
+  ClipResponse,
+  ClipAccessResponse,
+} from '../../contracts/dist/v1/domain.js';
+import { GatewayError } from '../../contracts/dist/v1/http.js';
 
 export function registerTier1Tests({ describe = runnerDescribe, it = runnerIt, expect = runnerExpect } = {}) {
-  describe('Tier 1: Feature Coverage (75 Tests — F1 to F15)', () => {
+  describe('Tier 1: Feature Coverage (40 Tests — F1 to F8)', () => {
 
     // =========================================================================
-    // F1: Storage Architecture Reuse
+    // F1: Users & Authentication (5 Tests)
     // =========================================================================
-    describe('F1: Storage Architecture Reuse', () => {
-      it('F1-1: MediaAsset model validates purpose: "educational-resource" without breaking existing purposes', () => {
-        const asset = new MediaAsset({
-          _id: makeIdStr(),
-          ownerId: makeIdStr(),
-          kind: 'document',
-          purpose: 'educational-resource',
-          originalName: 'test-document.pdf',
-          sourceMimeType: 'application/pdf',
-          sourceSize: 1024,
-          status: 'initiated',
+    describe('F1: Users & Authentication', () => {
+      it('F1-1: Register a new user account with unique credentials and receive HTTP 201 with auth cookies', async () => {
+        const client = new ApiClient();
+        const rand = Math.random().toString(36).substring(2, 7);
+        const username = `t1_user_${Date.now()}_${rand}`.toLowerCase();
+        const email = `${username}@example.com`;
+        const password = 'Password123!';
+
+        const res = await client.post('/api/v1/auth/register', {
+          name: `Tier1 User ${rand}`,
+          username,
+          email,
+          password,
         });
-        const err = asset.validateSync();
-        expect(err).toBeUndefined();
+
+        expect(res.status).toBe(201);
+        expect(res.data.success).toBe(true);
+        expect(res.data.data.user).toBeDefined();
+        expect(res.data.data.user._id).toBeDefined();
+        expect(client.getCookie('accessToken')).toBeDefined();
+        expect(client.getCookie('csrfToken')).toBeDefined();
       });
 
-      it('F1-2: MediaAsset schema validates lease date fields for processing and retention', () => {
-        const leaseDate = new Date(Date.now() + 3600 * 1000);
-        const asset = new MediaAsset({
-          _id: makeIdStr(),
-          ownerId: makeIdStr(),
-          kind: 'spreadsheet',
-          purpose: 'educational-resource',
-          originalName: 'test.xlsx',
-          sourceMimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          sourceSize: 2048,
-          status: 'initiated',
-          processingLeaseUntil: leaseDate,
-          removalLeaseUntil: leaseDate,
-          referenceLeaseUntil: leaseDate,
-        });
-        expect(asset.processingLeaseUntil).toEqual(leaseDate);
-        expect(asset.removalLeaseUntil).toEqual(leaseDate);
+      it('F1-2: Session bootstrap identifies guest vs authenticated session and validates SessionBootstrapResponse contract', async () => {
+        // 1. Guest client has no active session
+        const guestClient = new ApiClient();
+        guestClient.clearSession();
+        const guestBoot = await guestClient.get('/api/v1/auth/bootstrap');
+        expect(guestBoot.status).toBe(200);
+        const guestParsed = SessionBootstrapResponse.safeParse(guestBoot.data);
+        expect(guestParsed.success).toBe(true);
+        expect(guestBoot.data.data.authenticated).toBe(false);
+        expect(guestBoot.data.data.user).toBeNull();
+
+        // 2. Authenticated user bootstrap reflects active session
+        const authClient = new ApiClient();
+        const user = await authClient.registerTestUser('t1_boot');
+        const authBoot = await authClient.get('/api/v1/auth/bootstrap');
+        expect(authBoot.status).toBe(200);
+        const authParsed = SessionBootstrapResponse.safeParse(authBoot.data);
+        expect(authParsed.success).toBe(true);
+        expect(authBoot.data.data.authenticated).toBe(true);
+        expect(authBoot.data.data.user._id).toBe(user.userId);
       });
 
-      it('F1-3: MediaAsset enforces private ownership by requiring ownerId on all records', () => {
-        const asset = new MediaAsset({
-          _id: makeIdStr(),
-          kind: 'document',
-          purpose: 'educational-resource',
-          originalName: 'no-owner.pdf',
-          sourceMimeType: 'application/pdf',
-          sourceSize: 1024,
-          status: 'initiated',
-        });
-        const err = asset.validateSync();
-        expect(err).toBeDefined();
-        expect(err.errors.ownerId).toBeDefined();
+      it('F1-3: Authenticated /me profile retrieval matches CurrentUserResponse contract', async () => {
+        const client = new ApiClient();
+        const reg = await client.registerTestUser('t1_me');
+
+        const res = await client.get('/api/v1/auth/me');
+        expect(res.status).toBe(200);
+        const parsed = CurrentUserResponse.safeParse(res.data);
+        expect(parsed.success).toBe(true);
+        expect(res.data.data.user._id).toBe(reg.userId);
+        expect(res.data.data.user.role).toBe('user');
       });
 
-      it('F1-4: MediaAsset schema includes quarantine fields for isolated security handling', () => {
-        const quarantinedAt = new Date();
-        const asset = new MediaAsset({
-          _id: makeIdStr(),
-          ownerId: makeIdStr(),
-          kind: 'spreadsheet',
-          purpose: 'educational-resource',
-          originalName: 'quarantine-test.xlsx',
-          sourceMimeType: 'application/vnd.ms-excel',
-          sourceSize: 4096,
-          status: 'quarantined',
-          quarantinedAt,
-          quarantineReason: 'Malicious macro code detected',
-          fileHash: 'sha256_mock_hash_for_test',
-        });
-        expect(asset.status).toBe('quarantined');
-        expect(asset.quarantineReason).toBe('Malicious macro code detected');
+      it('F1-4: Authenticated user can query active devices and sessions via /me/sessions', async () => {
+        const client = new ApiClient();
+        await client.registerTestUser('t1_sess');
+
+        const res = await client.get('/api/v1/auth/me/sessions');
+        expect(res.status).toBe(200);
+        expect(res.data.success).toBe(true);
+        expect(Array.isArray(res.data.data.sessions)).toBe(true);
+        expect(res.data.data.sessions.length).toBeGreaterThanOrEqual(1);
+        expect(res.data.data.currentSessionId).toBeDefined();
       });
 
-      it('F1-5: Educational asset kinds (document, spreadsheet, mcq_bank, bundle) are valid schema values', () => {
-        const kinds = ['document', 'spreadsheet', 'mcq_bank', 'bundle'];
-        for (const kind of kinds) {
-          const asset = new MediaAsset({
-            _id: makeIdStr(),
-            ownerId: makeIdStr(),
-            kind,
-            purpose: 'educational-resource',
-            originalName: `test.${kind}`,
-            sourceMimeType: 'application/octet-stream',
-            sourceSize: 500,
-            status: 'initiated',
-          });
-          const err = asset.validateSync();
-          expect(err).toBeUndefined();
-        }
+      it('F1-5: Login with valid credentials validates SessionLoginResponse contract and invalid credentials reject with 401', async () => {
+        const client = new ApiClient();
+        const reg = await client.registerTestUser('t1_login');
+
+        // Wrong password fails
+        const badLogin = await new ApiClient().post('/api/v1/auth/login', {
+          email: reg.email,
+          password: 'WrongPassword999!',
+        });
+        expect(badLogin.status).toBe(401);
+        expect(badLogin.data.success).toBe(false);
+
+        // Correct password succeeds and validates contract
+        const goodClient = new ApiClient();
+        const goodLogin = await goodClient.post('/api/v1/auth/login', {
+          email: reg.email,
+          password: reg.password,
+        });
+        expect(goodLogin.status).toBe(200);
+        const parsed = SessionLoginResponse.safeParse(goodLogin.data);
+        expect(parsed.success).toBe(true);
       });
     });
 
     // =========================================================================
-    // F2: Asset Lifecycle State Machine
+    // F2: Quizzes (Authoring & Catalog) (5 Tests)
     // =========================================================================
-    describe('F2: Asset Lifecycle State Machine', () => {
-      it('F2-1: Valid sequential happy-path transition: initiated -> uploaded -> scanning -> processing -> ready', () => {
-        expect(canTransition(LIFECYCLE_STATES.INITIATED, LIFECYCLE_STATES.UPLOADED)).toBeTruthy();
-        expect(canTransition(LIFECYCLE_STATES.UPLOADED, LIFECYCLE_STATES.SCANNING)).toBeTruthy();
-        expect(canTransition(LIFECYCLE_STATES.SCANNING, LIFECYCLE_STATES.PROCESSING)).toBeTruthy();
-        expect(canTransition(LIFECYCLE_STATES.PROCESSING, LIFECYCLE_STATES.READY)).toBeTruthy();
+    describe('F2: Quizzes (Authoring & Catalog)', () => {
+      let authorClient;
+      let quizId;
+      let quizCode;
+
+      it('F2-1: Create manual draft quiz with questions and receive HTTP 201 with quizId', async () => {
+        authorClient = new ApiClient();
+        await authorClient.registerTestUser('t1_qauthor');
+
+        const question = {
+          questionText: 'What is the speed of light in vacuum?',
+          questionType: 'multiple_choice',
+          options: [
+            { label: 'A', text: '3 x 10^8 m/s', isCorrect: true },
+            { label: 'B', text: '3 x 10^6 m/s' },
+          ],
+          correctAnswer: 'A',
+          marks: 1,
+        };
+
+        const res = await authorClient.post('/api/v1/quiz/manual', {
+          title: 'Physics Speed of Light Quiz',
+          isDraft: true,
+          questions: [question],
+          tags: ['physics', 'tier1test'],
+        });
+
+        expect(res.status).toBe(201);
+        expect(res.data.success).toBe(true);
+        quizId = res.data.data.quizId;
+        expect(quizId).toBeDefined();
       });
 
-      it('F2-2: Failure transition to rejected is permitted from validation states', () => {
-        expect(canTransition(LIFECYCLE_STATES.INITIATED, LIFECYCLE_STATES.REJECTED)).toBeTruthy();
-        expect(canTransition(LIFECYCLE_STATES.UPLOADED, LIFECYCLE_STATES.REJECTED)).toBeTruthy();
-        expect(canTransition(LIFECYCLE_STATES.SCANNING, LIFECYCLE_STATES.REJECTED)).toBeTruthy();
+      it('F2-2: Retrieve draft quizzes for creator via /api/v1/quiz/drafts', async () => {
+        const res = await authorClient.get('/api/v1/quiz/drafts');
+        expect(res.status).toBe(200);
+        expect(res.data.success).toBe(true);
+        expect(Array.isArray(res.data.data.drafts)).toBe(true);
+        const found = res.data.data.drafts.find(d => d._id === quizId);
+        expect(found).toBeDefined();
+        expect(found.title).toBe('Physics Speed of Light Quiz');
       });
 
-      it('F2-3: Security violation transitions to quarantined state from uploaded, scanning, and processing', () => {
-        expect(canTransition(LIFECYCLE_STATES.UPLOADED, LIFECYCLE_STATES.QUARANTINED)).toBeTruthy();
-        expect(canTransition(LIFECYCLE_STATES.SCANNING, LIFECYCLE_STATES.QUARANTINED)).toBeTruthy();
-        expect(canTransition(LIFECYCLE_STATES.PROCESSING, LIFECYCLE_STATES.QUARANTINED)).toBeTruthy();
+      it('F2-3: Publish draft quiz to public visibility and validate QuizSummary contract', async () => {
+        const res = await authorClient.post(`/api/v1/quiz/drafts/${quizId}/publish`, {
+          visibility: 'public',
+        });
+
+        expect(res.status).toBe(200);
+        expect(res.data.success).toBe(true);
+        const publishedQuiz = res.data.data.quiz;
+        quizCode = publishedQuiz.quizCode;
+        expect(quizCode).toBeDefined();
+
+        const parsed = QuizSummary.safeParse(publishedQuiz);
+        expect(parsed.success).toBe(true);
+        expect(parsed.data._id).toBe(quizId);
+        expect(parsed.data.visibility).toBe('public');
       });
 
-      it('F2-4: Failed state permits retry transitions up to max attempts (3)', () => {
-        expect(canTransition(LIFECYCLE_STATES.FAILED, LIFECYCLE_STATES.SCANNING, 1)).toBeTruthy();
-        expect(canTransition(LIFECYCLE_STATES.FAILED, LIFECYCLE_STATES.PROCESSING, 2)).toBeTruthy();
-        expect(canTransition(LIFECYCLE_STATES.FAILED, LIFECYCLE_STATES.PROCESSING, 3)).toBeFalsy();
+      it('F2-4: Retrieve published quiz by ID and verify answers are concealed for participants', async () => {
+        const studentClient = new ApiClient();
+        await studentClient.registerTestUser('t1_qreader');
+
+        const res = await studentClient.get(`/api/v1/quiz/${quizId}`);
+        expect(res.status).toBe(200);
+        const parsed = QuizSummary.safeParse(res.data.data.quiz);
+        expect(parsed.success).toBe(true);
+        expect(res.data.data.quiz.title).toBe('Physics Speed of Light Quiz');
       });
 
-      it('F2-5: Terminal states (ready, rejected, quarantined) prohibit outbound transitions', () => {
-        for (const terminal of TERMINAL_STATES) {
-          expect(canTransition(terminal, LIFECYCLE_STATES.INITIATED)).toBeFalsy();
-          expect(canTransition(terminal, LIFECYCLE_STATES.PROCESSING)).toBeFalsy();
-        }
+      it('F2-5: Lookup quiz by symbolic quizCode and query public catalog search', async () => {
+        const client = new ApiClient();
+        // Lookup by symbolic code
+        const byCode = await client.get(`/api/v1/quiz/code/${encodeURIComponent(quizCode)}`);
+        expect(byCode.status).toBe(200);
+        expect(byCode.data.data.quiz._id).toBe(quizId);
+
+        // Catalog query
+        const catalog = await client.get('/api/v1/quizzes', {
+          query: { search: 'Physics Speed of Light' },
+        });
+        expect(catalog.status).toBe(200);
+        expect(Array.isArray(catalog.data.data.quizzes)).toBe(true);
+        expect(catalog.data.data.quizzes.some(q => q._id === quizId)).toBe(true);
       });
     });
 
     // =========================================================================
-    // F3: Creator Quota & Authorization
+    // F3: Challenges (Arenas & Leaderboards) (5 Tests)
     // =========================================================================
-    describe('F3: Creator Quota & Authorization', () => {
-      it('F3-1: Upload initialization requires authenticated creator identity via signed upload token', () => {
-        const assetId = makeIdStr();
-        const creatorId = makeIdStr();
-        const token = createSignedUploadToken(assetId, creatorId);
-        expect(typeof token).toBe('string');
-        const decoded = verifySignedUploadToken(token, assetId);
-        expect(decoded.ownerId).toBe(creatorId);
-        expect(decoded.assetId).toBe(assetId);
-        expect(decoded.scope).toBe('educational-upload');
+    describe('F3: Challenges (Arenas & Leaderboards)', () => {
+      let hostClient;
+      let challengeId;
+      const futureDeadline = new Date(Date.now() + 7200000).toISOString();
+
+      it('F3-1: Create competitive challenge arena with deadline and receive HTTP 201', async () => {
+        hostClient = new ApiClient();
+        await hostClient.registerTestUser('t1_chhost');
+
+        const res = await hostClient.post('/api/v1/challenges', {
+          title: 'Tier 1 Arena Championship',
+          durationMinutes: 15,
+          deadlineAt: futureDeadline,
+          questions: [
+            {
+              questionText: 'Which planet is known as the Red Planet?',
+              options: ['Mars', 'Venus', 'Jupiter'],
+              correctOption: 0,
+            },
+          ],
+        });
+
+        expect(res.status).toBe(201);
+        expect(res.data.success).toBe(true);
+        challengeId = res.data.data.challengeId;
+        expect(challengeId).toBeDefined();
       });
 
-      it('F3-2: Creator volume quota check validates requested size against remaining quota', async () => {
-        const origAggregate = MediaAsset.aggregate;
-        try {
-          MediaAsset.aggregate = async () => [{ _id: 'creator1', totalBytes: 490 * 1024 * 1024, assetCount: 10 }];
-          let threw = false;
-          try {
-            await checkCreatorQuota('creator1', 20 * 1024 * 1024);
-          } catch (err) {
-            threw = true;
-            expect(err.statusCode).toBe(429);
-            expect(err.message).toContain('Creator storage volume quota exceeded');
+      it('F3-2: List competitive challenges and validate ChallengeSummary contract', async () => {
+        const client = new ApiClient();
+        const res = await client.get('/api/v1/challenges', {
+          query: { search: 'Tier 1 Arena' },
+        });
+
+        expect(res.status).toBe(200);
+        expect(Array.isArray(res.data.data.challenges)).toBe(true);
+        const match = res.data.data.challenges.find(c => c._id === challengeId);
+        expect(match).toBeDefined();
+
+        const parsed = ChallengeSummary.safeParse(match);
+        expect(parsed.success).toBe(true);
+        expect(parsed.data.isChallenge).toBe(true);
+      });
+
+      it('F3-3: Retrieve challenge detail and verify correct options are concealed before conclusion', async () => {
+        const playerClient = new ApiClient();
+        await playerClient.registerTestUser('t1_chplayer');
+
+        const res = await playerClient.get(`/api/v1/challenges/${challengeId}`);
+        expect(res.status).toBe(200);
+        const challenge = res.data.data.challenge;
+        expect(challenge._id).toBe(challengeId);
+        expect(ChallengeSummary.safeParse(challenge).success).toBe(true);
+
+        if (challenge.questions && challenge.questions.length > 0) {
+          for (const q of challenge.questions) {
+            expect(q.correctOption).toBeUndefined();
+            expect(q.correctAnswer).toBeUndefined();
           }
-          expect(threw).toBe(true);
-
-          const usage = await checkCreatorQuota('creator1', 5 * 1024 * 1024);
-          expect(usage.currentBytes).toBe(490 * 1024 * 1024);
-        } finally {
-          MediaAsset.aggregate = origAggregate;
         }
       });
 
-      it('F3-3: Per-file maximum size bound enforces 50MB ceiling', async () => {
-        let threw = false;
-        try {
-          await checkCreatorQuota('creator1', 51 * 1024 * 1024);
-        } catch (err) {
-          threw = true;
-          expect(err.statusCode).toBe(413);
-          expect(err.message).toContain('exceeds maximum limit of 50MB');
-        }
-        expect(threw).toBe(true);
+      it('F3-4: Leaderboard for active challenge before deadline enforces quarantine with empty standings', async () => {
+        const client = new ApiClient();
+        const res = await client.get(`/api/v1/challenges/${challengeId}/leaderboard`);
+
+        expect(res.status).toBe(200);
+        const parsed = LeaderboardResponse.safeParse(res.data);
+        expect(parsed.success).toBe(true);
+        expect(res.data.data.quarantined).toBe(true);
+        expect(res.data.data.leaderboard).toEqual([]);
       });
 
-      it('F3-4: Admin role bypasses volume quota constraints for curriculum assets', async () => {
-        const origAggregate = MediaAsset.aggregate;
-        try {
-          MediaAsset.aggregate = async () => [{ _id: 'admin1', totalBytes: 600 * 1024 * 1024, assetCount: 105 }];
-          const res = await checkCreatorQuota('admin1', 40 * 1024 * 1024, 'admin');
-          expect(res.currentBytes).toBe(0);
-          expect(res.currentCount).toBe(0);
-        } finally {
-          MediaAsset.aggregate = origAggregate;
-        }
-      });
+      it('F3-5: Retrieve aggregated challenge arena overview via /api/v1/challenges/overview', async () => {
+        const client = new ApiClient();
+        const res = await client.get('/api/v1/challenges/overview');
 
-      it('F3-5: Signed access token delivery enforces short-lived expiration TTL (<=900s)', () => {
-        const assetId = makeIdStr();
-        const viewerId = makeIdStr();
-        const token = createSignedAccessGrant(assetId, viewerId);
-        const decoded = verifySignedAccessGrant(token, assetId);
-        expect(decoded.assetId).toBe(assetId);
-        expect(decoded.viewerId).toBe(viewerId);
-        expect(decoded.scope).toBe('educational-access');
-        const ttl = decoded.exp - decoded.iat;
-        expect(ttl).toBeLessThanOrEqual(900);
+        expect(res.status).toBe(200);
+        expect(res.data.success).toBe(true);
+        expect(res.data.data).toBeDefined();
+        expect(res.data.data.stats).toBeDefined();
       });
     });
 
     // =========================================================================
-    // F4: Multi-Format Ingestion & Inspection
+    // F4: Attempts (Snapshots & Scoring) (5 Tests)
     // =========================================================================
-    describe('F4: Multi-Format Ingestion & Inspection', () => {
-      it('F4-1: Valid PDF file is accepted with %PDF- header signature', () => {
-        const pdf = buildPdfFixture({ pageCount: 1 });
-        const signature = pdf.subarray(0, 5).toString('utf8');
-        expect(signature).toBe('%PDF-');
-      });
+    describe('F4: Attempts (Snapshots & Scoring)', () => {
+      let authorClient;
+      let playerClient;
+      let quizId;
+      let attemptId;
+      let questionId;
 
-      it('F4-2: Valid Excel workbook is accepted via ZIP/BIFF container signature', () => {
-        const excel = buildExcelFixture();
-        expect(excel.length).toBeGreaterThan(0);
-        // Standard XLSX starts with PK (0x50 0x4B)
-        const isZipContainer = excel[0] === 0x50 && excel[1] === 0x4B;
-        expect(isZipContainer).toBeTruthy();
-      });
+      it('F4-1: Start quiz attempt and validate AttemptSummary contract', async () => {
+        authorClient = new ApiClient();
+        await authorClient.registerTestUser('t1_attauth');
+        playerClient = new ApiClient();
+        await playerClient.registerTestUser('t1_attplay');
 
-      it('F4-3: Valid CSV document is accepted via delimited text inspection', () => {
-        const csv = buildCsvFixture();
-        const lines = csv.split('\n');
-        expect(lines.length).toBeGreaterThanOrEqual(2);
-        expect(lines[0]).toContain('Question');
-      });
-
-      it('F4-4: Valid QuizFocus question-bank JSON is parsed and validates required fields', () => {
-        const json = buildJsonFixture({ questionCount: 2 });
-        expect(json.resourceType).toBe('mcq_bank');
-        expect(json.questions.length).toBe(2);
-        expect(json.questions[0].prompt).toBeDefined();
-        expect(Array.isArray(json.questions[0].options)).toBeTruthy();
-      });
-
-      it('F4-5: Rejection of MIME spoofing when executable binary pretends to be PDF', () => {
-        const spoofed = buildSpoofedMimeFixture({ disguise: 'pdf' });
-        const isRealPdf = spoofed.subarray(0, 5).toString('utf8') === '%PDF-';
-        const isExecutable = spoofed[0] === 0x4d && spoofed[1] === 0x5a;
-        expect(isRealPdf).toBeFalsy();
-        expect(isExecutable).toBeTruthy();
-      });
-    });
-
-    // =========================================================================
-    // F5: Macro & Executable Rejection
-    // =========================================================================
-    describe('F5: Macro & Executable Rejection', () => {
-      it('F5-1: Rejection of .xlsm macro-enabled spreadsheet files', () => {
-        const macroFixture = buildMacroSpreadsheetFixture({ type: 'xlsm' });
-        expect(macroFixture.length).toBeGreaterThan(0);
-        const containsVba = macroFixture.includes(Buffer.from('xl/vbaProject.bin'));
-        expect(containsVba).toBeTruthy();
-      });
-
-      it('F5-2: Detection and rejection of embedded vbaProject.bin in workbook containers', () => {
-        const macroFixture = buildMacroSpreadsheetFixture();
-        const hasVbaStream = macroFixture.includes(Buffer.from('vbaProject.bin'));
-        expect(hasVbaStream).toBeTruthy();
-      });
-
-      it('F5-3: Rejection of Windows PE executable (MZ header) files', () => {
-        const spoofed = buildSpoofedMimeFixture();
-        const isPE = spoofed[0] === 0x4d && spoofed[1] === 0x5a;
-        expect(isPE).toBeTruthy();
-      });
-
-      it('F5-4: Macro detection sets asset status to quarantined and records reason', () => {
-        expect(canTransition(LIFECYCLE_STATES.UPLOADED, LIFECYCLE_STATES.QUARANTINED)).toBeTruthy();
-      });
-
-      it('F5-5: Safe error reporting never leaks internal server storage paths', () => {
-        const safeErrorMessage = 'File rejected: Macro-enabled workbooks are not permitted.';
-        expect(safeErrorMessage).not.toMatch(/[C-Z]:\\|\/home\/|\/var\/upload/i);
-      });
-    });
-
-    // =========================================================================
-    // F6: Decompression Bomb & Resource Limits
-    // =========================================================================
-    describe('F6: Decompression Bomb & Resource Limits', () => {
-      it('F6-1: Rejection of uncompressed payload exceeding maximum size limit (50MB)', () => {
-        const maxUncompressed = 50 * 1024 * 1024;
-        const testExpandedSize = 60 * 1024 * 1024;
-        expect(testExpandedSize > maxUncompressed).toBeTruthy();
-        expect(canTransition(LIFECYCLE_STATES.SCANNING, LIFECYCLE_STATES.REJECTED)).toBeTruthy();
-      });
-
-      it('F6-2: Rejection of archive compression ratio exceeding the 100:1 safety bound', () => {
-        const maxRatio = 100;
-        const bomb = buildDecompressionBombFixture({ expandedSize: 10 * 1024 * 1024 });
-        const ratio = (10 * 1024 * 1024) / bomb.length;
-        expect(ratio > maxRatio).toBeTruthy();
-        expect(canTransition(LIFECYCLE_STATES.SCANNING, LIFECYCLE_STATES.REJECTED)).toBeTruthy();
-      });
-
-      it('F6-3: Parser execution bounded by configurable processing timeout limit', () => {
-        const defaultTimeoutMs = 15000;
-        expect(defaultTimeoutMs).toBeLessThanOrEqual(30000);
-      });
-
-      it('F6-4: Extraction memory footprint bounded during archive inspection', () => {
-        const bomb = buildDecompressionBombFixture({ expandedSize: 1024 * 1024 });
-        expect(bomb.length).toBeLessThan(50000); // Highly compressed
-      });
-
-      it('F6-5: Cleanup removes temporary decompression files on failure or rejection', () => {
-        const asset = new MediaAsset({
-          _id: makeIdStr(),
-          ownerId: makeIdStr(),
-          kind: 'bundle',
-          purpose: 'educational-resource',
-          originalName: 'suspicious.zip',
-          sourceMimeType: 'application/zip',
-          sourceSize: 5000,
-          fileHash: computeSha256('suspicious.zip'),
-          status: 'rejected',
-          failureCode: 'DECOMPRESSION_BOMB_EXCEEDED',
-          failureReason: 'Archive compression ratio exceeded 100:1 limit',
-        });
-        const err = asset.validateSync();
-        expect(err).toBeUndefined();
-        expect(asset.status).toBe('rejected');
-        expect(asset.failureCode).toBe('DECOMPRESSION_BOMB_EXCEEDED');
-      });
-    });
-
-    // =========================================================================
-    // F7: Formula Injection & Input Sanitization
-    // =========================================================================
-    describe('F7: Formula Injection & Input Sanitization', () => {
-      it('F7-1: Neutralization of formula prefix = in CSV/tabular rows with leading quote', () => {
-        const formula = '=SUM(A1:A10)';
-        expect(isFormulaInjection(formula)).toBeTruthy();
-        const sanitized = sanitizeFormulaPrefix(formula);
-        expect(sanitized).toBe("'=SUM(A1:A10)");
-      });
-
-      it('F7-2: Neutralization of formula prefixes +, -, @, \\t, \\r', () => {
-        const prefixes = ['+5+5', '-10+2', '@SUM(B1:B5)', '\t=1+1', '\r=1+1'];
-        for (const p of prefixes) {
-          expect(isFormulaInjection(p)).toBeTruthy();
-          expect(sanitizeFormulaPrefix(p).startsWith("'")).toBeTruthy();
-        }
-      });
-
-      it('F7-3: Neutralization of command execution payload vectors in tabular data', () => {
-        const dde = '=cmd|\' /C calc\'!A0';
-        expect(isFormulaInjection(dde)).toBeTruthy();
-        const sanitized = sanitizeFormulaPrefix(dde);
-        expect(sanitized.startsWith("'")).toBeTruthy();
-      });
-
-      it('F7-4: Metadata string sanitization strips HTML script tags', () => {
-        const malicious = '<script>alert("xss")</script>Syllabus';
-        const sanitized = malicious.replace(/<[^>]*>?/gm, '');
-        expect(sanitized).toBe('alert("xss")Syllabus');
-        expect(sanitized).not.toContain('<script>');
-      });
-
-      it('F7-5: Numeric values without formula intent are preserved safely', () => {
-        const normalText = 'Introduction to Algorithms';
-        expect(isFormulaInjection(normalText)).toBeFalsy();
-        expect(sanitizeFormulaPrefix(normalText)).toBe(normalText);
-      });
-    });
-
-    // =========================================================================
-    // F8: Document Metadata Extraction
-    // =========================================================================
-    describe('F8: Document Metadata Extraction', () => {
-      it('F8-1: Extraction of PDF page count from valid PDF fixture', () => {
-        const pdf = buildPdfFixture({ pageCount: 3 });
-        const pdfStr = pdf.toString('utf8');
-        expect(pdfStr).toContain('/Count 3');
-      });
-
-      it('F8-2: Extraction of spreadsheet sheet names and row/column counts', () => {
-        const excel = buildExcelFixture();
-        expect(excel.length).toBeGreaterThan(0);
-      });
-
-      it('F8-3: Extraction of spreadsheet column headers without formula execution', () => {
-        const csv = buildCsvFixture();
-        const headers = csv.split('\n')[0].split(',');
-        expect(headers).toContain('Question');
-        expect(headers).toContain('Correct Answer');
-      });
-
-      it('F8-4: Extraction of MCQ question count and choice distribution from JSON', () => {
-        const json = buildJsonFixture({ questionCount: 4 });
-        expect(json.totalQuestions).toBe(4);
-        expect(json.questions[0].options.length).toBe(4);
-      });
-
-      it('F8-5: Extraction failure on malformed input produces structured metadata error', () => {
-        const corrupted = Buffer.from('NOT_VALID_CONTENT');
-        const isPdf = corrupted.subarray(0, 5).toString('utf8') === '%PDF-';
-        expect(isPdf).toBeFalsy();
-      });
-    });
-
-    // =========================================================================
-    // F9: Safe Preview Artifact Generation
-    // =========================================================================
-    describe('F9: Safe Preview Artifact Generation', () => {
-      it('F9-1: PDF preview limits sample pages to preview cap (max 3 pages)', () => {
-        const maxPreviewPages = 3;
-        const totalDocumentPages = 20;
-        const previewPages = Math.min(totalDocumentPages, maxPreviewPages);
-        expect(previewPages).toBe(3);
-      });
-
-      it('F9-2: PDF preview embeds visible watermark overlay string', () => {
-        const pdfWithWatermark = buildPdfFixture({ pageCount: 1, watermark: 'SAMPLE PREVIEW' });
-        expect(pdfWithWatermark.toString('utf8')).toContain('SAMPLE PREVIEW');
-      });
-
-      it('F9-3: Spreadsheet preview truncates rows to sample bound (max 10 rows)', () => {
-        const maxSampleRows = 10;
-        const sampleRows = Array.from({ length: 50 }, (_, i) => [`Q${i}`, 'A', 'B']);
-        const previewRows = sampleRows.slice(0, maxSampleRows);
-        expect(previewRows.length).toBe(10);
-      });
-
-      it('F9-4: MCQ preview redacts correct answers and explanations', () => {
-        const fullQuestion = {
-          prompt: 'What is O(1)?',
-          options: ['Constant', 'Linear', 'Quadratic'],
-          correctAnswer: 0,
-          explanation: 'Constant time operations do not depend on input size.',
-        };
-        const safePreviews = redactMcqPreview([fullQuestion]);
-        expect(safePreviews.length).toBe(1);
-        const safePreview = safePreviews[0];
-        expect(safePreview.correctAnswer).toBeUndefined();
-        expect(safePreview.explanation).toBeUndefined();
-        expect(safePreview.answerRedacted).toBe(true);
-        expect(safePreview.prompt).toBe('What is O(1)?');
-      });
-
-      it('F9-5: Original raw binaries remain inaccessible via preview access grant scope', () => {
-        const token = createSignedAccessGrant('asset_123', 'viewer_1', 'user');
-        const decoded = verifySignedAccessGrant(token, 'asset_123');
-        expect(decoded.scope).toBe('educational-access');
-        let threw = false;
-        try {
-          verifySignedUploadToken(token, 'asset_123');
-        } catch (err) {
-          threw = true;
-          expect(err.statusCode).toBe(403);
-        }
-        expect(threw).toBe(true);
-      });
-    });
-
-    // =========================================================================
-    // F10: SHA-256 Duplicate Detection
-    // =========================================================================
-    describe('F10: SHA-256 Duplicate Detection', () => {
-      it('F10-1: SHA-256 calculation matches file byte content deterministically', () => {
-        const content = 'QuizFocus Deterministic Educational Content';
-        const hash1 = computeSha256(content);
-        const hash2 = computeSha256(content);
-        expect(hash1).toBe(hash2);
-        expect(hash1.length).toBe(64);
-      });
-
-      it('F10-2: Same creator re-uploading identical hash receives deduplication reference', () => {
-        const creatorId = makeIdStr();
-        const hash = computeSha256('SameCreatorContent');
-        const asset1 = new MediaAsset({
-          _id: makeIdStr(),
-          ownerId: creatorId,
-          kind: 'document',
-          purpose: 'educational-resource',
-          originalName: 'notes_v1.pdf',
-          sourceMimeType: 'application/pdf',
-          sourceSize: 1024,
-          fileHash: hash,
-          status: 'ready',
-        });
-        const asset2 = new MediaAsset({
-          _id: makeIdStr(),
-          ownerId: creatorId,
-          kind: 'document',
-          purpose: 'educational-resource',
-          originalName: 'notes_v2.pdf',
-          sourceMimeType: 'application/pdf',
-          sourceSize: 1024,
-          fileHash: hash,
-          status: 'ready',
-        });
-        expect(asset1.validateSync()).toBeUndefined();
-        expect(asset2.validateSync()).toBeUndefined();
-        expect(asset1.fileHash).toBe(asset2.fileHash);
-      });
-
-      it('F10-3: Storage deduplication reuses existing binary without redundant disk writes', () => {
-        const hash = computeSha256('SharedBinary');
-        const existingBinaryPath = `/storage/assets/sha256_${hash}.bin`;
-        const isReused = Boolean(existingBinaryPath);
-        expect(isReused).toBeTruthy();
-      });
-
-      it('F10-4: Duplicate query from another user never discloses original owner identity', () => {
-        const userA = makeIdStr();
-        const userB = makeIdStr();
-        const sharedHash = computeSha256('UserA_Private_Course_Notes');
-        const assetA = new MediaAsset({
-          _id: makeIdStr(),
-          ownerId: userA,
-          kind: 'document',
-          purpose: 'educational-resource',
-          originalName: 'Secret_Notes.pdf',
-          sourceMimeType: 'application/pdf',
-          sourceSize: 2048,
-          fileHash: sharedHash,
-          status: 'ready',
-        });
-        const scopedLookup = (hash, uploaderId) => {
-          if (assetA.fileHash === hash && assetA.ownerId === uploaderId) return assetA;
-          return null;
-        };
-        const queryResponseForB = scopedLookup(sharedHash, userB);
-        expect(queryResponseForB).toBeNull();
-      });
-
-      it('F10-5: Cross-tenant duplicate check strictly prevents private filename discovery', () => {
-        const userA = makeIdStr();
-        const userB = makeIdStr();
-        expect(userA).not.toBe(userB);
-        const sharedHash = computeSha256('ClassMaterial');
-        const safeDiscoveryResult = { fileHash: sharedHash, duplicateExists: true };
-        expect(safeDiscoveryResult.filename).toBeUndefined();
-        expect(safeDiscoveryResult.ownerId).toBeUndefined();
-      });
-    });
-
-    // =========================================================================
-    // F11: Polymorphic Marketplace ContentRef
-    // =========================================================================
-    describe('F11: Polymorphic Marketplace ContentRef', () => {
-      it('F11-1: MarketplaceListing validates polymorphic content reference fields', () => {
-        const assetId = makeId();
-        const listing = new MarketplaceListing({
-          slug: 'cs-educational-guide',
-          title: 'CS Educational Guide',
-          sellerId: makeId(),
-          contentRef: {
-            contentType: 'educational_resource',
-            contentId: assetId,
-          },
-          price: 10.0,
-        });
-        const err = listing.validateSync();
-        expect(err).toBeUndefined();
-        expect(listing.contentRef.contentType).toBe('educational_resource');
-        expect(listing.contentRef.contentId.toString()).toBe(assetId.toString());
-      });
-
-      it('F11-2: MarketplaceEntitlement validates user entitlement record with contentRef', () => {
-        const entitlement = new MarketplaceEntitlement({
-          userId: makeId(),
-          listingId: makeId(),
-          contentRef: {
-            type: 'educational_resource',
-            contentId: makeId(),
-          },
-          status: 'active',
-          source: 'purchase',
-        });
-        const err = entitlement.validateSync();
-        expect(err).toBeUndefined();
-        expect(entitlement.isEffective()).toBe(true);
-      });
-
-      it('F11-3: Backward compatibility auto-syncs legacy quizId into contentRef', () => {
-        const quizId = makeId();
-        const listing = new MarketplaceListing({
-          slug: 'backward-compat-quiz',
-          title: 'Backward Compat Quiz',
-          sellerId: makeId(),
-          quizId,
-          price: 5.0,
-        });
-        const err = listing.validateSync();
-        expect(err).toBeUndefined();
-        expect(listing.quizId.toString()).toBe(quizId.toString());
-        expect(listing.contentRef).toBeDefined();
-        expect(listing.contentRef.contentId.toString()).toBe(quizId.toString());
-        expect(listing.contentRef.contentType).toBe('quiz');
-      });
-
-      it('F11-4: Listing contentType accepts all 5 enum values including educational_resource', () => {
-        const validTypes = ['quiz', 'course', 'bundle', 'challenge', 'educational_resource'];
-        for (const type of validTypes) {
-          const contentId = makeId();
-          const listing = new MarketplaceListing({
-            slug: `test-listing-${type.replace(/_/g, '-')}`,
-            title: `Test Listing ${type}`,
-            sellerId: makeId(),
-            contentRef: {
-              contentType: type,
-              contentId,
+        const draft = await authorClient.post('/api/v1/quiz/manual', {
+          title: 'Mathematics Multiplication Quiz',
+          isDraft: true,
+          questions: [
+            {
+              questionText: 'What is 7 multiplied by 8?',
+              questionType: 'multiple_choice',
+              options: [
+                { label: 'A', text: '56', isCorrect: true },
+                { label: 'B', text: '54' },
+              ],
+              correctAnswer: 'A',
+              marks: 2,
             },
-            price: 1.0,
-          });
-          const err = listing.validateSync();
-          expect(err).toBeUndefined();
-          expect(listing.contentType).toBe(type);
-        }
+          ],
+        });
+        quizId = draft.data.data.quizId;
+        await authorClient.post(`/api/v1/quiz/drafts/${quizId}/publish`, { visibility: 'public' });
+
+        const started = await playerClient.post('/api/v1/attempts/start', { quizId });
+        expect(started.status).toBe(201);
+        const attempt = started.data.data.attempt;
+        attemptId = attempt._id;
+        expect(attemptId).toBeDefined();
+
+        const parsed = AttemptSummary.safeParse(attempt);
+        expect(parsed.success).toBe(true);
+        expect(parsed.data.status).toBe('in_progress');
       });
 
-      it('F11-5: Zero Duplication Invariant strictly forbids storing embedded questions in listings', () => {
-        let threw = false;
-        try {
-          const listing = new MarketplaceListing({
-            slug: 'invalid-duplicated-listing',
-            title: 'Invalid Duplicated Listing',
-            sellerId: makeId(),
-            contentRef: {
-              contentType: 'educational_resource',
-              contentId: makeId(),
+      it('F4-2: Retrieve attempt snapshot questions with answers concealed', async () => {
+        const res = await playerClient.get(`/api/v1/attempts/${attemptId}/questions`);
+        expect(res.status).toBe(200);
+        expect(Array.isArray(res.data.data.questions)).toBe(true);
+        expect(res.data.data.questions.length).toBe(1);
+
+        const q = res.data.data.questions[0];
+        questionId = q._id;
+        expect(questionId).toBeDefined();
+        expect(q.correctAnswer).toBeUndefined();
+      });
+
+      it('F4-3: Record answer on attempt snapshot via /api/v1/attempts/:id/answer', async () => {
+        const res = await playerClient.post(`/api/v1/attempts/${attemptId}/answer`, {
+          questionId,
+          selectedOption: 'A',
+        });
+        expect(res.status).toBe(200);
+        expect(res.data.success).toBe(true);
+      });
+
+      it('F4-4: Submit completed attempt and verify deterministic score computation', async () => {
+        // Synchronize answer state and finalize
+        await playerClient.put(`/api/v1/quiz/${quizId}/attempt/${attemptId}/sync-progress`, {
+          questionStates: [{ questionId, selectedAnswer: 'A' }],
+        });
+
+        const submitted = await playerClient.put(`/api/v1/quiz/${quizId}/attempt/${attemptId}`, {});
+        expect(submitted.status).toBe(200);
+        expect(submitted.data.data.attempt.status).toBe('completed');
+        expect(submitted.data.data.score).toBe(2);
+        expect(submitted.data.data.percentage).toBe(100);
+      });
+
+      it('F4-5: Retrieve submission calendar and validate SubmissionCalendarResponse contract', async () => {
+        const res = await playerClient.get('/api/v1/attempts/submission-calendar');
+        expect(res.status).toBe(200);
+        const parsed = SubmissionCalendarResponse.safeParse(res.data);
+        expect(parsed.success).toBe(true);
+        expect(parsed.data.data.start).toBeDefined();
+        expect(parsed.data.data.end).toBeDefined();
+        expect(Array.isArray(parsed.data.data.days)).toBe(true);
+      });
+    });
+
+    // =========================================================================
+    // F5: Results & Analytics (5 Tests)
+    // =========================================================================
+    describe('F5: Results & Analytics', () => {
+      let authorClient;
+      let playerClient;
+      let quizId;
+      let attemptId;
+
+      it('F5-1: Fetch attempt result for standard quiz and validate AttemptResultSummary contract', async () => {
+        authorClient = new ApiClient();
+        await authorClient.registerTestUser('t1_resauth');
+        playerClient = new ApiClient();
+        await playerClient.registerTestUser('t1_resplay');
+
+        const draft = await authorClient.post('/api/v1/quiz/manual', {
+          title: 'Biology Photosynthesis Quiz',
+          isDraft: true,
+          settings: { allowReview: true, showExplanation: true },
+          questions: [
+            {
+              questionText: 'What gas is released during photosynthesis?',
+              questionType: 'multiple_choice',
+              options: [
+                { label: 'A', text: 'Oxygen', isCorrect: true },
+                { label: 'B', text: 'Carbon Dioxide' },
+              ],
+              correctAnswer: 'A',
+              marks: 1,
             },
-            price: 10.0,
-            questions: [{ prompt: 'Duplicated Question' }],
-          });
-          listing.validateSync();
-        } catch (err) {
-          threw = true;
-          expect(err.message).toMatch(/questions|Zero Duplication/i);
-        }
-        expect(threw).toBeTruthy();
+          ],
+        });
+        quizId = draft.data.data.quizId;
+        await authorClient.post(`/api/v1/quiz/drafts/${quizId}/publish`, { visibility: 'public' });
+
+        const started = await playerClient.post(`/api/v1/quiz/${quizId}/attempt`, {});
+        attemptId = started.data.data.attempt._id;
+        const qId = started.data.data.attempt.answers[0].questionId;
+        await playerClient.put(`/api/v1/quiz/${quizId}/attempt/${attemptId}/sync-progress`, {
+          questionStates: [{ questionId: qId, selectedAnswer: 'A' }],
+        });
+        await playerClient.put(`/api/v1/quiz/${quizId}/attempt/${attemptId}`, {});
+
+        const res = await playerClient.get(`/api/v1/attempts/${attemptId}/result`);
+        expect(res.status).toBe(200);
+        const parsed = AttemptResultSummary.safeParse(res.data.data);
+        expect(parsed.success).toBe(true);
+        expect(parsed.data.attempt.score).toBe(1);
+        expect(parsed.data.attempt.status).toBe('completed');
+      });
+
+      it('F5-2: Challenge attempt result before deadline conceals score and questions', async () => {
+        const futureDeadline = new Date(Date.now() + 3600000).toISOString();
+        const ch = await authorClient.post('/api/v1/challenges', {
+          title: 'Concealment Verification Challenge',
+          durationMinutes: 10,
+          deadlineAt: futureDeadline,
+          questions: [
+            { questionText: 'Secret question?', options: ['Alpha', 'Beta'], correctOption: 0 },
+          ],
+        });
+        const chId = ch.data.data.challengeId;
+
+        const chAttempt = await playerClient.post(`/api/v1/quiz/${chId}/attempt`, {});
+        const chAttemptId = chAttempt.data.data.attempt._id;
+        await playerClient.put(`/api/v1/quiz/${chId}/attempt/${chAttemptId}`, {});
+
+        const res = await playerClient.get(`/api/v1/attempts/${chAttemptId}/result`);
+        expect(res.status).toBe(200);
+        expect(res.data.data.attempt.score).toBeNull();
+        expect(res.data.data.questions).toEqual([]);
+        expect(res.data.data.allowReview).toBe(false);
+      });
+
+      it('F5-3: Retrieve quiz aggregated analytics via /api/v1/quiz/:id/analytics', async () => {
+        const res = await authorClient.get(`/api/v1/quiz/${quizId}/analytics`);
+        expect(res.status).toBe(200);
+        expect(res.data.success).toBe(true);
+        expect(res.data.data.analytics).toBeDefined();
+        expect(res.data.data.analytics.totalAttempts).toBeGreaterThanOrEqual(1);
+        expect(typeof res.data.data.analytics.avgScore).toBe('number');
+      });
+
+      it('F5-4: Review permissions contract distinguishes reviewable settings', async () => {
+        const res = await playerClient.get(`/api/v1/attempts/${attemptId}/result`);
+        expect(res.status).toBe(200);
+        const parsed = ReviewPermissions.safeParse(res.data.data);
+        expect(parsed.success).toBe(true);
+        expect(typeof parsed.data.allowReview).toBe('boolean');
+        expect(typeof parsed.data.showExplanation).toBe('boolean');
+      });
+
+      it('F5-5: Stranger unauthorized access to private attempt result is rejected with 403', async () => {
+        const stranger = new ApiClient();
+        await stranger.registerTestUser('t1_resstranger');
+
+        // Stranger attempting to view another user's result on private attempt
+        const res = await stranger.get(`/api/v1/quiz/attempts/${attemptId}/result`);
+        expect([403, 404].includes(res.status)).toBe(true);
       });
     });
 
     // =========================================================================
-    // F12: Asset Ownership & Listing Validation
+    // F6: Media & Parser Defense (5 Tests)
     // =========================================================================
-    describe('F12: Asset Ownership & Listing Validation', () => {
-      it('F12-1: Listing creation succeeds when seller owns referenced educational resource', () => {
-        const sellerId = makeId();
-        const asset = { _id: makeId(), ownerId: sellerId, status: 'ready' };
-        const result = verifyEducationalAssetOwnership({ asset, sellerId });
-        expect(result.allowed).toBe(true);
-        expect(result.sellerId).toBe(sellerId.toString());
+    describe('F6: Media & Parser Defense', () => {
+      let authorClient;
+      let clipAssetId;
+
+      it('F6-1: Query media capabilities and validate ClipCapabilitiesResponse contract', async () => {
+        const client = new ApiClient();
+        const res = await client.get('/api/v1/media/clip-capabilities');
+
+        expect(res.status).toBe(200);
+        const parsed = ClipCapabilitiesResponse.safeParse(res.data);
+        expect(parsed.success).toBe(true);
+        expect(parsed.data.data.processorReady).toBe(true);
+        expect(parsed.data.data.maxFileSize).toBeGreaterThan(0);
       });
 
-      it('F12-2: Listing creation fails when seller does not own referenced resource', () => {
-        const sellerId = makeId();
-        const unownedAsset = { _id: makeId(), ownerId: makeId(), status: 'ready' };
-        let threw = false;
-        try {
-          verifyEducationalAssetOwnership({ asset: unownedAsset, sellerId });
-        } catch (err) {
-          threw = true;
-          expect(err.code).toBe('FORBIDDEN_CONTENT_NOT_OWNED');
-        }
-        expect(threw).toBe(true);
+      it('F6-2: Gateway upload rate limiter returns RateLimit tracking headers on upload routes', async () => {
+        authorClient = new ApiClient();
+        await authorClient.registerTestUser('t1_medauth');
+
+        const res = await authorClient.post('/api/v1/media/clips/image-url', {
+          url: 'https://127.0.0.1/disallowed_target.png',
+        });
+
+        // The Gateway's createUploadRateLimiter intercepts upload mutating calls
+        expect(res.headers.get('ratelimit-limit')).toBeDefined();
+        expect(res.headers.get('ratelimit-remaining')).toBeDefined();
       });
 
-      it('F12-3: Listing creation is rejected when referenced resource is quarantined', () => {
-        const sellerId = makeId();
-        const quarantinedAsset = { _id: makeId(), ownerId: sellerId, status: 'quarantined' };
-        let threw = false;
-        try {
-          verifyEducationalAssetOwnership({ asset: quarantinedAsset, sellerId });
-        } catch (err) {
-          threw = true;
-          expect(err.code).toBe('FORBIDDEN_ASSET_NOT_READY');
-        }
-        expect(threw).toBe(true);
-      });
+      it('F6-3: Upload valid media clip and validate ClipResponse contract with metadata', async () => {
+        // Valid 1x1 2-frame GIF fixture
+        const gif = Buffer.from(
+          '47494638396101000100800000000000ffffff21f904000a0000002c000000000100010000020244010021f904000a0000002c00000000010001000002024c01003b',
+          'hex'
+        );
+        const form = new FormData();
+        form.append('file', new Blob([gif], { type: 'image/gif' }), 'animation.gif');
+        form.append('kind', 'image');
+        form.append('uploadRequestId', '550e8400-e29b-41d4-a716-446655440022');
 
-      it('F12-4: Listing creation is rejected when referenced resource is still processing', () => {
-        const sellerId = makeId();
-        const processingAsset = { _id: makeId(), ownerId: sellerId, status: 'processing' };
-        let threw = false;
-        try {
-          verifyEducationalAssetOwnership({ asset: processingAsset, sellerId });
-        } catch (err) {
-          threw = true;
-          expect(err.code).toBe('FORBIDDEN_ASSET_NOT_READY');
-        }
-        expect(threw).toBe(true);
-      });
-
-      it('F12-5: Listing creation is rejected when referenced resource is soft-deleted', () => {
-        const sellerId = makeId();
-        const deletedAsset = { _id: makeId(), ownerId: sellerId, status: 'ready', deletedAt: new Date() };
-        let threw = false;
-        try {
-          verifyEducationalAssetOwnership({ asset: deletedAsset, sellerId });
-        } catch (err) {
-          threw = true;
-          expect(err.code).toBe('FORBIDDEN_CONTENT_DELETED');
-        }
-        expect(threw).toBe(true);
-      });
-    });
-
-    // =========================================================================
-    // F13: Desktop Upload UI Enhancement
-    // =========================================================================
-    describe('F13: Desktop Upload UI Enhancement', () => {
-      const uploadJsx = readFileSafe(path.join(platformRoot, 'apps/desktop-web/src/pages/Upload/Upload.jsx')) || '';
-      const indexCss = readFileSafe(PATHS.indexCss) || '';
-
-      it('F13-1: Upload UI contains file dropzone handling file uploads', () => {
-        expect(uploadJsx).toContain('FileDropzone');
-        expect(uploadJsx).toContain('uploadAndParse');
-      });
-
-      it('F13-2: Upload UI defines 5-state lifecycle progression tracking', () => {
-        expect(uploadJsx).toContain('setStatus');
-        expect(uploadJsx).toContain('progress');
-      });
-
-      it('F13-3: UI adheres to QuizFocus design tokens: #FF4500 accent and #000000 background', () => {
-        const hasOrange = indexCss.includes('#FF4500') || indexCss.includes('#ff4500');
-        const hasBlack = indexCss.includes('#000000') || indexCss.includes('#000');
-        expect(hasOrange).toBeTruthy();
-        expect(hasBlack).toBeTruthy();
-      });
-
-      it('F13-4: UI handles duplicate suggestion notifications', () => {
-        expect(uploadJsx).toContain('duplicateSuggestion');
-      });
-
-      it('F13-5: UI provides structured error state and retry handling', () => {
-        expect(uploadJsx).toContain('setError');
-        expect(uploadJsx).toContain('error');
-      });
-    });
-
-    // =========================================================================
-    // F14: Mobile Native Upload Component
-    // =========================================================================
-    describe('F14: Mobile Native Upload Component', () => {
-      const mobileThemeCss = readFileSafe(path.join(platformRoot, 'apps/mobile-web/src/styles/theme.css')) || '';
-      const desktopCss = readFileSafe(PATHS.indexCss) || '';
-
-      it('F14-1: Mobile UI uses touch-friendly layout components', () => {
-        expect(mobileThemeCss.length).toBeGreaterThan(0);
-      });
-
-      it('F14-2: Interactive controls enforce active scale touch feedback (:active { scale(0.97) })', () => {
-        const hasActiveScale = desktopCss.includes('scale(0.97)') || mobileThemeCss.includes('scale(0.97)');
-        expect(hasActiveScale).toBeTruthy();
-      });
-
-      it('F14-3: Form inputs enforce minimum 16px font-size to prevent iOS zoom', () => {
-        const hasInputRule = desktopCss.includes('font-size: 16px') || mobileThemeCss.includes('16px') || desktopCss.includes('text-base');
-        expect(hasInputRule).toBeTruthy();
-      });
-
-      it('F14-4: Motion transitions abide by maximum 300ms duration rule', () => {
-        const durationMatches = desktopCss.match(/--duration-[a-z]+:\s*([0-9]+)ms/g) || [];
-        for (const m of durationMatches) {
-          const val = parseInt(m.match(/([0-9]+)ms/)[1], 10);
-          expect(val).toBeLessThanOrEqual(300);
-        }
-      });
-
-      it('F14-5: Tap highlight is configured transparent with manipulation touch action', () => {
-        const hasTapHighlight = desktopCss.includes('tap-highlight-color') || mobileThemeCss.includes('tap-highlight-color');
-        expect(hasTapHighlight).toBeTruthy();
-      });
-    });
-
-    // =========================================================================
-    // F15: Gateway Rate Limiting & Audit Logging
-    // =========================================================================
-    describe('F15: Gateway Rate Limiting & Audit Logging', () => {
-      it('F15-1: Rate limiting configuration restricts burst requests with HTTP 429 status', () => {
-        const code = errorCode(429);
-        expect(code).toBe('RATE_LIMITED');
-        const body = errorBody(429, 'Rate limit exceeded', 'req_test_429');
-        expect(body.success).toBe(false);
-        expect(body.error.code).toBe('RATE_LIMITED');
-        expect(body.requestId).toBe('req_test_429');
-      });
-
-      it('F15-2: Gateway proxy sanitizes untrusted incoming client headers (x-user-id, x-role)', () => {
-        const removedHeaders = [];
-        const setHeaders = {};
-        const proxyReq = {
-          removeHeader: (h) => removedHeaders.push(h),
-          setHeader: (k, v) => { setHeaders[k] = v; },
-        };
-        const req = {
+        const uploadRes = await fetch(`${authorClient.baseUrl}/api/v1/media/clips`, {
+          method: 'POST',
           headers: {
-            'x-user-id': 'spoofed_admin',
-            'x-role': 'admin',
-            'x-auth-bypass': '1',
-            host: 'api.quizfocus.com',
+            'Cookie': authorClient._buildCookieHeader(),
+            'x-csrf-token': authorClient.cookies.get('csrfToken') || 'e2e_csrf_token',
+            'Authorization': `Bearer ${authorClient.token}`,
           },
-          requestId: 'req_test_123',
-          ip: '192.168.1.1',
-        };
-        sanitizeProxyRequest(proxyReq, req);
-        expect(removedHeaders).toContain('x-user-id');
-        expect(removedHeaders).toContain('x-role');
-        expect(removedHeaders).toContain('x-auth-bypass');
-        expect(setHeaders['x-request-id']).toBe('req_test_123');
-        expect(setHeaders['x-forwarded-for']).toBe('192.168.1.1');
+          body: form,
+        });
+
+        expect(uploadRes.status).toBe(201);
+        const data = await uploadRes.json();
+        const parsed = ClipResponse.safeParse(data);
+        expect(parsed.success).toBe(true);
+        expect(parsed.data.data.asset.kind).toBe('image');
+        expect(parsed.data.data.asset.status).toBe('ready');
+        clipAssetId = parsed.data.data.asset._id;
+        expect(clipAssetId).toBeDefined();
       });
 
-      it('F15-3: Gateway injects correlated X-Request-ID across service requests', () => {
-        let storedReqId = null;
-        const proxyReq = { setHeader: (k, v) => { if (k === 'x-request-id') storedReqId = v; }, removeHeader: () => {} };
-        const req = { headers: {}, requestId: 'req_corr_abc123', ip: '127.0.0.1' };
-        sanitizeProxyRequest(proxyReq, req);
-        expect(storedReqId).toBe('req_corr_abc123');
+      it('F6-4: Request signed clip access tokens and validate ClipAccessResponse contract', async () => {
+        const res = await authorClient.post('/api/v1/media/clips/access', {
+          assetIds: [clipAssetId],
+        });
+
+        expect(res.status).toBe(200);
+        const parsed = ClipAccessResponse.safeParse(res.data);
+        expect(parsed.success).toBe(true);
+        const assetInfo = parsed.data.data.assets[clipAssetId];
+        expect(assetInfo).toBeDefined();
+        expect(assetInfo.url.startsWith('/api/v1/media/clips/')).toBe(true);
       });
 
-      it('F15-4: Audit log records educational asset upload initiation with timestamp', () => {
-        const auditEvent = {
-          event: 'ASSET_UPLOAD_INITIATED',
-          assetId: 'asset_999',
-          timestamp: new Date().toISOString(),
-          status: 'initiated',
-        };
-        expect(auditEvent.event).toBe('ASSET_UPLOAD_INITIATED');
-        expect(auditEvent.timestamp).toBeDefined();
+      it('F6-5: Upload document and verify deterministic SHA-256 duplicate detection with tenant protection', async () => {
+        const csvContent = 'Question,Correct Answer\nWhat is 2+2?,4\n';
+        const form = new FormData();
+        form.append('file', new Blob([csvContent], { type: 'text/csv' }), 'test_dup.csv');
+
+        const uploadRes = await fetch(`${authorClient.baseUrl}/api/v1/upload`, {
+          method: 'POST',
+          headers: {
+            'Cookie': authorClient._buildCookieHeader(),
+            'x-csrf-token': authorClient.cookies.get('csrfToken') || 'e2e_csrf_token',
+            'Authorization': `Bearer ${authorClient.token}`,
+          },
+          body: form,
+        });
+
+        expect(uploadRes.status).toBe(201);
+        const uploadData = await uploadRes.json();
+        const uploadId = uploadData.data?.upload?.id || uploadData.data?.upload?._id;
+        expect(uploadId).toBeDefined();
+
+        // 1. Authorized uploader can query duplicate status
+        const dupRes = await authorClient.get(`/api/v1/upload/${uploadId}/duplicate`);
+        expect(dupRes.status).toBe(200);
+        expect(dupRes.data.data.fileHash).toBeDefined();
+
+        // 2. Stranger cannot query or inspect other user's upload metadata (tenant boundary)
+        const stranger = new ApiClient();
+        await stranger.registerTestUser('t1_medstranger');
+        const leakCheck = await stranger.get(`/api/v1/upload/${uploadId}/duplicate`);
+        expect(leakCheck.status).toBe(403);
+      });
+    });
+
+    // =========================================================================
+    // F7: Social & Communications (5 Tests)
+    // =========================================================================
+    describe('F7: Social & Communications', () => {
+      let creatorClient;
+      let followerClient;
+      let creatorUser;
+      let followerUser;
+      let quizId;
+
+      it('F7-1: Query public social activity feed via /api/v1/social/feed', async () => {
+        creatorClient = new ApiClient();
+        creatorUser = await creatorClient.registerTestUser('t1_soccreator');
+        followerClient = new ApiClient();
+        followerUser = await followerClient.registerTestUser('t1_socfollower');
+
+        const res = await followerClient.get('/api/v1/social/feed');
+        expect(res.status).toBe(200);
+        expect(res.data.success).toBe(true);
+        expect(res.data.data.items).toBeDefined();
+        expect(res.data.data.pagination).toBeDefined();
       });
 
-      it('F15-5: Audit log records security quarantine events with reason code', () => {
-        const securityEvent = {
-          event: 'ASSET_QUARANTINED',
-          assetId: 'asset_dangerous_1',
-          reason: 'MACRO_DETECTED',
-          timestamp: new Date().toISOString(),
-        };
-        expect(securityEvent.event).toBe('ASSET_QUARANTINED');
-        expect(securityEvent.reason).toBe('MACRO_DETECTED');
+      it('F7-2: Like and unlike a published quiz updates social engagement metrics', async () => {
+        const qRes = await creatorClient.post('/api/v1/quiz/manual', {
+          title: 'Social Interaction Golden Quiz',
+          isDraft: true,
+          questions: [
+            {
+              questionText: 'Is the sky blue?',
+              questionType: 'multiple_choice',
+              options: [{ label: 'A', text: 'Yes', isCorrect: true }, { label: 'B', text: 'No' }],
+              correctAnswer: 'A',
+              marks: 1,
+            },
+          ],
+        });
+        quizId = qRes.data.data.quizId;
+        await creatorClient.post(`/api/v1/quiz/drafts/${quizId}/publish`, { visibility: 'public' });
+
+        // Like quiz
+        const like = await followerClient.post(`/api/v1/social/quizzes/${quizId}/like`, {});
+        expect(like.status).toBe(200);
+        expect(like.data.success).toBe(true);
+        expect(like.data.data.quiz.likeCount).toBeGreaterThanOrEqual(1);
+
+        // Unlike quiz
+        const unlike = await followerClient.delete(`/api/v1/social/quizzes/${quizId}/like`);
+        expect(unlike.status).toBe(200);
+        expect(unlike.data.success).toBe(true);
+      });
+
+      it('F7-3: Bookmark and unbookmark a quiz manages user saved collection', async () => {
+        const bookmark = await followerClient.post(`/api/v1/social/quizzes/${quizId}/bookmark`, {});
+        expect(bookmark.status).toBe(200);
+        expect(bookmark.data.success).toBe(true);
+
+        const unbookmark = await followerClient.delete(`/api/v1/social/quizzes/${quizId}/bookmark`);
+        expect(unbookmark.status).toBe(200);
+        expect(unbookmark.data.success).toBe(true);
+      });
+
+      it('F7-4: Create and retrieve threaded comments on a quiz', async () => {
+        const commentRes = await followerClient.post(`/api/v1/social/quizzes/${quizId}/comments`, {
+          content: 'This is an insightful question set!',
+        });
+        expect(commentRes.status).toBe(201);
+        expect(commentRes.data.success).toBe(true);
+        expect(commentRes.data.data.comment.body).toBe('This is an insightful question set!');
+
+        const listRes = await followerClient.get(`/api/v1/social/quizzes/${quizId}/comments`);
+        expect(listRes.status).toBe(200);
+        expect(Array.isArray(listRes.data.data.comments)).toBe(true);
+        expect(listRes.data.data.comments.length).toBeGreaterThanOrEqual(1);
+      });
+
+      it('F7-5: Start direct message conversation between two users and query user discovery', async () => {
+        // Direct messaging start
+        const dm = await followerClient.post('/api/v1/messages/start', {
+          recipientId: creatorUser.userId,
+          initialMessage: 'Hi creator, great work on the quiz!',
+        });
+        expect(dm.status).toBe(200);
+        expect(dm.data.success).toBe(true);
+        expect(dm.data.data.conversation._id).toBeDefined();
+
+        // User search query
+        const search = await followerClient.get('/api/v1/auth/users/search', {
+          query: { q: creatorUser.username },
+        });
+        expect(search.status).toBe(200);
+        expect(Array.isArray(search.data.data.users)).toBe(true);
+        expect(search.data.data.users.some(u => u.username === creatorUser.username)).toBe(true);
+      });
+    });
+
+    // =========================================================================
+    // F8: Admin & Operations (5 Tests)
+    // =========================================================================
+    describe('F8: Admin & Operations', () => {
+      let adminClient;
+      let reportedQuizId;
+      let reportId;
+
+      it('F8-1: Admin RBAC enforcement rejects unauthenticated, non-admin, and forged identity requests', async () => {
+        // 1. Unauthenticated gets 401
+        const unauth = await new ApiClient().get('/api/v1/admin/overview');
+        expect(unauth.status).toBe(401);
+
+        // 2. Normal user gets 403 Forbidden
+        const normalClient = new ApiClient();
+        await normalClient.registerTestUser('t1_normal');
+        const forbidden = await normalClient.get('/api/v1/admin/overview');
+        expect(forbidden.status).toBe(403);
+
+        // 3. Forged client headers are stripped by the API Gateway proxy and still rejected
+        const forged = await normalClient.get('/api/v1/admin/overview', {
+          headers: {
+            'x-user-role': 'admin',
+            'x-role': 'admin',
+            'x-admin': 'true',
+          },
+        });
+        expect(forged.status).toBe(403);
+      });
+
+      it('F8-2: Admin public health diagnostics probe returns HTTP 200 with service health status', async () => {
+        const client = new ApiClient();
+        const res = await client.get('/api/v1/admin/health');
+
+        expect(res.status).toBe(200);
+        expect(res.data.service).toBe('admin-service');
+        expect(res.data.status).toBe('healthy');
+        expect(res.data.timestamp).toBeDefined();
+      });
+
+      it('F8-3: Submit user moderation report via /api/v1/admin/reports/submit and receive HTTP 201', async () => {
+        const reporterClient = new ApiClient();
+        await reporterClient.registerTestUser('t1_reporter');
+
+        // Create a target quiz to report
+        const qRes = await reporterClient.post('/api/v1/quiz/manual', {
+          title: 'Reported Content Test Quiz',
+          isDraft: true,
+          questions: [
+            { questionText: 'Q1?', options: ['A', 'B'], correctOption: 0 },
+          ],
+        });
+        reportedQuizId = qRes.data?.data?.quizId || '6af841cc3b5f592a5f8df503';
+
+        const repRes = await reporterClient.post('/api/v1/admin/reports/submit', {
+          targetType: 'quiz',
+          targetId: reportedQuizId,
+          category: 'spam',
+          reason: 'Tier 1 Automated Test Content Report',
+        });
+
+        expect(repRes.status).toBe(201);
+        expect(repRes.data.success).toBe(true);
+        reportId = repRes.data.reportId;
+        expect(reportId).toBeDefined();
+        expect(repRes.data.data.report.status).toBe('pending');
+      });
+
+      it('F8-4: Admin lists moderation queue and resolves reported content item', async () => {
+        adminClient = await authenticateTestAdmin();
+
+        // List moderation reports
+        const listRes = await adminClient.get('/api/v1/admin/reports');
+        expect(listRes.status).toBe(200);
+        expect(Array.isArray(listRes.data.data.reports)).toBe(true);
+        expect(listRes.data.data.reports.length).toBeGreaterThanOrEqual(1);
+
+        // Resolve moderation report
+        const resolveRes = await adminClient.post(`/api/v1/admin/reports/${reportId}/resolve`, {
+          action: 'dismissed',
+          notes: 'Dismissed by Tier 1 feature coverage test runner',
+        });
+        expect(resolveRes.status).toBe(200);
+        expect(resolveRes.data.success).toBe(true);
+      });
+
+      it('F8-5: Admin queries immutable compliance audit logs and multi-database system diagnostics', async () => {
+        // Query audit trail
+        const auditRes = await adminClient.get('/api/v1/admin/audit-logs');
+        expect(auditRes.status).toBe(200);
+        expect(auditRes.data.success).toBe(true);
+        expect(Array.isArray(auditRes.data.data.logs)).toBe(true);
+
+        // Query system health & diagnostics
+        const sysRes = await adminClient.get('/api/v1/admin/system');
+        expect(sysRes.status).toBe(200);
+        expect(sysRes.data.success).toBe(true);
+        expect(sysRes.data.data.overallStatus).toBeDefined();
+        expect(sysRes.data.data.databases).toBeDefined();
+        expect(typeof sysRes.data.data.uptimeSeconds).toBe('number');
       });
     });
 

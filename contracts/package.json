@@ -1,0 +1,22 @@
+{
+  "name": "@quizfocus/contracts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./v1/domain.js": "./dist/v1/domain.js",
+    "./v1/http.js": "./dist/v1/http.js",
+    "./v1/media.js": "./dist/v1/media.js",
+    "./v1/quiz.js": "./dist/v1/quiz.js",
+    "./v1/attempt.js": "./dist/v1/attempt.js",
+    "./v1/challenge.js": "./dist/v1/challenge.js",
+    "./v1/social.js": "./dist/v1/social.js",
+    "./v1/admin.js": "./dist/v1/admin.js",
+    "./v1/middleware.js": "./dist/v1/middleware.js",
+    "./v1/index.js": "./dist/v1/index.js",
+    "./v1/*": "./dist/v1/*.js"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  }
+}

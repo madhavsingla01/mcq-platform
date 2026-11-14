@@ -1,8 +1,10 @@
+import { AttemptResultSummary, ChallengeSummary, CurrentUserResponse, LeaderboardResponse, QuizSummary, SessionBootstrapResponse, SessionLoginResponse } from '../../contracts/dist/v1/domain.js';
+import { SystemHealthResponse } from '../../contracts/dist/v1/admin.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { ApiClient } from '../e2e/helpers/api-client.js';
-import { finalizeExpiredAttempts } from '../../services/attempt-service/src/jobs/finalization.worker.js';
+import { finalizeExpiredAttempts } from '../../services/attempt-service/dist/jobs/finalization.worker.js';
 
 const authRequire = createRequire(new URL('../../services/auth-service/package.json', import.meta.url));
 const attemptRequire = createRequire(new URL('../../services/attempt-service/package.json', import.meta.url));
@@ -29,6 +31,7 @@ test('Step 02 gateway, domain ownership and real product lifecycle contracts', a
     check(await player.get(`/api/v1/quiz/${quizId}`),403);
     const publish=await author.post(`/api/v1/quiz/drafts/${quizId}/publish`,{visibility:'public'});check(publish,200);
     quizCode=publish.data.data.quiz.quizCode;
+    assert.equal(QuizSummary.parse(publish.data.data.quiz)._id, quizId);
     const search=await player.get('/api/v1/search/universal',{query:{q:'Architecture golden quiz'}});check(search,200);
     assert.ok(search.data.data.quizzes.some(q=>q._id===quizId));
   });
@@ -121,7 +124,10 @@ test('Step 02 gateway, domain ownership and real product lifecycle contracts', a
     const outsideStandings = await stranger.get(`/api/v1/challenges/${challengeId}/leaderboard`, { expectedStatus: 200 });
     assert.equal(outsideStandings.data.data.viewerSubmission, null);
     const review=await player.get(`/api/v1/attempts/${id}/result`);check(review,200);
-    assert.deepEqual(review.data.data.questions,[]);assert.equal(review.data.data.attempt.score,null);
+    assert.deepEqual(review.data.data.questions,[]);
+    const result = AttemptResultSummary.parse(review.data.data);
+    assert.equal(result.attempt.score, null);
+    assert.equal(result.allowReview, false);
     check(await author.get(`/api/v1/quiz/${challengeId}/analytics`),403);
     check(await player.get(`/api/v1/quiz/${challengeId}/analytics`),403);
     for (const base of ['quiz', 'quizzes']) {
@@ -151,6 +157,7 @@ test('Step 02 gateway, domain ownership and real product lifecycle contracts', a
     assert.equal(quizDetail.data.data.quiz.avgScore,0);
     assert.equal(quizDetail.data.data.quiz.questions, undefined);
     assert.equal(challengeDetail.data.data.challenge.avgScore,0);
+    assert.equal(ChallengeSummary.parse(challengeDetail.data.data.challenge)._id, challengeId);
     await db.collection('quizzes').updateOne({_id:new ObjectId(quizId)},{$set:{avgScore:50}});
     for (const path of ['/api/v1/quizzes', '/api/v1/social/explore', '/api/v1/social/feed']) {
       const rankedList = await player.get(path, { query: { sort: 'top', q: 'Architecture' } });
@@ -172,7 +179,7 @@ test('Step 02 gateway, domain ownership and real product lifecycle contracts', a
     const ranked=await player.get(`/api/v1/challenges/${challengeId}/leaderboard`);check(ranked,200);
     assert.equal(ranked.data.data.quarantined,false);
     assert.equal(ranked.data.data.leaderboard.length,1);
-    assert.equal(ranked.data.data.leaderboard[0].attemptId, id);
+    assert.equal(LeaderboardResponse.parse(ranked.data).data.leaderboard[0]?.attemptId, id);
     const hostRanked = await author.get(`/api/v1/challenges/${challengeId}/leaderboard`, { expectedStatus: 200 });
     assert.equal(hostRanked.data.data.viewerSubmission.attemptId, practiceId);
     assert.equal(hostRanked.data.data.totalParticipants, 1);
@@ -290,6 +297,19 @@ test('Step 02 gateway, domain ownership and real product lifecycle contracts', a
     check(await new ApiClient().get('/api/v1/admin/overview',{headers:{'x-user-id':a.userId,'x-role':'admin'}}),401);
     await db.collection('users').updateOne({_id:new ObjectId(a.userId)},{$set:{role:'admin'}});
     check(await author.get('/api/v1/admin/overview'),200);
+
+    check(await candidate.get('/api/v1/admin/system'),403);
+    const diagnostics = await author.get('/api/v1/admin/system');
+    check(diagnostics,200);
+    const health = SystemHealthResponse.parse(diagnostics.data).data;
+    assert.equal(health.databases.length,4);
+    assert.ok(health.services.some(service => service.self && service.name === 'admin-service'));
+    for (const database of diagnostics.data.data.databases) assert.equal(Object.hasOwn(database, 'uri'), false);
+
+    const account = await author.get(`/api/v1/admin/users/${p.userId}`);
+    check(account,200);
+    assert.ok(account.data.data.user.sessions.length);
+    assert.ok(account.data.data.user.sessions.every(session => !Object.hasOwn(session, 'refreshToken')));
   });
 
   await t.test('Competition and Admin rank nearby matches within existing access and list filters', async () => {
@@ -340,9 +360,13 @@ test('Step 02 gateway, domain ownership and real product lifecycle contracts', a
 
   await t.test('login, protected API, session validation and logout remain compatible', async () => {
     const identity=new ApiClient();
-    check(await identity.post('/api/v1/auth/login',{email:p.email,password:p.password}),200);
-    check(await identity.get('/api/v1/auth/me'),200);
-    const bootstrap=await identity.get('/api/v1/auth/bootstrap');check(bootstrap,200);assert.equal(bootstrap.data.data.authenticated,true);
+    const login = await identity.post('/api/v1/auth/login',{email:p.email,password:p.password});
+    check(login,200);
+    assert.ok(SessionLoginResponse.safeParse(login.data).success);
+    const currentUser = await identity.get('/api/v1/auth/me');
+    check(currentUser,200);
+    assert.ok(CurrentUserResponse.parse(currentUser.data).data.user._id);
+    const bootstrap=await identity.get('/api/v1/auth/bootstrap');check(bootstrap,200);assert.equal(SessionBootstrapResponse.parse(bootstrap.data).data.authenticated,true);
     check(await identity.post('/api/v1/auth/logout',{}),200);
     identity.clearSession();check(await identity.get('/api/v1/messages/conversations'),401);
   });

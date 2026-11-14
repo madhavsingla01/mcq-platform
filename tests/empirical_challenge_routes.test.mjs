@@ -75,7 +75,7 @@ async function runEmpiricalSuite() {
   // =========================================================================
   console.log('--- Suite 1: ChallengeService Contract & Route Verification ---');
   
-  const challengeServicePath = path.join(ROOT_DIR, 'apps/desktop-web/src/services/challenge.service.js');
+  const challengeServicePath = path.join(ROOT_DIR, 'apps/desktop-web/src/services/challenge.service.ts');
   const serviceCode = fs.readFileSync(challengeServicePath, 'utf8');
 
   // Verify all 7 required ChallengeService methods exist
@@ -115,7 +115,7 @@ async function runEmpiricalSuite() {
   assert(backendRoutesCode.includes("router.delete('/:idOrCode',"), "Backend mounts DELETE /:idOrCode (deleteChallenge)");
 
   // Verify Gateway Proxy Mapping
-  const gatewayServerPath = path.join(ROOT_DIR, 'services/api-gateway/src/server.js');
+  const gatewayServerPath = path.join(ROOT_DIR, 'services/api-gateway/src/server.ts');
   const gatewayCode = fs.readFileSync(gatewayServerPath, 'utf8');
   assert(
     gatewayCode.includes("app.use('/api/v1/challenges', makeProxy(SERVICES.challenge, '/api/v1/challenges'))"),
@@ -130,7 +130,7 @@ async function runEmpiricalSuite() {
   const {
     normalizeChallengeQuestionInput,
     sanitizeQuestionsForContest,
-  } = await import('../services/challenge-service/src/controllers/challenge.controller.js');
+  } = await import('../services/challenge-service/dist/controllers/challenge.controller.js');
 
   // Test 2.1: Question Normalization - UI format
   const uiQuestion = {
@@ -376,7 +376,7 @@ async function runEmpiricalSuite() {
   // =========================================================================
   console.log('\n--- Suite 6: ChallengeService Mock Invocation & Unwrapping ---');
 
-  // Create an empirical mock axios client mimicking desktop-web/src/api/axios.js
+  // Create an empirical mock axios client mimicking desktop-web/src/api/axios.ts
   const mockCalls = [];
   const mockApi = {
     get: async (url, config) => {

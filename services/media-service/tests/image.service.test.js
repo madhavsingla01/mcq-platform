@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 process.env.JWT_SECRET ||= 'media-test-secret-signing-key-for-tests';
-const { validateImageUrl } = await import('../src/services/image.service.js');
+const { validateImageUrl } = await import('../dist/services/image.service.js');
 
 describe('validateImageUrl', () => {
   it('accepts a public HTTPS image URL with query parameters', () => {

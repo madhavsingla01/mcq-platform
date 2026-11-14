@@ -1,6 +1,6 @@
 import { describe, it, expect } from '@jest/globals';
-import Quiz from '../src/models/Quiz.model.js';
-import Attempt from '../src/models/Attempt.model.js';
+import Quiz from '../dist/models/Quiz.model.js';
+import Attempt from '../dist/models/Attempt.model.js';
 
 describe('Pagination & Server-Side Filtering Architecture', () => {
   describe('Pagination Contract & Calculation', () => {
@@ -257,7 +257,7 @@ describe('Pagination & Server-Side Filtering Architecture', () => {
 
   describe('In-Memory TTL Caching Engine', () => {
     it('should store and retrieve cached values within TTL', async () => {
-      const { MemoryCache } = await import('../src/services/cache/cache.service.js');
+      const { MemoryCache } = await import('../dist/services/cache/cache.service.js');
       const cache = new MemoryCache(5000);
 
       cache.set('quiz:test-1', { title: 'Math Quiz' }, 1000);
@@ -266,7 +266,7 @@ describe('Pagination & Server-Side Filtering Architecture', () => {
     });
 
     it('should expire keys once TTL is exceeded', async () => {
-      const { MemoryCache } = await import('../src/services/cache/cache.service.js');
+      const { MemoryCache } = await import('../dist/services/cache/cache.service.js');
       const cache = new MemoryCache(10); // 10ms
 
       cache.set('temp-key', 'data', 10);
@@ -277,7 +277,7 @@ describe('Pagination & Server-Side Filtering Architecture', () => {
     });
 
     it('should invalidate keys matching a pattern prefix', async () => {
-      const { MemoryCache } = await import('../src/services/cache/cache.service.js');
+      const { MemoryCache } = await import('../dist/services/cache/cache.service.js');
       const cache = new MemoryCache(60000);
 
       cache.set('quiz:public:1', { id: 1 });
@@ -292,7 +292,7 @@ describe('Pagination & Server-Side Filtering Architecture', () => {
     });
 
     it('getOrSet should fetch and cache value when missing, and return cached on subsequent calls', async () => {
-      const { MemoryCache } = await import('../src/services/cache/cache.service.js');
+      const { MemoryCache } = await import('../dist/services/cache/cache.service.js');
       const cache = new MemoryCache(60000);
       let fetchCount = 0;
 

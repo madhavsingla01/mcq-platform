@@ -405,7 +405,26 @@ test('real HTTP, MongoDB and socket messaging/settings contracts', async t => {
     expectStatus(await alice.post('/api/v1/auth/me/sessions/revoke', { currentPassword: users[0].password }), 200);
     expectStatus(await older.get('/api/v1/auth/me'), 401);
     expectStatus(await alice.get('/api/v1/auth/me'), 200);
-    const response = await request(aliceSocket, 'message:send', { conversationId: conv, text: 'revoked' });
-    assert.equal(response.success, false);
+    // The periodic session check may disconnect before the event handler can reply.
+    if (aliceSocket.connected) {
+      const controller = new AbortController();
+      const disconnected = new Promise(resolve => {
+        const onDisconnect = () => resolve({ success: false });
+        aliceSocket.once('disconnect', onDisconnect);
+        controller.signal.addEventListener('abort', () => aliceSocket.off('disconnect', onDisconnect), { once: true });
+      });
+      try {
+        const response = await Promise.race([
+          disconnected,
+          request(aliceSocket, 'message:send', { conversationId: conv, text: 'revoked' }),
+        ]);
+        assert.equal(response.success, false);
+      } finally {
+        controller.abort();
+      }
+    }
+    const history = await alice.get(`/api/v1/messages/conversations/${conv}`);
+    expectStatus(history, 200);
+    assert.equal(history.data.data.messages.some(message => message.text === 'revoked'), false);
   });
 });

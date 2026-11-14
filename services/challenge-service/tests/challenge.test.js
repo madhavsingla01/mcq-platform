@@ -9,9 +9,9 @@ process.env.CLIENT_URL = 'http://localhost:5173';
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { sanitizeQuestionsForContest } from '../src/controllers/challenge.controller.js';
-import { RankingService } from '../src/services/ranking.service.js';
-import { AppError } from '../src/middleware/error.middleware.js';
+const { sanitizeQuestionsForContest } = await import('../dist/controllers/challenge.controller.js');
+import { RankingService } from '../dist/services/ranking.service.js';
+import { AppError } from '../dist/middleware/error.middleware.js';
 
 test('competitive challenge 10-question cap validation', () => {
   const validateQuestionsCap = (questions) => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { calculateDenseLeaderboard } from '../src/controllers/quiz.controller.js';
+import { calculateDenseLeaderboard } from '../dist/controllers/quiz.controller.js';
 
 describe('Challenge Engine - Dense Ranking Algorithm', () => {
   it('should rank participants by score descending, then completion time ascending', () => {

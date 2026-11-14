@@ -28,6 +28,8 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: |
+            package-lock.json
+            contracts/package-lock.json
             apps/desktop-web/package-lock.json
             apps/mobile-web/package-lock.json
             services/admin-service/package-lock.json
@@ -36,10 +38,14 @@ jobs:
             services/attempt-service/package-lock.json
             services/auth-service/package-lock.json
             services/challenge-service/package-lock.json
+            services/marketplace-service/package-lock.json
             services/media-service/package-lock.json
             services/message-service/package-lock.json
             services/parser-service/package-lock.json
             services/quiz-service/package-lock.json
+            services/social-comments-service/package-lock.json
+            services/social-feed-service/package-lock.json
+            services/social-interactions-service/package-lock.json
             services/social-service/package-lock.json
 
       - name: Install locked dependencies
@@ -47,6 +53,8 @@ jobs:
         run: |
           set -euo pipefail
           for package in \
+            . \
+            contracts \
             apps/desktop-web \
             apps/mobile-web \
             services/admin-service \
@@ -55,16 +63,23 @@ jobs:
             services/attempt-service \
             services/auth-service \
             services/challenge-service \
+            services/marketplace-service \
             services/media-service \
             services/message-service \
             services/parser-service \
             services/quiz-service \
+            services/social-comments-service \
+            services/social-feed-service \
+            services/social-interactions-service \
             services/social-service
           do
             (cd "$package" && npm ci)
           done
 
       - name: Run unit, component, accessibility, and build checks
+        env:
+          VITE_API_URL: http://127.0.0.1:5000/api/v1
+          VITE_DEV_PORT: 5173
         run: npm run test:ci
 
       - name: Install isolated MongoDB test binary
@@ -79,6 +94,9 @@ jobs:
           sudo apt-get install --yes --no-install-recommends mongodb-org-server ffmpeg
           /usr/bin/mongod --version
           ffmpeg -version
+
+      - name: Check attempt, identity, and standings invariants
+        run: npm run test:invariants
 
       - name: Run isolated API and database integration suites
         env:

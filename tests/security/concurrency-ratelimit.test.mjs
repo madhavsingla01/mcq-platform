@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { rateLimit } from '../../services/auth-service/src/middleware/rateLimit.middleware.js';
-import { sanitizeProxyRequest, errorBody } from '../../services/api-gateway/src/contracts.js';
+import { rateLimit } from '../../services/auth-service/dist/middleware/rateLimit.middleware.js';
+import { sanitizeProxyRequest, errorBody } from '../../services/api-gateway/dist/contracts.js';
 
 test('rateLimit middleware decrements remaining quota and rejects over-limit with 429 and RFC headers', async () => {
   const limiter = rateLimit({
