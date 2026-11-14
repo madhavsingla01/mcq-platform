@@ -26,7 +26,10 @@ const MAX_RECENT_SEARCHES = 10;
 
 export default function GlobalSearchModal() {
   const navigate = useNavigate();
-  const { isSearchOpen, searchInitialQuery, searchInitialTab, closeSearch } = useUIStore();
+  const isSearchOpen = useUIStore(state => state.isSearchOpen);
+  const searchInitialQuery = useUIStore(state => state.searchInitialQuery);
+  const searchInitialTab = useUIStore(state => state.searchInitialTab);
+  const closeSearch = useUIStore(state => state.closeSearch);
 
   const inputRef = useRef(null);
   const modalRef = useRef(null);
@@ -57,41 +60,38 @@ export default function GlobalSearchModal() {
     }
   }, []);
 
-  // Sync initial query and tab when opened
-  useEffect(() => {
-    if (isSearchOpen) {
-      setQuery(searchInitialQuery || '');
-      setActiveTab(searchInitialTab || 'top');
-      const timer = setTimeout(() => {
-        inputRef.current?.focus();
-        inputRef.current?.select();
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [isSearchOpen, searchInitialQuery, searchInitialTab]);
-
   useLayoutEffect(() => {
     if (!isSearchOpen) return;
     const trigger = document.getElementById('app-page-search');
     const previousFocus = document.activeElement;
-    if (!trigger) { setAnchor(null); return; }
     const align = () => {
+      if (!trigger) { setAnchor(null); return; }
       const rect = trigger.getBoundingClientRect();
       const width = Math.min(600, document.documentElement.clientWidth - 24);
       const left = Math.max(12, Math.min(rect.right - width, document.documentElement.clientWidth - width - 12));
       setAnchor({ top: Math.max(8, rect.top), left, width });
     };
     align();
+    inputRef.current?.focus({ preventScroll: true });
+    inputRef.current?.select();
     window.addEventListener('resize', align);
     return () => {
       window.removeEventListener('resize', align);
       requestAnimationFrame(() => {
+        if (useUIStore.getState().isSearchOpen) return;
         if (previousFocus instanceof HTMLElement && previousFocus !== document.body && previousFocus.isConnected) {
           previousFocus.focus({ preventScroll: true });
-        } else if (trigger.isConnected) trigger.focus({ preventScroll: true });
+        } else if (trigger?.isConnected) trigger.focus({ preventScroll: true });
       });
     };
   }, [isSearchOpen]);
+
+  useLayoutEffect(() => {
+    if (!isSearchOpen) return;
+    setQuery(searchInitialQuery || '');
+    setActiveTab(searchInitialTab || 'top');
+    inputRef.current?.select();
+  }, [isSearchOpen, searchInitialQuery, searchInitialTab]);
 
   // Fetch trending hashtags dynamically from DB (zero hardcoding)
   useEffect(() => {
@@ -148,6 +148,7 @@ export default function GlobalSearchModal() {
           signal: controller.signal,
         })
         .then(({ data }) => {
+          if (controller.signal.aborted) return;
           setResults({
             quizzes: data.data?.quizzes || [],
             creators: data.data?.creators || [],
@@ -155,13 +156,13 @@ export default function GlobalSearchModal() {
             directMatch: data.data?.directMatch || null,
           });
         })
-        .catch((err) => {
-          if (err.code !== 'ERR_CANCELED') {
+        .catch(() => {
+          if (!controller.signal.aborted) {
             setResults({ quizzes: [], creators: [], tags: [], directMatch: null });
           }
         })
         .finally(() => {
-          setLoading(false);
+          if (!controller.signal.aborted) setLoading(false);
         });
     }, 240);
 

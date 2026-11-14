@@ -28,6 +28,7 @@ const packages = [
   'services/admin-service',
   'services/challenge-service',
   'services/marketplace-service',
+  'services/ai-integration-service',
 ];
 
 console.log('📦 Installing dependencies across all web apps and microservices...\n');

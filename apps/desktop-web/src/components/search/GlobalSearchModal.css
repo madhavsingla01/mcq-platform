@@ -9,32 +9,18 @@
   inset: 0;
   z-index: 1000;
   background-color: rgba(0, 0, 0, 0.72);
-  backdrop-filter: var(--material-blur);
-  -webkit-backdrop-filter: var(--material-blur);
   display: flex;
   align-items: flex-start;
   justify-content: center;
   padding: 64px 16px 24px;
-  animation: searchBackdropFade 0.2s var(--ease-out);
-}
-
-@keyframes searchBackdropFade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
 }
 
 /* ── Floating Modal Container ── */
 .global-search-container {
   width: 100%;
   max-width: 680px;
-  max-height: 80vh;
-  background-color: rgba(12, 12, 16, 0.95);
-  backdrop-filter: var(--material-blur-heavy);
-  -webkit-backdrop-filter: var(--material-blur-heavy);
+  max-height: 80dvh;
+  background-color: #101014;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: var(--radius-xl, 20px);
   corner-shape: squircle;
@@ -42,19 +28,6 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transform-origin: center;
-  animation: searchModalSlide 0.24s var(--ease-out);
-}
-
-@keyframes searchModalSlide {
-  from {
-    opacity: 0;
-    transform: translateY(-12px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
 }
 
 /* ── Search Input Row ── */

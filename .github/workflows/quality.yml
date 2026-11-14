@@ -31,6 +31,7 @@ jobs:
             apps/desktop-web/package-lock.json
             apps/mobile-web/package-lock.json
             services/admin-service/package-lock.json
+            services/ai-integration-service/package-lock.json
             services/api-gateway/package-lock.json
             services/attempt-service/package-lock.json
             services/auth-service/package-lock.json
@@ -49,6 +50,7 @@ jobs:
             apps/desktop-web \
             apps/mobile-web \
             services/admin-service \
+            services/ai-integration-service \
             services/api-gateway \
             services/attempt-service \
             services/auth-service \

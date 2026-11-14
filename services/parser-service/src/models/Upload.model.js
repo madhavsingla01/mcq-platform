@@ -27,7 +27,7 @@ const uploadSchema = new mongoose.Schema(
     },
     fileType: {
       type: String,
-      enum: ['xlsx', 'xls', 'csv', 'json'],
+      enum: ['xlsx', 'xls', 'csv', 'json', 'pdf', 'zip', 'bundle'],
       required: true,
     },
     mimeType: {

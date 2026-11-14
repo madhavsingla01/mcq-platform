@@ -5,7 +5,6 @@ import { X, Send, Sparkles, Bot, User } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../../api/axios';
 
 const renderMarkdown = (content) => (
@@ -143,10 +142,8 @@ function AIWorkspace({ collapsed = false }) {
                 <div className="w-7 h-7 rounded-lg bg-[#18181B] border border-white/10 text-[#FF4500] shrink-0 flex items-center justify-center shadow-sm">
                   <Sparkles className="w-4 h-4" />
                 </div>
-                <div className="bg-[#121214] border border-white/10 shadow-sm rounded-2xl rounded-tl-sm px-4 py-4 flex items-center gap-1">
-                  <motion.div className="w-1.5 h-1.5 bg-zinc-500 rounded-full" animate={{ y: [0, -3, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} />
-                  <motion.div className="w-1.5 h-1.5 bg-zinc-500 rounded-full" animate={{ y: [0, -3, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} />
-                  <motion.div className="w-1.5 h-1.5 bg-zinc-500 rounded-full" animate={{ y: [0, -3, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }} />
+                <div role="status" className="bg-[#121214] border border-white/10 rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-zinc-400">
+                  Generating response…
                 </div>
               </div>
             )}

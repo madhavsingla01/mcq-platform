@@ -968,7 +968,8 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
     if (!element || !canvas) return;
     const offset = element.getBoundingClientRect().top - canvas.getBoundingClientRect().top;
     const inset = Math.max(0, (canvas.clientHeight - element.offsetHeight) / 2);
-    canvas.scrollTo({ top: canvas.scrollTop + offset - inset, behavior: 'smooth' });
+    canvas.scrollTop += offset - inset;
+    element.querySelector('.builder-question-title')?.focus({ preventScroll: true });
   };
 
   const updateQuestionField = (index, field, value) => {
@@ -1324,6 +1325,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
             <button
               type="button"
               className={`header-question-counter ${showQuestionJump ? 'active' : ''}`}
+              aria-expanded={showQuestionJump}
               onClick={() => setShowQuestionJump((prev) => !prev)}
               title={`Question ${Math.min(activeQuestionIndex + 1, questions.length)} of ${questions.length} (Click to jump)`}
               aria-label={`Question ${Math.min(activeQuestionIndex + 1, questions.length)} of ${questions.length}`}
@@ -1603,7 +1605,7 @@ export default function ManualBuilder({ isChallenge: challengeRoute = false }) {
                 {/* Question Card Header */}
                 <div className="q-card-header">
                   <div className="q-header-meta">
-                    <h2 className="builder-question-title">Question {qIndex + 1}</h2>
+                    <h2 className="builder-question-title" tabIndex={-1}>Question {qIndex + 1}</h2>
                     <p className="builder-question-meta">
                       {currentTypeObj.label} · {points} {points === 1 ? 'point' : 'points'}
                       {q.negativeMarks > 0 && ` · −${q.negativeMarks} for incorrect answers`}

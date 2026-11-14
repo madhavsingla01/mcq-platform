@@ -1,3 +1,5 @@
+import { sanitizeFormulaPrefix } from '../services/security/formulaSanitizer.service.js';
+
 /**
  * Parser helper utilities shared across all file parsers.
  */
@@ -15,13 +17,14 @@ export const isEmptyRow = (row) => {
 };
 
 /**
- * Clean a cell value — trim, normalize whitespace.
+ * Clean a cell value — trim, normalize whitespace, and sanitize formula injections.
  * @param {*} value - Raw cell value
  * @returns {string}
  */
 export const cleanCellValue = (value) => {
   if (value === null || value === undefined) return '';
-  return String(value).trim().replace(/\s+/g, ' ');
+  const cleaned = String(value).trim().replace(/\s+/g, ' ');
+  return sanitizeFormulaPrefix(cleaned);
 };
 
 /**
@@ -81,8 +84,8 @@ export const validateParsedData = (data) => {
     errors.push('No data rows found in file');
   }
 
-  if (data.headers && data.headers.length > 50) {
-    errors.push('Too many columns detected (max: 50)');
+  if (data.headers && data.headers.length > 500) {
+    errors.push('Too many columns detected (max: 500)');
   }
 
   return {

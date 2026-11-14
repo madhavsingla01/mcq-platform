@@ -81,7 +81,7 @@ test('gateway proxies bodies/cookies/correlation and distinguishes readiness fro
   const port = reserve.address().port;
   await new Promise(resolve => reserve.close(resolve));
   const upstreamUrl = `http://127.0.0.1:${upstream.address().port}`;
-  const serviceEnv = Object.fromEntries(['AUTH','QUIZ','PARSER','ATTEMPT','SOCIAL','SOCIAL_FEED','SOCIAL_INTERACTIONS','SOCIAL_COMMENTS','MESSAGE','MEDIA','ADMIN','CHALLENGE','MARKETPLACE'].map(name => [`${name}_SERVICE_URL`, upstreamUrl]));
+  const serviceEnv = Object.fromEntries(['AUTH','QUIZ','PARSER','ATTEMPT','SOCIAL','SOCIAL_FEED','SOCIAL_INTERACTIONS','SOCIAL_COMMENTS','MESSAGE','MEDIA','ADMIN','CHALLENGE','AI_INTEGRATION','MARKETPLACE'].map(name => [`${name}_SERVICE_URL`, upstreamUrl]));
   const child = spawn(process.execPath, ['src/server.js'], {
     cwd: fileURLToPath(new URL('../services/api-gateway/', import.meta.url)),
     env: { ...process.env, ...serviceEnv, PORT: String(port), NODE_ENV: 'test', CLIENT_URL: 'http://localhost:5173', HEALTH_CACHE_TTL_MS: '1', PROXY_TIMEOUT_MS: '100' },

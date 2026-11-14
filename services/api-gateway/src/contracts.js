@@ -1,3 +1,7 @@
+import { sanitizeFilename } from './middleware/security.js';
+
+export { sanitizeFilename };
+
 // Additive v1 error contract. Existing clients keep success/message/data.
 export const errorCode = status => ({
   400: 'VALIDATION_ERROR', 401: 'UNAUTHENTICATED', 403: 'FORBIDDEN',
@@ -19,10 +23,13 @@ export function proxyFailure(error) {
 // End services verify tokens. Remove misleading client identity assertions even
 // though no service may use these headers as authority.
 export function sanitizeProxyRequest(proxyReq, req) {
-  for (const name of Object.keys(req.headers)) {
+  for (const name of Object.keys(req.headers || {})) {
     if (/^(x-user-|x-auth-|x-admin-|x-internal-|x-service-)/i.test(name) ||
       ['x-role', 'x-roles', 'x-permissions', 'x-forwarded-user', 'x-forwarded-email'].includes(name)) proxyReq.removeHeader(name);
   }
   proxyReq.setHeader('x-request-id', req.requestId);
   proxyReq.setHeader('x-forwarded-for', req.ip);
+  if (req.headers && req.headers['x-filename']) {
+    proxyReq.setHeader('x-filename', sanitizeFilename(req.headers['x-filename']));
+  }
 }

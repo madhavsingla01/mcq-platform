@@ -1,0 +1,94 @@
+.mobile-upload-container {
+  min-height: 100dvh;
+  background: var(--bg-base, #000000);
+  padding: calc(var(--safe-top, 0px) + 12px) 16px calc(var(--safe-bottom, 0px) + 84px);
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-upload-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.mobile-back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-subtle, #1c1c1f);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--color-text-secondary, #a1a1aa);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-fast, 150ms) var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1));
+}
+
+.mobile-back-btn:active {
+  transform: scale(0.97);
+}
+
+.mobile-upload-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.mobile-upload-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-upload-intro {
+  margin-bottom: 20px;
+}
+
+.mobile-upload-lead {
+  font-size: 14px;
+  color: var(--color-text-secondary, #a1a1aa);
+  line-height: 1.45;
+  margin: 0 0 10px 0;
+}
+
+.mobile-security-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-success, #30d158);
+  background: rgba(48, 209, 88, 0.1);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill, 9999px);
+  border: 1px solid rgba(48, 209, 88, 0.2);
+}
+
+/* Apple-style slide-up keyframes for bottom sheet */
+@keyframes slideUpSheet {
+  from {
+    transform: translateY(100%);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Matte accent button - strict no glow */
+.matte-accent-btn {
+  box-shadow: none !important;
+  transition: transform var(--duration-fast, 150ms) var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1));
+}
+
+.matte-accent-btn:active {
+  transform: scale(0.97);
+}

@@ -1,14 +1,18 @@
 import fileTypePkg from 'file-type';
 import fs from 'fs';
 import { AppError } from './error.middleware.js';
+import { detectMacrosAndExecutables } from '../services/security/macroDetector.service.js';
 
 const fileTypeFromFile = fileTypePkg.fileTypeFromFile || fileTypePkg.fromFile;
-const ALLOWED_EXTENSIONS = ['xlsx', 'xls', 'csv', 'json'];
+const ALLOWED_EXTENSIONS = ['xlsx', 'xls', 'csv', 'json', 'pdf', 'zip', 'bundle'];
 const ALLOWED_SIGNATURES_BY_EXTENSION = {
   xlsx: ['xlsx', 'zip'],
   xls: ['xls', 'cfb'],
   csv: [],
   json: [],
+  pdf: ['pdf'],
+  zip: ['zip'],
+  bundle: ['zip'],
 };
 const TEXT_EXTENSIONS = new Set(['csv', 'json']);
 const DANGEROUS_SIGNATURES = new Set(['exe', 'dll', 'elf', 'macho', 'msi', 'scr', 'com']);
@@ -67,6 +71,16 @@ export const validateFileSecurity = async (req, res, next) => {
     if (!ALLOWED_EXTENSIONS.includes(ext)) {
       removeUploadedFile(req.file.path);
       return next(new AppError('Security Error: Extension not allowed', 400));
+    }
+
+    // Strict macro and executable defense (F5)
+    const macroThreat = await detectMacrosAndExecutables({
+      filePath: req.file.path,
+      filename: req.file.originalname,
+    });
+    if (!macroThreat.isClean) {
+      removeUploadedFile(req.file.path);
+      return next(new AppError(macroThreat.failureReason || 'Security Error: Threat detected', 400));
     }
 
     const detectedType = await fileTypeFromFile(req.file.path);

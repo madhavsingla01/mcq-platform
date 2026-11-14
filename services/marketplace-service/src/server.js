@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import env from './config/env.js';
 import logger from './utils/logger.js';
+import { connectDB, disconnectDB } from './config/db.js';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js';
 import marketplaceRoutes from './routes/marketplace.routes.js';
 
@@ -61,15 +62,27 @@ export const shutdown = async (exitProcess = true) => {
       await new Promise((resolve) => server.close(resolve));
       logger.info('HTTP server closed.');
     }
+    await disconnectDB();
   } catch (err) {
-    logger.error('Error during HTTP server drain:', err);
+    logger.error('Error during HTTP server drain or DB disconnect:', err);
   } finally {
     clearTimeout(deadline);
+    stopping = false;
     if (exitProcess) process.exit(0);
   }
 };
 
-export const start = (port = env.PORT) => {
+export const start = async (port = env.PORT) => {
+  stopping = false;
+  try {
+    await connectDB();
+  } catch (err) {
+    logger.error('Database connection failed during startup:', err.message);
+    if (process.env.NODE_ENV !== 'test') {
+      throw err;
+    }
+  }
+
   return new Promise((resolve, reject) => {
     try {
       server = app.listen(port, () => {

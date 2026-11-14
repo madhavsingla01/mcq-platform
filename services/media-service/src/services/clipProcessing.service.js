@@ -245,6 +245,21 @@ export async function recoverClipJobs() {
 }
 export async function cleanupAbandonedClips() {
   const before = new Date(Date.now()-env.MEDIA_ABANDONED_DAYS*86400000);
+  await MediaAsset.updateMany(
+    {
+      purpose: 'educational-resource',
+      status: 'initiated',
+      uploadExpiresAt: { $lt: new Date() },
+      deletedAt: null,
+    },
+    {
+      $set: {
+        status: 'failed',
+        failureCode: 'UPLOAD_TIMEOUT',
+        failureReason: 'Upload session timed out',
+      },
+    }
+  ).catch((err) => console.error('[Cleanup] Failed to expire stale initiated assets:', err.message));
   const rows = MediaAsset.find({...questionAssetFilter,createdAt:{$lt:before},deletedAt:null}).select('_id').cursor();
   for await (const asset of rows) {
     if (jobs.has(String(asset._id))) continue;

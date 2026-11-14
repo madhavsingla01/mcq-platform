@@ -6,7 +6,8 @@ import { parseJson } from '../jsonParser.js';
  */
 export class JsonParserStrategy extends BaseParserStrategy {
   supports(fileType) {
-    return String(fileType || '').toLowerCase() === 'json';
+    const norm = String(fileType || '').toLowerCase();
+    return norm === 'json' || norm === 'mcq_bank' || norm === 'application/json' || norm.includes('json');
   }
 
   async parse(filePath, options = {}) {

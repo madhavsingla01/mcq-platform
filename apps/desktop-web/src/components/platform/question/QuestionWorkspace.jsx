@@ -1,23 +1,18 @@
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { useQuizStore } from '../../../store/quizStore';
 import QuestionCard from './QuestionCard';
-import { motion, AnimatePresence } from 'framer-motion';
 
 export default function QuestionWorkspace() {
-  const { questions, currentIndex, isStarted, isSubmitted } = useQuizStore();
+  const currentIndex = useQuizStore(state => state.currentIndex);
+  const currentQuestion = useQuizStore(state => state.questions[state.currentIndex]);
+  const isOpen = useQuizStore(state => state.isStarted || state.isSubmitted);
   const scrollRef = useRef(null);
 
-  const currentQuestion = questions[currentIndex] || null;
+  useLayoutEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [currentQuestion?._id, isOpen]);
 
-  // Scroll to top when question changes
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.querySelectorAll('.qf-media-player').forEach(player => player.pause());
-      scrollRef.current.scrollTo({ top: 0, behavior: 'auto' });
-    }
-  }, [currentIndex]);
-
-  if (!isStarted && !isSubmitted) {
+  if (!isOpen) {
     return (
       <div className="h-full flex items-center justify-center bg-transparent">
         <div className="text-zinc-400">Please start the quiz from the entry screen.</div>
@@ -33,26 +28,11 @@ export default function QuestionWorkspace() {
         style={{ display: 'flex', flexDirection: 'column' }}
       >
         <div className="max-w-3xl w-full mx-auto" style={{ margin: 'auto', paddingBottom: '32px' }}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentIndex}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-            >
-              {currentQuestion ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                  <QuestionCard
-                    question={currentQuestion}
-                    questionNumber={currentIndex + 1}
-                  />
-                </div>
-              ) : (
-                <div className="text-center text-zinc-500 py-20">Question not found.</div>
-              )}
-            </motion.div>
-          </AnimatePresence>
+          {currentQuestion ? (
+            <QuestionCard key={currentQuestion._id} question={currentQuestion} questionNumber={currentIndex + 1} />
+          ) : (
+            <div className="text-center text-zinc-500 py-20">Question not found.</div>
+          )}
         </div>
       </div>
     </div>

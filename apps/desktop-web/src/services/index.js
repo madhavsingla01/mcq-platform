@@ -9,4 +9,6 @@ export { SocialService } from './social.service.js';
 export { SearchService } from './search.service.js';
 export { MessageService } from './message.service.js';
 export { ChallengeService } from './challenge.service.js';
+export { MarketplaceService, marketplaceService } from './marketplace.service.js';
+
 

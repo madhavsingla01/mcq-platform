@@ -145,3 +145,119 @@ test('desktop Attempt client keeps progress sync separate from final submission 
     assert.equal(calls[2].args[1].finalize,true);
   } finally { delete globalThis.__quizfocusContractCalls; }
 });
+
+test('marketplace client adapter serializes query parameters, handles transitional 404, and normalizes errors', async () => {
+  const calls = [];
+  globalThis.__quizfocusMarketplaceCalls = calls;
+  let mockMode = 'success';
+
+  try {
+    const bundle = await build({
+      entryPoints: [fileURLToPath(new URL('../apps/desktop-web/src/services/marketplace.service.js', import.meta.url))],
+      bundle: true,
+      write: false,
+      format: 'esm',
+      platform: 'node',
+      plugins: [{
+        name: 'mock-marketplace-transport',
+        setup(api) {
+          api.onResolve({ filter: /api\/axios$/ }, () => ({ path: 'transport', namespace: 'marketplace-test' }));
+          api.onLoad({ filter: /.*/, namespace: 'marketplace-test' }, () => ({
+            contents: `
+              export default {
+                get: async (url, config) => {
+                  globalThis.__quizfocusMarketplaceCalls.push({ method: 'GET', url, config });
+                  if (globalThis.__quizfocusMarketplaceMode === '404') {
+                    const err = new Error('Marketplace business routes are not yet implemented in Phase 1');
+                    err.response = { status: 404, data: { message: 'Marketplace business routes are not yet implemented in Phase 1' } };
+                    throw err;
+                  }
+                  if (globalThis.__quizfocusMarketplaceMode === '429') {
+                    const err = new Error('Rate limit exceeded');
+                    err.response = { status: 429, headers: { 'retry-after': '30' } };
+                    throw err;
+                  }
+                  if (globalThis.__quizfocusMarketplaceMode === '500') {
+                    const err = new Error('Internal Server Error');
+                    err.response = { status: 500 };
+                    throw err;
+                  }
+                  if (globalThis.__quizfocusMarketplaceMode === 'network') {
+                    const err = new Error('Connection refused');
+                    err.code = 'ECONNREFUSED';
+                    err.status = 0;
+                    throw err;
+                  }
+                  return {
+                    data: {
+                      success: true,
+                      data: {
+                        items: [{ listingId: 'list-1', title: 'Calculus Quiz', price: 0 }],
+                        pagination: { page: 1, limit: 20, total: 1, totalPages: 1 }
+                      }
+                    }
+                  };
+                },
+                post: async (url, data, config) => {
+                  globalThis.__quizfocusMarketplaceCalls.push({ method: 'POST', url, data, config });
+                  return { data: { success: true, data: { orderId: 'ord-123' } } };
+                }
+              };
+            `,
+            loader: 'js',
+          }));
+        },
+      }],
+    });
+
+    const { MarketplaceService } = await import('data:text/javascript;base64,' + Buffer.from(bundle.outputFiles[0].text).toString('base64'));
+    const service = new MarketplaceService();
+
+    // 1. Success catalog query with search, category, and sorting
+    globalThis.__quizfocusMarketplaceMode = 'success';
+    const catalogRes = await service.fetchCatalog({ q: 'calculus', category: 'Quizzes', sortBy: 'latest' });
+    assert.equal(catalogRes.success, true);
+    assert.equal(catalogRes.data.items.length, 1);
+    assert.equal(catalogRes.data.items[0].listingId, 'list-1');
+    assert.ok(catalogRes.queryString.includes('q=calculus'));
+    assert.ok(catalogRes.queryString.includes('category=Quizzes'));
+    assert.ok(catalogRes.queryString.includes('sortBy=latest'));
+
+    // 2. Transitional 404 handling without throwing
+    globalThis.__quizfocusMarketplaceMode = '404';
+    const transitionalRes = await service.fetchCatalog({ q: 'biology' });
+    assert.equal(transitionalRes.success, true);
+    assert.equal(transitionalRes.isTransitional, true);
+    assert.deepEqual(transitionalRes.data.items, []);
+
+    // 3. Transitional 404 handling on entitlements
+    const transitionalEnt = await service.getUserEntitlements();
+    assert.equal(transitionalEnt.success, true);
+    assert.equal(transitionalEnt.isTransitional, true);
+    assert.deepEqual(transitionalEnt.data.entitlements, []);
+
+    // 4. Rate-limiting error normalization (429)
+    globalThis.__quizfocusMarketplaceMode = '429';
+    await assert.rejects(
+      async () => await service.fetchCatalog(),
+      (err) => err.code === 'RATE_LIMITED' && err.status === 429 && err.retryAfter === 30
+    );
+
+    // 5. Server error normalization (500)
+    globalThis.__quizfocusMarketplaceMode = '500';
+    await assert.rejects(
+      async () => await service.fetchCatalog(),
+      (err) => err.code === 'SERVER_ERROR' && err.status === 500
+    );
+
+    // 6. Network error normalization
+    globalThis.__quizfocusMarketplaceMode = 'network';
+    await assert.rejects(
+      async () => await service.fetchCatalog(),
+      (err) => err.code === 'NETWORK_ERROR' && err.status === 0
+    );
+  } finally {
+    delete globalThis.__quizfocusMarketplaceCalls;
+    delete globalThis.__quizfocusMarketplaceMode;
+  }
+});

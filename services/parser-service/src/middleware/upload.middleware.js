@@ -22,9 +22,12 @@ const ALLOWED_TYPES = {
   'text/csv': 'csv',
   'application/json': 'json',
   'text/plain': 'csv',  // Some CSV files are detected as text/plain
+  'application/pdf': 'pdf',
+  'application/zip': 'zip',
+  'application/x-zip-compressed': 'zip',
 };
 
-const ALLOWED_EXTENSIONS = ['.xlsx', '.xls', '.csv', '.json'];
+const ALLOWED_EXTENSIONS = ['.xlsx', '.xls', '.csv', '.json', '.pdf', '.zip', '.bundle'];
 
 // Storage configuration
 const storage = multer.diskStorage({

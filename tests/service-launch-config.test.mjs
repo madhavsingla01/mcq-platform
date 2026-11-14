@@ -36,6 +36,7 @@ test('new Social service ports can come from examples and inherit existing Socia
 test('gateway receives local URLs for all new Social services unless explicitly configured', () => {
   const services = [
     { name: 'api-gateway', port: 5000 },
+    { name: 'ai-integration-service', port: 5014 },
     { name: 'social-feed-service', port: 5010 },
     { name: 'social-interactions-service', port: 5011 },
     { name: 'social-comments-service', port: 5012 },
@@ -47,4 +48,23 @@ test('gateway receives local URLs for all new Social services unless explicitly 
   assert.equal(env.SOCIAL_FEED_SERVICE_URL, 'http://127.0.0.1:5010');
   assert.equal(env.SOCIAL_INTERACTIONS_SERVICE_URL, 'http://custom-social-interactions:8011');
   assert.equal(env.SOCIAL_COMMENTS_SERVICE_URL, 'http://127.0.0.1:5012');
+});
+
+test('AI integration service uses its example port and is routed without inheriting Social secrets', () => {
+  const service = { name: 'ai-integration-service', port: readServicePort('ai-integration-service', process.cwd()) };
+  const services = [
+    { name: 'api-gateway', port: 5000 },
+    { name: 'social-feed-service', port: 5010 },
+    { name: 'social-interactions-service', port: 5011 },
+    { name: 'social-comments-service', port: 5012 },
+    { name: 'marketplace-service', port: 5013 },
+    service,
+  ];
+  const aiEnv = createServiceEnvironment(service, services, process.cwd(), { NODE_ENV: 'development' });
+  const gatewayEnv = createServiceEnvironment(services[0], services, process.cwd(), { NODE_ENV: 'development' });
+
+  assert.equal(service.port, 5014);
+  assert.equal(aiEnv.PORT, '5014');
+  assert.equal(aiEnv.JWT_SECRET, undefined);
+  assert.equal(gatewayEnv.AI_INTEGRATION_SERVICE_URL, 'http://127.0.0.1:5014');
 });

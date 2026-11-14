@@ -40,15 +40,20 @@ async function ensureGeneratedMedia(name) {
       const ffmpeg = process.env.MEDIA_FFMPEG_PATH || 'ffmpeg';
       const index = [...generatedMedia].indexOf(name);
       const output = path.join(generatedMediaDirectory, name);
+      const duration = name === 'spoken-video-described.mp4' ? 4 : 2;
+      const includeSyntheticAudio = !name.startsWith('gesture-');
       const input = name.endsWith('.wav')
         ? ['-f', 'lavfi', '-i', `sine=frequency=${440 + index * 40}:duration=2`]
         : [
-            '-f', 'lavfi', '-i', `color=c=${['white', 'gray', 'blue', 'green'][index % 4]}:s=320x240:r=24:d=2`,
-            '-f', 'lavfi', '-i', `sine=frequency=${440 + index * 40}:duration=2`,
+            '-f', 'lavfi', '-i', `color=c=${['white', 'gray', 'blue', 'green'][index % 4]}:s=320x240:r=24:d=${duration}`,
+            ...(includeSyntheticAudio ? ['-f', 'lavfi', '-i', `sine=frequency=${440 + index * 40}:duration=${duration}`] : []),
           ];
       const encoding = name.endsWith('.wav')
         ? ['-c:a', 'pcm_s16le', '-ar', '44100', '-ac', '1']
-        : ['-shortest', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-movflags', '+faststart'];
+        : [
+            '-shortest', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p',
+            ...(includeSyntheticAudio ? ['-c:a', 'aac'] : []), '-movflags', '+faststart',
+          ];
 
       await execFileAsync(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-nostdin', '-y', ...input, ...encoding, output], {
         windowsHide: true,

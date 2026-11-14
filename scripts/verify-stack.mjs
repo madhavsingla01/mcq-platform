@@ -10,17 +10,19 @@ import net from 'node:net';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const names = ['api-gateway','auth-service','quiz-service','parser-service','attempt-service','social-service','social-feed-service','social-interactions-service','social-comments-service','message-service','media-service','admin-service','challenge-service'];
+const names = ['api-gateway','auth-service','quiz-service','parser-service','attempt-service','social-service','social-feed-service','social-interactions-service','social-comments-service','message-service','media-service','admin-service','challenge-service','marketplace-service','ai-integration-service'];
 const serviceUrlKeys = {
   'api-gateway': 'GATEWAY_URL',
   'social-feed-service': 'SOCIAL_FEED_SERVICE_URL',
   'social-interactions-service': 'SOCIAL_INTERACTIONS_SERVICE_URL',
   'social-comments-service': 'SOCIAL_COMMENTS_SERVICE_URL',
+  'ai-integration-service': 'AI_INTEGRATION_SERVICE_URL',
 };
 const entrypoints = {
   'social-feed-service': 'src/index.js',
   'social-interactions-service': 'src/index.js',
   'social-comments-service': 'src/index.js',
+  'ai-integration-service': 'dist/main.js',
 };
 const children = [];
 const logs = new Map();
@@ -71,6 +73,15 @@ process.once('SIGINT', async () => { await stop(); process.exit(130); });
 process.once('SIGTERM', async () => { await stop(); process.exit(143); });
 
 try {
+  const aiServiceDirectory = path.join(root, 'services', 'ai-integration-service');
+  const buildAiService = spawn(process.execPath, [
+    path.join(aiServiceDirectory, 'node_modules', 'typescript', 'bin', 'tsc'),
+    '-p',
+    path.join(aiServiceDirectory, 'tsconfig.json'),
+  ], { cwd: aiServiceDirectory, env: process.env, stdio: 'inherit', windowsHide: true });
+  const [buildCode] = await once(buildAiService, 'exit');
+  if (buildCode !== 0) throw new Error('Failed to build ai-integration-service before starting the isolated stack.');
+
   await mkdir(path.join(temp, 'db'));
   const mongoPort = await availablePort();
   launch('mongo', process.env.MONGOD_BINARY || 'mongod', ['--dbpath', path.join(temp, 'db'), '--bind_ip', '127.0.0.1', '--port', String(mongoPort), '--quiet']);
@@ -97,7 +108,8 @@ try {
   }
   env.API_GATEWAY_URL = env.GATEWAY_URL;
   for (const name of names) {
-    const mode = testProductionAuth && name === 'auth-service' ? 'production' : name === 'media-service' ? 'development' : 'test';
+    const mode = testProductionAuth && name === 'auth-service' ? 'production'
+      : ['media-service', 'marketplace-service'].includes(name) ? 'development' : 'test';
     launch(name, process.execPath, [entrypoints[name] || 'src/server.js'], { cwd: path.join(root, 'services', name), env: { ...env, NODE_ENV: mode, PORT: String(ports[name]) } });
   }
   let ready = false;

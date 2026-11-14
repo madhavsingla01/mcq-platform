@@ -3,7 +3,6 @@ import AppRouter from './routes/AppRouter';
 import { useAuthStore } from './store/authStore';
 import { useUIStore } from './store/uiStore';
 import { useSettingsStore } from './store/settingsStore';
-import { MotionConfig } from 'framer-motion';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import { CustomDialogContainer } from './components/ui';
 import UploadPanel from './components/upload/UploadPanel';
@@ -36,14 +35,13 @@ function App() {
 
   return (
     <ErrorBoundary fullPage>
-      <MotionConfig reducedMotion={reducedMotion ? 'always' : 'user'}>
       <div className="App">
         <AppRouter />
         <UploadPanel />
         <CustomDialogContainer />
         <Toaster
           position="bottom-right"
-          theme="dark"
+          theme={theme === 'light' ? 'light' : 'dark'}
           richColors
           closeButton
           duration={3500}
@@ -51,7 +49,6 @@ function App() {
           mobileOffset="16px"
         />
       </div>
-      </MotionConfig>
     </ErrorBoundary>
   );
 }

@@ -4,6 +4,15 @@ import { requireAuth } from '../middleware/auth.middleware.js';
 import { receiveImage, verifyImageSignature } from '../middleware/upload.middleware.js';
 import { requireMediaAuthor } from '../services/clipAccess.service.js';
 import { clipCapabilities, receiveClip, uploadClip, importClipImage, getClip, retryClip, deleteClip, validateClipReferences, requestClipAccess, streamClip } from '../controllers/clip.controller.js';
+import {
+  initiateAsset,
+  receiveEducationalUpload,
+  uploadAsset,
+  getAssetStatus,
+  updateAssetStatus,
+  getAssetAccess,
+  streamAssetContent,
+} from '../controllers/educationalAsset.controller.js';
 
 const router = Router();
 router.get('/clip-capabilities', clipCapabilities);
@@ -19,6 +28,15 @@ router.delete('/clips/:id', requireMediaAuthor, deleteClip);
 router.post('/images', requireAuth, receiveImage, verifyImageSignature, uploadImage);
 router.post('/validate-url', requireAuth, validateUrl);
 router.get('/assets', requireAuth, getMyMedia);
+
+// Educational Resource Asset Routes (Milestone 1)
+router.post('/assets/initiate', requireAuth, initiateAsset);
+router.post('/assets/:id/upload', receiveEducationalUpload, uploadAsset);
+router.get('/assets/:id/status', requireAuth, getAssetStatus);
+router.patch('/assets/:id/status', updateAssetStatus);
+router.get('/assets/:id/access', requireAuth, getAssetAccess);
+router.get('/assets/:id/content', streamAssetContent);
+
 router.delete('/assets/:id', requireAuth, deleteMyMedia);
 router.get('/assets/:id/:variant?', getAsset);
 

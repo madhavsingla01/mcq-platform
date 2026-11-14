@@ -22,6 +22,7 @@ Start here for local setup. See the [modernization documentation](docs/README.md
   - **Message Service** (`:5006`): Direct messaging, inbox conversations & quiz challenge invites
   - **Media Service** (`:5007`): Secure image processing, WebP variants, thumbnails, URL validation & optimized delivery
   - **Admin Service** (`:5008`): Role-based administration, moderation, user controls, and audit logs
+  - **AI Integration Service** (`:5014`): Authenticated AI integration boundary and service-to-service client; provider connectors are not configured
 
 ---
 

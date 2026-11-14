@@ -10,7 +10,7 @@
     "test:invariants": "node --test tests/invariants/",
     "test:concurrency": "node --test tests/security/concurrency-ratelimit.test.mjs",
     "test:load": "node tests/performance/load-runner.mjs",
-    "test:services": "npm --prefix services/api-gateway test && npm --prefix services/auth-service test && npm --prefix services/quiz-service test && npm --prefix services/parser-service test && npm --prefix services/attempt-service test && npm --prefix services/social-service test && npm --prefix services/social-feed-service test && npm --prefix services/social-interactions-service test && npm --prefix services/social-comments-service test && npm --prefix services/message-service test && npm --prefix services/media-service test && npm --prefix services/admin-service test && npm --prefix services/challenge-service test && npm --prefix services/marketplace-service test",
+    "test:services": "npm --prefix services/api-gateway test && npm --prefix services/auth-service test && npm --prefix services/quiz-service test && npm --prefix services/parser-service test && npm --prefix services/attempt-service test && npm --prefix services/social-service test && npm --prefix services/social-feed-service test && npm --prefix services/social-interactions-service test && npm --prefix services/social-comments-service test && npm --prefix services/message-service test && npm --prefix services/media-service test && npm --prefix services/admin-service test && npm --prefix services/challenge-service test && npm --prefix services/marketplace-service test && npm --prefix services/ai-integration-service test",
     "test:ci": "npm run test:unit && npm run test:services && npm run test:media:ui && npm run desktop:build && npm run mobile:build",
     "security:audit": "node scripts/audit-dependencies.mjs",
     "test:integration": "node scripts/verify-stack.mjs",
@@ -43,6 +43,7 @@
     "message:dev": "npm --prefix services/message-service run dev",
     "media:dev": "npm --prefix services/media-service run dev",
     "admin:dev": "npm --prefix services/admin-service run dev",
-    "challenge:dev": "npm --prefix services/challenge-service run dev"
+    "challenge:dev": "npm --prefix services/challenge-service run dev",
+    "ai:dev": "npm --prefix services/ai-integration-service run dev"
   }
 }

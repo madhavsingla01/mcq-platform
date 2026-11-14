@@ -1,6 +1,8 @@
 import { ExcelParserStrategy } from './ExcelParserStrategy.js';
 import { CsvParserStrategy } from './CsvParserStrategy.js';
 import { JsonParserStrategy } from './JsonParserStrategy.js';
+import { PdfParserStrategy } from './PdfParserStrategy.js';
+import { BundleParserStrategy } from './BundleParserStrategy.js';
 import { AppError } from '../../../middleware/error.middleware.js';
 
 /**
@@ -15,6 +17,8 @@ class ParserRegistryImpl {
     this.register(new ExcelParserStrategy());
     this.register(new CsvParserStrategy());
     this.register(new JsonParserStrategy());
+    this.register(new PdfParserStrategy());
+    this.register(new BundleParserStrategy());
   }
 
   /**
@@ -59,7 +63,7 @@ class ParserRegistryImpl {
    * @returns {string[]}
    */
   getSupportedTypes() {
-    const commonTypes = ['xlsx', 'xls', 'csv', 'tsv', 'json'];
+    const commonTypes = ['xlsx', 'xls', 'csv', 'tsv', 'json', 'pdf', 'bundle', 'zip'];
     return commonTypes.filter((t) => this.strategies.some((s) => s.supports(t)));
   }
 }

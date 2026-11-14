@@ -2532,6 +2532,7 @@
 .settings-calendar-day[data-level='4'] { background: var(--color-primary); }
 .settings-calendar-legend { display: flex; align-items: center; gap: 4px; }
 .settings-submission-calendar summary { width: fit-content; padding-block: 5px; cursor: pointer; }
+.settings-profile-images-section .settings-section-body { container-type: inline-size; }
 .settings-profile-images-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2593,8 +2594,9 @@
   width: 100%;
   justify-content: flex-start;
 }
-.settings-profile-banner-actions { display: flex; min-height: 32px; align-items: center; justify-content: space-between; gap: 12px; }
+.settings-profile-banner-actions { display: flex; min-width: 0; min-height: 32px; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .settings-profile-image-actions .settings-banner-btn-group { flex-wrap: wrap; }
+.settings-profile-banner-control .settings-banner-btn-group { flex-wrap: wrap; }
 .settings-profile-image-item .settings-btn-remove-avatar {
   color: var(--color-text-secondary, #9ca3af);
 }
@@ -2668,6 +2670,9 @@
   .settings-profile-bio-field { grid-column: auto; }
   .settings-profile-visibility { align-items: flex-start; flex-direction: column; }
   .settings-profile-image-item { padding: 14px; }
+}
+@container (max-width: 720px) {
+  .settings-profile-images-grid { grid-template-columns: minmax(0, 1fr); }
 }
 .settings-profile-image-item {
   transition: border-color 160ms ease;

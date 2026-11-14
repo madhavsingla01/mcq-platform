@@ -1,7 +1,6 @@
 import { rankSearchResults } from '../../../components/search/rankSearchResults';
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
   User,
   Shield,
@@ -151,7 +150,6 @@ export function SettingsSidebar({
         )}
       </div>
 
-      {/* Category Nav List with Framer Motion Liquid Active Pill */}
       <nav className="settings-sidebar-nav" aria-label="Settings categories">
         {filteredCategories.length === 0 ? (
           <div className="p-4 text-center text-xs text-gray-500">
@@ -170,13 +168,6 @@ export function SettingsSidebar({
                 aria-current={isActive ? 'page' : undefined}
                 onClick={() => onSelectCategory(cat.id)}
               >
-                {isActive && (
-                  <motion.div
-                    layoutId="sidebarActivePill"
-                    className="settings-nav-item-active-pill"
-                    transition={{ type: 'spring', stiffness: 450, damping: 35 }}
-                  />
-                )}
                 <div className="settings-nav-item-icon-box">
                   <Icon size={17} />
                 </div>

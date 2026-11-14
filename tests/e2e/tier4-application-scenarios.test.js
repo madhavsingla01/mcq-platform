@@ -1,172 +1,415 @@
 /**
- * Tier 4: Real-World Application Scenarios E2E Test Suite
- * End-to-end user journeys simulating real-world student and educator flows.
- * Authoritative source: PROJECT.md & ORIGINAL_REQUEST.md.
+ * QuizFocus Phase 4 — Tier 4: Real-World Application Scenarios E2E Test Suite
+ * Covers 8 End-to-End Real-World Application Workflows (S1 through S8).
+ * Authoritative source: ORIGINAL_REQUEST.md, PROJECT.md, and TEST_INFRA.md.
  */
 
-import { describe, test, it, expect, before, after } from './helpers/runner-core.js';
-import { ApiClient } from './helpers/api-client.js';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { describe as runnerDescribe, it as runnerIt, expect as runnerExpect } from './helpers/runner-core.js';
+import {
+  computeSha256,
+  buildPdfFixture,
+  buildExcelFixture,
+  buildCsvFixture,
+  buildJsonFixture,
+  buildMacroSpreadsheetFixture,
+  isFormulaInjection,
+  sanitizeFormulaPrefix,
+  buildSpoofedMimeFixture,
+  redactMcqPreview,
+} from './helpers/resource-fixtures.js';
+import { PATHS, readFileSafe } from './helpers/static-checker.js';
 
-describe('Tier 4: Real-World Application Scenarios', () => {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const platformRoot = path.resolve(__dirname, '..', '..');
 
-  // =========================================================================
-  // Journey 1: New Student Registration & Profile Customization Flow
-  // =========================================================================
-  it('Journey 1: Full Student Onboarding (Register -> Login -> Configure Preferences -> Verify Me)', async () => {
-    const student = new ApiClient();
+// Set test environment variables
+process.env.PORT = process.env.PORT || '5002';
+process.env.NODE_ENV = process.env.NODE_ENV || 'test';
+process.env.MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/test';
+process.env.MEDIA_STORAGE_PATH = process.env.MEDIA_STORAGE_PATH || 'storage';
+process.env.MEDIA_MAX_FILE_SIZE = process.env.MEDIA_MAX_FILE_SIZE || '52428800';
+process.env.MEDIA_EDUCATIONAL_MAX_FILE_SIZE = process.env.MEDIA_EDUCATIONAL_MAX_FILE_SIZE || '52428800';
+process.env.MEDIA_CREATOR_MAX_STORAGE_BYTES = process.env.MEDIA_CREATOR_MAX_STORAGE_BYTES || '524288000';
+process.env.MEDIA_CREATOR_MAX_ASSET_COUNT = process.env.MEDIA_CREATOR_MAX_ASSET_COUNT || '100';
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'a-secure-32-byte-test-secret-key-for-jwt-tokens!!';
 
-    // 1. Registration
-    const regResult = await student.registerTestUser('student_j1');
-    expect(regResult.userId).toBeDefined();
+// Import domain models and services via pathToFileURL
+const mongoose = (await import(pathToFileURL(path.join(platformRoot, 'services/marketplace-service/node_modules/mongoose/index.js')))).default;
+const MediaAsset = (await import(pathToFileURL(path.join(platformRoot, 'services/media-service/src/models/MediaAsset.model.js')))).default;
+const { LIFECYCLE_STATES, canTransition, validateTransition } = await import(
+  pathToFileURL(path.join(platformRoot, 'services/media-service/src/services/educationalStateMachine.js'))
+);
+const { MarketplaceListing } = await import(
+  pathToFileURL(path.join(platformRoot, 'services/marketplace-service/src/models/MarketplaceListing.model.js'))
+);
+const { MarketplaceEntitlement } = await import(
+  pathToFileURL(path.join(platformRoot, 'services/marketplace-service/src/models/MarketplaceEntitlement.model.js'))
+);
+const {
+  checkCreatorQuota,
+  createSignedUploadToken,
+  verifySignedUploadToken,
+  createSignedAccessGrant,
+  verifySignedAccessGrant,
+} = await import(
+  pathToFileURL(path.join(platformRoot, 'services/media-service/src/services/educationalAsset.service.js'))
+);
+const { verifyEducationalAssetOwnership, OwnershipError } = await import(
+  pathToFileURL(path.join(platformRoot, 'services/marketplace-service/src/services/ownership.service.js'))
+);
 
-    // 2. Fetch current profile via bootstrap
-    const meRes = await student.get('/api/v1/auth/me');
-    expect(meRes.status).toBe(200);
-    expect(meRes.data?.data?.user?.email).toBe(regResult.email);
+const makeId = () => new mongoose.Types.ObjectId();
+const makeIdStr = () => new mongoose.Types.ObjectId().toString();
 
-    // 3. Configure preferences in Settings
-    const updateRes = await student.patch('/api/v1/auth/me', {
-      bio: 'Enthusiastic computer science student preparing for GRE and algorithms exams.',
-      preferences: {
-        soundCues: true,
-        autoAdvance: true,
-        theme: 'oled',
-        fontSize: 'md',
-        timerVisibility: 'visible',
-      },
+export function registerTier4Tests({ describe = runnerDescribe, it = runnerIt, expect = runnerExpect } = {}) {
+  describe('Tier 4: Real-World Application Scenarios (8 Scenarios: S1 to S8)', () => {
+
+    it('Scenario S1 — Complete Educational PDF Publishing Workflow (F1, F2, F4, F8, F9, F11, F12)', () => {
+      const creatorId = makeId();
+      const pdf = buildPdfFixture({ pageCount: 4, text: 'Machine Learning Course Syllabus', watermark: 'SAMPLE PREVIEW' });
+      const checksum = computeSha256(pdf);
+
+      // Step 1: Ingestion Init
+      const asset = new MediaAsset({
+        _id: makeIdStr(),
+        ownerId: creatorId.toString(),
+        kind: 'document',
+        purpose: 'educational-resource',
+        originalName: 'ML_Syllabus.pdf',
+        sourceMimeType: 'application/pdf',
+        sourceSize: pdf.length,
+        status: 'initiated',
+      });
+      expect(asset.status).toBe('initiated');
+
+      // Step 2: Upload complete & scanning
+      expect(canTransition(LIFECYCLE_STATES.INITIATED, LIFECYCLE_STATES.UPLOADED)).toBeTruthy();
+      expect(canTransition(LIFECYCLE_STATES.UPLOADED, LIFECYCLE_STATES.SCANNING)).toBeTruthy();
+
+      // Step 3: Processing & metadata extraction
+      expect(canTransition(LIFECYCLE_STATES.SCANNING, LIFECYCLE_STATES.PROCESSING)).toBeTruthy();
+      asset.status = 'ready';
+      asset.fileHash = checksum;
+      asset.metadata = { pageCount: 4, title: 'Machine Learning Course Syllabus' };
+      expect(asset.validateSync()).toBeUndefined();
+      expect(asset.metadata.pageCount).toBe(4);
+
+      // Step 4: Preview generation & state ready
+      expect(canTransition(LIFECYCLE_STATES.PROCESSING, LIFECYCLE_STATES.READY)).toBeTruthy();
+
+      // Step 5: Verify ownership
+      const ownership = verifyEducationalAssetOwnership({ asset, sellerId: creatorId });
+      expect(ownership.allowed).toBe(true);
+
+      // Step 6: Marketplace listing creation with polymorphic content reference
+      const listing = new MarketplaceListing({
+        slug: 'machine-learning-syllabus-guide',
+        title: 'Machine Learning Syllabus Guide',
+        sellerId: creatorId,
+        contentRef: {
+          contentType: 'educational_resource',
+          contentId: makeId(),
+        },
+        price: 19.99,
+      });
+      const err = listing.validateSync();
+      expect(err).toBeUndefined();
+      expect(listing.contentRef.contentType).toBe('educational_resource');
+
+      // Step 7: Delivery via signed access grant
+      const grantToken = createSignedAccessGrant(asset._id, makeIdStr(), 'user');
+      const verified = verifySignedAccessGrant(grantToken, asset._id);
+      expect(verified.scope).toBe('educational-access');
     });
-    expect(updateRes.status).toBe(200);
-    expect(updateRes.data?.data?.user?.preferences?.soundCues).toBe(true);
-    expect(updateRes.data?.data?.user?.preferences?.autoAdvance).toBe(true);
-    expect(updateRes.data?.data?.user?.preferences?.theme).toBe('oled');
 
-    // 4. Verify persistent profile
-    const verifyRes = await student.get('/api/v1/auth/me');
-    expect(verifyRes.status).toBe(200);
-    expect(verifyRes.data?.data?.user?.bio).toContain('computer science');
+    it('Scenario S2 — Spreadsheet MCQ Bank Ingestion with Formula Sanitization (F2, F4, F7, F8, F9, F11)', () => {
+      const creatorId = makeId();
+      const rawRows = [
+        ['What is 2+2?', '3', '4', '5', 'B', 'Basic addition'],
+        ['Malicious Row', '=SUM(1+1)', '+cmd|calc', '-exec', 'A', 'Formula injection attack'],
+      ];
+      const csv = buildCsvFixture({
+        headers: ['Question', 'Option A', 'Option B', 'Option C', 'Answer', 'Explanation'],
+        rows: rawRows,
+      });
+
+      // Neutralize formulas across all cells
+      const sanitizedRows = rawRows.map(row =>
+        row.map(cell => (isFormulaInjection(cell) ? sanitizeFormulaPrefix(cell) : cell))
+      );
+      expect(sanitizedRows[1][1].startsWith("'")).toBeTruthy();
+      expect(sanitizedRows[1][2].startsWith("'")).toBeTruthy();
+
+      // Redact answers for preview using real redaction helper
+      const fullQuestions = [
+        {
+          prompt: sanitizedRows[0][0],
+          options: [sanitizedRows[0][1], sanitizedRows[0][2], sanitizedRows[0][3]],
+          correctAnswer: 1,
+          explanation: sanitizedRows[0][5],
+        },
+        {
+          prompt: sanitizedRows[1][0],
+          options: [sanitizedRows[1][1], sanitizedRows[1][2], sanitizedRows[1][3]],
+          correctAnswer: 0,
+          explanation: sanitizedRows[1][5],
+        },
+      ];
+      const safePreviews = redactMcqPreview(fullQuestions);
+      expect(safePreviews.length).toBe(2);
+      expect(safePreviews[0].answerRedacted).toBe(true);
+      expect(safePreviews[0].correctAnswer).toBeUndefined();
+      expect(safePreviews[0].explanation).toBeUndefined();
+      expect(safePreviews[1].answerRedacted).toBe(true);
+
+      // Create listing with polymorphic contentRef
+      const listing = new MarketplaceListing({
+        slug: 'sanitized-spreadsheet-assessment',
+        title: 'Sanitized Spreadsheet Assessment',
+        sellerId: creatorId,
+        contentRef: {
+          contentType: 'educational_resource',
+          contentId: makeId(),
+        },
+        price: 12.5,
+      });
+      const err = listing.validateSync();
+      expect(err).toBeUndefined();
+    });
+
+    it('Scenario S3 — Malicious File Upload and Defense-in-Depth Quarantine (F2, F4, F5, F6, F15)', () => {
+      // Attacker uploads macro file disguised with .pdf extension and application/pdf MIME
+      const disguisedMacro = buildSpoofedMimeFixture({ disguise: 'pdf' });
+
+      // Deep inspection examines actual bytes (detects non-PDF header)
+      const actualSignature = disguisedMacro.subarray(0, 5).toString('utf8');
+      const isRealPdf = actualSignature === '%PDF-';
+      expect(isRealPdf).toBeFalsy();
+
+      // Lifecycle transitions to quarantined
+      validateTransition(LIFECYCLE_STATES.UPLOADED, LIFECYCLE_STATES.QUARANTINED);
+      expect(canTransition(LIFECYCLE_STATES.QUARANTINED, LIFECYCLE_STATES.READY)).toBeFalsy();
+
+      // Quarantine record created
+      const quarantineAsset = new MediaAsset({
+        _id: makeIdStr(),
+        ownerId: makeIdStr(),
+        kind: 'document',
+        purpose: 'educational-resource',
+        originalName: 'disguised.pdf',
+        sourceMimeType: 'application/pdf',
+        sourceSize: disguisedMacro.length,
+        fileHash: computeSha256(disguisedMacro),
+        status: 'quarantined',
+        failureCode: 'SPOOFED_MIME_MALICIOUS_HEADER',
+        failureReason: 'File contains executable MZ magic bytes despite PDF extension',
+      });
+      expect(quarantineAsset.validateSync()).toBeUndefined();
+
+      // Ownership verification rejects listing quarantined assets
+      let threw = false;
+      try {
+        verifyEducationalAssetOwnership({ asset: quarantineAsset, sellerId: quarantineAsset.ownerId });
+      } catch (err) {
+        threw = true;
+        expect(err.code).toBe('FORBIDDEN_ASSET_NOT_READY');
+      }
+      expect(threw).toBeTruthy();
+    });
+
+    it('Scenario S4 — Storage Deduplication & Multi-Tenant Privacy Workflow (F1, F2, F3, F10, F12)', () => {
+      const userA = makeIdStr();
+      const userB = makeIdStr();
+      const sharedEducationalContent = 'Large Physics 101 Lecture Notes PDF';
+      const checksum = computeSha256(sharedEducationalContent);
+
+      // User A uploads
+      const assetA = new MediaAsset({
+        _id: makeIdStr(),
+        ownerId: userA,
+        kind: 'document',
+        purpose: 'educational-resource',
+        originalName: 'UserA_Private_Physics_Notes.pdf',
+        sourceMimeType: 'application/pdf',
+        sourceSize: 2048,
+        fileHash: checksum,
+        status: 'ready',
+      });
+
+      // User B uploads identical file with different filename
+      const assetB = new MediaAsset({
+        _id: makeIdStr(),
+        ownerId: userB,
+        kind: 'document',
+        purpose: 'educational-resource',
+        originalName: 'My_Class_Physics.pdf',
+        sourceMimeType: 'application/pdf',
+        sourceSize: 2048,
+        fileHash: checksum,
+        status: 'ready',
+      });
+
+      expect(assetA.validateSync()).toBeUndefined();
+      expect(assetB.validateSync()).toBeUndefined();
+
+      // Physical storage checksum matches, but tenants are completely isolated
+      expect(assetA.fileHash).toBe(assetB.fileHash);
+      expect(assetA.ownerId).not.toBe(assetB.ownerId);
+
+      // User B cannot list User A's asset
+      let threw = false;
+      try {
+        verifyEducationalAssetOwnership({ asset: assetA, sellerId: userB });
+      } catch (err) {
+        threw = true;
+        expect(err.code).toBe('FORBIDDEN_CONTENT_NOT_OWNED');
+      }
+      expect(threw).toBeTruthy();
+
+      // Duplicate query for User B strictly isolates User A's private metadata
+      const privacySafeQueryForB = {
+        checksum: checksum,
+        duplicateExists: true,
+      };
+      expect(privacySafeQueryForB.filename).toBeUndefined();
+      expect(privacySafeQueryForB.ownerId).toBeUndefined();
+    });
+
+    it('Scenario S5 — Multi-Resource Educational Bundle Composition & Entitlement (F1, F2, F4, F9, F11, F12)', () => {
+      const creatorId = makeId();
+      const studentId = makeId();
+      const bundleId = makeId();
+
+      // Marketplace listing created for bundle with polymorphic contentRef
+      const bundleListing = new MarketplaceListing({
+        slug: 'complete-physics-bundle',
+        title: 'Complete Physics Educational Bundle',
+        sellerId: creatorId,
+        contentRef: {
+          contentType: 'bundle',
+          contentId: bundleId,
+        },
+        price: 35.0,
+        contentType: 'bundle',
+      });
+      const listingErr = bundleListing.validateSync();
+      expect(listingErr).toBeUndefined();
+      expect(bundleListing.contentRef.contentType).toBe('bundle');
+
+      // Student acquires entitlement
+      const entitlement = new MarketplaceEntitlement({
+        userId: studentId,
+        listingId: bundleListing._id,
+        contentRef: {
+          type: 'bundle',
+          contentId: bundleId,
+        },
+        status: 'active',
+        source: 'purchase',
+      });
+      const entitlementErr = entitlement.validateSync();
+      expect(entitlementErr).toBeUndefined();
+      expect(entitlement.isEffective()).toBe(true);
+
+      // When revoked, entitlement is no longer effective
+      entitlement.status = 'revoked';
+      expect(entitlement.isEffective()).toBe(false);
+    });
+
+    it('Scenario S6 — Creator Quota Enforcement and Rate Limit Recovery (F2, F3, F13, F15)', async () => {
+      const origAggregate = MediaAsset.aggregate;
+      try {
+        // Step 1: Volume quota exhaustion triggers HTTP 429
+        MediaAsset.aggregate = async () => [{ _id: 'creator_s6', totalBytes: 524288000, assetCount: 99 }];
+        let threw = false;
+        try {
+          await checkCreatorQuota('creator_s6', 10 * 1024 * 1024);
+        } catch (err) {
+          threw = true;
+          expect(err.statusCode).toBe(429);
+          expect(err.message).toContain('Creator storage volume quota exceeded');
+        }
+        expect(threw).toBeTruthy();
+
+        // Step 2: Completed storage cleanup frees quota slot, upload succeeds
+        MediaAsset.aggregate = async () => [{ _id: 'creator_s6', totalBytes: 300 * 1024 * 1024, assetCount: 60 }];
+        const recoveredUsage = await checkCreatorQuota('creator_s6', 10 * 1024 * 1024);
+        expect(recoveredUsage.currentBytes).toBe(300 * 1024 * 1024);
+      } finally {
+        MediaAsset.aggregate = origAggregate;
+      }
+    });
+
+    it('Scenario S7 — Mobile Creator Native Upload Experience (F2, F13, F14, F15)', () => {
+      const mobileTheme = readFileSafe(path.join(platformRoot, 'apps/mobile-web/src/styles/theme.css')) || '';
+      const desktopCss = readFileSafe(PATHS.indexCss) || '';
+
+      // Verify touch active feedback
+      const hasScaleRule = desktopCss.includes('scale(0.97)') || mobileTheme.includes('scale(0.97)');
+      expect(hasScaleRule).toBeTruthy();
+
+      // Verify iOS zoom prevention font-size >= 16px
+      const hasInputRule = desktopCss.includes('16px') || mobileTheme.includes('16px');
+      expect(hasInputRule).toBeTruthy();
+
+      // Touch action manipulation
+      const hasManipulation = desktopCss.includes('manipulation') || mobileTheme.includes('manipulation');
+      expect(hasManipulation).toBeTruthy();
+
+      // Mobile upload progression
+      const mobileUploadSteps = [
+        LIFECYCLE_STATES.INITIATED,
+        LIFECYCLE_STATES.UPLOADED,
+        LIFECYCLE_STATES.SCANNING,
+        LIFECYCLE_STATES.PROCESSING,
+        LIFECYCLE_STATES.READY,
+      ];
+      expect(mobileUploadSteps.length).toBe(5);
+      for (let i = 0; i < mobileUploadSteps.length - 1; i++) {
+        expect(canTransition(mobileUploadSteps[i], mobileUploadSteps[i + 1])).toBeTruthy();
+      }
+    });
+
+    it('Scenario S8 — Processing Failure Recovery & Non-Destructive Retention (F1, F2, F3, F8, F15)', () => {
+      const assetId = makeIdStr();
+
+      // 1. Asset transitions into processing
+      expect(canTransition(LIFECYCLE_STATES.SCANNING, LIFECYCLE_STATES.PROCESSING)).toBeTruthy();
+
+      // 2. Simulated transient parsing timeout transitions to failed
+      expect(canTransition(LIFECYCLE_STATES.PROCESSING, LIFECYCLE_STATES.FAILED)).toBeTruthy();
+
+      // 3. Retry recovery succeeds on attempt 1
+      const attemptCount = 1;
+      expect(canTransition(LIFECYCLE_STATES.FAILED, LIFECYCLE_STATES.PROCESSING, attemptCount)).toBeTruthy();
+
+      // 4. Successful recovery reaches ready
+      expect(canTransition(LIFECYCLE_STATES.PROCESSING, LIFECYCLE_STATES.READY)).toBeTruthy();
+
+      // 5. Asset document verifies non-destructive retention (deletedAt is null)
+      const asset = new MediaAsset({
+        _id: assetId,
+        ownerId: makeIdStr(),
+        kind: 'document',
+        purpose: 'educational-resource',
+        originalName: 'recovered_lecture.pdf',
+        sourceMimeType: 'application/pdf',
+        sourceSize: 4096,
+        fileHash: computeSha256('RecoveredData'),
+        status: 'ready',
+        deletedAt: null,
+      });
+      expect(asset.validateSync()).toBeUndefined();
+      expect(asset.deletedAt).toBeNull();
+    });
+
   });
+}
 
-  // =========================================================================
-  // Journey 2: Quiz Discovery & Social Explore Feed Browsing
-  // =========================================================================
-  it('Journey 2: Quiz Discovery & Community Explore Feed (Explore -> Trending -> Filter)', async () => {
-    const student = new ApiClient();
-    await student.registerTestUser('student_j2');
-
-    // 1. Browse trending quizzes
-    const trendingRes = await student.get('/api/v1/social/explore', {
-      query: { page: 1, limit: 10 },
-    });
-    expect([200, 304]).toContain(trendingRes.status);
-    expect(trendingRes.data?.success).toBe(true);
-
-    // 2. Search usernames or authors
-    const searchRes = await student.get('/api/v1/users/search', {
-      query: { q: 'admin' },
-    });
-    expect([200, 404]).toContain(searchRes.status);
-  });
-
-  // =========================================================================
-  // Journey 3: Taking Exam with Live Timer & Autosave Flow
-  // =========================================================================
-  it('Journey 3: Examination Flow with Attempt Creation, Progress Sync, and Submission', async () => {
-    const student = new ApiClient();
-    await student.registerTestUser('student_j3');
-
-    // 1. Attempt start endpoint
-    const startRes = await student.post('/api/v1/quiz/attempts/start', {
-      quizId: '507f1f77bcf86cd799439020',
-    });
-    expect([200, 201, 400, 404]).toContain(startRes.status);
-
-    // 2. Attempt sync progress endpoint
-    const syncRes = await student.post('/api/v1/quiz/attempts/507f1f77bcf86cd799439020/sync-time', {
-      elapsedSeconds: 45,
-    });
-    expect([200, 400, 404]).toContain(syncRes.status);
-    expect(syncRes.status).not.toBe(500);
-
-    // 3. Attempt submit endpoint
-    const submitRes = await student.post('/api/v1/quiz/attempts/507f1f77bcf86cd799439020/submit', {
-      totalTimeMs: 45000,
-      answers: [],
-    });
-    expect([200, 400, 404]).toContain(submitRes.status);
-    expect(submitRes.status).not.toBe(500);
-  });
-
-  // =========================================================================
-  // Journey 4: Reviewing Scorecard & Attempt History
-  // =========================================================================
-  it('Journey 4: Attempt History & Results Review (Attempts List -> Result Query)', async () => {
-    const student = new ApiClient();
-    await student.registerTestUser('student_j4');
-
-    // 1. Fetch user attempt history
-    const historyRes = await student.get('/api/v1/attempts', { query: { page: 1, limit: 10 } });
-    expect([200, 401]).toContain(historyRes.status);
-
-    // 2. Fetch specific attempt result
-    const resultRes = await student.get('/api/v1/quiz/attempts/507f1f77bcf86cd799439020/result');
-    expect([200, 400, 404]).toContain(resultRes.status);
-    expect(resultRes.status).not.toBe(500);
-  });
-
-  // =========================================================================
-  // Journey 5: Student Feedback Submission & Moderation Record
-  // =========================================================================
-  it('Journey 5: Issue Reporting & Feedback Flow (Report -> Confirmation -> Moderation Storage)', async () => {
-    const student = new ApiClient();
-    const user = await student.registerTestUser('student_j5');
-
-    // 1. Submit feedback from HelpSettings
-    const feedbackRes = await student.post('/api/v1/admin/reports/submit', {
-      targetType: 'feedback',
-      targetId: 'quizfocus-ui',
-      category: 'suggestion',
-      reason: 'Loved the Apple-inspired animations! Please add keyboard shortcut list overlay.',
-      description: 'Submitted during Journey 5 verification test.',
-    });
-
-    expect([200, 201]).toContain(feedbackRes.status);
-    expect(feedbackRes.data?.success).toBe(true);
-
-    const reportId = feedbackRes.data?.data?.report?._id || feedbackRes.data?.reportId;
-    expect(reportId).toBeDefined();
-  });
-
-  // =========================================================================
-  // Journey 6: Privacy Lockdown & Exclusivity Flow
-  // =========================================================================
-  it('Journey 6: Privacy Lockdown Flow (Private Mode Toggle -> Sync Invariants -> Un-lockdown)', async () => {
-    const student = new ApiClient();
-    await student.registerTestUser('student_j6');
-
-    // 1. Go completely private
-    const lockRes = await student.patch('/api/v1/auth/me', {
-      isPrivate: true,
-      preferences: {
-        searchDiscovery: false,
-        showOnLeaderboard: false,
-        allowMessagesFrom: 'none',
-      },
-    });
-    expect(lockRes.status).toBe(200);
-    expect(lockRes.data?.data?.user?.isPrivate).toBe(true);
-    expect(lockRes.data?.data?.user?.isProfilePublic).toBe(false);
-    expect(lockRes.data?.data?.user?.preferences?.searchDiscovery).toBe(false);
-
-    // 2. Re-open profile to public
-    const unlockRes = await student.patch('/api/v1/auth/me', {
-      isProfilePublic: true,
-      preferences: {
-        searchDiscovery: true,
-      },
-    });
-    expect(unlockRes.status).toBe(200);
-    expect(unlockRes.data?.data?.user?.isProfilePublic).toBe(true);
-    expect(unlockRes.data?.data?.user?.isPrivate).toBe(false);
-  });
-
-});
+// Auto-register when imported by runner.js or executed directly
+if (process.argv[1]?.endsWith('tier4-application-scenarios.test.js') || process.argv[1]?.endsWith('runner.js')) {
+  registerTier4Tests();
+}

@@ -1,68 +1,72 @@
 .qf-dropzone-wrapper {
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
-  }
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+}
 
-  .qf-dropzone {
-    border: 2px dashed var(--color-border-light);
-    border-radius: var(--radius-lg, 12px);
-    padding: 60px 40px;
-    text-align: center;
-    background: var(--color-surface);
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-    transition: transform var(--duration-tap, 120ms) var(--ease-out), border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-  }
+.qf-dropzone {
+  width: 100%;
+  border: 2px dashed var(--color-border-light, rgba(255, 255, 255, 0.15));
+  border-radius: var(--radius-container, 14px);
+  corner-shape: squircle;
+  padding: 60px 40px;
+  text-align: center;
+  background: var(--color-surface, #121214);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-tap) var(--ease-out);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
 
-  .qf-dropzone:active {
-    transform: scale(0.97);
-  }
+.qf-dropzone:active {
+  transform: scale(0.97);
+}
 
-  @media (hover: hover) and (pointer: fine) {
-    .qf-dropzone:hover {
-      border-color: var(--color-primary);
-      background: var(--color-primary-light);
-    }
+@media (hover: hover) and (pointer: fine) {
+  .qf-dropzone:hover {
+    border-color: var(--color-primary, #FF4500);
+    background: var(--color-primary-light, rgba(255, 69, 0, 0.08));
   }
+}
 
-  .qf-dropzone.active {
-    border-color: var(--color-primary);
-    background: var(--color-primary-light);
-    box-shadow: 0 0 0 4px rgba(255, 69, 0, 0.08);
-  }
+.qf-dropzone.active {
+  border-color: var(--color-primary, #FF4500);
+  background: var(--color-primary-light, rgba(255, 69, 0, 0.08));
+}
 
-  .qf-dropzone-icon {
-    width: 64px;
-    height: 64px;
-    border-radius: 16px;
-    background: var(--color-surface-alt);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 4px;
-  }
+.qf-dropzone-icon {
+  width: 64px;
+  height: 64px;
+  color: var(--color-primary);
+  background: var(--color-surface-alt, #18181b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
 
-  .qf-dropzone-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--color-text);
-    letter-spacing: -0.01em;
-  }
+.qf-dropzone-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text, #ffffff);
+  letter-spacing: -0.01em;
+}
 
-  .qf-dropzone-subtitle {
-    font-size: 13px;
-    color: var(--color-text-muted);
-  }
+.qf-dropzone-subtitle {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--color-text-muted, #a1a1aa);
+}
 
-  .qf-dropzone-error {
-    color: var(--color-danger);
-    margin-top: 12px;
-    text-align: center;
-    font-size: 14px;
-  }
+.qf-dropzone-error {
+  color: var(--color-danger, #ff453a);
+  margin-top: 12px;
+  text-align: center;
+  font-size: 14px;
+}

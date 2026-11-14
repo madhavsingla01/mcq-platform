@@ -33,6 +33,12 @@ const Notifications = lazy(() => import('../pages/Notifications/Notifications'))
 const Messages = lazy(() => import('../pages/Messages/Messages'));
 const Guide = lazy(() => import('../pages/Guide/Guide'));
 
+// Marketplace Pages
+const MarketplaceCatalogPage = lazy(() => import('../pages/marketplace/MarketplaceCatalogPage'));
+const ListingDetailsPage = lazy(() => import('../pages/marketplace/ListingDetailsPage'));
+const MarketplaceLibraryPage = lazy(() => import('../pages/marketplace/MarketplaceLibraryPage'));
+const MarketplaceManagePage = lazy(() => import('../pages/marketplace/MarketplaceManagePage'));
+
 // Admin Pages
 const AdminLayout = lazy(() => import('../pages/Admin/AdminLayout'));
 const AdminOverview = lazy(() => import('../pages/Admin/AdminOverview'));
@@ -145,6 +151,12 @@ const routes = createRoutesFromElements(
     >
       <Route path="explore" handle="Explore" element={<Explore />} />
       <Route path="quizzes" handle="Explore" element={<Explore />} />
+
+      {/* Marketplace Phase 3 Routes */}
+      <Route path="marketplace" handle="Marketplace" element={<MarketplaceCatalogPage />} />
+      <Route path="marketplace/:listingId" handle="Listing Details" element={<ListingDetailsPage />} />
+      <Route path="marketplace/library" handle="Marketplace Library" element={<MarketplaceLibraryPage />} />
+      <Route path="marketplace/manage" handle="Seller Dashboard" element={<MarketplaceManagePage />} />
       <Route path="guide" handle="Guide" element={<Guide />} />
       <Route path="how-it-works" handle="Guide" element={<Guide />} />
 
@@ -245,6 +257,7 @@ const searchLabels = {
   ':profileId': 'Search this profile',
   users: 'Search users',
   content: 'Search quizzes and challenges',
+  marketplace: 'Search marketplace',
 };
 
 export default function AppRouter() {

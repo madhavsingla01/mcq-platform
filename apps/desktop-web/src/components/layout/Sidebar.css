@@ -5,23 +5,20 @@
   position: fixed;
   top: var(--app-header-height);
   left: 0;
-  background: rgba(8, 8, 10, 0.85);
-  backdrop-filter: var(--material-blur);
-  -webkit-backdrop-filter: var(--material-blur);
+  background: var(--color-surface);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.02);
   display: flex;
   flex-direction: column;
   z-index: 90;
   box-sizing: border-box;
-  transition: transform 0.25s var(--ease-out), box-shadow 0.25s ease, background 0.25s ease;
   overflow: visible;
 }
 
 .app-sidebar.open {
   width: 240px;
-  background: rgba(12, 12, 15, 0.94);
-  box-shadow: 12px 0 36px rgba(0, 0, 0, 0.85), inset -1px 0 0 rgba(255, 255, 255, 0.06);
+  background: var(--color-surface);
+  box-shadow: 12px 0 36px rgba(0, 0, 0, 0.42), inset -1px 0 0 rgba(255, 255, 255, 0.06);
   z-index: 100;
 }
 
@@ -65,8 +62,6 @@
 .sidebar-brand-mark {
   width: 36px;
   height: 36px;
-  border-radius: var(--radius-md, 8px);
-  corner-shape: squircle;
   background: var(--accent-primary, #FF4500);
   display: flex;
   align-items: center;
@@ -196,7 +191,16 @@
 }
 
 .app-sidebar:not(.open) .sidebar-nav-label {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.sidebar-nav-item:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -272,22 +276,11 @@
   pointer-events: none;
   z-index: 150;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.8);
-  animation: sidebarTooltipIn 0.12s ease-out;
-}
-
-@keyframes sidebarTooltipIn {
-  from {
-    opacity: 0;
-    transform: translateY(-50%) translateX(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(-50%) translateX(0);
-  }
 }
 
 /* Show tooltips only in collapsed state on hover */
 @media (hover: hover) and (pointer: fine) {
+
   .app-sidebar:not(.open) .sidebar-nav-item:hover .sidebar-tooltip,
   .app-sidebar:not(.open) .sidebar-user-info:hover .sidebar-tooltip,
   .app-sidebar:not(.open) .sidebar-logout-btn:hover .sidebar-tooltip {
@@ -440,6 +433,7 @@
   .app-sidebar {
     width: 260px;
     transform: translateX(-100%);
+    visibility: hidden;
     box-shadow: 6px 0 28px rgba(0, 0, 0, 0.65);
     z-index: 100;
   }
@@ -447,6 +441,7 @@
   .app-sidebar.open {
     transform: translateX(0);
     width: 260px;
+    visibility: visible;
   }
 
   .app-sidebar:not(.open) .sidebar-brand-row {

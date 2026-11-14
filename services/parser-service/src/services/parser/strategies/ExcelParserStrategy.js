@@ -7,7 +7,7 @@ import { parseExcel } from '../excelParser.js';
 export class ExcelParserStrategy extends BaseParserStrategy {
   supports(fileType) {
     const norm = String(fileType || '').toLowerCase();
-    return norm === 'xlsx' || norm === 'xls';
+    return norm === 'xlsx' || norm === 'xls' || norm === 'spreadsheet' || norm.includes('spreadsheet') || norm.includes('ms-excel');
   }
 
   async parse(filePath, options = {}) {

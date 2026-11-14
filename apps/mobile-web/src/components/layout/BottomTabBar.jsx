@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Compass, Trophy, User, Zap, X, Play, Sparkles, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Compass, Trophy, User, Zap, X, Play, Sparkles, MessageSquare, Store, UploadCloud } from 'lucide-react';
 
 export default function BottomTabBar() {
   const location = useLocation();
@@ -139,6 +139,76 @@ export default function BottomTabBar() {
               <div>
                 <div style={{ fontWeight: 600, fontSize: '15px' }}>Today's Arena Challenge</div>
                 <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>Earn 2x streak multiplier today</div>
+              </div>
+            </div>
+
+            {/* Marketplace Quick Action */}
+            <div 
+              onClick={() => {
+                setShowQuickSheet(false);
+                navigate('/marketplace');
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                padding: '14px',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-card)',
+                cursor: 'pointer',
+              }}
+            >
+              <div style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '12px',
+                background: 'rgba(255, 69, 0, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--color-accent)',
+              }}>
+                <Store size={20} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '15px' }}>Quiz Marketplace</div>
+                <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>Browse, acquire &amp; study quiz packages</div>
+              </div>
+            </div>
+
+            {/* Upload Educational Resource Quick Action */}
+            <div 
+              onClick={() => {
+                setShowQuickSheet(false);
+                navigate('/upload');
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                padding: '14px',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-card)',
+                cursor: 'pointer',
+              }}
+            >
+              <div style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '12px',
+                background: 'rgba(255, 69, 0, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--color-accent)',
+              }}>
+                <UploadCloud size={20} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '15px' }}>Upload Resource</div>
+                <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>Upload PDF, Excel, CSV, or question banks</div>
               </div>
             </div>
 

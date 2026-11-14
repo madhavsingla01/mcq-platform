@@ -7,6 +7,7 @@ import { catchAsync, AppError } from '../middleware/error.middleware.js';
 import { ParserRegistry } from '../services/parser/strategies/ParserRegistry.js';
 import { smartMapColumns } from '../services/parser/smartColumnMapper.js';
 import { validateColumnMapping } from '../services/parser/validateColumnMapping.js';
+import { memoryCache } from '../services/cache/cache.service.js';
 import { logger } from '../utils/logger.js';
 import { assertUploadAccess } from '../utils/authorizeUpload.js';
 
@@ -189,4 +190,22 @@ export const getPreview = catchAsync(async (req, res, next) => {
   });
 });
 
-export default { parseFile, applyMapping, getPreview };
+/**
+ * GET /api/v1/parser/preview/:assetId or /preview/asset/:assetId
+ * Retrieve cached SafePreviewArtifact for an educational asset.
+ */
+export const getAssetPreview = catchAsync(async (req, res, next) => {
+  const { assetId } = req.params;
+  const cached = memoryCache.get(`preview:${assetId}`);
+
+  if (!cached) {
+    return next(new AppError('Safe preview artifact not found or expired', 404));
+  }
+
+  res.json({
+    success: true,
+    data: cached,
+  });
+});
+
+export default { parseFile, applyMapping, getPreview, getAssetPreview };

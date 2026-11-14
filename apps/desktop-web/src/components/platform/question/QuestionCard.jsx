@@ -1,5 +1,5 @@
 import AccessibleMedia from '../../media/AccessibleMedia';
-import { memo, useMemo, useEffect, useRef, useId, useState } from 'react';
+import { memo, useMemo, useEffect, useLayoutEffect, useRef, useId, useState } from 'react';
 import { useQuizStore } from '../../../store/quizStore';
 import { useSettingsStore } from '../../../store/settingsStore';
 import ReactMarkdown from 'react-markdown';
@@ -25,8 +25,8 @@ function QuestionCard({ question, questionNumber }) {
   const headingRef = useRef(null), headingId = useId();
   const advanceTimer = useRef(null);
   const attemptId = useQuizStore(state => state.attemptId);
-  useEffect(() => { headingRef.current?.focus({ preventScroll: true }); }, [question._id]);
-  useEffect(() => () => clearTimeout(advanceTimer.current), [question._id]);
+  useLayoutEffect(() => { headingRef.current?.focus({ preventScroll: true }); }, [question._id]);
+  useLayoutEffect(() => () => clearTimeout(advanceTimer.current), [question._id]);
   const answers = useQuizStore((state) => state.answers);
   const selectAnswer = useQuizStore((state) => state.selectAnswer);
   const instantFeedback = useQuizStore((state) => state.instantFeedback);
@@ -105,7 +105,7 @@ function QuestionCard({ question, questionNumber }) {
   };
 
   return (
-    <section aria-labelledby={headingId} className={`flex flex-col ${spacingClasses[density] || 'gap-6'} animate-fade-in`}>
+    <section aria-labelledby={headingId} className={`flex flex-col ${spacingClasses[density] || 'gap-6'}`}>
       <h2 id={headingId} ref={headingRef} tabIndex={-1} className="qf-question-heading">Question {questionNumber}</h2>
       {/* Header / Question Text */}
       {question.questionText && <div className="flex items-start gap-3.5">

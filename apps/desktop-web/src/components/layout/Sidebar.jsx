@@ -12,6 +12,7 @@ import {
   Trophy,
   X,
   ShieldCheck,
+  Store,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
@@ -28,16 +29,13 @@ export default function Sidebar() {
   const unreadMessages = user?.preferences?.notifications?.directMessages === false ? 0 : messageCount;
   const [isExpanded, setIsExpanded] = useState(false);
   const collapseUntilMouseLeaveRef = useRef(false);
-  const isPointerOverSidebarRef = useRef(false);
-
-  const handleMouseEnter = () => {
-    isPointerOverSidebarRef.current = true;
+  const handlePointerEnter = (event) => {
+    if (event.pointerType === 'touch') return;
     if (collapseUntilMouseLeaveRef.current) return;
     setIsExpanded(true);
   };
 
-  const handleMouseLeave = () => {
-    isPointerOverSidebarRef.current = false;
+  const handlePointerLeave = () => {
     collapseUntilMouseLeaveRef.current = false;
     setIsExpanded(false);
   };
@@ -122,8 +120,8 @@ export default function Sidebar() {
       <aside
         className={`app-sidebar ${isExpanded ? 'open' : 'collapsed'}`}
         aria-label="Sidebar navigation"
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+        onPointerEnter={handlePointerEnter}
+        onPointerLeave={handlePointerLeave}
       >
         {/* Top: Brand Header (No collapse or menu button needed) */}
         <div className="sidebar-brand-row">
@@ -133,7 +131,7 @@ export default function Sidebar() {
             onClick={handleNavClick}
             title="QuizFocus"
           >
-            <div className="sidebar-brand-mark">
+            <div className="sidebar-brand-mark apple-squircle">
               <FileQuestion size={20} strokeWidth={2.4} color="#ffffff" />
             </div>
             <span className="sidebar-brand-title">QuizFocus</span>
@@ -152,7 +150,7 @@ export default function Sidebar() {
               <LayoutDashboard size={20} strokeWidth={2} />
             </div>
             <span className="sidebar-nav-label">Dashboard</span>
-            <span className="sidebar-tooltip">Dashboard</span>
+            <span className="sidebar-tooltip" aria-hidden="true">Dashboard</span>
           </NavLink>
 
           {/* 2. Explore Quizzes */}
@@ -165,7 +163,20 @@ export default function Sidebar() {
               <Compass size={20} strokeWidth={2} />
             </div>
             <span className="sidebar-nav-label">Explore Quizzes</span>
-            <span className="sidebar-tooltip">Explore Quizzes</span>
+            <span className="sidebar-tooltip" aria-hidden="true">Explore Quizzes</span>
+          </NavLink>
+
+          {/* Marketplace Navigation Item */}
+          <NavLink
+            to="/marketplace"
+            className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}
+            onClick={handleNavClick}
+          >
+            <div className="nav-item-icon-wrap">
+              <Store size={20} strokeWidth={2} />
+            </div>
+            <span className="sidebar-nav-label">Marketplace</span>
+            <span className="sidebar-tooltip" aria-hidden="true">Marketplace</span>
           </NavLink>
 
           {/* 3. Competitions / Arena */}
@@ -178,7 +189,7 @@ export default function Sidebar() {
               <Trophy size={20} strokeWidth={2} />
             </div>
             <span className="sidebar-nav-label">Competitions / Arena</span>
-            <span className="sidebar-tooltip">Competitions / Arena</span>
+            <span className="sidebar-tooltip" aria-hidden="true">Competitions / Arena</span>
           </NavLink>
 
           {/* 4. Create Quiz */}
@@ -191,7 +202,7 @@ export default function Sidebar() {
               <PlusCircle size={20} strokeWidth={2} />
             </div>
             <span className="sidebar-nav-label">Create</span>
-            <span className="sidebar-tooltip">Create</span>
+            <span className="sidebar-tooltip" aria-hidden="true">Create</span>
           </NavLink>
 
           {/* 4. Messages */}
@@ -210,7 +221,7 @@ export default function Sidebar() {
             </div>
             <span className="sidebar-nav-label">Messages</span>
             {unreadMessages > 0 && <span className="sidebar-badge">{unreadMessages}</span>}
-            <span className="sidebar-tooltip">
+            <span className="sidebar-tooltip" aria-hidden="true">
               Messages {unreadMessages > 0 ? `(${unreadMessages})` : ''}
             </span>
           </NavLink>
@@ -231,7 +242,7 @@ export default function Sidebar() {
             </div>
             <span className="sidebar-nav-label">Notifications</span>
             {unreadCount > 0 && <span className="sidebar-badge">{unreadCount}</span>}
-            <span className="sidebar-tooltip">
+            <span className="sidebar-tooltip" aria-hidden="true">
               Notifications {unreadCount > 0 ? `(${unreadCount})` : ''}
             </span>
           </NavLink>
@@ -246,7 +257,7 @@ export default function Sidebar() {
               <Settings size={20} strokeWidth={2} />
             </div>
             <span className="sidebar-nav-label">Settings</span>
-            <span className="sidebar-tooltip">Settings</span>
+            <span className="sidebar-tooltip" aria-hidden="true">Settings</span>
           </NavLink>
 
           {/* 7. Admin Control Center (Admins only) */}
@@ -260,7 +271,7 @@ export default function Sidebar() {
                 <ShieldCheck size={20} strokeWidth={2} color="#ff4500" />
               </div>
               <span className="sidebar-nav-label" style={{ fontWeight: 600, color: '#ff4500' }}>Admin Panel</span>
-              <span className="sidebar-tooltip">Admin Panel</span>
+              <span className="sidebar-tooltip" aria-hidden="true">Admin Panel</span>
             </NavLink>
           )}
         </nav>

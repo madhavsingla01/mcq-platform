@@ -70,11 +70,6 @@
   --icon-md: 20px;
   --icon-lg: 24px;
 
-  /* ── G2 Curvature Continuity Squircle Tokens (Default for whole website) ── */
-  --squircle-exponent: 4.2;         /* G2 continuous superellipse exponent */
-  --squircle-smooth: 0.62;          /* 62% Figma / iOS G2 smoothing ratio */
-  --corner-shape: squircle;
-
   /* G2 Squircle Calibrated Scale */
   --radius-xs: 4px;
   --radius-sm: 6px;
@@ -83,6 +78,7 @@
   --radius-container: 14px;         /* Standard Cards, Panels, Drawers */
   --radius-lg: 16px;                /* Floating Modals, Sheets */
   --radius-xl: 20px;                /* Hero Cards, Elevated Panels */
+  --radius-card: 20px;              /* Marketplace & Feature Cards */
   --radius-2xl: 24px;               /* Major App Dialogs */
   --radius-full: 9999px;            /* Avatars, round indicators */
   --border-width: 1px;
@@ -292,7 +288,6 @@ input[type="radio"] {
 html {
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
-  scroll-behavior: smooth;
   font-size: 16px;
   overscroll-behavior: none;
 }
@@ -436,33 +431,10 @@ a {
   -webkit-corner-shape: squircle;
 }
 
-.squircle-svg {
-  clip-path: url(#squircle-clip);
-  -webkit-clip-path: url(#squircle-clip);
-}
-
-/* Chromium CSS Paint API Mask Fallback Enhancement */
-@supports (mask-image: paint(squircle)) or (-webkit-mask-image: paint(squircle)) {
-  .squircle-mask-control {
-    mask-image: paint(squircle);
-    -webkit-mask-image: paint(squircle);
-    --squircle-radius: 8;
-    --squircle-smooth: 4.2;
-  }
-
-  .squircle-mask-card {
-    mask-image: paint(squircle);
-    -webkit-mask-image: paint(squircle);
-    --squircle-radius: 14;
-    --squircle-smooth: 4.2;
-  }
-
-  .squircle-mask-modal {
-    mask-image: paint(squircle);
-    -webkit-mask-image: paint(squircle);
-    --squircle-radius: 20;
-    --squircle-smooth: 4.2;
-  }
+/* For square icon tiles. Fluid controls and surfaces use the radius scale. */
+.apple-squircle {
+  border-radius: 22.37%;
+  corner-shape: squircle;
 }
 
 .glass {
@@ -766,7 +738,7 @@ input[type="submit"]:not(:disabled):active,
 .stagger-5 { animation-delay: 150ms; }
 
 /* ── Sonner Toast Customization (QuizFocus G2 Squircle Dark Aesthetic) ── */
-[data-sonner-toaster] {
+[data-sonner-toaster][data-sonner-theme="dark"] {
   --normal-bg: #08080A !important;
   --normal-border: rgba(255, 255, 255, 0.12) !important;
   --normal-text: #FFFFFF !important;
@@ -782,35 +754,46 @@ input[type="submit"]:not(:disabled):active,
   --info-bg: #140A04 !important;
   --info-border: rgba(255, 69, 0, 0.4) !important;
   --info-text: #FF4500 !important;
-  font-family: var(--font-sans) !important;
 }
+
+[data-sonner-toaster] { font-family: var(--font-sans); }
 
 [data-sonner-toast] {
   border-radius: var(--radius-container, 14px) !important;
   corner-shape: squircle !important;
   -webkit-corner-shape: squircle !important;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.12) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
+}
+
+.App [data-sonner-toaster] [data-sonner-toast] {
+  transition-property: transform, opacity;
+  transition-duration: var(--duration-modal);
+  transition-timing-function: var(--ease-out);
+}
+
+[data-sonner-toast]:focus-visible,
+[data-sonner-toast] [data-close-button]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 [data-sonner-toast] [data-close-button] {
-  background: rgba(255, 255, 255, 0.08) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  color: #A1A1AA !important;
+  background: var(--color-surface-alt) !important;
+  border: 1px solid var(--color-border-strong) !important;
+  color: var(--color-text-secondary) !important;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   transition: transform var(--duration-tap, 120ms) var(--ease-out), background-color 140ms ease, color 140ms ease !important;
 }
 
 [data-sonner-toast] [data-close-button]:active {
-  transform: scale(0.97) !important;
+  transform: var(--toast-close-button-transform) scale(0.97) !important;
 }
 
 @media (hover: hover) and (pointer: fine) {
   [data-sonner-toast] [data-close-button]:hover {
-    background: rgba(255, 255, 255, 0.16) !important;
-    color: #FFFFFF !important;
+    background: var(--color-surface) !important;
+    color: var(--color-text) !important;
   }
 }
 

@@ -45,11 +45,39 @@ export function validateEnv(source = process.env) {
     throw new Error('JWT_SECRET must be a configured, non-placeholder secret in production');
   }
 
+  let mongoUri = source.MONGO_URI;
+  if (mongoUri === undefined) {
+    if (isProd && process.env.NODE_ENV === 'production') {
+      mongoUri = process.env.MONGO_URI;
+      if (!mongoUri) {
+        throw new Error('MONGO_URI is required in production');
+      }
+    } else {
+      mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/mcq-platform';
+    }
+  }
+
+  if (source.MONGO_URI === '') {
+    throw new Error('MONGO_URI is required');
+  }
+
+  if (!mongoUri) {
+    if (isProd) {
+      throw new Error('MONGO_URI is required');
+    }
+    mongoUri = 'mongodb://127.0.0.1:27017/mcq-platform';
+  }
+
+  if (!/^mongodb(\+srv)?:\/\//.test(mongoUri)) {
+    throw new Error('MONGO_URI must be a valid MongoDB connection string');
+  }
+
   return {
     PORT,
     NODE_ENV,
     CLIENT_URL,
     JWT_SECRET: jwtSecret,
+    MONGO_URI: mongoUri,
     isDev,
     isProd,
   };

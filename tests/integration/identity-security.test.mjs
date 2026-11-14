@@ -22,6 +22,19 @@ test('Step 03 identity and privacy controls through the gateway and direct servi
   const userId = new ObjectId(user.userId);
   const users = db.collection('users');
 
+  await t.test('AI integration boundary authenticates through Auth Service and exposes no connectors', async () => {
+    const guest = new ApiClient(process.env.GATEWAY_URL);
+    status(await guest.get('/api/v1/ai/status'), 401);
+
+    const aiUser = new ApiClient(process.env.GATEWAY_URL);
+    const registered = await aiUser.registerTestUser('aiintegration');
+    const response = await aiUser.get('/api/v1/ai/status');
+    status(response, 200);
+    assert.equal(response.data.data.enabled, false);
+    assert.deepEqual(response.data.data.connectors, []);
+    assert.equal(response.data.data.requestedBy, registered.userId);
+  });
+
   await t.test('login supports username and cookie boundaries reject unsafe origins', async () => {
     const body = { identifier: user.username, password: user.password };
     for (const url of [process.env.GATEWAY_URL, process.env.AUTH_SERVICE_URL]) {

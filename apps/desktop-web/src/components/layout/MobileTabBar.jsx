@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Shield,
   Sparkles,
+  Store,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import api from '../../api/axios';
@@ -180,6 +181,22 @@ export default function MobileTabBar() {
 
             {/* Quick Action Rows */}
             <div className="mobile-sheet-links-list">
+              {/* Marketplace */}
+              <Link
+                to="/marketplace"
+                className="sheet-link-row"
+                onClick={() => setIsSheetOpen(false)}
+              >
+                <div className="sheet-link-icon-box orange">
+                  <Store size={18} />
+                </div>
+                <div className="sheet-link-text">
+                  <span className="sheet-link-title">Quiz Marketplace</span>
+                  <span className="sheet-link-sub">Browse, share &amp; acquire quiz decks</span>
+                </div>
+                <ChevronRight size={16} className="sheet-link-chevron" />
+              </Link>
+
               {/* Activity Hub */}
               <Link
                 to="/settings?tab=activity"

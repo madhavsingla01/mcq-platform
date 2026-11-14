@@ -8,6 +8,11 @@ const SOCIAL_DOMAIN_SERVICES = new Set([
   'social-interactions-service',
   'social-comments-service',
 ]);
+const EXAMPLE_CONFIG_SERVICES = new Set([
+  ...SOCIAL_DOMAIN_SERVICES,
+  'ai-integration-service',
+  'marketplace-service',
+]);
 
 export const SERVICE_PORTS = {
   'api-gateway': 5000,
@@ -24,6 +29,7 @@ export const SERVICE_PORTS = {
   'social-interactions-service': 5011,
   'social-comments-service': 5012,
   'marketplace-service': 5013,
+  'ai-integration-service': 5014,
 };
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.join(scriptDirectory, '..');
@@ -36,7 +42,7 @@ export function readServicePort(serviceName, root) {
   const examplePath = path.join(serviceDirectory, '.env.example');
   const configPath = fs.existsSync(envPath)
     ? envPath
-    : (SOCIAL_DOMAIN_SERVICES.has(serviceName) || serviceName === 'marketplace-service')
+    : EXAMPLE_CONFIG_SERVICES.has(serviceName)
       ? examplePath
       : envPath;
   if (!fs.existsSync(configPath)) {
@@ -82,6 +88,7 @@ export function createServiceEnvironment(service, services, root, processEnv = p
       ['SOCIAL_INTERACTIONS_SERVICE_URL', 'social-interactions-service'],
       ['SOCIAL_COMMENTS_SERVICE_URL', 'social-comments-service'],
       ['MARKETPLACE_SERVICE_URL', 'marketplace-service'],
+      ['AI_INTEGRATION_SERVICE_URL', 'ai-integration-service'],
     ];
     for (const [key, name] of serviceRoutes) {
       const domainService = services.find(candidate => candidate.name === name);

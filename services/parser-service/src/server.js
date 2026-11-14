@@ -61,6 +61,7 @@ app.get('/api/v1/health', (req, res) => {
 // Routes
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/parser', parserRoutes);
+app.use('/jobs', parserRoutes);
 
 // Error Handling
 app.use(notFoundHandler);

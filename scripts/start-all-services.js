@@ -29,6 +29,7 @@ const SERVICES = [
   { name: 'admin-service', label: 'ADMIN', color: '\x1b[38;5;214m' },
   { name: 'challenge-service', label: 'CHALLENGE', color: '\x1b[38;5;178m' },
   { name: 'marketplace-service', label: 'MARKETPLACE', color: '\x1b[38;5;172m' },
+  { name: 'ai-integration-service', label: 'AI-INTEGRATION', color: '\x1b[38;5;141m' },
   { name: 'api-gateway', label: 'GATEWAY', color: '\x1b[31m' },
 ].map((service) => ({ ...service, port: readServicePort(service.name, root) }));
 

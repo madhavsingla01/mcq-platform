@@ -39,6 +39,7 @@ services:
       - ADMIN_SERVICE_URL=http://admin-service:5008
       - CHALLENGE_SERVICE_URL=http://challenge-service:5009
       - MARKETPLACE_SERVICE_URL=http://marketplace-service:5013
+      - AI_INTEGRATION_SERVICE_URL=http://ai-integration-service:5014
     depends_on:
       - auth-service
       - quiz-service
@@ -53,6 +54,7 @@ services:
       - admin-service
       - challenge-service
       - marketplace-service
+      - ai-integration-service
     restart: unless-stopped
 
   # ── Service 1: Auth & User Profiles ──
@@ -370,6 +372,24 @@ services:
       - NODE_ENV=production
       - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
       - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in the root .env file}
+    restart: unless-stopped
+
+  # ── Service 14: AI Integration Boundary (connectors not configured) ──
+  ai-integration-service:
+    build:
+      context: ./services/ai-integration-service
+      dockerfile: Dockerfile
+    container_name: mcq-ai-integration-service
+    expose:
+      - "5014"
+    environment:
+      - PORT=5014
+      - NODE_ENV=production
+      - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
+      - AUTH_SERVICE_URL=http://auth-service:5001
+      - INTERNAL_API_TIMEOUT_MS=5000
+    depends_on:
+      - auth-service
     restart: unless-stopped
 
 volumes:

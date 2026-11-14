@@ -31,9 +31,10 @@
   overscroll-behavior: contain;
   padding: 0;
   border: 1px solid #ffffff24;
-  border-radius: 14px;
-  background: #121214;
-  color: #f4f4f5;
+  border-radius: var(--radius-xl);
+  corner-shape: squircle;
+  background: var(--color-surface);
+  color: var(--color-text);
   box-shadow: 0 20px 56px #0009;
 }
 
@@ -42,22 +43,34 @@
   backdrop-filter: blur(6px);
 }
 
+/* Pointer openings use a short entrance to distinguish the modal from its card. */
+@media (prefers-reduced-motion: no-preference) {
+  html:not(.reduce-motion) .quiz-card-overflow-pointer[open] {
+    animation: quiz-details-enter var(--duration-popover) var(--ease-out);
+  }
+}
+
+@keyframes quiz-details-enter {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
 body:has(.quiz-card-overflow-panel[open]) { overflow: hidden; }
 .quiz-card-overflow-content { padding: 20px; }
 .quiz-card-overflow-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
 .quiz-card-overflow-heading h2 { margin: 0; font-size: 20px; line-height: 1.3; overflow-wrap: anywhere; }
 .quiz-card-overflow-section { margin-top: 18px; }
-.quiz-card-overflow-section h3 { margin: 0 0 7px; font-size: 13px; color: #a1a1aa; }
+.quiz-card-overflow-section h3 { margin: 0 0 7px; font-size: 13px; color: var(--color-text-secondary); }
 .quiz-card-overflow-section dl { margin: 0; }
 .quiz-card-overflow-detail {
   display: flex;
   justify-content: space-between;
   gap: 16px;
   padding: 7px 0;
-  border-bottom: 1px solid #ffffff12;
+  border-bottom: 1px solid var(--color-border);
   font-size: 13px;
 }
-.quiz-card-overflow-detail dt { flex: 0 0 auto; color: #a1a1aa; }
+.quiz-card-overflow-detail dt { flex: 0 0 auto; color: var(--color-text-secondary); }
 .quiz-card-overflow-detail dd { min-width: 0; margin: 0; text-align: right; overflow-wrap: anywhere; }
 .quiz-card-overflow-actions-list { display: flex; flex-direction: column; gap: 2px; }
 .quiz-card-overflow-action {

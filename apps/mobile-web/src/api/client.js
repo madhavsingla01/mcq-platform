@@ -99,3 +99,60 @@ export const attemptApi = {
   getReview: (attemptId) => api.get(`/attempts/${attemptId}/review`),
   getHistory: (params) => api.get('/attempts', { params }),
 };
+
+export const marketplaceApi = {
+  getCatalog: async (params) => {
+    try {
+      const res = await api.get('/marketplace/catalog', { params });
+      return res.data;
+    } catch (err) {
+      if (err?.status === 404 || err?.statusCode === 404 || (err?.message && err.message.includes('not yet implemented'))) {
+        return {
+          success: true,
+          data: { items: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 1 } },
+          isTransitional: true,
+        };
+      }
+      throw err;
+    }
+  },
+  getListing: async (id) => {
+    const res = await api.get(`/marketplace/listings/${id}`);
+    return res.data;
+  },
+  getEntitlements: async (params) => {
+    try {
+      const res = await api.get('/marketplace/entitlements', { params });
+      return res.data;
+    } catch (err) {
+      if (err?.status === 404 || err?.statusCode === 404) {
+        return {
+          success: true,
+          data: { entitlements: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 1 } },
+          isTransitional: true,
+        };
+      }
+      throw err;
+    }
+  },
+};
+
+export const uploadApi = {
+  // Standard parser upload
+  uploadFile: (formData, onProgress) => api.post('/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: (e) => e.total && onProgress?.(Math.round((e.loaded * 100) / e.total)),
+  }),
+  // Educational asset lifecycle pipeline
+  initiateAsset: (payload) => api.post('/media/assets/initiate', payload),
+  uploadBinary: (assetId, token, file, onProgress) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/media/assets/${assetId}/upload?token=${token}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (e) => e.total && onProgress?.(Math.round((e.loaded * 100) / e.total)),
+    });
+  },
+  getAssetStatus: (assetId) => api.get(`/media/assets/${assetId}/status`),
+  getAssetPreview: (assetId) => api.get(`/parser/preview/asset/${assetId}`),
+};

@@ -15,6 +15,9 @@ import http from 'http';
 import { createHealthMonitor, integerSetting, isSocketPath, requestContext } from './runtime.js';
 import { errorBody, proxyFailure, sanitizeProxyRequest } from './contracts.js';
 import { socialServiceForPath } from './social-routing.js';
+import { pathTraversalGuard } from './middleware/security.js';
+import { createUploadRateLimiter } from './middleware/rateLimit.js';
+import { createAuditLogMiddleware } from './middleware/auditLog.js';
 
 dotenv.config();
 
@@ -44,6 +47,7 @@ const SERVICES = {
   media: requiredSetting('MEDIA_SERVICE_URL'),
   admin: requiredSetting('ADMIN_SERVICE_URL'),
   challenge: requiredSetting('CHALLENGE_SERVICE_URL'),
+  aiIntegration: requiredSetting('AI_INTEGRATION_SERVICE_URL'),
   marketplace: process.env.MARKETPLACE_SERVICE_URL || 'http://127.0.0.1:5013',
 };
 
@@ -72,6 +76,9 @@ app.use(helmet({
   xFrameOptions: { action: 'deny' },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
+
+// Path traversal & safe filename perimeter defense
+app.use(pathTraversalGuard);
 
 // CORS Configuration
 app.use(cors({
@@ -199,13 +206,16 @@ app.use('/api/v1/quizzes', makeProxy(SERVICES.quiz, '/api/v1/quizzes'));
 app.use('/api/v1/search', makeProxy(SERVICES.quiz, '/api/v1/search'));
 
 
-// 4. Parser, Upload & Static Uploads
-app.use('/api/v1/media', makeProxy(SERVICES.media, '/api/v1/media'));
-app.use('/media', makeProxy(SERVICES.media, '/media'));
-app.use('/api/v1/upload', makeProxy(SERVICES.parser, '/api/v1/upload'));
-app.use('/api/v1/parser', makeProxy(SERVICES.parser, '/api/v1/parser'));
+// 4. Parser, Upload & Static Uploads (Protected with rate limiting and audit logging)
+const uploadRateLimiter = createUploadRateLimiter();
+const auditLogMiddleware = createAuditLogMiddleware();
+
+app.use('/api/v1/media', auditLogMiddleware, uploadRateLimiter, makeProxy(SERVICES.media, '/api/v1/media'));
+app.use('/media', auditLogMiddleware, uploadRateLimiter, makeProxy(SERVICES.media, '/media'));
+app.use('/api/v1/upload', auditLogMiddleware, uploadRateLimiter, makeProxy(SERVICES.parser, '/api/v1/upload'));
+app.use('/api/v1/parser', auditLogMiddleware, uploadRateLimiter, makeProxy(SERVICES.parser, '/api/v1/parser'));
 app.use('/uploads/covers', makeProxy(SERVICES.quiz, '/uploads/covers'));
-app.use('/uploads', makeProxy(SERVICES.parser, '/uploads'));
+app.use('/uploads', auditLogMiddleware, uploadRateLimiter, makeProxy(SERVICES.parser, '/uploads'));
 
 // 5. Social & Community
 const socialDomainProxies = {
@@ -233,6 +243,9 @@ app.use('/api/v1/admin', makeProxy(SERVICES.admin, '/api/v1/admin'));
 
 // 8. Competitive Challenges Arena
 app.use('/api/v1/challenges', makeProxy(SERVICES.challenge, '/api/v1/challenges'));
+
+// 10. AI integration boundary (connectors are intentionally not configured yet)
+app.use('/api/v1/ai', makeProxy(SERVICES.aiIntegration, '/api/v1/ai'));
 
 // 9. Marketplace Service & Phase 1 Route Isolation
 const marketplaceProxy = makeProxy(SERVICES.marketplace, '/api/v1/marketplace');
@@ -313,6 +326,7 @@ server.listen(PORT, () => {
   console.log(`   - Media Service:    ${SERVICES.media}`);
   console.log(`   - Admin Service:    ${SERVICES.admin}`);
   console.log(`   - Challenge Service:${SERVICES.challenge}`);
+  console.log(`   - AI Integration Service: ${SERVICES.aiIntegration}`);
   console.log(`   - Marketplace Service: ${SERVICES.marketplace}`);
   console.log(`   - Real-Time WS:     /socket.io -> ${SERVICES.message}`);
 });

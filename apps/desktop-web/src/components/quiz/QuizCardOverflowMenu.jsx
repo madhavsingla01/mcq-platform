@@ -19,7 +19,10 @@ export default function QuizCardOverflowMenu({ label = 'Quiz options', title, de
         title={label}
         onClick={(event) => {
           event.stopPropagation();
-          dialogRef.current?.showModal();
+          const dialog = dialogRef.current;
+          if (!dialog || dialog.open) return;
+          dialog.classList.toggle('quiz-card-overflow-pointer', event.detail > 0);
+          dialog.showModal();
         }}
       >
         <MoreHorizontal size={18} aria-hidden="true" />
