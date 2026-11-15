@@ -88,8 +88,14 @@ const quizSchema = new mongoose.Schema(
     questionCount: {
       type: Number,
       required: true,
-      min: 1,
+      min: 0,
+      validate: {
+        validator(value) { return value > 0 || this.metadata?.savedAsDraft === true; },
+        message: 'A published quiz must have at least one question',
+      },
     },
+    draftWriteToken: { type: String, select: false },
+    draftWriteExpiresAt: { type: Date, select: false },
     totalMarks: {
       type: Number,
       default: 0,

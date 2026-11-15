@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Search, X } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useUIStore } from '../../store/uiStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { usePageSearch } from '../search/PageSearchContext';
@@ -9,7 +9,6 @@ import './PageHeader.css';
 
 export default function PageHeader({ title, searchLabel, advancedSearch }) {
   const { search } = useLocation();
-  const navigate = useNavigate();
   const { query, setQuery } = usePageSearch();
   const openSearch = useUIStore(state => state.openSearch);
   const closeSearch = useUIStore(state => state.closeSearch);
@@ -41,7 +40,6 @@ export default function PageHeader({ title, searchLabel, advancedSearch }) {
 
   function submitSearch(event) {
     event.preventDefault();
-    if (!searchLabel && query.trim()) navigate(`/explore?${new URLSearchParams({ q: query.trim() })}`);
   }
 
   return (
@@ -52,7 +50,7 @@ export default function PageHeader({ title, searchLabel, advancedSearch }) {
           onClick={() => openSearch(initialAdvancedQuery)} aria-label="Open universal search" aria-haspopup="dialog" aria-expanded={isSearchOpen}>
           <Search aria-hidden="true" size={16} />
           <span>Search</span>
-        </button> : <form role="search" className="app-page-search app-page-search-form consistent-search-field" onSubmit={submitSearch}>
+        </button> : searchLabel ? <form role="search" className="app-page-search app-page-search-form consistent-search-field" onSubmit={submitSearch}>
           <Search aria-hidden="true" size={16} />
           <input id="app-page-search" type="search" className="consistent-search-input" placeholder="Search"
             aria-label={searchLabel || 'Search quizzes'} value={query} maxLength={100} enterKeyHint="search"
@@ -62,7 +60,7 @@ export default function PageHeader({ title, searchLabel, advancedSearch }) {
             setQuery('');
             document.getElementById('app-page-search')?.focus();
           }}><X size={15} aria-hidden="true" /></button>}
-        </form>}
+        </form> : null}
       </div>
     </header>
   );

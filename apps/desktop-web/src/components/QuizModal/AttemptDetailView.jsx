@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
+import AccessibleMedia from '../media/AccessibleMedia';
 import api from '../../api/axios';
 import { Card, Spinner, Button } from '../ui';
 import './AttemptDetailView.css';
@@ -112,12 +113,6 @@ export default function AttemptDetailView({ quizId, attemptId, onBack }) {
     return `${mins}m ${secs}s`;
   };
 
-  const formatTimeSeconds = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}m ${secs}s`;
-  };
-
   const questionsWithStatus = questions.map(q => {
     const answerData = (attempt.answers || []).find(a => String(a.questionId) === String(q._id));
     let status = 'unanswered';
@@ -130,7 +125,7 @@ export default function AttemptDetailView({ quizId, attemptId, onBack }) {
 
   const filteredQuestions = questionsWithStatus.filter(q => {
     if (filter !== 'all' && q.status !== filter) return false;
-    if (searchQuery && !q.questionText.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    if (searchQuery && !(q.questionText || '').toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
   });
   const totalPages = Math.max(1, Math.ceil(filteredQuestions.length / pageSize));
@@ -252,12 +247,17 @@ export default function AttemptDetailView({ quizId, attemptId, onBack }) {
                       </div>
                     </div>
 
-                    <p style={{ margin: 0, fontSize: '16px', lineHeight: '1.5' }}>{q.questionText}</p>
+                    {q.questionText && <p style={{ margin: 0, fontSize: '16px', lineHeight: '1.5' }}>{q.questionText}</p>}
+                    <AccessibleMedia clips={q.accessibilityMedia || []} text={q.questionText || ''} attemptId={attemptId} />
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {(q.options || []).map((opt) => {
-                        const isSelected = answerData?.selectedAnswer === opt.label;
-                        const isCorrectOption = opt.isCorrect === true || q.correctAnswer === opt.label;
+                        const selected = answerData?.selectedAnswer;
+                        const isSelected = q.questionType === 'checkboxes'
+                          ? (Array.isArray(selected) ? selected : String(selected ?? '').split(',')).includes(opt.label)
+                          : selected === opt.label;
+                        const isCorrectOption = opt.isCorrect === true || (Array.isArray(q.correctAnswer)
+                          ? q.correctAnswer.includes(opt.label) : q.correctAnswer === opt.label);
 
                         let optionClass = 'attempt-option-neutral';
                         let indicatorText = null;
@@ -271,9 +271,12 @@ export default function AttemptDetailView({ quizId, attemptId, onBack }) {
                         }
 
                         return (
-                          <div key={opt.label} className={`attempt-option ${optionClass}`}>
+                          <div key={opt.optionId || opt._id || opt.label} className={`attempt-option ${optionClass}`}>
                             <span className="attempt-option-label-pill">{opt.label}</span>
-                            <span style={{ flex: 1 }}>{opt.text}</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              {opt.text}
+                              <AccessibleMedia clips={opt.accessibilityMedia || []} text={opt.text || ''} attemptId={attemptId} />
+                            </div>
                             {indicatorText ? <span className="attempt-option-indicator">{indicatorText}</span> : null}
                           </div>
                         );

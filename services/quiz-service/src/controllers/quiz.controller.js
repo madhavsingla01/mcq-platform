@@ -393,6 +393,79 @@ const normalizeQuizInput = (payload) => {
 };
 
 
+async function readMappedQuestions(upload) {
+  const { columnMapping } = upload;
+  const { rows } = await ParserRegistry.parse(upload.fileType, upload.filePath);
+  const questions = [];
+  let skipped = 0;
+
+  for (const row of rows) {
+    const questionText = row[columnMapping.question];
+
+    if (!questionText || !String(questionText).trim()) {
+      skipped += 1;
+      continue;
+    }
+
+    const options = extractOptions(row, columnMapping.options);
+
+    if (options.length < 2) {
+      skipped += 1;
+      continue;
+    }
+
+    let correctAnswer = '';
+
+    if (columnMapping.answer) {
+      correctAnswer = normalizeAnswer(row[columnMapping.answer], options);
+    }
+
+    if (!correctAnswer || !options.some((option) => option.label === correctAnswer)) {
+      skipped += 1;
+      continue;
+    }
+
+    let explanation = '';
+
+    if (columnMapping.explanation) {
+      explanation = String(row[columnMapping.explanation] || '').trim();
+    }
+
+    questions.push({
+      questionNumber: questions.length + 1,
+      questionText: String(questionText).trim(),
+      options: options.map((option) => ({
+        ...option,
+        isCorrect: option.label === correctAnswer,
+      })),
+      correctAnswer,
+      explanation,
+      difficulty: normalizeDifficulty(row[columnMapping.difficulty]),
+      category: String(row[columnMapping.category] || 'General').trim() || 'General',
+      marks: Math.max(Number(row[columnMapping.marks] ?? 1) || 1, 0),
+      negativeMarks: Math.max(Number(row[columnMapping.negativeMarks] ?? 0) || 0, 0),
+      orderIndex: questions.length,
+      metadata: columnMapping.serial ? { serial: row[columnMapping.serial] } : {},
+    });
+  }
+
+  return { questions, skipped };
+}
+
+export const getIntegrationImportQuestions = catchAsync(async (req, res) => {
+  const upload = await Upload.findById(req.params.id);
+  if (!upload) throw new AppError('Upload not found', 404);
+  assertUploadAccess(upload, req);
+  if (upload.status !== 'mapped') throw new AppError('Map the source columns before importing', 400);
+  const { questions, skipped } = await readMappedQuestions(upload);
+  if (!questions.length || questions.length > 100) throw new AppError('Use a file with 1 to 100 valid questions', 400);
+  res.set('Cache-Control', 'private, no-store').json({ success: true, data: { skipped, questions: questions.map(({ questionText, options, correctAnswer, explanation, marks, negativeMarks }) => ({
+    questionText, questionType: 'multiple_choice',
+    options: options.map(({ label, text, isCorrect }) => ({ label, text, isCorrect })),
+    correctAnswer, explanation, marks, negativeMarks,
+  })) } });
+});
+
 export const generateQuiz = catchAsync(async (req, res, next) => {
   const { uploadId, title, description, settings, forceGenerate, allowDuplicate } = req.body;
 
@@ -447,59 +520,7 @@ export const generateQuiz = catchAsync(async (req, res, next) => {
   // Concurrency-safe generation with lock by fileHash
   const generationResult = await withGenerationLock(shouldBypassDuplicate ? null : fileHash, async () => {
     const { columnMapping } = upload;
-    const { rows } = await ParserRegistry.parse(upload.fileType, upload.filePath);
-    const questions = [];
-    let skipped = 0;
-
-    for (const row of rows) {
-      const questionText = row[columnMapping.question];
-
-      if (!questionText || !String(questionText).trim()) {
-        skipped += 1;
-        continue;
-      }
-
-      const options = extractOptions(row, columnMapping.options);
-
-      if (options.length < 2) {
-        skipped += 1;
-        continue;
-      }
-
-      let correctAnswer = '';
-
-      if (columnMapping.answer) {
-        correctAnswer = normalizeAnswer(row[columnMapping.answer], options);
-      }
-
-      if (!correctAnswer || !options.some((option) => option.label === correctAnswer)) {
-        skipped += 1;
-        continue;
-      }
-
-      let explanation = '';
-
-      if (columnMapping.explanation) {
-        explanation = String(row[columnMapping.explanation] || '').trim();
-      }
-
-      questions.push({
-        questionNumber: questions.length + 1,
-        questionText: String(questionText).trim(),
-        options: options.map((option) => ({
-          ...option,
-          isCorrect: option.label === correctAnswer,
-        })),
-        correctAnswer,
-        explanation,
-        difficulty: normalizeDifficulty(row[columnMapping.difficulty]),
-        category: String(row[columnMapping.category] || 'General').trim() || 'General',
-        marks: Math.max(Number(row[columnMapping.marks] ?? 1) || 1, 0),
-        negativeMarks: Math.max(Number(row[columnMapping.negativeMarks] ?? 0) || 0, 0),
-        orderIndex: questions.length,
-        metadata: columnMapping.serial ? { serial: row[columnMapping.serial] } : {},
-      });
-    }
+    const { questions, skipped } = await readMappedQuestions(upload);
 
     if (!questions.length) {
       throw new AppError('No valid questions extracted', 422);
@@ -660,6 +681,18 @@ export const getQuiz = catchAsync(async (req, res, next) => {
       quiz: finalQuiz,
     },
   });
+});
+
+const integrationQuizFields = 'title description category difficulty tags questionCount visibility updatedAt';
+const ownedIntegrationQuiz = (userId) => ({
+  uploader: userId, isChallenge: { $ne: true }, isRestricted: { $ne: true },
+  'metadata.savedAsDraft': { $ne: true }, contentKind: { $in: ['quiz', null] },
+});
+
+export const getIntegrationQuiz = catchAsync(async (req, res) => {
+  const quiz = await Quiz.findOne({ _id: req.params.id, ...ownedIntegrationQuiz(req.user._id) }).select(integrationQuizFields).lean();
+  if (!quiz) throw new AppError('Quiz not found', 404);
+  res.json({ success: true, data: { quiz } });
 });
 
 export const getQuizQuestions = catchAsync(async (req, res, next) => {
@@ -1131,6 +1164,17 @@ export const getMyQuizzes = catchAsync(async (req, res) => {
     ? { uploader: req.user._id }
     : { uploader: req.user._id, 'metadata.savedAsDraft': { $ne: true } };
 
+  if (req.query.scope === 'integration') {
+    const owned = ownedIntegrationQuiz(req.user._id);
+    const [quizzes, total] = await Promise.all([
+      Quiz.find(owned).select(integrationQuizFields).sort({ updatedAt: -1, _id: -1 }).skip(skip).limit(limit).lean(),
+      Quiz.countDocuments(owned),
+    ]);
+    return res.json({ success: true, data: {
+      quizzes, pagination: { page, limit, total, pages: Math.max(1, Math.ceil(total / limit)) },
+    } });
+  }
+
   const [rawQuizzes, total, draftsCount] = await Promise.all([
     Quiz.find(filter)
       .sort({ createdAt: -1 })
@@ -1215,6 +1259,73 @@ export const normalizeManualQuestion = (q, index) => {
   };
 };
 
+// Keep this predicate consistent for integration reads and conditional writes.
+const integrationDraftState = {
+  isRestricted: { $ne: true },
+  isPublic: { $ne: true },
+  $or: [
+    { isChallenge: { $ne: true }, visibility: 'private', 'metadata.savedAsDraft': true, contentKind: { $in: ['quiz', null] } },
+    { isChallenge: true, challengeStatus: 'draft' },
+    { isChallenge: true, challengeStatus: { $in: [null, 'active'] }, 'metadata.savedAsDraft': true },
+  ],
+};
+
+function integrationDraftFilter(req) {
+  if (req.query.scope !== 'integration') return {};
+  return {
+    ...integrationDraftState,
+    ...(req.query.kind === 'quiz' ? { isChallenge: { $ne: true } }
+      : req.query.kind === 'challenge' ? { isChallenge: true } : {}),
+  };
+}
+
+const draftWriteAvailable = () => ({
+  $or: [{ draftWriteToken: { $exists: false } }, { draftWriteExpiresAt: { $lte: new Date() } }],
+});
+const quizDraftState = {
+  isChallenge: { $ne: true }, isPublic: { $ne: true }, 'metadata.savedAsDraft': true,
+};
+
+async function withDraftWrite(quiz, operation, state = {}) {
+  const draftWriteToken = crypto.randomUUID();
+  const filter = {
+    _id: quiz._id, uploader: quiz.uploader, updatedAt: quiz.updatedAt, $and: [state, draftWriteAvailable()],
+  };
+  const draftWriteExpiresAt = new Date(Date.now() + 120000);
+  const claim = await Quiz.updateOne(filter, { $set: { draftWriteToken, draftWriteExpiresAt } }, { timestamps: false });
+  if (!claim.matchedCount) throw new AppError('The draft changed. Reload it and try again.', 409);
+  quiz.$where = { draftWriteToken, updatedAt: quiz.updatedAt, ...state };
+  try {
+    return await operation();
+  } catch (error) {
+    if (error.name === 'DocumentNotFoundError') throw new AppError('The draft changed. Reload it and try again.', 409);
+    throw error;
+  } finally {
+    await Quiz.updateOne({ _id: quiz._id, draftWriteToken }, { $unset: { draftWriteToken: 1, draftWriteExpiresAt: 1 } }, { timestamps: false });
+  }
+}
+
+async function replaceDraftQuestions(quiz, questions) {
+  const documents = questions.map((question, index) => new Question({
+    ...normalizeManualQuestion(question, index), quizId: quiz._id,
+  }));
+  // Validate both sets of changes before deleting any saved questions.
+  quiz.questionCount = documents.length;
+  quiz.totalMarks = getQuizTotalMarks(documents);
+  await quiz.validate();
+  await Promise.all(documents.map(document => document.validate()));
+  const previous = await Question.find({ quizId: quiz._id }).select('_id').lean();
+  const insertedIds = documents.map(document => document._id);
+  try {
+    if (documents.length) await Question.insertMany(documents);
+    await quiz.save();
+  } catch (error) {
+    if (insertedIds.length) await Question.deleteMany({ _id: { $in: insertedIds }, quizId: quiz._id });
+    throw error;
+  }
+  if (previous.length) await Question.deleteMany({ _id: { $in: previous.map(document => document._id) }, quizId: quiz._id });
+}
+
 export const getDrafts = catchAsync(async (req, res) => {
   if (!req.user) {
     return res.json({
@@ -1230,6 +1341,7 @@ export const getDrafts = catchAsync(async (req, res) => {
   const filter = {
     uploader: req.user._id,
     $or: [{ 'metadata.savedAsDraft': true }, { isChallenge: true, challengeStatus: 'draft' }],
+    ...integrationDraftFilter(req),
   };
 
   if (search) {
@@ -1243,7 +1355,7 @@ export const getDrafts = catchAsync(async (req, res) => {
     ] }];
   }
 
-  let sort = { updatedAt: -1, createdAt: -1 };
+  let sort = { updatedAt: -1, createdAt: -1, _id: -1 };
   if (sortBy === 'oldest') sort = { createdAt: 1 };
   else if (sortBy === 'title') sort = { title: 1 };
   else if (sortBy === 'questions') sort = { questionCount: -1 };
@@ -1299,10 +1411,19 @@ export const getDraftById = catchAsync(async (req, res, next) => {
   const quiz = await Quiz.findOne({
     _id: req.params.id,
     uploader: req.user._id,
+    ...integrationDraftFilter(req),
   }).lean();
 
   if (!quiz) {
     return next(new AppError('Draft not found or unauthorized', 404));
+  }
+
+  if (req.query.scope === 'integration' && req.query.summary === 'true') {
+    const { draftData, ...draft } = quiz;
+    return res.json({ success: true, data: { draft: {
+      ...draft,
+      questionCount: draftData?.questions?.length ?? draft.questionCount,
+    } } });
   }
 
   const { draftData, ...draft } = quiz;
@@ -1324,15 +1445,21 @@ export const getDraftById = catchAsync(async (req, res, next) => {
 });
 
 export const updateDraft = catchAsync(async (req, res, next) => {
-  if (Array.isArray(req.body.questions)) req.body.questions = await validateQuestionMedia(req.body.questions, req, { draft: true });
   const quiz = await Quiz.findOne({
     _id: req.params.id,
     uploader: req.user._id,
+    ...integrationDraftFilter(req),
   });
 
   if (!quiz) {
     return next(new AppError('Draft not found or unauthorized', 404));
   }
+
+  if (req.query.scope === 'integration' && quiz.isChallenge) {
+    throw new AppError('Use the competition draft operation for this challenge', 400);
+  }
+
+  if (Array.isArray(req.body.questions)) req.body.questions = await validateQuestionMedia(req.body.questions, req, { draft: true });
 
   const {
     title,
@@ -1386,7 +1513,7 @@ export const updateDraft = catchAsync(async (req, res, next) => {
 
   if (settings && typeof settings === 'object') {
     quiz.settings = {
-      ...quiz.settings,
+      ...(quiz.settings?.toObject?.() || quiz.settings),
       ...settings,
     };
   }
@@ -1398,20 +1525,11 @@ export const updateDraft = catchAsync(async (req, res, next) => {
     lastAutosavedAt: new Date(),
   };
 
-  if (Array.isArray(questions)) {
-    await Question.deleteMany({ quizId: quiz._id });
-    if (questions.length > 0) {
-      const questionDocs = questions.map((q, index) => ({
-        ...normalizeManualQuestion(q, index),
-        quizId: quiz._id,
-      }));
-      await Question.insertMany(questionDocs);
-    }
-    quiz.questionCount = questions.length;
-    quiz.totalMarks = questions.reduce((acc, q) => acc + (Number(q.marks) || 1), 0);
-  }
-
-  await quiz.save();
+  await withDraftWrite(
+    quiz,
+    () => Array.isArray(questions) ? replaceDraftQuestions(quiz, questions) : quiz.save(),
+    req.query.scope === 'integration' ? { ...quizDraftState, ...integrationDraftFilter(req) } : {},
+  );
 
   res.json({
     success: true,
@@ -1422,66 +1540,121 @@ export const updateDraft = catchAsync(async (req, res, next) => {
   });
 });
 
-export const publishDraft = catchAsync(async (req, res, next) => {
+async function validateQuizPublication(quiz, req) {
+  const questions = await Question.find({ quizId: quiz._id }).sort({ orderIndex: 1, questionNumber: 1 });
+  if (!questions || questions.length === 0) {
+    throw new AppError('Cannot publish an empty draft. Please add at least 1 question.', 400);
+  }
+
+  if (quiz.isChallenge) {
+    if (questions.length > 10) {
+      throw new AppError('Challenges cannot have more than 10 questions.', 400);
+    }
+    if (!Number.isFinite(Number(quiz.durationMinutes)) || Number(quiz.durationMinutes) <= 0) {
+      throw new AppError('Challenges require a valid duration in minutes.', 400);
+    }
+    if (!quiz.deadlineAt || Number.isNaN(new Date(quiz.deadlineAt).getTime()) || new Date(quiz.deadlineAt) <= new Date()) {
+      throw new AppError('Challenges require a valid future deadline.', 400);
+    }
+  }
+
+  for (const q of questions) {
+    if (q.questionType === 'short_answer' && (typeof q.correctAnswer !== 'string' || !q.correctAnswer.trim())) {
+      throw new AppError(`Question ${q.questionNumber || ''} is missing its expected answer.`, 400);
+    }
+    if (['multiple_choice', 'dropdown', 'checkboxes'].includes(q.questionType)) {
+      if (!q.options || q.options.length < 2) {
+        throw new AppError(`Question ${q.questionNumber || ''} must have at least 2 options.`, 400);
+      }
+      const answers = Array.isArray(q.correctAnswer) ? q.correctAnswer : q.correctAnswer ? [q.correctAnswer] : [];
+      if (!answers.length && !q.options.some((option) => option.isCorrect)) {
+        throw new AppError(`Question ${q.questionNumber || ''} is missing a correct answer.`, 400);
+      }
+      const labels = new Set(q.options.map((option) => option.label.toUpperCase()));
+      if (answers.some((answer) => typeof answer !== 'string' || !labels.has(answer.trim().toUpperCase()))) {
+        throw new AppError(`Question ${q.questionNumber || ''} has a correct answer that does not match an option.`, 400);
+      }
+    }
+  }
+
+  await validateQuestionMedia(questions.map(q => q.toObject()), req);
+}
+
+export const validateIntegrationQuizDraft = catchAsync(async (req, res) => {
+  const quiz = await Quiz.findOne({
+    _id: req.params.id, uploader: req.user._id, ...integrationDraftState, isChallenge: { $ne: true },
+  });
+  if (!quiz) throw new AppError('Draft not found', 404);
+
+  await validateQuizPublication(quiz, req);
+  res.json({ success: true, data: { valid: true } });
+});
+
+export const appendIntegrationQuizQuestions = catchAsync(async (req, res) => {
+  const quiz = await Quiz.findOne({
+    _id: req.params.id, uploader: req.user._id, ...integrationDraftState, isChallenge: { $ne: true },
+  });
+  if (!quiz) throw new AppError('Draft not found', 404);
+  if (!Array.isArray(req.body.questions) || !req.body.questions.length || req.body.questions.length > 10) {
+    throw new AppError('Provide 1 to 10 questions', 400);
+  }
+
+  const questions = await validateQuestionMedia(req.body.questions, req, { draft: true });
+  await withDraftWrite(quiz, async () => {
+    const existing = await Question.find({ quizId: quiz._id }).select('questionNumber orderIndex marks').lean();
+    if (existing.length + questions.length > 100) throw new AppError('A quiz draft supports at most 100 questions through the integration', 400);
+
+    const highestNumber = existing.reduce((max, entry) => Math.max(max, entry.questionNumber || 0), 0);
+    const highestOrder = existing.reduce((max, entry) => Math.max(max, entry.orderIndex ?? 0), -1);
+    const additions = questions.map((question, index) => new Question({
+      ...normalizeManualQuestion(question, index),
+      quizId: quiz._id,
+      questionNumber: highestNumber + index + 1,
+      orderIndex: highestOrder + index + 1,
+    }));
+    quiz.questionCount = existing.length + additions.length;
+    quiz.totalMarks = getQuizTotalMarks([...existing, ...additions]);
+    quiz.metadata = { ...quiz.metadata, lastAutosavedAt: new Date() };
+    await quiz.validate();
+    await Promise.all(additions.map(question => question.validate()));
+    try {
+      await Question.insertMany(additions);
+      await quiz.save();
+    } catch (error) {
+      await Question.deleteMany({ _id: { $in: additions.map(question => question._id) }, quizId: quiz._id });
+      throw error;
+    }
+  }, { ...integrationDraftState, isChallenge: { $ne: true } });
+  res.json({ success: true, data: { draft: quiz } });
+});
+
+export const publishDraft = catchAsync(async (req, res) => {
   const quiz = await Quiz.findOne({
     _id: req.params.id,
     uploader: req.user._id,
   });
 
   if (!quiz) {
-    return next(new AppError('Draft not found or unauthorized', 404));
+    throw new AppError('Draft not found or unauthorized', 404);
   }
 
-  const questions = await Question.find({ quizId: quiz._id });
-  if (!questions || questions.length === 0) {
-    return next(new AppError('Cannot publish an empty draft. Please add at least 1 question.', 400));
-  }
+  await withDraftWrite(quiz, async () => {
+    await validateQuizPublication(quiz, req);
 
-  if (quiz.isChallenge) {
-    if (questions.length > 10) {
-      return next(new AppError('Challenges cannot have more than 10 questions.', 400));
-    }
-    if (!Number.isFinite(Number(quiz.durationMinutes)) || Number(quiz.durationMinutes) <= 0) {
-      return next(new AppError('Challenges require a valid duration in minutes.', 400));
-    }
-    if (!quiz.deadlineAt || Number.isNaN(new Date(quiz.deadlineAt).getTime()) || new Date(quiz.deadlineAt) <= new Date()) {
-      return next(new AppError('Challenges require a valid future deadline.', 400));
-    }
-  }
+    const visibility = quiz.isChallenge
+      ? quiz.accessType === 'invite_only' ? 'private' : 'public'
+      : req.body.visibility === 'private' ? 'private' : 'public';
+    quiz.visibility = visibility;
+    quiz.isPublic = visibility === 'public';
+    if (quiz.isChallenge) quiz.challengeStatus = 'active';
+    quiz.metadata = {
+      ...quiz.metadata,
+      savedAsDraft: false,
+      publishedAt: new Date(),
+    };
 
-  for (const q of questions) {
-    if (q.questionType === 'short_answer' && !String(q.correctAnswer || '').trim()) {
-      return next(new AppError(`Question ${q.questionNumber || ''} is missing its expected answer.`, 400));
-    }
-    if (['multiple_choice', 'dropdown', 'checkboxes'].includes(q.questionType)) {
-      if (!q.options || q.options.length < 2) {
-        return next(new AppError(`Question ${q.questionNumber || ''} must have at least 2 options.`, 400));
-      }
-      const hasAnswer = Array.isArray(q.correctAnswer)
-        ? q.correctAnswer.length > 0
-        : Boolean(String(q.correctAnswer || '').trim());
-      const hasCorrect = q.options.some((o) => o.isCorrect) || hasAnswer;
-      if (!hasCorrect) {
-        return next(new AppError(`Question ${q.questionNumber || ''} is missing a correct answer.`, 400));
-      }
-    }
-  }
-
-  await validateQuestionMedia(questions.map(q => q.toObject()), req);
-
-  const visibility = quiz.isChallenge
-    ? quiz.accessType === 'invite_only' ? 'private' : 'public'
-    : req.body.visibility === 'private' ? 'private' : 'public';
-  quiz.visibility = visibility;
-  quiz.isPublic = visibility === 'public';
-  if (quiz.isChallenge) quiz.challengeStatus = 'active';
-  quiz.metadata = {
-    ...quiz.metadata,
-    savedAsDraft: false,
-    publishedAt: new Date(),
-  };
-
-  await quiz.save();
+    await quiz.save();
+  });
 
   if (quiz.visibility === 'public') {
     await syncUserPublicQuizCount(quiz.uploader);
@@ -1825,45 +1998,37 @@ export const saveManualDraft = catchAsync(async (req, res, next) => {
   if (req.body.draftId) {
     const existingDraft = await Quiz.findOne({ _id: req.body.draftId, uploader });
     if (existingDraft) {
-      existingDraft.title = String(title || 'Untitled Quiz').trim().slice(0, 70);
-      existingDraft.description = description || '';
-      if (req.body.thumbnail !== undefined || req.body.coverUrl !== undefined) {
-        existingDraft.thumbnail = normalizeCoverReference(req.body.thumbnail || req.body.coverUrl);
-      }
-      existingDraft.tags = Array.isArray(req.body.tags) ? req.body.tags.map((t) => String(t).trim()).filter(Boolean) : [];
-      existingDraft.category = String(req.body.category || 'General').trim() || 'General';
-      existingDraft.difficulty = normalizeDifficulty(req.body.difficulty);
-      existingDraft.isChallenge = isChallenge;
-      existingDraft.deadlineAt = isChallenge ? deadlineAt : null;
-      existingDraft.durationMinutes = isChallenge ? durationMinutes : 0;
-      existingDraft.accessType = isChallenge ? accessType : 'public';
-      existingDraft.inviteAccessType = isChallenge ? inviteAccessType : null;
-      existingDraft.challengeStatus = isChallenge
-        ? (effectiveDraft ? 'draft' : 'active')
-        : 'active';
-      existingDraft.settings = {
-        ...(existingDraft.settings?.toObject?.() || existingDraft.settings || {}),
-        ...req.body.settings,
-      };
-      existingDraft.visibility = visibility;
-      existingDraft.isPublic = visibility === 'public';
-      existingDraft.metadata = {
-        ...existingDraft.metadata,
-        ...metadata,
-        savedAsDraft: effectiveDraft,
-        lastAutosavedAt: new Date(),
-      };
-      await Question.deleteMany({ quizId: existingDraft._id });
-      if (questions.length > 0) {
-        const questionDocs = questions.map((q, index) => ({
-          ...normalizeManualQuestion(q, index),
-          quizId: existingDraft._id,
-        }));
-        await Question.insertMany(questionDocs);
-      }
-      existingDraft.questionCount = questions.length;
-      existingDraft.totalMarks = questions.reduce((acc, question) => acc + (Number(question.marks) || 1), 0);
-      await existingDraft.save();
+      await withDraftWrite(existingDraft, async () => {
+        existingDraft.title = String(title || 'Untitled Quiz').trim().slice(0, 70);
+        existingDraft.description = description || '';
+        if (req.body.thumbnail !== undefined || req.body.coverUrl !== undefined) {
+          existingDraft.thumbnail = normalizeCoverReference(req.body.thumbnail || req.body.coverUrl);
+        }
+        existingDraft.tags = Array.isArray(req.body.tags) ? req.body.tags.map((t) => String(t).trim()).filter(Boolean) : [];
+        existingDraft.category = String(req.body.category || 'General').trim() || 'General';
+        existingDraft.difficulty = normalizeDifficulty(req.body.difficulty);
+        existingDraft.isChallenge = isChallenge;
+        existingDraft.deadlineAt = isChallenge ? deadlineAt : null;
+        existingDraft.durationMinutes = isChallenge ? durationMinutes : 0;
+        existingDraft.accessType = isChallenge ? accessType : 'public';
+        existingDraft.inviteAccessType = isChallenge ? inviteAccessType : null;
+        existingDraft.challengeStatus = isChallenge
+          ? (effectiveDraft ? 'draft' : 'active')
+          : 'active';
+        existingDraft.settings = {
+          ...(existingDraft.settings?.toObject?.() || existingDraft.settings || {}),
+          ...req.body.settings,
+        };
+        existingDraft.visibility = visibility;
+        existingDraft.isPublic = visibility === 'public';
+        existingDraft.metadata = {
+          ...existingDraft.metadata,
+          ...metadata,
+          savedAsDraft: effectiveDraft,
+          lastAutosavedAt: new Date(),
+        };
+        await replaceDraftQuestions(existingDraft, questions);
+      });
 
       await syncUserPublicQuizCount(uploader);
       if (!effectiveDraft && existingDraft.visibility === 'public') {
@@ -1885,7 +2050,7 @@ export const saveManualDraft = catchAsync(async (req, res, next) => {
 
   const requestedThumbnail = normalizeCoverReference(req.body.thumbnail || req.body.coverUrl);
 
-  const quiz = await Quiz.create({
+  const quiz = new Quiz({
     title: String(title || 'Untitled Quiz').trim().slice(0, 70),
     description: description || '',
     thumbnail: requestedThumbnail,
@@ -1921,14 +2086,7 @@ export const saveManualDraft = catchAsync(async (req, res, next) => {
     totalMarks: questions.reduce((acc, question) => acc + (Number(question.marks) || 1), 0),
   });
 
-  if (questions.length > 0) {
-    const questionDocs = questions.map((q, index) => ({
-      ...normalizeManualQuestion(q, index),
-      quizId: quiz._id,
-    }));
-
-    await Question.insertMany(questionDocs);
-  }
+  await replaceDraftQuestions(quiz, questions);
 
   if (!effectiveDraft && quiz.visibility === 'public') {
     await syncUserPublicQuizCount(uploader);

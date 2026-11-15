@@ -172,6 +172,28 @@ test('Step 03 identity and privacy controls through the gateway and direct servi
     }
   });
 
+  await t.test('messaging rejects suspended accounts over HTTP and Socket.IO', async () => {
+    const suspended = new ApiClient();
+    const registered = await suspended.registerTestUser('suspendedchat');
+    const suspendedId = new ObjectId(registered.userId);
+    status(await suspended.get('/api/v1/messages/unread-count'), 200);
+
+    // Hold the token version steady to verify messaging checks the moderation flag itself.
+    await users.updateOne({ _id: suspendedId }, { $set: { isSuspended: true, suspensionReason: 'Test moderation' } });
+    status(await suspended.get('/api/v1/messages/unread-count'), 403);
+    const socket = io(process.env.GATEWAY_URL, {
+      auth: { token: suspended.token }, transports: ['websocket'], reconnection: false, autoConnect: false,
+    });
+    try {
+      const rejected = once(socket, 'connect_error', { signal: AbortSignal.timeout(5000) });
+      socket.connect();
+      const [error] = await rejected;
+      assert.match(error.message, /Authentication required/);
+    } finally {
+      socket.disconnect();
+    }
+  });
+
   await t.test('revocation rejects old and legacy access tokens and disconnects an idle socket', async () => {
     const oldAccess = client.token;
     const legacyAccess = jwt.sign({ id: user.userId }, process.env.JWT_SECRET, { expiresIn: '5m' });

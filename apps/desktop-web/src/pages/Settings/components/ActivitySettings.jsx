@@ -1,3 +1,4 @@
+import FilterSelect from '../../../components/ui/FilterSelect';
 import { rankSearchResults } from '../../../components/search/rankSearchResults';
 import { usePageSearch } from '../../../components/search/PageSearchContext';
 import React, { useState, useEffect, useMemo } from 'react';
@@ -29,7 +30,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { clearCachedPreferences } from '../../../store/settingsStore';
 import api from '../../../api/axios';
 import { SettingsInfo, SettingsSection, SettingsRow } from './SettingsSection';
-import { Button, showCustomDialog, CustomSelect } from '../../../components/ui';
+import { Button, showCustomDialog } from '../../../components/ui';
 import ConfirmDeleteModal from '../../../components/ui/ConfirmDeleteModal';
 import SubmissionCalendar from './SubmissionCalendar';
 
@@ -485,13 +486,7 @@ export function ActivitySettings() {
         <div className="settings-activity-toolbar">
           <div className="settings-activity-toolbar-left">
             <div className="settings-activity-select-wrapper">
-              <CustomSelect
-                options={filterOptions}
-                value={filter}
-                onChange={setFilter}
-                size="sm"
-                placeholder="Filter by activity..."
-              />
+              <FilterSelect label="Activity" options={filterOptions} value={filter} onChange={setFilter} />
             </div>
 
           </div>

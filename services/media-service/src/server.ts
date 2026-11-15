@@ -11,8 +11,10 @@ import { connectDB, contentDbReady } from './config/db.js';
 import mediaRoutes from './routes/media.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { recoverClipJobs, cleanupAbandonedClips } from './services/clipProcessing.service.js';
+import { cleanChatAttachments } from './controllers/chatAttachment.controller.js';
 
 const app = express();
+
 const storageRoot = path.resolve(env.MEDIA_STORAGE_PATH);
 let server: Server | undefined;
 
@@ -27,6 +29,13 @@ app.use(helmet({
 }));
 app.use(cookieParser());
 app.use(express.json({ limit: '32kb' }));
+
+app.get('/', (_req, res) => {
+  res.set('Cache-Control', 'no-store').json({
+    service: 'media-service', message: 'QuizFocus Media Service. This port serves the API. Open the QuizFocus desktop app to use the website.',
+    health: '/api/v1/health',
+  });
+});
 
 app.get('/api/v1/health', (req, res) => {
   const healthy = mongoose.connection.readyState === 1 && contentDbReady();
@@ -52,7 +61,10 @@ const start = async () => {
   await recoverClipJobs();
   const recover = setInterval(() => recoverClipJobs().catch(() => console.error('Clip job recovery failed')),30000);
   recover.unref();
-  const cleanup = setInterval(() => cleanupAbandonedClips().catch(() => console.error('Abandoned media cleanup failed')),3600000);
+  const cleanup = setInterval(() => {
+    void cleanupAbandonedClips().catch(() => console.error('Abandoned media cleanup failed'));
+    void cleanChatAttachments().catch(() => console.error('Chat attachment cleanup failed'));
+  }, 3600000);
   cleanup.unref();
   server = app.listen(env.PORT, () => {
     console.log(`Media service running on port ${env.PORT} [${env.NODE_ENV}]`);

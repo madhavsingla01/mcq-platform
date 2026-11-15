@@ -3,7 +3,9 @@ import { catchAsync } from '../middleware/error.middleware.js';
 import { Router } from 'express';
 import {
   generateQuiz,
+  getIntegrationImportQuestions,
   getQuiz,
+  getIntegrationQuiz,
   getQuizByCode,
   getQuizQuestions,
   getMyQuizzes,
@@ -19,6 +21,8 @@ import {
   getDrafts,
   getDraftById,
   updateDraft,
+  appendIntegrationQuizQuestions,
+  validateIntegrationQuizDraft,
   publishDraft,
   duplicateDraft,
   deleteDraft,
@@ -29,6 +33,7 @@ import { validateObjectId, validateQuizIdentifier } from '../middleware/validati
 const router = Router();
 
 router.post('/generate', optionalAuth, generateQuiz);
+router.get('/imports/:id/questions', protect, validateObjectId('id'), getIntegrationImportQuestions);
 router.post('/challenge', protect, createChallenge);
 router.post('/manual', protect, saveManualDraft);
 router.post('/media-validation', protect, catchAsync(async (req, res) => {
@@ -37,11 +42,14 @@ router.post('/media-validation', protect, catchAsync(async (req, res) => {
   res.json({ success: true, data: { questions } });
 }));
 router.get('/my', protect, getMyQuizzes);
+router.get('/my/:id', protect, validateObjectId('id'), getIntegrationQuiz);
 
 // Dedicated Draft Management Endpoints
 router.get('/drafts', protect, getDrafts);
 router.get('/drafts/:id', validateObjectId('id'), protect, getDraftById);
 router.put('/drafts/:id', validateObjectId('id'), protect, updateDraft);
+router.post('/drafts/:id/questions', protect, validateObjectId('id'), appendIntegrationQuizQuestions);
+router.post('/drafts/:id/validate', protect, validateObjectId('id'), validateIntegrationQuizDraft);
 router.post('/drafts/:id/publish', validateObjectId('id'), protect, publishDraft);
 router.post('/drafts/:id/duplicate', validateObjectId('id'), protect, duplicateDraft);
 router.delete('/drafts/:id', validateObjectId('id'), protect, deleteDraft);

@@ -8,11 +8,11 @@ process.env.PORT = '5013';
 process.env.CLIENT_URL = 'http://localhost:5173,http://localhost:3000';
 process.env.JWT_SECRET = 'quizfocus-local-development-secret-minimum-32-bytes-long';
 
-const { validateEnv } = await import('../src/config/env.js');
-const { app, start, shutdown } = await import('../src/server.js');
-const { AppError, catchAsync, errorHandler, notFoundHandler } = await import('../src/middleware/error.middleware.js');
-const { validateBody, validateObjectId } = await import('../src/middleware/validation.middleware.js');
-const { verifySessionToken, protect, optionalAuth } = await import('../src/middleware/auth.middleware.js');
+const { validateEnv } = await import('../dist/config/env.js');
+const { app, start, shutdown } = await import('../dist/server.js');
+const { AppError, catchAsync, errorHandler, notFoundHandler } = await import('../dist/middleware/error.middleware.js');
+const { validateBody, validateObjectId } = await import('../dist/middleware/validation.middleware.js');
+const { verifySessionToken, protect, optionalAuth } = await import('../dist/middleware/auth.middleware.js');
 
 describe('Marketplace Service — Milestone 3 Test Suite', () => {
   let testServer;

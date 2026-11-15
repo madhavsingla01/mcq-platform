@@ -19,6 +19,7 @@ import { pruneExpiredSessions } from './services/session.service.js';
 const allowedOrigins = env.CLIENT_URL;
 
 const app = express();
+
 app.set('trust proxy', env.AUTH_TRUST_PROXY_HOPS);
 
 app.use(cors({
@@ -39,6 +40,13 @@ app.use(cookieParser());
 app.use(csrfProtection);
 
 // Health check
+app.get('/', (_req, res) => {
+  res.set('Cache-Control', 'no-store').json({
+    service: 'auth-service', message: 'QuizFocus Auth Service. This port serves the API. Open the QuizFocus desktop app to use the website.',
+    health: '/api/v1/health',
+  });
+});
+
 app.get('/api/v1/health', (req, res) => {
   const connected = mongoose.connection.readyState === 1;
   res.status(connected ? 200 : 503).json({

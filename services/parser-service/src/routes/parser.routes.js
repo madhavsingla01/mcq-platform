@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { parseFile, applyMapping, getPreview, getAssetPreview } from '../controllers/parser.controller.js';
+import { parseFile, applyMapping, getPreview, getAssetPreview, searchImportedRows } from '../controllers/parser.controller.js';
 import { createParseJob } from '../controllers/job.controller.js';
 import { optionalAuth } from '../middleware/auth.middleware.js';
 import { validateObjectId } from '../middleware/validation.middleware.js';
@@ -18,5 +18,6 @@ router.get('/api/v1/parser/preview/:assetId', getAssetPreview);
 router.post('/parse/:uploadId', validateObjectId('uploadId'), optionalAuth, parseFile);
 router.post('/map/:uploadId', validateObjectId('uploadId'), optionalAuth, applyMapping);
 router.get('/preview/:uploadId', validateObjectId('uploadId'), optionalAuth, getPreview);
+router.get('/preview/:uploadId/search', validateObjectId('uploadId'), optionalAuth, searchImportedRows);
 
 export default router;

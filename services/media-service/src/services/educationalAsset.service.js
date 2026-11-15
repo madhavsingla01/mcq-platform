@@ -243,7 +243,7 @@ export async function saveEducationalAssetUpload(assetId, uploadToken, inputPayl
     throw new AppError('Invalid asset ID', 400);
   }
 
-  const asset = await MediaAsset.findOne({ _id: assetId, deletedAt: null });
+  const asset = await MediaAsset.findOne({ _id: assetId, purpose: { $ne: 'chat-attachment' }, deletedAt: null });
   if (!asset) throw new AppError('Asset not found', 404);
   if (asset.status !== 'initiated') {
     throw new AppError(`Asset is not awaiting upload (current status: ${asset.status})`, 409);
@@ -336,7 +336,7 @@ export async function updateEducationalAssetStatus(
     throw new AppError('Invalid asset ID', 400);
   }
 
-  const asset = await MediaAsset.findOne({ _id: assetId, deletedAt: null }).select('+sourcePath +content.filePath');
+  const asset = await MediaAsset.findOne({ _id: assetId, purpose: { $ne: 'chat-attachment' }, deletedAt: null }).select('+sourcePath +content.filePath');
   if (!asset) throw new AppError('Asset not found', 404);
 
   validateTransition(asset.status, targetStatus, asset.processingAttempts);
@@ -404,7 +404,7 @@ export async function updateEducationalAssetStatus(
   if (updateInc) updateOp.$inc = updateInc;
 
   const updated = await MediaAsset.findOneAndUpdate(
-    { _id: assetId, status: asset.status, deletedAt: null },
+    { _id: assetId, purpose: { $ne: 'chat-attachment' }, status: asset.status, deletedAt: null },
     updateOp,
     { new: true }
   );
@@ -424,7 +424,7 @@ export async function getEducationalAssetAccess(assetId, viewer) {
     throw new AppError('Invalid asset ID', 400);
   }
 
-  const asset = await MediaAsset.findOne({ _id: assetId, deletedAt: null });
+  const asset = await MediaAsset.findOne({ _id: assetId, purpose: { $ne: 'chat-attachment' }, deletedAt: null });
   if (!asset) throw new AppError('Asset not found', 404);
 
   if (asset.status === 'quarantined') {
@@ -461,7 +461,7 @@ export async function streamEducationalAssetContent(assetId, grantToken, req, re
 
   verifySignedAccessGrant(grantToken, assetId);
 
-  const asset = await MediaAsset.findOne({ _id: assetId, deletedAt: null }).select('+sourcePath +content.filePath');
+  const asset = await MediaAsset.findOne({ _id: assetId, purpose: { $ne: 'chat-attachment' }, deletedAt: null }).select('+sourcePath +content.filePath');
   if (!asset) throw new AppError('Asset not found', 404);
 
   if (asset.status === 'quarantined') {

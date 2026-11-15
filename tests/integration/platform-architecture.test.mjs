@@ -17,6 +17,12 @@ test('Step 02 gateway, domain ownership and real product lifecycle contracts', a
   const mongo = new MongoClient(process.env.MONGO_URI); await mongo.connect();
   await attemptMongoose.connect(process.env.MONGO_URI);
   const db = mongo.db();
+  const expireContest = async id => {
+    const write = await db.collection('quizzes').updateOne(
+      { _id: new ObjectId(id) }, { $set: { deadlineAt: new Date(Date.now() - 60_000) } },
+    );
+    assert.equal(write.modifiedCount, 1, 'the isolated contest deadline must be moved into the past');
+  };
   t.after(async () => { await attemptMongoose.disconnect(); await mongo.close(); });
   const author = new ApiClient(), player = new ApiClient(), stranger = new ApiClient();
   const [a,p] = await Promise.all([author.registerTestUser('architect'),player.registerTestUser('participant'),stranger.registerTestUser('outsider')]);
@@ -125,6 +131,8 @@ test('Step 02 gateway, domain ownership and real product lifecycle contracts', a
     assert.equal(outsideStandings.data.data.viewerSubmission, null);
     const review=await player.get(`/api/v1/attempts/${id}/result`);check(review,200);
     assert.deepEqual(review.data.data.questions,[]);
+    assert.equal(review.data.data.contest.submissionCount, 1);
+    assert.ok(Date.parse(review.data.data.contest.deadlineAt));
     const result = AttemptResultSummary.parse(review.data.data);
     assert.equal(result.attempt.score, null);
     assert.equal(result.allowReview, false);
@@ -174,7 +182,7 @@ test('Step 02 gateway, domain ownership and real product lifecycle contracts', a
     assert.ok(searchHit);
     assert.equal(searchHit.questions, undefined);
     assert.equal(searchHit.avgScore, 0);
-    await db.collection('quizzes').updateOne({_id:new ObjectId(challengeId)},{$set:{deadlineAt:new Date(Date.now()-1000)}});
+    await expireContest(challengeId);
     await finalizeExpiredAttempts();
     const ranked=await player.get(`/api/v1/challenges/${challengeId}/leaderboard`);check(ranked,200);
     assert.equal(ranked.data.data.quarantined,false);
@@ -201,7 +209,7 @@ test('Step 02 gateway, domain ownership and real product lifecycle contracts', a
     const id = created.data.data.challengeId;
     const attempt = await stranger.post(`/api/v1/quiz/${id}/attempt`, {}, { expectedStatus: 201 });
     const path = `/api/v1/challenges/${id}/leaderboard`;
-    await db.collection('quizzes').updateOne({ _id: new ObjectId(id) }, { $set: { deadlineAt: new Date(Date.now() - 1000) } });
+    await expireContest(id);
     const pending = (await stranger.get(path, { expectedStatus: 200 })).data.data;
     assert.equal(pending.finalizing, true);
     assert.equal(pending.viewerSubmission, null);
@@ -257,7 +265,7 @@ test('Step 02 gateway, domain ownership and real product lifecycle contracts', a
     assert.equal(submission.data.data.score,null);
     const before = await player.get(`/api/v1/attempts/${attempt._id}/result`); check(before,200);
     assert.deepEqual(before.data.data.questions,[]);
-    await db.collection('quizzes').updateOne({_id:new ObjectId(draftId)},{$set:{deadlineAt:new Date(Date.now()-1000)}});
+    await expireContest(draftId);
     const released = await player.get(`/api/v1/attempts/${attempt._id}/result`); check(released,200);
     assert.equal(released.data.data.attempt.score,3);
     assert.deepEqual(released.data.data.questions[0].correctAnswer,['A','C']);

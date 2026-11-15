@@ -12,6 +12,7 @@ const EXAMPLE_CONFIG_SERVICES = new Set([
   ...SOCIAL_DOMAIN_SERVICES,
   'ai-integration-service',
   'marketplace-service',
+  'analytics-service',
 ]);
 
 export const SERVICE_PORTS = {
@@ -30,6 +31,7 @@ export const SERVICE_PORTS = {
   'social-comments-service': 5012,
   'marketplace-service': 5013,
   'ai-integration-service': 5014,
+  'analytics-service': 5015,
 };
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.join(scriptDirectory, '..');
@@ -82,6 +84,17 @@ export function createServiceEnvironment(service, services, root, processEnv = p
     PORT: String(service.port),
   };
 
+  if (service.name === 'ai-integration-service') {
+    for (const [key, name] of [
+      ['AUTH_SERVICE_URL', 'auth-service'],
+      ['QUIZ_SERVICE_URL', 'quiz-service'],
+      ['CHALLENGE_SERVICE_URL', 'challenge-service'],
+    ]) {
+      const core = services.find(candidate => candidate.name === name);
+      if (core) childEnv[key] ||= 'http://127.0.0.1:' + core.port;
+    }
+  }
+
   if (service.name === 'api-gateway') {
     const serviceRoutes = [
       ['SOCIAL_FEED_SERVICE_URL', 'social-feed-service'],
@@ -89,12 +102,13 @@ export function createServiceEnvironment(service, services, root, processEnv = p
       ['SOCIAL_COMMENTS_SERVICE_URL', 'social-comments-service'],
       ['MARKETPLACE_SERVICE_URL', 'marketplace-service'],
       ['AI_INTEGRATION_SERVICE_URL', 'ai-integration-service'],
+      ['ANALYTICS_SERVICE_URL', 'analytics-service'],
     ];
     for (const [key, name] of serviceRoutes) {
       const domainService = services.find(candidate => candidate.name === name);
       if (domainService) {
         childEnv[key] = processEnv[key] || serviceEnv[key] || `http://127.0.0.1:${domainService.port}`;
-      } else if (name !== 'marketplace-service') {
+      } else if (name !== 'marketplace-service' && name !== 'analytics-service') {
         throw new Error(`Missing ${name} in the service list.`);
       }
     }

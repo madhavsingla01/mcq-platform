@@ -8,7 +8,6 @@ import {
   User,
   FileText,
   Users,
-  TrendingUp,
   ArrowRight,
   Sparkles,
   Copy,
@@ -38,7 +37,7 @@ export default function GlobalSearchModal() {
   const [query, setQuery] = useState(searchInitialQuery || '');
   const [activeTab, setActiveTab] = useState(searchInitialTab || 'top'); // 'top' | 'quizzes' | 'accounts' | 'tags'
   const [loading, setLoading] = useState(false);
-  const [trendingTags, setTrendingTags] = useState([]);
+  const [recentTags, setRecentTags] = useState([]);
   const [recentSearches, setRecentSearches] = useState([]);
   const [copiedCode, setCopiedCode] = useState('');
   const [results, setResults] = useState({
@@ -93,16 +92,14 @@ export default function GlobalSearchModal() {
     inputRef.current?.select();
   }, [isSearchOpen, searchInitialQuery, searchInitialTab]);
 
-  // Fetch trending hashtags dynamically from DB (zero hardcoding)
   useEffect(() => {
     if (!isSearchOpen) return;
-    SearchService.getTrendingTags(10)
+    let active = true;
+    SearchService.getRecentTags(10)
       .then((tags) => {
-        setTrendingTags(tags || []);
-      })
-      .catch(() => {
-        setTrendingTags([]);
+        if (active) setRecentTags(tags);
       });
+    return () => { active = false; };
   }, [isSearchOpen]);
 
 
@@ -473,18 +470,17 @@ export default function GlobalSearchModal() {
                 )}
               </div>
 
-              {/* Trending Hashtags Section */}
               <div className="search-section trending-section">
                 <div className="search-section-header">
                   <div className="trending-title-wrap">
-                    <TrendingUp size={15} className="trending-icon" />
-                    <span className="search-section-title">Trending Hashtags</span>
+                    <Hash size={15} className="trending-icon" />
+                    <span className="search-section-title">Explore hashtags</span>
                   </div>
                 </div>
 
                 <div className="search-trending-chips">
-                  {trendingTags.length > 0 ? (
-                    trendingTags.map((t) => (
+                  {recentTags.length > 0 ? (
+                    recentTags.map((t) => (
                       <button
                         key={t.tag}
                         type="button"
@@ -493,13 +489,10 @@ export default function GlobalSearchModal() {
                       >
                         <Hash size={13} className="chip-hash-icon" />
                         <span className="chip-tag-name">{t.tag}</span>
-                        {t.count > 0 && (
-                          <span className="chip-count">{t.count}</span>
-                        )}
                       </button>
                     ))
                   ) : (
-                    <span className="search-no-recent-text">No trending hashtags yet.</span>
+                    <span className="search-no-recent-text">No hashtags yet.</span>
                   )}
                 </div>
               </div>

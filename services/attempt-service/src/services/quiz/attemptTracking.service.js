@@ -207,7 +207,8 @@ const normalizeQuestionStates = (questionStates = []) => {
 
       return {
         questionId,
-        selectedAnswer: typeof state.selectedAnswer === 'string' ? state.selectedAnswer.trim() : null,
+        selectedAnswer: typeof state.selectedAnswer === 'string' ? state.selectedAnswer.trim()
+          : state.selectedAnswer === null ? null : undefined,
         timeSpentMs: clampMs(
           state.timeSpentMs ??
           state.timeTakenMs ??
@@ -302,6 +303,7 @@ const mergeAnswerState = ({
     answer.timeTaken = msToSeconds(answer.timeTakenMs);
   }
 
+  const previousSubmittedAt = parseDateValue(answer.submittedAt);
   const submissionTimestamps = uniqueSortedDates([
     ...(Array.isArray(answer.submissionTimestamps) ? answer.submissionTimestamps : []),
     ...incomingState.submissionTimestamps,
@@ -313,10 +315,13 @@ const mergeAnswerState = ({
     answer.submittedAt = getLatestDate(submissionTimestamps);
   }
 
-  if (incomingState.selectedAnswer) {
+  const clearWrittenAnswer = question.questionType === 'short_answer' &&
+    (incomingState.selectedAnswer === '' || incomingState.selectedAnswer === null) &&
+    Boolean(incomingState.submittedAt) && !answer.isLocked;
+  if (incomingState.selectedAnswer || clearWrittenAnswer) {
     const normalizedSelectedAnswer = normalizeSelectedAnswer(incomingState.selectedAnswer, question);
 
-    if (!normalizedSelectedAnswer) {
+    if (!normalizedSelectedAnswer && !clearWrittenAnswer) {
       appendFlag(
         flags,
         'invalid_answer_option',
@@ -333,20 +338,16 @@ const mergeAnswerState = ({
         `Attempt tried to change locked answer for question ${question.questionNumber}.`
       );
     } else {
-      const existingSubmittedAt = parseDateValue(answer.submittedAt);
       const incomingSubmittedAt = pickLatestByTimestamp(
         incomingState.submittedAt,
         incomingState.lastClientUpdatedAt,
-        getLatestDate(submissionTimestamps)
+        getLatestDate(incomingState.submissionTimestamps)
       );
 
       const shouldReplaceSelection =
-        !answer.selectedAnswer ||
-        !existingSubmittedAt ||
-        (
-          incomingSubmittedAt &&
-          incomingSubmittedAt.getTime() >= existingSubmittedAt.getTime()
-        );
+        !previousSubmittedAt ||
+        !incomingSubmittedAt ||
+        incomingSubmittedAt.getTime() >= previousSubmittedAt.getTime();
 
       if (shouldReplaceSelection) {
         const previousAnswer = answer.selectedAnswer || null;

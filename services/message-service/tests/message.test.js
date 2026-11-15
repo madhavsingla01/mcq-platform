@@ -16,8 +16,8 @@ import {
   assertEditable,
   requireId,
   validId,
-} from '../src/services/messagePolicy.js';
-import { AppError } from '../src/middleware/error.middleware.js';
+} from '../dist/services/messagePolicy.js';
+import { AppError } from '../dist/middleware/error.middleware.js';
 
 test('messagePolicy textValue and identifier validation', () => {
   // textValue
@@ -129,8 +129,23 @@ test('assertEditable enforces sender ownership, deleted state, and 15-minute win
   );
 });
 
+test('conversation and message indexes support chat history queries', async () => {
+  const { default: Conversation } = await import('../dist/models/Conversation.model.js');
+  const { default: Message } = await import('../dist/models/Message.model.js');
+  const keys = (model) => model.schema.indexes().map(([fields]) => fields);
+  for (const [model, expected] of [
+    [Conversation, { participants: 1, lastMessageAt: -1 }],
+    [Message, { conversation: 1, createdAt: 1 }],
+    [Message, { conversation: 1, createdAt: -1 }],
+  ]) {
+    assert.ok(keys(model).some((fields) =>
+      Object.keys(fields).length === Object.keys(expected).length &&
+      Object.entries(expected).every(([field, direction]) => fields[field] === direction)));
+  }
+});
+
 test('message routes structure adheres to microservice boundary', async () => {
-  const { default: router } = await import('../src/routes/message.routes.js');
+  const { default: router } = await import('../dist/routes/message.routes.js');
   const routePaths = router.stack
     .filter((layer) => layer.route)
     .map((layer) => layer.route.path);

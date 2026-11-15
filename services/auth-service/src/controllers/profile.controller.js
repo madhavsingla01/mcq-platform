@@ -29,18 +29,14 @@ export const canViewPrivateDetails = async (targetUser, viewer) => {
   return Boolean(isFollowing);
 };
 
-const publicQuizFilterFor = (userId, viewerId = null) => {
-  const isOwner = viewerId && String(viewerId) === String(userId);
-  if (isOwner) {
-    return { uploader: userId };
-  }
-  return {
+const publicQuizFilterFor = userId => ({
     uploader: userId,
-    visibility: { $ne: 'private' },
-    $or: [{ visibility: 'public' }, { isPublic: true }],
+    isRestricted: { $ne: true },
+    accessType: { $ne: 'invite_only' },
+    $or: [{ visibility: 'public' }, { visibility: null, isPublic: true }],
     'metadata.savedAsDraft': { $ne: true },
-  };
-};
+    challengeStatus: { $nin: ['draft', 'publishing'] },
+});
 
 export const getProfile = catchAsync(async (req, res, next) => {
   const user = await resolveUserByIdentifier(
@@ -58,7 +54,7 @@ export const getProfile = catchAsync(async (req, res, next) => {
     : false;
   const isPrivate = Boolean(user.isPrivate || user.isProfilePublic === false);
 
-  const quizCount = await Quiz.countDocuments(publicQuizFilterFor(user._id, req.user?._id));
+  const quizCount = await Quiz.countDocuments({ ...publicQuizFilterFor(user._id), isChallenge: { $ne: true } });
 
   const profileData = {
     _id: user._id,
@@ -94,8 +90,12 @@ export const getUserQuizzes = catchAsync(async (req, res, next) => {
   }
 
   const canAccess = await canViewPrivateDetails(user, req.user);
-  const page = parseInt(req.query.page, 10) || 1;
-  const limit = parseInt(req.query.limit, 10) || 10;
+  const privateView = req.query.visibility === 'private';
+  if (privateView && toIdString(req.user?._id) !== toIdString(user._id)) {
+    return next(new AppError('Private quizzes are only visible to their owner', 403));
+  }
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.max(1, Math.min(100, parseInt(req.query.limit, 10) || 10));
   const skip = (page - 1) * limit;
 
   if (!canAccess) {
@@ -119,7 +119,10 @@ export const getUserQuizzes = catchAsync(async (req, res, next) => {
     });
   }
 
-  const filter = publicQuizFilterFor(user._id, req.user?._id);
+  const filter = privateView
+    ? { uploader: user._id, isChallenge: { $ne: true }, isRestricted: { $ne: true },
+        'metadata.savedAsDraft': { $ne: true }, $or: [{ visibility: 'private' }, { visibility: null, isPublic: { $ne: true } }] }
+    : publicQuizFilterFor(user._id);
 
   const quizzes = await Quiz.find(filter)
     .sort({ createdAt: -1 })

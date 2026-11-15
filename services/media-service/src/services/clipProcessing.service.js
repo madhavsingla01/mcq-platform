@@ -162,7 +162,7 @@ async function encodeQuestionImage(file) {
   }
 }
 
-export async function acceptClip(file, kind, ownerId, requestKey) {
+export async function acceptClip(file, kind, ownerId, requestKey, chatConversationId) {
   if (!file || !['audio','video','image','captions'].includes(kind)) throw new AppError('Choose one audio, video, image, or WebVTT file',400);
   const limit = { captions: env.MEDIA_CAPTION_MAX_FILE_SIZE, image: env.MEDIA_MAX_FILE_SIZE }[kind] ?? env.MEDIA_CLIP_MAX_FILE_SIZE;
   if (file.size < 1 || file.size > limit) throw new AppError('Media exceeds its configured upload limit or is empty',413);
@@ -171,7 +171,7 @@ export async function acceptClip(file, kind, ownerId, requestKey) {
   if (requestKey) {
     const existing = await MediaAsset.findOne({ownerId,'uploadRequestId':requestKey,deletedAt:null});
     if (existing) {
-      if (existing.kind !== kind) throw new AppError('Upload request ID is already used for a different media type',409);
+      if (existing.kind !== kind || (existing.conversationId || undefined) !== chatConversationId) throw new AppError('Upload request ID is already used for a different media type or context',409);
       return existing;
     }
   }
@@ -198,7 +198,8 @@ export async function acceptClip(file, kind, ownerId, requestKey) {
       await fs.writeFile(filePath, image.data);
       content = { filePath, mimeType: 'image/webp', fileSize: image.data.length, width: image.width, height: image.height, animated: image.animated };
     }
-    const asset = await MediaAsset.create({_id:id,ownerId,kind,purpose:'quiz-clip',status:ready?'ready':'queued',sourcePath:ready?undefined:sourcePath,
+    const asset = await MediaAsset.create({_id:id,ownerId,kind,purpose:chatConversationId?'chat-attachment':'quiz-clip',
+      conversationId:chatConversationId,status:ready?'ready':'queued',sourcePath:ready?undefined:sourcePath,
       uploadRequestId:requestKey || undefined,originalName:path.basename(file.originalname || 'clip').slice(0,255),sourceMimeType:captions?'text/vtt':image?.sourceMime || info.mime,
       sourceSize:file.size,fileHash:hash.digest('hex'),sanitized:ready,content});
     if (!ready) enqueueClip(id);
@@ -207,7 +208,7 @@ export async function acceptClip(file, kind, ownerId, requestKey) {
     await fs.rm(directory,{recursive:true,force:true});
     if (error.code === 11000 && requestKey) {
       const existing = await MediaAsset.findOne({ ownerId, uploadRequestId: requestKey, deletedAt: null });
-      if (existing?.kind === kind) return existing;
+      if (existing?.kind === kind && (existing.conversationId || undefined) === chatConversationId) return existing;
       throw new AppError('Upload request ID is no longer available. Choose the file again',409);
     }
     throw error;

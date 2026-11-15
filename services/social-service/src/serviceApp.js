@@ -20,6 +20,13 @@ export function createSocialServiceApp(serviceName, routes) {
   app.use(cookieParser());
   app.use(csrfProtection);
 
+  app.get('/', (_req, res) => {
+    res.set('Cache-Control', 'no-store').json({
+      service: serviceName, message: 'QuizFocus Social API. Open the QuizFocus desktop app to use the website.',
+      health: '/api/v1/health',
+    });
+  });
+
   app.get('/api/v1/health', (req, res) => {
     const healthy = mongoose.connection.readyState === 1;
     res.status(healthy ? 200 : 503).json({

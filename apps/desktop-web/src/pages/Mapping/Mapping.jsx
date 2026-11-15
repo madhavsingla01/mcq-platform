@@ -1,13 +1,11 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { usePageSearch } from '../../components/search/PageSearchContext';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle,
   Table,
   SlidersHorizontal,
   ChevronDown,
   RefreshCw,
-  Copy,
-  ArrowRight,
   Settings,
   Sliders,
   Image as ImageIcon,
@@ -22,6 +20,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, Button, Badge } from '../../components/ui';
+import SmallPopup from '../../components/ui/SmallPopup';
 import { useUploadStore } from '../../store/uploadStore';
 import api from '../../api/axios';
 import { compressImage } from '../../utils/imageCompressor';
@@ -49,6 +48,9 @@ const DIFFICULTIES = ['Beginner', 'Intermediate', 'Advanced', 'All Levels'];
 export default function Mapping() {
   const { uploadId } = useParams();
   const navigate = useNavigate();
+  const { query } = usePageSearch();
+  const search = query.trim();
+  const [rowSearch, setRowSearch] = useState(null);
   const { parsedData, autoMapping, confidence, setColumnMapping } = useUploadStore();
   const [mapping, setMapping] = useState({
     question: '',
@@ -134,6 +136,19 @@ export default function Mapping() {
       }
     }
   }, [uploadId, parsedData, autoMapping, quizTitle]);
+
+  useEffect(() => {
+    if (!search || !parsedData) return;
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      api.get(`/parser/preview/${uploadId}/search`, { params: { q: search }, signal: controller.signal })
+        .then(({ data }) => { if (!controller.signal.aborted) setRowSearch({ query: search, uploadId, ...data.data }); })
+        .catch(() => { if (!controller.signal.aborted) setRowSearch({ query: search, uploadId, error: true }); });
+    }, 350);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [uploadId, parsedData, search]);
+
+  const rows = search ? (rowSearch?.query === search && rowSearch.uploadId === uploadId ? rowSearch : null) : null;
 
   // Escape key to close settings modal
   useEffect(() => {
@@ -312,97 +327,28 @@ export default function Mapping() {
   return (
     <>
       <div className="qf-mapping-shell">
-        {/* Duplicate Quiz Detected Modal Overlay */}
-        {duplicateModal && (
-          <div className="qf-mapping-overlay">
-            <Card style={{ width: 540, maxWidth: '90vw', padding: 28 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-                <div
-                  style={{
-                    width: 42,
-                    height: 42,
-                    borderRadius: '50%',
-                    background: 'rgba(255, 69, 0, 0.12)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--color-primary)',
-                  }}
-                >
-                  <Copy size={20} />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>
-                    Duplicate Quiz Detected
-                  </h3>
-                  <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>
-                    SHA-256 fingerprint matched an existing quiz
-                  </span>
-                </div>
-              </div>
+        <SmallPopup isOpen={Boolean(duplicateModal)} title="This file was imported before"
+          description={duplicateModal ? `“${duplicateModal.title}” was generated from the same file.` : undefined}
+          onClose={() => setDuplicateModal(null)} busy={isSubmitting}
+          actions={<>
+            <Button variant="secondary" autoFocus onClick={() => setDuplicateModal(null)} disabled={isSubmitting}>Cancel</Button>
+            <Button variant="outline" onClick={() => handleConfirm({ forceGenerate: true })} disabled={isSubmitting}>Generate a copy</Button>
+            <Button onClick={() => navigate(`/quiz/${duplicateModal.quizId}`)} disabled={isSubmitting}>Open existing quiz</Button>
+          </>} />
 
-              <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', lineHeight: 1.5, marginBottom: 20 }}>
-                A quiz generated from an identical file already exists: <strong style={{ color: 'var(--color-text)' }}>"{duplicateModal.title}"</strong> ({duplicateModal.questionCount || 'â€”'} questions).
-              </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <Button
-                  size="lg"
-                  variant="primary"
-                  onClick={() => navigate(`/quiz/${duplicateModal.quizId}`)}
-                  style={{ width: '100%', justifyContent: 'center' }}
-                >
-                  <span>Go to Existing Quiz</span>
-                  <ArrowRight size={16} style={{ marginLeft: 6 }} />
-                </Button>
-
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <Button
-                    variant="outline"
-                    onClick={() => handleConfirm({ forceGenerate: true })}
-                    style={{ flex: 1, justifyContent: 'center' }}
-                    disabled={isSubmitting}
-                  >
-                    Generate New Copy Anyway
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={() => setDuplicateModal(null)}
-                    style={{ flex: 1, justifyContent: 'center' }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </div>
-        )}
-
-        {/* Validation Errors Modal overlay */}
-        {validationErrors && (
-          <div className="qf-mapping-overlay">
-            <Card style={{ width: 600, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                <AlertTriangle size={22} style={{ color: 'var(--color-warning)' }} />
-                <h3 style={{ fontSize: 20, fontWeight: 600 }}>Parser Validation Issues</h3>
-              </div>
-              <p style={{ marginBottom: 16, color: 'var(--color-text-secondary)', fontSize: 14 }}>
-                The quiz was generated, but {validationErrors.length} rows were skipped due to formatting errors.
-              </p>
-              <div className="qf-mapping-errors-list">
-                {validationErrors.map((err, i) => (
-                  <div key={i} className="qf-mapping-error-row">
-                    <span style={{ fontWeight: 600, color: 'var(--color-danger)' }}>Row {err.row}:</span> {err.error}
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 20 }}>
-                <Button onClick={() => setValidationErrors(null)} variant="secondary">Go Back</Button>
-                <Button onClick={handleProceedWithErrors}>Proceed to Quiz Anyway</Button>
-              </div>
-            </Card>
-          </div>
-        )}
+        <SmallPopup isOpen={Boolean(validationErrors)} title="Some rows were skipped"
+          description={validationErrors ? `${validationErrors.length} rows could not be used to generate this quiz.` : undefined}
+          onClose={() => setValidationErrors(null)}
+          actions={<>
+            <Button variant="secondary" autoFocus onClick={() => setValidationErrors(null)}>Go back</Button>
+            <Button onClick={handleProceedWithErrors}>Open quiz</Button>
+          </>}>
+          <ul className="qf-mapping-errors-list">
+            {validationErrors?.map((error, index) => (
+              <li key={index} className="qf-mapping-error-row"><strong>Row {error.row}</strong> {error.error}</li>
+            ))}
+          </ul>
+        </SmallPopup>
 
         {/* Left: Preview Table */}
         <Card className="qf-mapping-preview">
@@ -410,6 +356,10 @@ export default function Mapping() {
             <Table size={18} style={{ color: 'var(--color-primary)' }} />
             Data Preview
           </h2>
+          {search && <p role="status">
+            {!rows ? 'Searching imported rows…' : rows.error ? 'Could not search this file. Clear or change the search to try again.'
+              : rows.total === 0 ? 'No matching rows.' : `Showing ${rows.matches.length} of ${rows.total} matching rows.`}
+          </p>}
           <div className="qf-mapping-table-wrap">
             <table className="qf-mapping-table">
               <thead>
@@ -420,10 +370,10 @@ export default function Mapping() {
                 </tr>
               </thead>
               <tbody>
-                {parsedData.preview.map((row, i) => (
-                  <tr key={i}>
+                {(search ? (rows?.matches || []) : parsedData.preview.map((row, index) => ({ row, index }))).map(({ row, index }) => (
+                  <tr key={index}>
                     {parsedData.headers.map((h) => (
-                      <td key={h}>{String(row[h] || '')}</td>
+                      <td key={h}>{String(row[h] ?? '')}</td>
                     ))}
                   </tr>
                 ))}
@@ -493,38 +443,6 @@ export default function Mapping() {
             <SelectField label="Explanation" value={mapping.explanation} onChange={(v) => setMapping({ ...mapping, explanation: v })} options={parsedData.headers} />
             <SelectField label="Topic / Tags" value={mapping.topic} onChange={(v) => setMapping({ ...mapping, topic: v })} options={parsedData.headers} />
             <SelectField label="Difficulty" value={mapping.difficulty} onChange={(v) => setMapping({ ...mapping, difficulty: v })} options={parsedData.headers} />
-
-            {/* â”€â”€ High-Craft Settings Banner Trigger (Replaces old cramped accordion) â”€â”€ */}
-            <div className="qf-mapping-settings-banner">
-              <div className="qf-settings-banner-left">
-                <div className="qf-settings-icon-badge">
-                  <Sliders size={18} />
-                </div>
-                <div className="qf-settings-banner-info">
-                  <div className="qf-settings-banner-title-row">
-                    <h3 className="qf-settings-banner-title">Quiz Settings & Governance</h3>
-                    <span className="qf-settings-chip-mini">
-                      {timerMode === 'none' ? 'Untimed' : `${timeLimit}m`}
-                    </span>
-                  </div>
-                  <p className="qf-settings-banner-summary">
-                    {visibility.charAt(0).toUpperCase() + visibility.slice(1)} • {difficulty} • {category}
-                    {instantFeedback ? ' • Instant Feedback' : ''}
-                    {shuffleQuestions ? ' • Shuffled' : ''}
-                    {coverImage ? ' • Cover set' : ''}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="qf-open-settings-btn"
-                onClick={() => setShowFloatingSettings(true)}
-              >
-                <Settings size={14} className="qf-spin-icon" />
-                <span>Configure Settings</span>
-              </button>
-            </div>
-
             <div style={{ marginTop: 'auto', paddingTop: 16 }}>
               <Button onClick={handleConfirm} disabled={isSubmitting} style={{ width: '100%', height: 46 }}>
                 {isSubmitting ? 'Generating Quiz...' : 'Looks Good, Generate Quiz!'}

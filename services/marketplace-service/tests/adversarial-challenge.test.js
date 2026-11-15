@@ -10,10 +10,10 @@ process.env.PORT = '5013';
 process.env.CLIENT_URL = 'http://localhost:5173,http://localhost:3000';
 process.env.JWT_SECRET = 'quizfocus-local-development-secret-minimum-32-bytes-long';
 
-const { verifySessionToken, protect, optionalAuth } = await import('../src/middleware/auth.middleware.js');
-const { validateBody, validateObjectId } = await import('../src/middleware/validation.middleware.js');
-const { errorHandler, AppError } = await import('../src/middleware/error.middleware.js');
-const { start, shutdown } = await import('../src/server.js');
+const { verifySessionToken, protect, optionalAuth } = await import('../dist/middleware/auth.middleware.js');
+const { validateBody, validateObjectId } = await import('../dist/middleware/validation.middleware.js');
+const { errorHandler, AppError } = await import('../dist/middleware/error.middleware.js');
+const { start, shutdown } = await import('../dist/server.js');
 
 describe('Empirical Adversarial Challenge Suite — Marketplace Service', () => {
   let app;

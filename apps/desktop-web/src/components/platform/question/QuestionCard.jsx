@@ -42,7 +42,9 @@ function QuestionCard({ question, questionNumber }) {
   const shortAnswer = question.questionType === 'short_answer';
   const dropdown = question.questionType === 'dropdown';
   const [pendingAnswer, setPendingAnswer] = useState(selectedAnswer || '');
-  useEffect(() => setPendingAnswer(selectedAnswer || ''), [question._id, selectedAnswer]);
+  useLayoutEffect(() => setPendingAnswer(useQuizStore.getState().answers[question._id]?.selectedAnswer || ''), [question._id]);
+  useEffect(() => setPendingAnswer(current => shortAnswer && current.trim() === (selectedAnswer || '').trim()
+    ? current : selectedAnswer || ''), [selectedAnswer, shortAnswer]);
 
   const options = useMemo(() => Array.isArray(question.options) ? question.options : [], [question.options]);
   const correctAnswer = question.correctAnswer;
@@ -132,11 +134,17 @@ function QuestionCard({ question, questionNumber }) {
       </div>}
 
       <AccessibleMedia clips={question.accessibilityMedia || []} text={question.questionText} quizId={quiz?._id} attemptId={attemptId} />
-      <p className="sr-only" role="status">{selectedAnswer ? (multiple || shortAnswer ? 'Answer saved.' : `Answer ${selectedAnswer} selected.`) : ''}</p>
+      <p className="sr-only" role="status">{selectedAnswer && !shortAnswer ? (multiple ? 'Answer saved.' : `Answer ${selectedAnswer} selected.`) : ''}</p>
       {shortAnswer ? <label className="ws-written-answer">
         Your answer
         <input value={pendingAnswer} maxLength={1000} readOnly={isLocked}
-          onChange={event => setPendingAnswer(event.target.value)} />
+          onChange={event => {
+            const value = event.target.value;
+            setPendingAnswer(value);
+            if (!instantFeedback && value.trim() !== (selectedAnswer || '').trim()) {
+              selectAnswer(question._id, value.trim());
+            }
+          }} />
       </label> : dropdown ? <div className="ws-written-answer">
         <label htmlFor={`${headingId}-answer`}>Choose one answer</label>
         <select id={`${headingId}-answer`} value={selectedAnswer || ''} disabled={isLocked} onChange={event => saveAnswer(event.target.value)}>
@@ -165,7 +173,7 @@ function QuestionCard({ question, questionNumber }) {
           />
         ))}
       </fieldset>}
-      {(shortAnswer || multiple) && !isLocked && <div className="ws-save-answer">
+      {(multiple || (shortAnswer && instantFeedback)) && !isLocked && <div className="ws-save-answer">
         <Button type="button" variant="secondary" disabled={!pendingAnswer.trim() || pendingAnswer.trim() === selectedAnswer}
           onClick={() => saveAnswer(pendingAnswer.trim())}>Save answer</Button>
         {pendingAnswer.trim() !== (selectedAnswer || '') && <span>Save this answer before moving on.</span>}

@@ -14,15 +14,30 @@ export class InternalApiClient {
     requestId: string,
     incomingHeaders: Record<string, string | string[] | undefined>,
   ): Promise<unknown> {
+    return this.requestJson(origin, pathname, requestId, incomingHeaders);
+  }
+
+  async requestJson(
+    origin: string,
+    pathname: string,
+    requestId: string,
+    incomingHeaders: Record<string, string | string[] | undefined>,
+    method: 'GET' | 'POST' | 'PUT' = 'GET',
+    body?: object,
+    delegation?: string,
+  ): Promise<unknown> {
     const url = new URL(pathname, origin);
+    if (url.origin !== origin) throw new Error('Invalid internal destination');
     const headers = new Headers({ accept: 'application/json', 'x-request-id': requestId });
+    if (body) headers.set('content-type', 'application/json');
+    if (delegation) headers.set('x-internal-quizfocus-delegation', delegation);
 
     for (const name of FORWARDED_HEADERS) {
       const value = incomingHeaders[name];
       if (name === 'cookie' && typeof value === 'string') {
-        const accessToken = value.split(';').map((cookie) => cookie.trim())
-          .find((cookie) => cookie.startsWith('accessToken='));
-        if (accessToken) headers.set(name, accessToken);
+        const cookies = value.split(';').map(cookie => cookie.trim()).filter(cookie =>
+          cookie.startsWith('accessToken=') || (method !== 'GET' && cookie.startsWith('csrfToken=')));
+        if (cookies.length) headers.set(name, cookies.join('; '));
       } else if (typeof value === 'string') {
         headers.set(name, value);
       }
@@ -31,8 +46,9 @@ export class InternalApiClient {
     let response: Response;
     try {
       response = await this.fetchImpl(url, {
-        method: 'GET',
+        method,
         headers,
+        ...(body ? { body: JSON.stringify(body) } : {}),
         redirect: 'error',
         signal: AbortSignal.timeout(this.timeoutMs),
       });
@@ -41,19 +57,26 @@ export class InternalApiClient {
       throw new InternalApiError(
         503,
         timedOut ? 'DEPENDENCY_TIMEOUT' : 'DEPENDENCY_UNAVAILABLE',
-        timedOut ? 'Authentication service timed out' : 'Authentication service is unavailable',
+        timedOut ? 'Dependency timed out' : 'Dependency is unavailable',
       );
     }
 
     if (!response.ok) {
-      throw new InternalApiError(response.status, 'AUTHENTICATION_REJECTED', 'Authentication service rejected the request');
+      let message = 'Dependency rejected the request';
+      if (response.status === 400) {
+        const payload: unknown = await response.json().catch(() => undefined);
+        if (typeof payload === 'object' && payload !== null && 'message' in payload && typeof payload.message === 'string') {
+          message = payload.message.slice(0, 300);
+        }
+      }
+      throw new InternalApiError(response.status, 'UPSTREAM_REJECTED', message);
     }
 
     try {
       const payload: unknown = await response.json();
       return payload;
     } catch {
-      throw new InternalApiError(502, 'INVALID_DEPENDENCY_RESPONSE', 'Authentication service returned an invalid response');
+      throw new InternalApiError(502, 'INVALID_DEPENDENCY_RESPONSE', 'Dependency returned an invalid response');
     }
   }
 }

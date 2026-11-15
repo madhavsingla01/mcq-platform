@@ -8,11 +8,11 @@ process.env.PORT = '5013';
 process.env.CLIENT_URL = 'http://localhost:5173,http://localhost:3000';
 process.env.JWT_SECRET = 'quizfocus-local-development-secret-minimum-32-bytes-long';
 
-const { validateEnv } = await import('../services/marketplace-service/src/config/env.js');
-const { app, start, shutdown } = await import('../services/marketplace-service/src/server.js');
-const { AppError, catchAsync, errorHandler, notFoundHandler } = await import('../services/marketplace-service/src/middleware/error.middleware.js');
-const { validateBody, validateObjectId } = await import('../services/marketplace-service/src/middleware/validation.middleware.js');
-const { verifySessionToken, protect, optionalAuth } = await import('../services/marketplace-service/src/middleware/auth.middleware.js');
+const { validateEnv } = await import('../services/marketplace-service/dist/config/env.js');
+const { app, start, shutdown } = await import('../services/marketplace-service/dist/server.js');
+const { AppError, catchAsync, errorHandler, notFoundHandler } = await import('../services/marketplace-service/dist/middleware/error.middleware.js');
+const { validateBody, validateObjectId } = await import('../services/marketplace-service/dist/middleware/validation.middleware.js');
+const { verifySessionToken, protect, optionalAuth } = await import('../services/marketplace-service/dist/middleware/auth.middleware.js');
 
 describe('Adversarial Stress Testing — Marketplace Service (Port 5013)', () => {
   let testServer;

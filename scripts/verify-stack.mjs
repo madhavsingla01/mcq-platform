@@ -21,11 +21,13 @@ const serviceUrlKeys = {
 const entrypoints = {
   'api-gateway': 'dist/server.js',
   'admin-service': 'dist/server.js',
+  'marketplace-service': 'dist/server.js',
   'quiz-service': 'dist/server.js',
   'auth-service': 'dist/server.js',
   'attempt-service': 'dist/server.js',
   'challenge-service': 'dist/server.js',
   'media-service': 'dist/server.js',
+  'message-service': 'dist/server.js',
   'social-feed-service': 'src/index.js',
   'social-interactions-service': 'src/index.js',
   'social-comments-service': 'src/index.js',
@@ -35,6 +37,9 @@ const children = [];
 const logs = new Map();
 const keepServing = process.argv.includes('--serve');
 const testMedia = process.argv.includes('--media');
+const testDrafts = process.argv.includes('--drafts');
+const testDesktopUpdates = process.argv.includes('--desktop-updates');
+const testMcp = process.argv.includes('--mcp');
 const testSecurity = process.argv.includes('--security');
 const testProductionAuth = process.argv.includes('--production-auth');
 const tempRoot = await realpath(tmpdir());
@@ -80,7 +85,14 @@ process.once('SIGINT', async () => { await stop(); process.exit(130); });
 process.once('SIGTERM', async () => { await stop(); process.exit(143); });
 
 try {
-  for (const service of ['api-gateway', 'ai-integration-service', 'media-service', 'auth-service', 'challenge-service', 'attempt-service', 'admin-service', 'quiz-service']) {
+  if (testDesktopUpdates || (!testMcp && !testDrafts && !testMedia && !testSecurity && !testProductionAuth)) {
+    const sdkDirectory = path.join(root, 'packages', 'sdk');
+    const build = spawn(process.execPath, [path.join(sdkDirectory, 'node_modules', 'typescript', 'bin', 'tsc'), '-p', 'tsconfig.json'],
+      { cwd: sdkDirectory, stdio: 'inherit', windowsHide: true });
+    const [code] = await once(build, 'exit');
+    if (code !== 0) throw new Error('Failed to build the SDK before running the isolated stack.');
+  }
+  for (const service of ['api-gateway', 'ai-integration-service', 'media-service', 'auth-service', 'challenge-service', 'attempt-service', 'admin-service', 'marketplace-service', 'message-service', 'quiz-service']) {
     const directory = path.join(root, 'services', service);
     const build = spawn(process.execPath, [
       path.join(directory, 'node_modules', 'typescript', 'bin', 'tsc'),
@@ -104,6 +116,7 @@ try {
     CORS_ALLOWED_ORIGINS: 'http://localhost:5173,http://127.0.0.1:5183',
     MONGO_URI: mongoUri, AUTH_MONGO_URI: mongoUri, QUIZ_MONGO_URI: mongoUri, ATTEMPT_MONGO_URI: mongoUri, MEDIA_CONTENT_MONGO_URI: mongoUri,
     JWT_SECRET: randomBytes(48).toString('hex'), JWT_REFRESH_SECRET: randomBytes(48).toString('hex'),
+    INTEGRATION_DELEGATION_SECRET: randomBytes(48).toString('hex'),
     JWT_EXPIRES_IN: '15m', JWT_REFRESH_EXPIRES_IN: '7d',
     MAX_IMPORT_ROWS: '10000', CACHE_DEFAULT_TTL_MS: '30000', CACHE_SHORT_TTL_MS: '15000', CACHE_SEARCH_TTL_MS: '60000',
     MAX_FILE_SIZE_GUEST: '20480', MAX_FILE_SIZE_AUTH: '10485760', MEDIA_MAX_FILE_SIZE: '12582912',
@@ -149,11 +162,14 @@ try {
     await new Promise(() => {});
   } else {
     const securitySuite = 'tests/integration/identity-security.test.mjs';
-    const suites = testProductionAuth ? [['--test', 'tests/integration/production-auth.test.mjs']]
+    const draftSuite = 'tests/integration/draft-api.test.mjs';
+    const mcpSuite = 'services/ai-integration-service/tests/mcp.integration.test.mjs';
+    const desktopUpdatesSuite = 'tests/integration/desktop-updates.test.mjs';
+    const suites = testDesktopUpdates ? [['--test', desktopUpdatesSuite]] : testMcp ? [['--test', mcpSuite]] : testDrafts ? [['--test', draftSuite]] : testProductionAuth ? [['--test', 'tests/integration/production-auth.test.mjs']]
       : testMedia ? [['--test', 'tests/integration/accessible-media.test.mjs']]
       : testSecurity ? [['--test', securitySuite, 'tests/integration/platform-architecture.test.mjs']]
-        : [['tests/e2e/runner.js'], ['--test', 'tests/integration/chat-settings.test.mjs', 'tests/integration/platform-architecture.test.mjs', securitySuite]];
-    if (!testProductionAuth && !testMedia && !testSecurity) {
+        : [['tests/e2e/runner.js'], ['--test', 'tests/integration/chat-settings.test.mjs', 'tests/integration/platform-architecture.test.mjs', securitySuite, draftSuite, mcpSuite, desktopUpdatesSuite]];
+    if (!testProductionAuth && !testMedia && !testSecurity && !testDrafts && !testMcp && !testDesktopUpdates) {
       const { ApiClient } = await import('../tests/e2e/helpers/api-client.js');
       const { createRequire } = await import('node:module');
       const authRequire = createRequire(new URL('../services/auth-service/package.json', import.meta.url));

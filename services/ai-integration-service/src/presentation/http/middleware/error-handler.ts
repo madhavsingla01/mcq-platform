@@ -16,9 +16,11 @@ export const createErrorHandler = (logger: Logger): ErrorRequestHandler => (erro
     return;
   }
 
-  const appError = error instanceof AppError
-    ? error
-    : new AppError('Internal service error', 500, 'INTERNAL_ERROR');
+  const bodyType = typeof error === 'object' && error !== null && 'type' in error ? error.type : undefined;
+  const appError = error instanceof AppError ? error
+    : bodyType === 'entity.parse.failed' ? new AppError('Invalid JSON body', 400, 'VALIDATION_ERROR')
+      : bodyType === 'entity.too.large' ? new AppError('Draft request is too large', 413, 'PAYLOAD_TOO_LARGE')
+        : new AppError('Internal service error', 500, 'INTERNAL_ERROR');
 
   if (appError.statusCode >= 500) {
     logger.error('request.failed', {
@@ -32,7 +34,7 @@ export const createErrorHandler = (logger: Logger): ErrorRequestHandler => (erro
   res.status(appError.statusCode).json({
     success: false,
     message: appError.message,
-    error: { code: appError.code },
+    error: { code: appError.code, ...(appError.details ? { details: appError.details } : {}) },
     requestId: res.locals.requestId,
   });
 };

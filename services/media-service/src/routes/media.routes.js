@@ -3,6 +3,7 @@ import { deleteMyMedia, getAsset, getMyMedia, uploadImage, validateUrl } from '.
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { receiveImage, verifyImageSignature } from '../middleware/upload.middleware.js';
 import { requireMediaAuthor } from '../services/clipAccess.service.js';
+import { getChatAttachmentStatus, prepareChatUpload, streamChatAttachment, uploadChatAttachment } from '../controllers/chatAttachment.controller.js';
 import { clipCapabilities, receiveClip, uploadClip, importClipImage, getClip, retryClip, deleteClip, validateClipReferences, requestClipAccess, streamClip } from '../controllers/clip.controller.js';
 import {
   initiateAsset,
@@ -15,6 +16,9 @@ import {
 } from '../controllers/educationalAsset.controller.js';
 
 const router = Router();
+router.post('/chat/:conversationId/attachments', requireMediaAuthor, prepareChatUpload, uploadChatAttachment);
+router.get('/chat/:conversationId/attachments/:assetId', requireMediaAuthor, getChatAttachmentStatus);
+router.get('/chat/:conversationId/messages/:messageId/attachments/:assetId', requireMediaAuthor, streamChatAttachment);
 router.get('/clip-capabilities', clipCapabilities);
 router.post('/clips', requireMediaAuthor, receiveClip, uploadClip);
 router.post('/clips/image-url', requireMediaAuthor, importClipImage);

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { protect, optionalAuth } from '../middleware/auth.middleware.js';
 import {
   createChallenge,
+  validateIntegrationChallengeDraft,
   listChallenges,
   getChallengeByIdOrCode,
   updateChallenge,
@@ -35,6 +36,12 @@ router.get('/:idOrCode', optionalAuth, getChallengeByIdOrCode);
 
 // Protected Management Endpoints
 router.post('/', protect, createChallenge);
+router.post('/drafts/:id/validate', protect, (req, res, next) => {
+  if (!/^[a-f\d]{24}$/i.test(req.params.id)) {
+    return res.status(404).json({ success: false, message: 'Challenge draft not found.' });
+  }
+  next();
+}, validateIntegrationChallengeDraft);
 router.put('/:idOrCode', protect, updateChallenge);
 router.delete('/:idOrCode', protect, deleteChallenge);
 

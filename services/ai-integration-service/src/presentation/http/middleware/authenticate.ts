@@ -1,8 +1,8 @@
-import type { RequestHandler } from 'express';
+import type { IntegrationHandler } from './integration-auth.js';
 import { GetCurrentUser } from '../../../application/use-cases/get-current-user.js';
 import { AppError, InternalApiError } from '../../../shared/errors/app-error.js';
 
-export const authenticate = (getCurrentUser: GetCurrentUser): RequestHandler => (req, res, next) => {
+export const authenticate = (getCurrentUser: GetCurrentUser): IntegrationHandler => (req, res, next) => {
   const hasBearer = typeof req.headers.authorization === 'string' &&
     req.headers.authorization.startsWith('Bearer ');
   const hasCookie = typeof req.headers.cookie === 'string' && req.headers.cookie.includes('accessToken=');

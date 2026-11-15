@@ -18,13 +18,14 @@ import { assignRequestId, createHealthMonitor, integerSetting, isSocketPath, req
 import { errorBody, proxyFailure, sanitizeProxyRequest } from './contracts.js';
 import { socialServiceForPath } from './social-routing.js';
 import { pathTraversalGuard } from './middleware/security.js';
-import { createUploadRateLimiter } from './middleware/rateLimit.js';
+import { createRateLimiter, createUploadRateLimiter } from './middleware/rateLimit.js';
 import { createAuditLogMiddleware } from './middleware/auditLog.js';
 import { isRecord, requestIdOf } from './request-types.js';
 
 dotenv.config();
 
 const app = express();
+
 const requiredSetting = (name: string) => {
   const value = process.env[name]?.trim();
   if (!value) throw new Error(`${name} is required`);
@@ -52,6 +53,7 @@ const SERVICES = {
   challenge: requiredSetting('CHALLENGE_SERVICE_URL'),
   aiIntegration: requiredSetting('AI_INTEGRATION_SERVICE_URL'),
   marketplace: process.env.MARKETPLACE_SERVICE_URL || 'http://127.0.0.1:5013',
+  analytics: process.env.ANALYTICS_SERVICE_URL || (process.env.NODE_ENV === 'test' && process.env.MARKETPLACE_SERVICE_URL ? process.env.MARKETPLACE_SERVICE_URL : 'http://127.0.0.1:5015'),
 };
 
 for (const [name, value] of Object.entries(SERVICES)) {
@@ -87,7 +89,7 @@ app.use(pathTraversalGuard);
 app.use(cors({
   origin: allowedOrigins,
   credentials: true,
-  exposedHeaders: ['X-Request-ID'],
+  exposedHeaders: ['X-Request-ID', 'Retry-After', 'WWW-Authenticate'],
 }));
 
 app.use(cookieParser());
@@ -104,6 +106,13 @@ if (NODE_ENV !== 'test') {
   morgan.token('safe-path', req => 'path' in req && typeof req.path === 'string' ? req.path : undefined);
   app.use(morgan(':request-id :method :safe-path :status :response-time ms'));
 }
+
+app.get('/', (_req, res) => {
+  res.set('Cache-Control', 'no-store').json({
+    service: 'api-gateway', message: 'QuizFocus API Gateway. This port serves the API. Open the QuizFocus desktop app to use the website.',
+    health: '/api/v1/health',
+  });
+});
 
 app.get('/api/v1/livez', (req, res) => res.json({ status: 'alive' }));
 app.get(['/api/v1/health', '/api/v1/readyz'], async (req, res, next) => {
@@ -239,7 +248,9 @@ app.use('/api/v1/admin', makeProxy(SERVICES.admin, '/api/v1/admin'));
 app.use('/api/v1/challenges', makeProxy(SERVICES.challenge, '/api/v1/challenges'));
 
 // 10. AI integration boundary (connectors are intentionally not configured yet)
-app.use('/api/v1/ai', makeProxy(SERVICES.aiIntegration, '/api/v1/ai'));
+app.use('/api/v1/ai', createRateLimiter({ keyPrefix: 'ai', max: integerSetting(process.env, 'AI_GATEWAY_REQUESTS_PER_MINUTE', 240, 1, 5000),
+  message: 'Integration request limit reached. Try again shortly.' }), makeProxy(SERVICES.aiIntegration, '/api/v1/ai'));
+app.use('/.well-known/oauth-protected-resource', makeProxy(SERVICES.aiIntegration, '/.well-known/oauth-protected-resource'));
 
 // 9. Marketplace Service & Phase 1 Route Isolation
 const marketplaceProxy = makeProxy(SERVICES.marketplace, '/api/v1/marketplace');
@@ -248,6 +259,12 @@ app.use('/api/v1/marketplace', (req, res, next) => {
     return marketplaceProxy(req, res, next);
   }
   return res.status(404).json(errorBody(404, 'Marketplace business routes are not yet implemented in Phase 1', requestIdOf(req)));
+});
+
+// 11. Analytics Service Proxy
+const analyticsProxy = makeProxy(SERVICES.analytics, '/api/v1/analytics');
+app.use('/api/v1/analytics', (req, res, next) => {
+  return analyticsProxy(req, res, next);
 });
 
 // Fallback 404
@@ -326,6 +343,7 @@ server.listen(PORT, () => {
   console.log(`   - Challenge Service:${SERVICES.challenge}`);
   console.log(`   - AI Integration Service: ${SERVICES.aiIntegration}`);
   console.log(`   - Marketplace Service: ${SERVICES.marketplace}`);
+  console.log(`   - Analytics Service:   ${SERVICES.analytics}`);
   console.log(`   - Real-Time WS:     /socket.io -> ${SERVICES.message}`);
 });
 

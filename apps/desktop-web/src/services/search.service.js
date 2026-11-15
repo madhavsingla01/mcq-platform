@@ -17,14 +17,12 @@ export const SearchService = {
   },
 
   /**
-   * Retrieves dynamically aggregated trending hashtags from the database
-   * @param {number} limit - Maximum number of trending tags to return
-   * @returns {Promise<Array>} List of { tag, count } objects
+   * Retrieves hashtag names from recent public quizzes.
    */
-  getTrendingTags: async (limit = 12) => {
+  getRecentTags: async (limit = 12) => {
     try {
       const { data } = await api.get('/search/trending-tags', {
-        params: { limit },
+        params: { limit, order: 'recent' },
       });
       return data?.data?.tags || [];
     } catch {

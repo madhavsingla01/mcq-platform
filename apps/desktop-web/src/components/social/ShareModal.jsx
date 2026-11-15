@@ -14,7 +14,7 @@ import { useAuthStore } from '../../store/authStore';
 import { Spinner } from '../ui';
 import './ShareModal.css';
 
-export default function ShareModal({ isOpen, onClose, quiz, comment = null, profile = null }) {
+export default function ShareModal({ isOpen, onClose, quiz, comment = null, profile = null, forward = null }) {
   const { isAuthenticated, user } = useAuthStore();
   const [contacts, setContacts] = useState([]);
   const [frequent, setFrequent] = useState([]);
@@ -36,7 +36,7 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null, prof
     : (quiz?._id || quiz?.id || comment?.quiz?._id || comment?.quiz?.id || (typeof comment?.quiz === 'string' ? comment.quiz : null));
   const quizTitle = quiz?.title || 'Shared quiz';
   const commentAuthor = comment?.author?.name || comment?.author?.username || 'user';
-  const effectiveTitle = profile?.title || (isComment ? `Comment by @${commentAuthor}` : quizTitle);
+  const effectiveTitle = forward?.title || profile?.title || (isComment ? `Comment by @${commentAuthor}` : quizTitle);
 
   const challengeUrl = profile?.url || (quizId && typeof window !== 'undefined'
     ? (isComment
@@ -52,11 +52,11 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null, prof
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && !isSending) onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, isSending, onClose]);
 
   // Lock body scroll and compensate for scrollbar width
   useEffect(() => {
@@ -140,7 +140,7 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null, prof
     setIsSending(true);
 
     try {
-      const results = await Promise.allSettled(targets.map(contact => api.post('/messages/start', {
+      const results = await Promise.allSettled(targets.map(contact => forward ? forward.send(contact._id) : api.post('/messages/start', {
         recipientId: contact._id, initialMessage: msg || shareText,
         ...(profile ? { link: challengeUrl } : { quizId, ...(isComment ? { commentId: comment._id } : {}) }),
       })));
@@ -164,7 +164,7 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null, prof
   const displayFrequent = contactsOwner === user?._id ? frequent : [];
 
   const modalContent = (
-    <div className="share-modal-overlay" onClick={onClose}>
+    <div className="share-modal-overlay" onClick={isSending ? undefined : onClose}>
       <div
         className="share-modal-dialog"
         onClick={(e) => e.stopPropagation()}
@@ -180,7 +180,7 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null, prof
             </div>
             <div className="share-header-meta">
               <h3 id="share-modal-title" className="share-dialog-title">
-                {profile ? 'Share profile' : isComment ? 'Share Comment' : 'Share Quiz'}
+                {forward ? 'Share message' : profile ? 'Share profile' : isComment ? 'Share Comment' : 'Share Quiz'}
               </h3>
               <p className="share-dialog-subtitle" title={effectiveTitle}>
                 {effectiveTitle}
@@ -192,6 +192,7 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null, prof
             type="button"
             className="share-dialog-close-btn"
             onClick={onClose}
+            disabled={isSending}
             aria-label="Close dialog"
           >
             <X size={18} />
@@ -199,7 +200,7 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null, prof
         </div>
 
         {/* ── SHARE LINK Section (Screenshot: Label + Input + Copy link button + Social row) ── */}
-        <div className="share-link-block">
+        {!forward && <div className="share-link-block">
           <span className="share-link-label">SHARE LINK</span>
 
           <div className="share-link-input-row">
@@ -287,7 +288,7 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null, prof
               <span>Reddit</span>
             </a>
           </div>
-        </div>
+        </div>}
 
         {/* ── Two-Column Layout (Screenshot: Connections on left, Message preview on right) ── */}
         <div className="share-panels-grid">
@@ -346,7 +347,7 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null, prof
             <div className="connections-list-scroll custom-scrollbar">
               {loading && <div role="status"><Spinner size="sm" /> Loading connections…</div>}
               {contactsError && <p role="alert">{contactsError} <button type="button" onClick={() => setReloadContacts(n => n + 1)}>Retry</button></p>}
-              {!loading && !contactsError && filteredContacts.length === 0 && <p>{!isAuthenticated ? 'Sign in to share with connections.' : searchQuery ? 'No matching connections.' : 'Your connections will appear here. You can still copy the link.'}</p>}
+              {!loading && !contactsError && filteredContacts.length === 0 && <p>{!isAuthenticated ? 'Sign in to share with connections.' : searchQuery ? 'No matching connections.' : forward ? 'Your connections will appear here.' : 'Your connections will appear here. You can still copy the link.'}</p>}
               {filteredContacts.map((contact) => {
                 const isSelected = selectedContacts.some((c) => c._id === contact._id);
                 const initial = (contact.name?.[0] || contact.username?.[0] || 'U').toUpperCase();
@@ -401,7 +402,7 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null, prof
                 </div>
               </div>
 
-              <textarea
+              {forward ? <p className="share-forward-preview">{forward.preview}</p> : <><textarea
                 className="preview-quiz-textarea"
                 placeholder="Try this quiz and challenge me..."
                 value={customMessage}
@@ -411,7 +412,7 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null, prof
                 aria-label="Optional message"
               />
 
-              <span className="preview-hint-note">Your message is optional.</span>
+              <span className="preview-hint-note">Your message is optional.</span></>}
             </div>
 
             {/* Bottom Recipient Action Card (Dark Warm Box) */}
@@ -427,7 +428,7 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null, prof
                   <p className="action-status-desc">
                     {selectedContacts.length === 0
                       ? 'Select connections from the left'
-                      : 'Ready to receive your invitation'}
+                      : forward ? 'Ready to send' : 'Ready to receive your invitation'}
                   </p>
                 </div>
               </div>
@@ -440,7 +441,7 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null, prof
                     setSelectedContacts([]);
                     setCustomMessage('');
                   }}
-                  disabled={selectedContacts.length === 0}
+                  disabled={selectedContacts.length === 0 || isSending}
                 >
                   Clear all
                 </button>
@@ -449,7 +450,7 @@ export default function ShareModal({ isOpen, onClose, quiz, comment = null, prof
                   type="button"
                   className="action-btn-send-main"
                   onClick={handleSendToSelected}
-                  disabled={selectedContacts.length === 0 || isSending || !challengeUrl || !isAuthenticated}
+                  disabled={selectedContacts.length === 0 || isSending || (!forward && !challengeUrl) || !isAuthenticated}
                 >
                   {isSending ? (
                     <Spinner size={14} />

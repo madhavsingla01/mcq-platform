@@ -32,6 +32,14 @@ function RevealTime({ remaining }: { remaining: number }) {
   </dl>;
 }
 
+function CompetitorName({ row }: { row: StandingsRow }) {
+  const username = row.user?.username;
+  const label = displayName(row);
+  return username && row.user?._id && !row.user.isPseudonymized
+    ? <Link className="contest-profile-link" to={'/@' + encodeURIComponent(username)}>{label}</Link>
+    : label;
+}
+
 function Avatar({ row }: { row: StandingsRow }) {
   const name = displayName(row);
   return row.user?.avatar
@@ -73,7 +81,7 @@ function RankedStandings({ rows, receipt, viewerRank }: {
       {rows.slice(0, 3).map(row => <article key={row.attemptId} className="contest-podium-card" data-rank={row.rank}>
         <span className="contest-podium-rank">#{row.rank}</span>
         <Avatar row={row} />
-        <h3>{displayName(row)}{isViewer(row, receipt) && <span className="contest-you">You</span>}</h3>
+        <h3><CompetitorName row={row} />{isViewer(row, receipt) && <span className="contest-you">You</span>}</h3>
         <p><strong>{numberFormat.format(row.score)}</strong> pts <span>· {formatDuration(row.totalTimeMs)}</span></p>
       </article>)}
     </section>
@@ -90,7 +98,7 @@ function RankedStandings({ rows, receipt, viewerRank }: {
             <th scope="row">
               <div className="contest-person">
                 <Avatar row={row} />
-                <div><strong>{displayName(row)}{isViewer(row, receipt) && <span className="contest-you">You</span>}</strong>
+                <div><strong><CompetitorName row={row} />{isViewer(row, receipt) && <span className="contest-you">You</span>}</strong>
                   {row.user?.username && !row.user.isPseudonymized && <small>@{row.user.username}</small>}
                 </div>
               </div>

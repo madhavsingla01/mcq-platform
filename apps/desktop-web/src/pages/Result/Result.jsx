@@ -2,11 +2,16 @@ import AccessibleMedia from '../../components/media/AccessibleMedia';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { CheckCircle, Percent, Timer, Zap, ChevronDown, EyeOff, RotateCcw, LayoutDashboard, Shield, Trophy, Lock } from 'lucide-react';
+import { usePageSearch } from '../../components/search/PageSearchContext';
 import api from '../../api/axios';
 import { Badge, Button, Spinner } from '../../components/ui';
-import { useAuthStore } from '../../store/authStore';
 import { formatDurationMs, getGuestSessionId } from '../../utils/quizSession';
 import './Result.css';
+
+const hasAnswer = (answer) => Array.isArray(answer.selectedAnswer)
+  ? answer.selectedAnswer.length > 0
+  : Boolean(answer.selectedAnswer);
+const mediaSearchText = (item) => (item.accessibilityMedia || []).flatMap(({ label, transcript }) => [label, transcript]);
 
 const getAnswerTimeMs = (answer) => Number(answer?.timeTakenMs || 0) || Number(answer?.timeTaken || 0) * 1000;
 
@@ -60,24 +65,27 @@ function ScoreRing({ percentage, size = 160, strokeWidth = 10 }) {
 export default function Result() {
   const { attemptId } = useParams();
   const navigate = useNavigate();
+  const { query: searchQuery } = usePageSearch();
   const [loading, setLoading] = useState(true);
-  const [resultData, setResultData] = useState(null);
+  const [result, setResult] = useState(null);
+  const resultData = result?.id === attemptId ? result.data : null;
   const [error, setError] = useState('');
   const [expandedQ, setExpandedQ] = useState(null);
-  const currentUser = useAuthStore((s) => s.user);
+  const [refreshVersion, setRefreshVersion] = useState(0);
   const reviewRefs = useRef({});
   const headingRef = useRef(null);
-  useEffect(() => { if (resultData) headingRef.current?.focus(); }, [resultData]);
+  useEffect(() => { if (!loading) headingRef.current?.focus(); }, [loading, attemptId]);
 
   useEffect(() => {
     let cancelled = false;
+    setError('');
     const fetchResult = async () => {
       try {
         const sessionId = getGuestSessionId();
         const response = await api.get(`/quiz/attempts/${attemptId}/result`, {
           headers: { 'x-quiz-session-id': sessionId },
         });
-        if (!cancelled) setResultData(response.data.data);
+        if (!cancelled) setResult({ id: attemptId, data: response.data.data });
       } catch (err) {
         if (!cancelled) {
           console.error('[Result Load Error]:', err?.response?.data || err.message);
@@ -89,20 +97,34 @@ export default function Result() {
     };
     fetchResult();
     return () => { cancelled = true; };
-  }, [attemptId]);
+  }, [attemptId, refreshVersion]);
+
+  const refreshDeadline = resultData?.contest?.deadlineAt || resultData?.attempt?.quizId?.deadlineAt;
+  useEffect(() => {
+    if (!resultData?.isChallenge || resultData.deadlinePassed || !refreshDeadline) return;
+    const remaining = Date.parse(refreshDeadline) - Date.now();
+    if (!Number.isFinite(remaining)) return;
+    const wait = Math.min(2147483647, Math.max(3000, remaining + 1000));
+    const timer = setTimeout(() => setRefreshVersion(version => version + 1), wait);
+    return () => clearTimeout(timer);
+  }, [resultData, refreshDeadline]);
 
   const reviewItems = useMemo(() => {
     if (!resultData) return [];
-    const questionMap = new Map(resultData.questions.map((q) => [q._id, q]));
-    return resultData.attempt.answers
-      .map((answer) => {
-        const question = questionMap.get(String(answer.questionId)) || questionMap.get(answer.questionId);
-        return question ? { answer, question } : null;
-      })
-      .filter(Boolean);
-  }, [resultData]);
+    const questionMap = new Map((resultData.questions || []).map((q) => [String(q._id), q]));
+    const query = searchQuery.trim().toLowerCase();
+    return (resultData.attempt.answers || [])
+      .flatMap((answer, index) => {
+        const question = questionMap.get(String(answer.questionId));
+        if (!question) return [];
+        const fields = [`Question ${index + 1}`, question.questionText, ...mediaSearchText(question),
+          ...(question.options || []).flatMap(option => [option.text, ...mediaSearchText(option)])];
+        return !query || fields.some(value => typeof value === 'string' && value.toLowerCase().includes(query))
+          ? [{ answer, question, index }] : [];
+      });
+  }, [resultData, searchQuery]);
 
-  if (loading) {
+  if (loading || (!resultData && !error)) {
     return <div style={{ display: 'flex', justifyContent: 'center', padding: '72px 0' }}><Spinner size={40} /></div>;
   }
   if (error) {
@@ -128,8 +150,14 @@ export default function Result() {
 
   const correctCount = attempt.correctCount ?? analytics.correctCount ?? 0;
   const wrongCount = attempt.wrongCount ?? analytics.wrongCount ?? 0;
-  const answeredCount = attempt.answers.filter((answer) => Boolean(answer.selectedAnswer)).length;
-  const skippedCount = Math.max((attempt.totalQuestions || attempt.answers.length) - answeredCount, 0);
+  const answers = attempt.answers || [];
+  const totalQuestions = attempt.totalQuestions ?? answers.length;
+  const answeredCount = answers.filter(hasAnswer).length;
+  const skippedCount = Math.max(totalQuestions - answeredCount, 0);
+  const contest = resultData.contest;
+  const deadline = contest?.deadlineAt || attempt.quizId?.deadlineAt;
+  const submittedAt = attempt.completedAt;
+  const formatDate = (value) => new Date(value).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
   const avgTimeMs = analytics.averageTimePerQuestionMs || (attempt.totalQuestions > 0 ? totalTimeMs / attempt.totalQuestions : 0);
 
   const retakePath = `/quiz/${attempt.quizId?._id}`;
@@ -182,7 +210,7 @@ export default function Result() {
               </h3>
               <p style={{ margin: '4px 0 0', fontSize: 13.5, color: '#FBBF24', lineHeight: 1.4 }}>
                 {attempt.isPractice ? 'Your host practice was recorded. Your results are available after the contest deadline.'
-                  : 'Your answers have been submitted. Scores and correct answers are quarantined until the contest deadline.'}
+                  : 'Your answers have been submitted. Scores and correct answers are sealed until the contest deadline.'}
               </p>
             </div>
           </div>
@@ -225,8 +253,8 @@ export default function Result() {
                 </div>
               ) : (
                 <div className="r-hero-summary">
-                  <span className="r-tag r-tag--muted">Answers Recorded</span>
-                  <span className="r-tag r-tag--muted">Single Attempt Finalized</span>
+                  <span className="r-tag r-tag--muted">{answeredCount} of {totalQuestions} answered</span>
+                  <span className="r-tag r-tag--muted">{skippedCount} skipped</span>
                 </div>
               )}
               <div className="r-hero-badges">
@@ -257,13 +285,25 @@ export default function Result() {
           </div>
         </div>
 
+        {isChallenge && (
+          <section className="r-contest-summary" aria-labelledby="contest-submission-heading">
+            <h2 id="contest-submission-heading">Submission details</h2>
+            <dl>
+              {submittedAt && <div><dt>Submitted</dt><dd><time dateTime={submittedAt}>{formatDate(submittedAt)}</time></dd></div>}
+              {deadline && <div><dt>{isQuarantined ? 'Scheduled reveal' : 'Contest closed'}</dt><dd><time dateTime={deadline}>{formatDate(deadline)}</time></dd></div>}
+              {typeof contest?.submissionCount === 'number' && <div><dt>Ranked submissions</dt><dd>{contest.submissionCount}</dd></div>}
+              <div><dt>Your answers</dt><dd>{answeredCount} of {totalQuestions}</dd></div>
+            </dl>
+          </section>
+        )}
+
         {/* â”€â”€ Question Timeline â”€â”€ */}
         {isReviewAllowed && reviewItems.length > 0 ? (
           <div className="r-section">
             <h2 className="r-section-title">Question Timeline</h2>
             <div className="r-timeline">
-              {reviewItems.map(({ answer }, idx) => {
-                const status = answer.isCorrect ? 'correct' : answer.selectedAnswer ? 'wrong' : 'skipped';
+              {reviewItems.map(({ answer, index: idx }) => {
+                const status = answer.isCorrect ? 'correct' : hasAnswer(answer) ? 'wrong' : 'skipped';
                 const isOpen = expandedQ === idx;
                 return (
                   <div key={answer.questionId || idx} className="r-pill-container" style={{ position: 'relative' }}>
@@ -287,9 +327,9 @@ export default function Result() {
           <div className="r-section">
             <h2 className="r-section-title">Review Answers</h2>
             <div className="r-review-list">
-              {reviewItems.map(({ answer, question }, idx) => {
+              {reviewItems.map(({ answer, question, index: idx }) => {
                 const isOpen = expandedQ === idx;
-                const status = answer.isCorrect ? 'correct' : answer.selectedAnswer ? 'wrong' : 'skipped';
+                const status = answer.isCorrect ? 'correct' : hasAnswer(answer) ? 'wrong' : 'skipped';
                 return (
                   <div key={`${question._id}-${idx}`} ref={(el) => (reviewRefs.current[idx] = el)}
                     className={`r-review ${isOpen ? 'r-review--open' : ''}`}>
@@ -311,8 +351,8 @@ export default function Result() {
                       <div className="r-review-body" id={`review-${question._id}`}>
                         <AccessibleMedia clips={question.accessibilityMedia || []} text={question.questionText} attemptId={attemptId} />
                         <div className="r-review-meta">
-                          <Badge variant={answer.isCorrect ? 'success' : answer.selectedAnswer ? 'danger' : 'warning'}>
-                            {answer.isCorrect ? 'Correct' : answer.selectedAnswer ? 'Incorrect' : 'Skipped'}
+                          <Badge variant={answer.isCorrect ? 'success' : hasAnswer(answer) ? 'danger' : 'warning'}>
+                            {answer.isCorrect ? 'Correct' : hasAnswer(answer) ? 'Incorrect' : 'Skipped'}
                           </Badge>
                           <span className="r-review-time">{formatDurationMs(getAnswerTimeMs(answer))}</span>
                         </div>
@@ -325,7 +365,7 @@ export default function Result() {
                             const isCorrectOpt = Array.isArray(question.correctAnswer)
                               ? question.correctAnswer.includes(option.label) : option.label === question.correctAnswer;
                             const isSelected = question.questionType === 'checkboxes'
-                              ? answer.selectedAnswer?.split(',').includes(option.label) : option.label === answer.selectedAnswer;
+                              ? (Array.isArray(answer.selectedAnswer) ? answer.selectedAnswer : (answer.selectedAnswer || '').split(',')).includes(option.label) : option.label === answer.selectedAnswer;
                             return (
                               <div key={option.optionId || option._id || option.label}
                                 className={`r-opt ${isCorrectOpt ? 'r-opt--correct' : ''} ${isSelected && !answer.isCorrect ? 'r-opt--wrong' : ''}`}>
@@ -354,11 +394,13 @@ export default function Result() {
         ) : !isReviewAllowed ? (
           <div className="r-section" style={{ textAlign: 'center', padding: '36px 20px', background: 'var(--color-surface)', borderRadius: 12, border: '1px solid var(--color-border)' }}>
             <EyeOff size={36} style={{ color: 'var(--color-text-secondary)', marginBottom: 12, margin: '0 auto 12px', display: 'block' }} />
-            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Question Review Restricted</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>{isQuarantined ? 'Question review is sealed' : 'Question review is restricted'}</h3>
             <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', maxWidth: 440, margin: '0 auto' }}>
-              Detailed question-by-question review is restricted by the creator for this quiz.
+              {isQuarantined ? 'Review opens after the contest deadline and scoring are complete.' : 'The creator restricted detailed review for this quiz.'}
             </p>
           </div>
+        ) : searchQuery.trim() ? (
+          <p className="r-review-empty" role="status">No reviewed questions match your search.</p>
         ) : null}
 
         {/* ── Actions ── */}

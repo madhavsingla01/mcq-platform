@@ -14,6 +14,7 @@ const root = path.join(__dirname, '..');
 const packages = [
   '.',
   'contracts',
+  'packages/sdk',
   'apps/desktop-web',
   'apps/mobile-web',
   'services/api-gateway',
@@ -31,6 +32,7 @@ const packages = [
   'services/challenge-service',
   'services/marketplace-service',
   'services/ai-integration-service',
+  'services/analytics-service',
 ];
 
 console.log('📦 Installing dependencies across all web apps and microservices...\n');

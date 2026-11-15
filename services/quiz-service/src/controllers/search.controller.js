@@ -280,13 +280,14 @@ export const universalSearch = catchAsync(async (req, res) => {
  */
 export const getTrendingTags = catchAsync(async (req, res) => {
   const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 12, 1), 30);
+  const filter = { ...canonicalPublicQuizFilter, tags: { $exists: true, $ne: [] } };
+  if (req.query.order === 'recent') {
+    const quizzes = await Quiz.find(filter).sort({ createdAt: -1, _id: -1 }).limit(100).select('tags -_id').lean();
+    const names = new Set(quizzes.flatMap(quiz => quiz.tags.map(tag => tag.trim().toLowerCase())).filter(Boolean));
+    return res.json({ success: true, data: { tags: [...names].slice(0, limit).map(tag => ({ tag })) } });
+  }
   const tags = await Quiz.aggregate([
-    {
-      $match: {
-        ...canonicalPublicQuizFilter,
-        tags: { $exists: true, $ne: [] },
-      },
-    },
+    { $match: filter },
     { $unwind: '$tags' },
     {
       $group: {

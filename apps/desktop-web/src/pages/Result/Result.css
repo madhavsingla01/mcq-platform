@@ -337,3 +337,15 @@
   }
 .r-opt:has(.qf-accessible-media) { flex-wrap:wrap; }
 .r-opt .qf-accessible-media { flex-basis:100%; }
+
+.r-contest-summary {
+  margin-block: 24px;
+  padding: 16px 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+.r-contest-summary h2 { margin: 0 0 12px; font-size: 1rem; }
+.r-contest-summary dl { display: flex; flex-wrap: wrap; gap: 12px 28px; margin: 0; }
+.r-contest-summary dt, .r-review-empty { color: var(--color-text-secondary); }
+.r-contest-summary dd { margin: 2px 0 0; font-weight: 600; }

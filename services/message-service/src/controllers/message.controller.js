@@ -5,14 +5,14 @@ import { AppError, catchAsync } from '../middleware/error.middleware.js';
 import { getIO } from '../socket/socketHandler.js';
 import { requireId, textValue, toId } from '../services/messagePolicy.js';
 import { consumeChatBudget } from '../services/chatBudget.js';
-import { USER_CARD_SELECT, assertRecipientAllowsMessages, deleteChatMessage, editChatMessage, latestVisibleMessage, listChatMessages, reactToChatMessage, readChatMessages, sendChatMessage, unreadByConversation } from '../services/messaging.service.js';
+import { USER_CARD_SELECT, assertRecipientAllowsMessages, changeConversationInbox, deleteChatMessage, editChatMessage, inboxVisibilityFilter, latestVisibleMessage, listChatMessages, reactToChatMessage, readChatMessages, sendChatMessage, unreadByConversation } from '../services/messaging.service.js';
 
 export const getConversations = catchAsync(async (req, res) => {
   const page = Number(req.query.page || 1);
   const limit = Number(req.query.limit || 30);
   if (!Number.isInteger(page) || page < 1 || page > 10000 || !Number.isInteger(limit) || limit < 1 || limit > 100) throw new AppError('Invalid pagination', 400);
   const userId = req.user._id;
-  const filter = { participants: userId };
+  const filter = inboxVisibilityFilter(userId);
   const [conversations, total] = await Promise.all([
     Conversation.find(filter).sort({ lastMessageAt: -1, _id: -1 }).skip((page - 1) * limit).limit(limit).populate('participants', USER_CARD_SELECT).lean(),
     Conversation.countDocuments(filter),
@@ -61,6 +61,14 @@ export const startConversation = catchAsync(async (req, res) => {
 export const getMessages = catchAsync(async (req, res) => {
   res.json({ success: true, data: await listChatMessages(req.params.conversationId, req.user._id, req.query) });
 });
+export const clearConversation = catchAsync(async (req, res) => {
+  const data = await changeConversationInbox(req.params.conversationId, req.user._id, 'clear', getIO());
+  res.json({ success: true, data });
+});
+export const removeConversation = catchAsync(async (req, res) => {
+  const data = await changeConversationInbox(req.params.conversationId, req.user._id, 'remove', getIO());
+  res.json({ success: true, data });
+});
 export const sendMessage = catchAsync(async (req, res) => {
   const message = await sendChatMessage(req.params.conversationId, req.user._id, req.body, getIO());
   res.status(201).json({ success: true, data: { message } });
@@ -82,7 +90,7 @@ export const markConversationRead = catchAsync(async (req, res) => {
   res.json({ success: true, data });
 });
 export const getUnreadMessagesCount = catchAsync(async (req, res) => {
-  const conversations = await Conversation.find({ participants: req.user._id }).select('_id').lean();
+  const conversations = await Conversation.find(inboxVisibilityFilter(req.user._id)).select('_id').lean();
   const counts = await unreadByConversation(conversations.map((c) => c._id), req.user._id);
   res.json({ success: true, data: { unreadCount: [...counts.values()].reduce((sum, count) => sum + count, 0) } });
 });

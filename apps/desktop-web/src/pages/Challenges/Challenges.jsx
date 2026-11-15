@@ -1,4 +1,5 @@
 import { usePageSearch, useSearchPage } from '../../components/search/PageSearchContext';
+import FilterSelect from '../../components/ui/FilterSelect';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
@@ -60,6 +61,23 @@ const CATEGORIES = [
   { id: 'Science', label: 'Science' },
   { id: 'General', label: 'General' },
 ];
+
+function AuthorIdentity({ creator }) {
+  const name = creator.name || creator.username || 'Author';
+  return <>
+    {creator.avatar ? (
+      <img src={creator.avatar} alt="" className="creator-avatar" />
+    ) : (
+      <span className="creator-avatar-fallback" aria-hidden="true">{name.charAt(0).toUpperCase()}</span>
+    )}
+    <div className="creator-meta">
+      <span className="creator-name" title={name}>{name}</span>
+      <span className="creator-followers">
+        {creator.quizCount ? `${creator.quizCount} contests` : creator.username ? '@' + creator.username : 'Author'}
+      </span>
+    </div>
+  </>;
+}
 
 export default function Challenges() {
   const navigate = useNavigate();
@@ -389,12 +407,9 @@ export default function Challenges() {
                   </button>
                 ))}
               </div>
-              <label className="arena-difficulty">Difficulty
-                <select value={difficulty} onChange={event => { setDifficulty(event.target.value); setPage(1); }}>
-                  <option value="">All levels</option>
-                  {['Beginner', 'Intermediate', 'Advanced'].map(level => <option key={level}>{level}</option>)}
-                </select>
-              </label>
+              <FilterSelect label="Difficulty" value={difficulty} onChange={value => { setDifficulty(value); setPage(1); }}
+                options={[{ value: '', label: 'All levels' },
+                  ...['Beginner', 'Intermediate', 'Advanced'].map(level => ({ value: level, label: level }))]} />
             </div>
 
             {listError ? (
@@ -417,7 +432,9 @@ export default function Challenges() {
                       </div>
 
                       <h3 className="comp-card-title" title={item.title}>
-                        {item.title}
+                        <Link className="comp-card-link" to={'/challenges/' + item._id + (isEnded ? '/leaderboard' : '')}>
+                          {item.title}
+                        </Link>
                       </h3>
 
                       <div className="comp-card-tags">
@@ -563,21 +580,13 @@ export default function Challenges() {
                   return (
                     <div key={cr._id || cr.username || idx} className="creator-rank-row">
                       <span className="creator-rank-num">{idx + 1}</span>
-                      {cr.avatar ? (
-                        <img src={cr.avatar} alt={cr.name || cr.username} className="creator-avatar" />
+                      {cr.username ? (
+                        <Link className="arena-author-profile" to={'/@' + encodeURIComponent(cr.username)}>
+                          <AuthorIdentity creator={cr} />
+                        </Link>
                       ) : (
-                        <div className="creator-avatar-fallback">
-                          {(cr.name || cr.username || 'A').charAt(0).toUpperCase()}
-                        </div>
+                        <div className="arena-author-profile"><AuthorIdentity creator={cr} /></div>
                       )}
-                      <div className="creator-meta">
-                        <span className="creator-name" title={cr.name || cr.username}>
-                          {cr.name || cr.username}
-                        </span>
-                        <span className="creator-followers">
-                          {cr.quizCount ? `${cr.quizCount} contests` : `@${cr.username || 'author'}`}
-                        </span>
-                      </div>
                       {!isSelf && cr.username && (
                         <button
                           type="button"

@@ -10,7 +10,7 @@ import {
   FORBIDDEN_DUPLICATION_FIELDS,
   normalizeQuizIdQuery,
   normalizeEntitlementQuizIdQuery,
-} from '../src/models/index.js';
+} from '../dist/models/index.js';
 
 import {
   verifyQuizOwnership,
@@ -18,7 +18,7 @@ import {
   verifyEducationalAssetOwnership,
   verifyEducationalAssetOwnershipWithDb,
   OwnershipError,
-} from '../src/services/ownership.service.js';
+} from '../dist/services/ownership.service.js';
 
 import {
   LISTING_STATUSES,
@@ -26,7 +26,7 @@ import {
   validateStateTransition,
   transitionListing,
   InvalidStateTransitionError,
-} from '../src/services/state-machine.service.js';
+} from '../dist/services/state-machine.service.js';
 
 describe('Marketplace Phase 2 Domain Architecture & Models Test Suite', () => {
   const sampleUserId = new mongoose.Types.ObjectId();

@@ -95,6 +95,7 @@ export function isUploadProcessingRequest(req: Pick<Request, 'method' | 'path' |
     path.startsWith('/api/v1/media/assets') ||
     path.startsWith('/api/v1/media/images') ||
     path.startsWith('/api/v1/media/clips') ||
+    path.startsWith('/api/v1/media/chat/') ||
     path.startsWith('/api/v1/upload') ||
     path.startsWith('/api/v1/parser') ||
     path.startsWith('/media/assets') ||

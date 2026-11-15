@@ -374,14 +374,6 @@
   color: inherit;
 }
 
-.chip-count {
-  font-size: 11px;
-  color: #9CA3AF;
-  background: rgba(255, 255, 255, 0.08);
-  padding: 1px 5px;
-  border-radius: 3px;
-}
-
 /* ── Result Row Components ── */
 .global-search-results-list {
   display: flex;

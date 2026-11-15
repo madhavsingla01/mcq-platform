@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { Bell, CheckCheck, Heart, MessageCircle, UserPlus, Check } from 'lucide-react';
 import api from '../../api/axios';
 import { Button, Spinner, EmptyState } from '../../components/ui';
+import FilterSelect from '../../components/ui/FilterSelect';
 import './Notifications.css';
 
 const iconFor = (verb) => {
@@ -49,6 +50,7 @@ export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
   const { query: searchQuery } = usePageSearch();
 
   const fetchNotifications = async () => {
@@ -88,13 +90,25 @@ export default function Notifications() {
     } catch {}
   };
 
-  const filteredNotifications = rankSearchResults(notifications, searchQuery, notification => [
+  const matchingFilter = notifications.filter(notification => {
+    if (filter === 'unread') return !notification.readAt;
+    if (filter === 'read') return Boolean(notification.readAt);
+    if (filter === 'likes') return ['quiz_liked', 'comment_liked'].includes(notification.verb);
+    return filter === 'all' || notification.verb === filter;
+  });
+  const filteredNotifications = rankSearchResults(matchingFilter, searchQuery, notification => [
     notification.quiz?.title, notification.actor?.username, copyFor(notification), notification.comment?.body,
   ]);
 
   return (
     <div className="notifications-shell">
-        <div className="notifications-header app-page-tools">{unread > 0 && <span className="unread-count-pill">{unread} new</span>}
+        <div className="notifications-header app-page-tools">
+          <FilterSelect label="Notifications" value={filter} onChange={setFilter} options={[
+            { value: 'all', label: 'All' }, { value: 'unread', label: 'Unread' },
+            { value: 'read', label: 'Read' }, { value: 'commented', label: 'Comments' },
+            { value: 'likes', label: 'Likes' }, { value: 'followed', label: 'Followers' },
+          ]} />
+          {unread > 0 && <span className="unread-count-pill">{unread} new</span>}
           <div className="notifications-header-actions">
             <Button variant="secondary" onClick={markAllRead} disabled={!unread}>
               <CheckCheck size={16} />
@@ -118,7 +132,7 @@ export default function Notifications() {
             }}
           />
         ) : filteredNotifications.length === 0 ? (
-          <div className="notifications-state">No notifications match “{searchQuery}”.</div>
+          <div className="notifications-state">No notifications match {searchQuery ? 'your search and filter.' : 'this filter.'}</div>
         ) : (
           <div className="notifications-list">
             {filteredNotifications.map((notification) => {

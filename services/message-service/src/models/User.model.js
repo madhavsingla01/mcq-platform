@@ -49,6 +49,8 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    isSuspended: { type: Boolean, default: false },
+    suspensionReason: { type: String, default: null },
     password: {
       type: String,
       required: [true, 'Password is required'],

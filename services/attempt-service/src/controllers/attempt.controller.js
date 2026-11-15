@@ -31,6 +31,9 @@ import {
 import memoryCache from '../services/cache/cache.service.js';
 import env from '../config/env.js';
 import { RankingService } from '../domain/services/RankingService.js';
+import { stageOutboxEvent, startOutboxWorker } from '../services/outbox/outbox.service.js';
+
+startOutboxWorker();
 
 const resultsSealed = quiz => Boolean(quiz?.isChallenge && !(quiz.deadlineAt && new Date(quiz.deadlineAt) <= new Date()));
 
@@ -795,6 +798,36 @@ export const startAttempt = catchAsync(async (req, res, next) => {
     throw error;
   }
 
+  stageOutboxEvent({
+    eventType: 'quiz.started.v1',
+    producer: 'attempt-service',
+    data: {
+      attemptId: attempt._id.toString(),
+      quizId: quiz._id.toString(),
+      creatorId: (quiz.uploader?._id || quiz.uploader).toString(),
+      userId: req.user?._id ? req.user._id.toString() : null,
+      sessionId: guestSessionId || null,
+      startedAt: attempt.startedAt ? new Date(attempt.startedAt).toISOString() : new Date().toISOString(),
+      isPractice: Boolean(attempt.isPractice),
+      isChallenge: Boolean(quiz.isChallenge),
+      totalQuestions: quiz.questionCount || attempt.totalQuestions || 0,
+    },
+  });
+
+  if (isChallenge && !isCreator && req.user?._id) {
+    stageOutboxEvent({
+      eventType: 'challenge.participated.v1',
+      producer: 'challenge-service',
+      data: {
+        challengeId: quiz._id.toString(),
+        creatorId: (quiz.uploader?._id || quiz.uploader).toString(),
+        userId: req.user._id.toString(),
+        attemptId: attempt._id.toString(),
+        joinedAt: new Date().toISOString(),
+      },
+    });
+  }
+
   res.status(201).json({
     success: true,
     data: {
@@ -932,6 +965,54 @@ export const submitAttempt = catchAsync(async (req, res, next) => {
   const deadlinePassed = quiz?.deadlineAt ? new Date() >= new Date(quiz.deadlineAt) : false;
   const isOwner = req.user && String(req.user._id) === String(quiz?.uploader);
 
+  stageOutboxEvent({
+    eventType: 'quiz.completed.v1',
+    producer: 'attempt-service',
+    data: {
+      attemptId: attempt._id.toString(),
+      quizId: (attempt.quizId?._id || attempt.quizId).toString(),
+      creatorId: (quiz?.uploader?._id || quiz?.uploader || attempt.creatorId).toString(),
+      userId: req.user?._id ? req.user._id.toString() : null,
+      sessionId: attempt.sessionId || null,
+      completedAt: attempt.completedAt ? new Date(attempt.completedAt).toISOString() : new Date().toISOString(),
+      startedAt: attempt.startedAt ? new Date(attempt.startedAt).toISOString() : undefined,
+      score: attempt.score ?? 0,
+      totalMarks: attempt.totalMarks ?? 100,
+      percentage: attempt.percentage ?? 0,
+      totalQuestions: attempt.totalQuestions ?? 0,
+      answeredCount: attempt.progress?.answeredCount ?? 0,
+      correctCount: attempt.correctCount ?? 0,
+      wrongCount: attempt.wrongCount ?? 0,
+      unansweredCount: attempt.unansweredCount ?? 0,
+      totalTimeSeconds: attempt.totalTime ?? 0,
+      totalTimeMs: attempt.totalTimeMs ?? 0,
+      isPractice: Boolean(attempt.isPractice),
+      isChallenge: Boolean(isChallenge),
+    },
+  });
+
+  if (isChallenge && !isOwner && req.user?._id) {
+    stageOutboxEvent({
+      eventType: 'challenge.submitted.v1',
+      producer: 'challenge-service',
+      data: {
+        challengeId: (attempt.quizId?._id || attempt.quizId).toString(),
+        creatorId: (quiz?.uploader?._id || quiz?.uploader).toString(),
+        userId: req.user._id.toString(),
+        attemptId: attempt._id.toString(),
+        score: attempt.score ?? 0,
+        totalMarks: attempt.totalMarks ?? 100,
+        percentage: attempt.percentage ?? 0,
+        totalQuestions: attempt.totalQuestions ?? 0,
+        correctCount: attempt.correctCount ?? 0,
+        wrongCount: attempt.wrongCount ?? 0,
+        totalTimeMs: attempt.totalTimeMs ?? 0,
+        submittedAt: attempt.completedAt ? new Date(attempt.completedAt).toISOString() : new Date().toISOString(),
+        quarantined: !deadlinePassed,
+      },
+    });
+  }
+
   res.json({
     success: true,
     data: {
@@ -975,8 +1056,15 @@ const getAttemptResultPayload = async ({ attemptId, req }) => {
   const deadlinePassed = attempt.quizId?.deadlineAt ? new Date() >= new Date(attempt.quizId.deadlineAt) : false;
 
   const canReviewAnswers = isChallenge
-    ? deadlinePassed
+    ? deadlinePassed && attempt.status === 'completed'
     : (attempt.status === 'completed' && (attempt.quizId?.settings?.allowReview !== false || isOwner));
+
+  const contest = isChallenge ? {
+    deadlineAt: attempt.quizId.deadlineAt || null,
+    submissionCount: await Attempt.countDocuments({
+      quizId: attempt.quizId._id, status: 'completed', userId: { $ne: null }, isPractice: { $ne: true },
+    }),
+  } : undefined;
 
   const hideExplanations = isChallenge
     ? !deadlinePassed
@@ -1002,6 +1090,7 @@ const getAttemptResultPayload = async ({ attemptId, req }) => {
     showExplanation: !hideExplanations,
     isChallenge,
     deadlinePassed,
+    ...(contest ? { contest } : {}),
   };
 };
 
@@ -1785,6 +1874,54 @@ export const submitAttemptById = catchAsync(async (req, res) => {
   const isChallenge = Boolean(quiz?.isChallenge);
   const deadlinePassed = quiz?.deadlineAt ? new Date() >= new Date(quiz.deadlineAt) : false;
   const isOwner = req.user && String(req.user._id) === String(quiz?.uploader);
+
+  stageOutboxEvent({
+    eventType: 'quiz.completed.v1',
+    producer: 'attempt-service',
+    data: {
+      attemptId: attempt._id.toString(),
+      quizId: (attempt.quizId?._id || attempt.quizId).toString(),
+      creatorId: (quiz?.uploader?._id || quiz?.uploader || attempt.creatorId).toString(),
+      userId: req.user?._id ? req.user._id.toString() : null,
+      sessionId: attempt.sessionId || null,
+      completedAt: attempt.completedAt ? new Date(attempt.completedAt).toISOString() : new Date().toISOString(),
+      startedAt: attempt.startedAt ? new Date(attempt.startedAt).toISOString() : undefined,
+      score: attempt.score ?? 0,
+      totalMarks: attempt.totalMarks ?? 100,
+      percentage: attempt.percentage ?? 0,
+      totalQuestions: attempt.totalQuestions ?? 0,
+      answeredCount: attempt.progress?.answeredCount ?? 0,
+      correctCount: attempt.correctCount ?? 0,
+      wrongCount: attempt.wrongCount ?? 0,
+      unansweredCount: attempt.unansweredCount ?? 0,
+      totalTimeSeconds: attempt.totalTime ?? 0,
+      totalTimeMs: attempt.totalTimeMs ?? 0,
+      isPractice: Boolean(attempt.isPractice),
+      isChallenge: Boolean(isChallenge),
+    },
+  });
+
+  if (isChallenge && !isOwner && req.user?._id) {
+    stageOutboxEvent({
+      eventType: 'challenge.submitted.v1',
+      producer: 'challenge-service',
+      data: {
+        challengeId: (attempt.quizId?._id || attempt.quizId).toString(),
+        creatorId: (quiz?.uploader?._id || quiz?.uploader).toString(),
+        userId: req.user._id.toString(),
+        attemptId: attempt._id.toString(),
+        score: attempt.score ?? 0,
+        totalMarks: attempt.totalMarks ?? 100,
+        percentage: attempt.percentage ?? 0,
+        totalQuestions: attempt.totalQuestions ?? 0,
+        correctCount: attempt.correctCount ?? 0,
+        wrongCount: attempt.wrongCount ?? 0,
+        totalTimeMs: attempt.totalTimeMs ?? 0,
+        submittedAt: attempt.completedAt ? new Date(attempt.completedAt).toISOString() : new Date().toISOString(),
+        quarantined: !deadlinePassed,
+      },
+    });
+  }
 
   res.json({
     success: true,

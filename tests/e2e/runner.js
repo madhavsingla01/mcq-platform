@@ -40,15 +40,19 @@ async function main() {
   // Load requested test suites into globalTestContext
   if (!tierFilter || tierFilter === '1') {
     await import('./tier1-feature-coverage.test.js');
+    await import('./tier1-analytics-studio.test.js');
   }
   if (!tierFilter || tierFilter === '2') {
     await import('./tier2-boundary-corner.test.js');
+    await import('./tier2-analytics-studio.test.js');
   }
   if (!tierFilter || tierFilter === '3') {
     await import('./tier3-cross-feature.test.js');
+    await import('./tier3-analytics-studio.test.js');
   }
   if (!tierFilter || tierFilter === '4') {
     await import('./tier4-application-scenarios.test.js');
+    await import('./tier4-analytics-studio.test.js');
   }
   if (!tierFilter || tierFilter === '5') {
     await import('./tier5-adversarial-hardening.test.js');

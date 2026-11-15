@@ -30,6 +30,7 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             contracts/package-lock.json
+            packages/sdk/package-lock.json
             apps/desktop-web/package-lock.json
             apps/mobile-web/package-lock.json
             services/admin-service/package-lock.json
@@ -55,6 +56,7 @@ jobs:
           for package in \
             . \
             contracts \
+            packages/sdk \
             apps/desktop-web \
             apps/mobile-web \
             services/admin-service \

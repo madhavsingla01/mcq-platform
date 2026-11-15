@@ -1,0 +1,16 @@
+.qf-small-popup {
+  margin: auto;
+  width: min(30rem, calc(100% - 2rem));
+  max-height: calc(100% - 2rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-container, 14px);
+  background: var(--color-surface, #121212);
+  color: var(--color-text, #fff);
+  padding: 1.25rem;
+}
+.qf-small-popup::backdrop { background: rgb(0 0 0 / .64); backdrop-filter: blur(4px); }
+.qf-small-popup h2 { margin: 0; font-size: 1.125rem; overflow-wrap: anywhere; }
+.qf-small-popup p { margin-block: .5rem 0; color: var(--color-text-secondary); line-height: 1.45; }
+.qf-small-popup footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; margin-top: 1.25rem; }

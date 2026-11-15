@@ -190,6 +190,28 @@ export const getPreview = catchAsync(async (req, res, next) => {
   });
 });
 
+export const searchImportedRows = catchAsync(async (req, res, next) => {
+  const query = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+  if (!query || query.length > 100) throw new AppError('Enter a search of 1 to 100 characters', 400);
+  const upload = await Upload.findById(req.params.uploadId);
+  if (!upload) throw new AppError('Upload not found', 404);
+  assertUploadAccess(upload, req);
+  if (!upload.parsedData?.headers?.length) throw new AppError('File has not been parsed yet', 400);
+
+  const { rows, headers } = await ParserRegistry.parse(upload.fileType, upload.filePath);
+  const normalize = value => String(value ?? '').normalize('NFKC').toLocaleLowerCase();
+  const terms = normalize(query).split(/\s+/).filter(Boolean);
+  const matches = [];
+  let total = 0;
+  for (const [index, row] of rows.entries()) {
+    const content = headers.map(header => normalize(row[header])).join(' ');
+    if (!terms.every(term => content.includes(term))) continue;
+    total += 1;
+    if (matches.length < 50) matches.push({ index, row });
+  }
+  res.set('Cache-Control', 'private, no-store').json({ success: true, data: { matches, total } });
+});
+
 /**
  * GET /api/v1/parser/preview/:assetId or /preview/asset/:assetId
  * Retrieve cached SafePreviewArtifact for an educational asset.

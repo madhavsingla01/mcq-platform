@@ -95,17 +95,17 @@ const {
 const {
   MarketplaceListing,
   FORBIDDEN_DUPLICATION_FIELDS,
-} = await import(pathToFileURL(path.join(platformRoot, 'services/marketplace-service/src/models/MarketplaceListing.model.js')));
+} = await import(pathToFileURL(path.join(platformRoot, 'services/marketplace-service/dist/models/MarketplaceListing.model.js')));
 
 const {
   MarketplaceEntitlement,
-} = await import(pathToFileURL(path.join(platformRoot, 'services/marketplace-service/src/models/MarketplaceEntitlement.model.js')));
+} = await import(pathToFileURL(path.join(platformRoot, 'services/marketplace-service/dist/models/MarketplaceEntitlement.model.js')));
 
 const {
   verifyQuizOwnership,
   verifyEducationalAssetOwnership,
   OwnershipError,
-} = await import(pathToFileURL(path.join(platformRoot, 'services/marketplace-service/src/services/ownership.service.js')));
+} = await import(pathToFileURL(path.join(platformRoot, 'services/marketplace-service/dist/services/ownership.service.js')));
 
 const {
   withGenerationLock,

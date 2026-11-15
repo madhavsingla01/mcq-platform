@@ -20,6 +20,9 @@ import {
   recordActivity,
 } from '../services/social/activity.service.js';
 import { buildCommentTree } from '../services/social/commentTree.js';
+import { stageOutboxEvent, startOutboxWorker } from '../services/outbox/outbox.service.js';
+
+startOutboxWorker();
 
 const USER_PUBLIC_SELECT = 'name username avatar banner bio quizCount followersCount followingCount activityCount isProfilePublic createdAt socialLinks';
 const USER_LIST_SELECT = 'name username avatar bio quizCount followersCount followingCount';
@@ -1049,6 +1052,17 @@ export const followUser = catchAsync(async (req, res) => {
   );
 
   if (result.upsertedCount > 0) {
+    stageOutboxEvent({
+      eventType: 'audience.user_followed.v1',
+      producer: 'social-service',
+      data: {
+        creatorId: toIdString(target._id),
+        followerId: toIdString(req.user._id),
+        action: 'follow',
+        followedAt: new Date().toISOString(),
+      },
+    });
+
     await Promise.all([
       User.findByIdAndUpdate(req.user._id, { $inc: { followingCount: 1 } }),
       User.findByIdAndUpdate(target._id, { $inc: { followersCount: 1 } }),
@@ -1086,6 +1100,17 @@ export const unfollowUser = catchAsync(async (req, res) => {
 
   const result = await Follow.deleteOne({ follower: req.user._id, following: target._id });
   if (result.deletedCount > 0) {
+    stageOutboxEvent({
+      eventType: 'audience.user_followed.v1',
+      producer: 'social-service',
+      data: {
+        creatorId: toIdString(target._id),
+        followerId: toIdString(req.user._id),
+        action: 'unfollow',
+        followedAt: new Date().toISOString(),
+      },
+    });
+
     await Promise.all([
       User.findByIdAndUpdate(req.user._id, { $inc: { followingCount: -1 } }),
       User.findByIdAndUpdate(target._id, { $inc: { followersCount: -1 } }),

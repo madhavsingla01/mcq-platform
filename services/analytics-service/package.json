@@ -1,0 +1,33 @@
+{
+  "name": "mcq-analytics-service",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node dist/server.js",
+    "dev": "nodemon --watch src --ext ts,json --exec \"npm run build && npm start\"",
+    "test": "node --test tests/",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "tsc -p tsconfig.json",
+    "pretest": "npm run build"
+  },
+  "dependencies": {
+    "@quizfocus/contracts": "file:../../contracts",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.0",
+    "express": "^4.19.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.4.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "1.4.10",
+    "@types/cors": "2.8.19",
+    "@types/express": "4.17.25",
+    "@types/jsonwebtoken": "9.0.10",
+    "@types/node": "22.19.0",
+    "nodemon": "^3.1.0",
+    "typescript": "5.9.3"
+  }
+}

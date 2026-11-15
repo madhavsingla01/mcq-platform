@@ -22,7 +22,7 @@ Start here for local setup. See the [modernization documentation](docs/README.md
   - **Message Service** (`:5006`): Direct messaging, inbox conversations & quiz challenge invites
   - **Media Service** (`:5007`): Secure image processing, WebP variants, thumbnails, URL validation & optimized delivery
   - **Admin Service** (`:5008`): Role-based administration, moderation, user controls, and audit logs
-  - **AI Integration Service** (`:5014`): Authenticated AI integration boundary and service-to-service client; provider connectors are not configured
+  - **AI Integration Service** (`:5014`): Authenticated draft REST API and [MCP authoring tools](services/ai-integration-service/README.md#mcp-clients)
 
 ---
 
@@ -188,6 +188,7 @@ All API routes are prefixed with `/api/v1`.
 | `/messages/*` | Direct messages and quiz invitation conversations |
 | `/search/*` | Universal search across quizzes, creators, and dynamic trending hashtags |
 | `/admin/*` | Administrative controls, moderation, reports, and audit logs |
+| `/ai/drafts`, `/ai/mcp` | Private draft authoring API and user-scoped MCP tools |
 
 Image variants are delivered through the gateway at `/media/assets/:id/:variant` (outside the `/api/v1` prefix). Uploads are limited to 12 MiB by default and accept JPEG, PNG, WebP, GIF, AVIF, TIFF, and SVG source files. The media service decodes and re-encodes accepted uploads as WebP image and thumbnail variants, and stores ownership, source size/type, dimensions, content hash, variant sizes, and processing status in its dedicated `mcq_media` database. Files use the shared `uploads-data` volume.
 

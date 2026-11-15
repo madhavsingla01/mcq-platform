@@ -9,6 +9,7 @@ import QuizShare from '../models/QuizShare.model.js';
 import { AppError } from '../middleware/error.middleware.js';
 import { consumeChatBudget } from './chatBudget.js';
 import { buildClosestSearch } from './closestSearch.js';
+import { verifyChatAttachment } from './chatAttachment.js';
 import { assertEditable, cursorCondition, deletionFields, normalizeClientMessageId, paginationOptions, publicMessage, requireId, safeUrl, shareableQuiz, textValue, toId } from './messagePolicy.js';
 
 export const USER_CARD_SELECT = '_id name username avatar bio isProfilePublic';
@@ -26,6 +27,31 @@ export const requireParticipant = async (conversationId, userId) => {
   if (!conversation) throw new AppError('Conversation not found or access denied', 404);
   return conversation;
 };
+
+export function inboxVisibilityFilter(userId) {
+  const removedAt = 'inboxRemovedAt.' + toId(userId);
+  return { participants: userId, $or: [
+    { [removedAt]: { $exists: false } },
+    { $expr: { $gt: ['$lastMessageAt', '$' + removedAt] } },
+  ] };
+}
+
+export async function changeConversationInbox(conversationId, userId, action, io) {
+  consumeChatBudget(userId, 'manage', 10);
+  const conversation = await requireParticipant(conversationId, userId);
+  const through = new Date();
+  if (action === 'clear') {
+    await Message.updateMany({
+      conversation: conversation._id, createdAt: { $lte: through }, deletedFor: { $ne: userId },
+    }, { $addToSet: { deletedFor: userId } });
+  } else {
+    await Conversation.updateOne({ _id: conversation._id, participants: userId },
+      { $max: { ['inboxRemovedAt.' + toId(userId)]: through } });
+  }
+  const event = { conversationId: toId(conversation._id), action, through };
+  io?.to('user:' + toId(userId)).emit('conversation:managed', event);
+  return event;
+}
 
 export const assertRecipientAllowsMessages = async (recipientId, senderId) => {
   const recipient = await User.findById(recipientId).select('preferences isDeleted isActive isSuspended').lean();
@@ -62,6 +88,8 @@ export const publishConversation = async (io, conversationId) => {
   const conversation = await Conversation.findById(conversationId).lean();
   if (!conversation) return;
   for (const participant of conversation.participants) {
+    const removedAt = conversation.inboxRemovedAt?.[toId(participant)];
+    if (removedAt && conversation.lastMessageAt <= removedAt) continue;
     const counts = await unreadByConversation([conversation._id], participant);
     const latest = await latestVisibleMessage(conversation._id, participant);
     io.to(`user:${toId(participant)}`).emit('conversation:updated', {
@@ -76,7 +104,7 @@ const buildPayload = async (conversation, userId, input) => {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new AppError('Invalid message payload', 400);
   const text = textValue(input.text);
   let type = input.type || 'text';
-  if (!['text', 'image', 'audio', 'document', 'quiz_share', 'comment_share', 'challenge_invite', 'link'].includes(type)) throw new AppError('Unsupported message type', 400);
+  if (!['text', 'image', 'audio', 'video', 'document', 'quiz_share', 'comment_share', 'challenge_invite', 'link'].includes(type)) throw new AppError('Unsupported message type', 400);
   const payload = { conversation: conversation._id, sender: userId, text, type, readBy: [userId], clientMessageId: normalizeClientMessageId(input.clientMessageId) };
   const quizId = input.quizId || input.quizMetadata?.quizId;
   if (quizId) {
@@ -105,7 +133,13 @@ const buildPayload = async (conversation, userId, input) => {
     payload.type = 'link';
     payload.text ||= payload.link;
   } else if (type === 'link') throw new AppError('A link is required', 400);
-  if (['image', 'audio', 'document'].includes(type)) {
+  if (input.attachmentProof !== undefined) {
+    if (type !== 'text' || quizId || input.commentId || input.link || input.media) throw new AppError('Send the attachment with optional message text only', 400);
+    const attachment = verifyChatAttachment(input.attachmentProof, toId(userId), toId(conversation._id));
+    payload.type = attachment.type;
+    payload.media = attachment.media;
+    payload.text ||= attachment.media.fileName;
+  } else if (['image', 'audio', 'document'].includes(type)) {
     if (!input.media || typeof input.media !== 'object' || Array.isArray(input.media) || !input.media.url) throw new AppError('A media URL is required', 400);
     const { media } = input;
     payload.media = { url: safeUrl(media.url), thumbnailUrl: safeUrl(media.thumbnailUrl), fileName: textValue(media.fileName, { max: 255 }), mimeType: textValue(media.mimeType, { max: 100 }) };
@@ -116,7 +150,7 @@ const buildPayload = async (conversation, userId, input) => {
       }
     }
     payload.text ||= type === 'image' ? 'Photo' : type === 'audio' ? 'Voice message' : payload.media.fileName || 'Document';
-  }
+  } else if (type === 'video') throw new AppError('Upload a video before sending it', 400);
   if (input.replyTo?.messageId) {
     requireId(input.replyTo.messageId, 'reply ID');
     const original = await populateMessage(Message.findOne({ _id: input.replyTo.messageId, conversation: conversation._id,

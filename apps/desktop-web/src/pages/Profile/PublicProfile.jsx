@@ -1,3 +1,4 @@
+import FilterSelect from '../../components/ui/FilterSelect';
 import { rankSearchResults } from '../../components/search/rankSearchResults';
 import { usePageSearch } from '../../components/search/PageSearchContext';
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -111,6 +112,10 @@ export default function PublicProfile() {
 
   const [profile, setProfile] = useState(null);
   const [quizzes, setQuizzes] = useState([]);
+  const [privateQuizzes, setPrivateQuizzes] = useState([]);
+  const [quizVisibility, setQuizVisibility] = useState('public');
+  const [privateLoading, setPrivateLoading] = useState(false);
+  const [privateError, setPrivateError] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isFollowing, setIsFollowing] = useState(false);
@@ -141,14 +146,17 @@ export default function PublicProfile() {
   const [loadingFollowers, setLoadingFollowers] = useState(false);
   const [loadingFollowing, setLoadingFollowing] = useState(false);
 
+  const profileQuizzes = useMemo(() => quizzes.filter(quiz =>
+    quiz.visibility === 'public' || (!quiz.visibility && quiz.isPublic === true)), [quizzes]);
   const challengeQuizzes = useMemo(() => {
-    return quizzes.filter((q) => q.isChallenge === true);
-  }, [quizzes]);
+    return profileQuizzes.filter((q) => q.isChallenge === true);
+  }, [profileQuizzes]);
 
   const visibleQuizzes = useMemo(() => {
-    const list = activeTab === 'challenges' ? challengeQuizzes : quizzes;
+    const list = activeTab === 'challenges' ? challengeQuizzes
+      : quizVisibility === 'private' ? privateQuizzes : profileQuizzes.filter(quiz => !quiz.isChallenge);
     return rankSearchResults(list, searchQuery, item => [item.title, item.description, item.category]);
-  }, [quizzes, challengeQuizzes, activeTab, searchQuery]);
+  }, [profileQuizzes, privateQuizzes, challengeQuizzes, activeTab, searchQuery, quizVisibility]);
 
   const totalQuizPages = Math.max(1, Math.ceil(visibleQuizzes.length / QUIZZES_PER_PAGE));
   const pagedQuizzes = useMemo(() => {
@@ -157,7 +165,25 @@ export default function PublicProfile() {
 
   useEffect(() => {
     setQuizPage(1);
-  }, [activeTab, searchQuery]);
+  }, [activeTab, searchQuery, quizVisibility]);
+
+  useEffect(() => {
+    setQuizVisibility('public');
+    setPrivateQuizzes([]);
+    setPrivateError('');
+  }, [username, user?._id]);
+
+  useEffect(() => {
+    if (quizVisibility !== 'private' || !username || !user?._id || user._id !== profile?._id) return;
+    const controller = new AbortController();
+    setPrivateLoading(true);
+    setPrivateError('');
+    api.get(`/users/${username}/quizzes`, { params: { visibility: 'private', limit: 100 }, signal: controller.signal })
+      .then(({ data }) => setPrivateQuizzes(data.data.quizzes || []))
+      .catch(() => { if (!controller.signal.aborted) setPrivateError('Could not load private quizzes.'); })
+      .finally(() => { if (!controller.signal.aborted) setPrivateLoading(false); });
+    return () => controller.abort();
+  }, [quizVisibility, username, user?._id, profile?._id]);
 
   const fetchProfile = async () => {
     if (!username) return;
@@ -485,7 +511,7 @@ export default function PublicProfile() {
     );
   }
 
-  const totalQuestions = quizzes.reduce((sum, q) => sum + (q.questionCount || q.questions?.length || 0), 0);
+  const totalQuestions = quizzes.filter(quiz => !quiz.isChallenge).reduce((sum, q) => sum + (q.questionCount || q.questions?.length || 0), 0);
   const totalAttempts = quizzes.reduce((sum, q) => sum + (q.totalAttempts || 0), 0);
   const hasBanner = Boolean(profile.banner) && bannerError !== profile.banner;
 
@@ -592,7 +618,7 @@ export default function PublicProfile() {
               {(profile.followingCount || 0).toLocaleString()} following
             </button>
             <span className="yt-meta-dot">•</span>
-            <span className="yt-meta-stat">{quizzes.length} public {quizzes.length === 1 ? 'quiz' : 'quizzes'}</span>
+            <span className="yt-meta-stat">{profile.quizCount ?? 0} public {profile.quizCount === 1 ? 'quiz' : 'quizzes'}</span>
             {showRank && (
               <>
                 <span className="yt-meta-dot">•</span>
@@ -706,8 +732,7 @@ export default function PublicProfile() {
               className={`yt-nav-tab ${activeTab === 'quizzes' ? 'active' : ''}`}
               onClick={() => setActiveTab('quizzes')}
             >
-              <span>Public Quizzes</span>
-              <span className="yt-tab-badge">{quizzes.length}</span>
+              <span>{isOwnProfile ? 'Quizzes' : 'Public Quizzes'}</span>
             </button>
 
             <button
@@ -716,7 +741,6 @@ export default function PublicProfile() {
               onClick={() => setActiveTab('challenges')}
             >
               <span>Challenges</span>
-              <span className="yt-tab-badge">{challengeQuizzes.length}</span>
             </button>
 
             <button
@@ -725,7 +749,6 @@ export default function PublicProfile() {
               onClick={() => setActiveTab('activity')}
             >
               <span>Recent Activity</span>
-              <span className="yt-tab-badge">{activityTotal || activities.length}</span>
             </button>
 
             <button
@@ -739,6 +762,10 @@ export default function PublicProfile() {
 
         </div>
 
+        {isOwnProfile && activeTab === 'quizzes' && (
+          <FilterSelect label="Quiz visibility" value={quizVisibility} onChange={setQuizVisibility}
+            options={[{ value: 'public', label: 'Public' }, { value: 'private', label: 'Private' }]} />
+        )}
         {profile?.isPrivate && !isFollowing && !isOwnProfile ? (
           <div className="no-items-card private-lock-card">
             <div className="private-lock-icon">
@@ -748,7 +775,9 @@ export default function PublicProfile() {
             <p>Follow @{profile.username} to see their quizzes, questions, and learning activity.</p>
           </div>
         ) : (activeTab === 'quizzes' || activeTab === 'challenges') ? (
-          visibleQuizzes.length === 0 ? (
+          activeTab === 'quizzes' && quizVisibility === 'private' && (privateLoading || privateError) ? (
+            <p role="status">{privateLoading ? 'Loading private quizzes…' : privateError}</p>
+          ) : visibleQuizzes.length === 0 ? (
             searchQuery ? (
               <EmptyState
                 icon={<Search size={24} />}
@@ -772,8 +801,8 @@ export default function PublicProfile() {
             ) : (
               <EmptyState
                 icon={<FileQuestion size={24} />}
-                title="No public quizzes yet"
-                description="This creator has not published any public quizzes yet."
+                title={quizVisibility === 'private' ? 'No private quizzes yet' : 'No public quizzes yet'}
+                description={quizVisibility === 'private' ? 'Only you can see quizzes in this view.' : 'This creator has not published any public quizzes yet.'}
                 action={isOwnProfile ? {
                   label: "Build a Quiz",
                   to: "/create/quiz",
@@ -784,7 +813,14 @@ export default function PublicProfile() {
             <>
               <div className="creator-quizzes-grid">
                 {pagedQuizzes.map((quiz) => (
-                  <QuizCard key={quiz._id} quiz={quiz} />
+                  <QuizCard key={quiz._id} quiz={quiz} onDelete={id => {
+                    setQuizzes(current => current.filter(item => item._id !== id));
+                    setPrivateQuizzes(current => current.filter(item => item._id !== id));
+                    if (quizVisibility === 'public' && !quiz.isChallenge) {
+                      setProfile(current => current ? { ...current, quizCount: Math.max(0, (current.quizCount ?? 1) - 1) } : current);
+                    }
+                    if (pagedQuizzes.length === 1) setQuizPage(current => Math.max(1, current - 1));
+                  }} />
                 ))}
               </div>
               {totalQuizPages > 1 && (
@@ -1082,7 +1118,7 @@ export default function PublicProfile() {
                     <FileQuestion size={18} className="yt-about-detail-icon" />
                     <div className="yt-about-detail-content">
                       <span className="yt-about-detail-label">
-                        {quizzes.length} public quizzes ({totalQuestions} questions)
+                        {profile.quizCount ?? 0} public quizzes ({totalQuestions} questions)
                       </span>
                     </div>
                   </div>

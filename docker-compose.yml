@@ -93,6 +93,7 @@ services:
     volumes:
       - uploads-data:/app/src/uploads
     environment:
+      - INTEGRATION_DELEGATION_SECRET=${INTEGRATION_DELEGATION_SECRET:-}
       - MEDIA_SERVICE_URL=http://media-service:5007
       - ATTEMPT_SERVICE_URL=http://attempt-service:5004
       - PORT=5002
@@ -345,6 +346,7 @@ services:
     expose:
       - "5009"
     environment:
+      - INTEGRATION_DELEGATION_SECRET=${INTEGRATION_DELEGATION_SECRET:-}
       - PORT=5009
       - NODE_ENV=production
       - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
@@ -370,8 +372,12 @@ services:
     environment:
       - PORT=5013
       - NODE_ENV=production
+      - MONGO_URI=mongodb://mongo:27017/mcq-platform
       - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
       - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in the root .env file}
+    depends_on:
+      mongo:
+        condition: service_healthy
     restart: unless-stopped
 
   # ── Service 14: AI Integration Boundary (connectors not configured) ──
@@ -383,13 +389,30 @@ services:
     expose:
       - "5014"
     environment:
+      - MCP_PUBLIC_ORIGIN=${MCP_PUBLIC_ORIGIN:-}
+      - MCP_OAUTH_ISSUER=${MCP_OAUTH_ISSUER:-}
+      - MCP_OAUTH_INTROSPECTION_URL=${MCP_OAUTH_INTROSPECTION_URL:-}
+      - MCP_OAUTH_INTROSPECTION_CLIENT_ID=${MCP_OAUTH_INTROSPECTION_CLIENT_ID:-}
+      - MCP_OAUTH_INTROSPECTION_CLIENT_SECRET=${MCP_OAUTH_INTROSPECTION_CLIENT_SECRET:-}
+      - INTEGRATION_WEBHOOK_ORIGINS=${INTEGRATION_WEBHOOK_ORIGINS:-}
+      - INTEGRATION_WEBHOOK_SECRET=${INTEGRATION_WEBHOOK_SECRET:-}
+      - INTEGRATION_GENERATION_URL=${INTEGRATION_GENERATION_URL:-}
+      - INTEGRATION_GENERATION_TOKEN=${INTEGRATION_GENERATION_TOKEN:-}
+      - INTEGRATION_GENERATION_DAILY_LIMIT=${INTEGRATION_GENERATION_DAILY_LIMIT:-}
+      - INTEGRATION_DELEGATION_SECRET=${INTEGRATION_DELEGATION_SECRET:-}
       - PORT=5014
       - NODE_ENV=production
       - CLIENT_URL=${CLIENT_URL:?Set CLIENT_URL in the root .env file}
       - AUTH_SERVICE_URL=http://auth-service:5001
-      - INTERNAL_API_TIMEOUT_MS=5000
+      - INTERNAL_API_TIMEOUT_MS=12000
+      - AI_INTEGRATION_MONGO_URI=mongodb://mongo:27017/quizfocus_integration
+      - QUIZ_SERVICE_URL=http://quiz-service:5002
+      - CHALLENGE_SERVICE_URL=http://challenge-service:5009
     depends_on:
-      - auth-service
+      auth-service:
+        condition: service_started
+      mongo:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

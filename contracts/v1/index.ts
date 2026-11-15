@@ -7,3 +7,4 @@ export * from './challenge.js';
 export * from './social.js';
 export * from './admin.js';
 export * from './middleware.js';
+export * from './analytics.js';

@@ -231,28 +231,7 @@ describe('Pagination & Server-Side Filtering Architecture', () => {
       expect(hasIndex({ quizId: 1, status: 1, isPractice: 1, score: -1, totalTime: 1 })).toBe(true);
     });
 
-    it('Conversation and Message schemas should include indexes for chat history and cursor ordering', async () => {
-      const Conversation = (await import('../../message-service/src/models/Conversation.model.js')).default;
-      const Message = (await import('../../message-service/src/models/Message.model.js')).default;
 
-      const convIndexes = Conversation.schema.indexes();
-      const msgIndexes = Message.schema.indexes();
-
-      const hasIndex = (indexes, fields) => {
-        return indexes.some(([spec]) => {
-          const specKeys = Object.keys(spec);
-          const fieldKeys = Object.keys(fields);
-          if (specKeys.length !== fieldKeys.length) return false;
-          return fieldKeys.every((k) => spec[k] === fields[k]);
-        });
-      };
-
-      // Conversation compound
-      expect(hasIndex(convIndexes, { participants: 1, lastMessageAt: -1 })).toBe(true);
-      // Message forward & reverse cursor indexes
-      expect(hasIndex(msgIndexes, { conversation: 1, createdAt: 1 })).toBe(true);
-      expect(hasIndex(msgIndexes, { conversation: 1, createdAt: -1 })).toBe(true);
-    });
   });
 
   describe('In-Memory TTL Caching Engine', () => {

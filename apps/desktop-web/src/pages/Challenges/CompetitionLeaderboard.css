@@ -209,3 +209,6 @@
   .contest-stats > div { padding: 8px; }
   .contest-table :is(th, td) { padding-inline: 9px; }
 }
+
+.contest-profile-link { color: inherit; text-decoration: none; }
+.contest-profile-link:hover { text-decoration: underline; }

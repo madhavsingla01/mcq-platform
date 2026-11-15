@@ -243,6 +243,8 @@ function RoutedContent() {
 
 const searchLabels = {
   dashboard: 'Search your quizzes',
+  'mapping/:uploadId': 'Search imported rows',
+  'result/:attemptId': 'Search reviewed questions',
   guide: 'Search guide',
   'how-it-works': 'Search guide',
   create: 'Search creation options',

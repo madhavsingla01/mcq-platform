@@ -33,6 +33,7 @@ export function CustomSelect({
   name,
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [openedWithPointer, setOpenedWithPointer] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [dropdownPosition, setDropdownPosition] = useState(null);
   const containerRef = useRef(null);
@@ -135,13 +136,14 @@ export function CustomSelect({
         : triggerRect.bottom + gap;
 
       setDropdownPosition((previous) => {
-        const next = { top, left, width, maxHeight };
+        const next = { top, left, width, maxHeight, openAbove };
         if (
           previous &&
           previous.top === next.top &&
           previous.left === next.left &&
           previous.width === next.width &&
-          previous.maxHeight === next.maxHeight
+          previous.maxHeight === next.maxHeight &&
+          previous.openAbove === next.openAbove
         ) {
           return previous;
         }
@@ -175,6 +177,7 @@ export function CustomSelect({
   // Handle keyboard navigation
   const handleKeyDown = (e) => {
     if (disabled) return;
+    if (!isOpen && ['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(e.key)) setOpenedWithPointer(false);
 
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -235,6 +238,8 @@ export function CustomSelect({
       ref={listRef}
       id={`${selectId}-options`}
       className={`g2-select-dropdown ${portal ? 'g2-select-dropdown--portal' : 'animate-scale-fade'} ${dropdownClassName}`}
+      data-pointer-open={openedWithPointer || undefined}
+      data-placement={dropdownPosition?.openAbove ? 'above' : 'below'}
       role="listbox"
       tabIndex={-1}
       style={portal ? {
@@ -291,6 +296,10 @@ export function CustomSelect({
       className={`g2-select-container ${size} ${disabled ? 'disabled' : ''} ${className}`}
       style={style}
       onKeyDown={handleKeyDown}
+      onBlur={(event) => {
+        const next = event.relatedTarget;
+        if (next && !containerRef.current?.contains(next) && !listRef.current?.contains(next)) setIsOpen(false);
+      }}
     >
       {/* Trigger Button */}
       <button
@@ -298,7 +307,11 @@ export function CustomSelect({
         ref={triggerRef}
         id={selectId}
         className={`g2-select-trigger ${isOpen ? 'open' : ''}`}
-        onClick={() => !disabled && setIsOpen((prev) => !prev)}
+        onClick={(event) => {
+          if (disabled) return;
+          setOpenedWithPointer(event.detail > 0);
+          setIsOpen((prev) => !prev);
+        }}
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={isOpen}

@@ -43,10 +43,10 @@ const { LIFECYCLE_STATES, canTransition, validateTransition } = await import(
   pathToFileURL(path.join(platformRoot, 'services/media-service/dist/services/educationalStateMachine.js'))
 );
 const { MarketplaceListing } = await import(
-  pathToFileURL(path.join(platformRoot, 'services/marketplace-service/src/models/MarketplaceListing.model.js'))
+  pathToFileURL(path.join(platformRoot, 'services/marketplace-service/dist/models/MarketplaceListing.model.js'))
 );
 const { MarketplaceEntitlement } = await import(
-  pathToFileURL(path.join(platformRoot, 'services/marketplace-service/src/models/MarketplaceEntitlement.model.js'))
+  pathToFileURL(path.join(platformRoot, 'services/marketplace-service/dist/models/MarketplaceEntitlement.model.js'))
 );
 const {
   checkCreatorQuota,
@@ -58,7 +58,7 @@ const {
   pathToFileURL(path.join(platformRoot, 'services/media-service/dist/services/educationalAsset.service.js'))
 );
 const { verifyEducationalAssetOwnership, OwnershipError } = await import(
-  pathToFileURL(path.join(platformRoot, 'services/marketplace-service/src/services/ownership.service.js'))
+  pathToFileURL(path.join(platformRoot, 'services/marketplace-service/dist/services/ownership.service.js'))
 );
 
 const makeId = () => new mongoose.Types.ObjectId();

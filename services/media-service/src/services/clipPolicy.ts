@@ -56,6 +56,7 @@ export const publicClip = (asset: Pick<MediaAssetRecord, '_id' | 'kind' | 'statu
 });
 
 export const questionAssetFilter = {
+  purpose: { $ne: 'chat-attachment' },
   $or: [{ kind: { $in: ['audio', 'video', 'captions'] } }, { kind: 'image', purpose: 'quiz-clip' }],
 };
 

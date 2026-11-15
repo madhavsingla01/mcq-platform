@@ -312,8 +312,8 @@ export default function Explore() {
                 <div className="explore-page-numbers-wrap">
                   {getPageNumbers().map((num, idx) =>
                     num === '...' ? (
-                      <span key={`ellipsis-${idx}`} className="explore-page-ellipsis">
-                        â€¦
+                      <span key={`ellipsis-${idx}`} className="explore-page-ellipsis" aria-hidden="true">
+                        &hellip;
                       </span>
                     ) : (
                       <button

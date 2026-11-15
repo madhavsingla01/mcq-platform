@@ -8,7 +8,7 @@
     "typecheck": "tsc -p tsconfig.test.json --noEmit",
     "dev": "nodemon --watch src --ext ts,js,json --exec \"npm run build && npm start\"",
     "start": "node dist/server.js",
-    "test": "npm run build && tsc -p tsconfig.test.json && node --test tests/ai-integration-routing.test.js tests/rate-limiting-audit.test.js dist/test-build/tests/contracts.test.js"
+    "test": "npm run build && tsc -p tsconfig.test.json && node --test tests/ai-integration-routing.test.js tests/analytics-routing.test.js tests/rate-limiting-audit.test.js dist/test-build/tests/contracts.test.js"
   },
   "dependencies": {
     "cookie-parser": "^1.4.6",

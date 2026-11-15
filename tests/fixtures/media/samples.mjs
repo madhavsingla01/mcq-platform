@@ -76,7 +76,7 @@ export async function uploadFixture(client, name, { kind, key = randomUUID(), en
   }), name);
   if (kind) {
     form.append('kind', kind);
-    form.append('uploadRequestId', key);
+    if (key) form.append('uploadRequestId', key);
   }
   const response = await fetch(client.baseUrl + endpoint, {
     method: 'POST', headers: { Cookie: client._buildCookieHeader(), 'x-csrf-token': client.getCookie('csrfToken') },

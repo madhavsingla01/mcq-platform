@@ -1,3 +1,4 @@
+import { delegatedAccount } from './integrationDelegation.js';
 import { verifySessionToken, isCurrentSession } from '../utils/sessionToken.js';
 import env from '../config/env.js';
 import User from '../models/User.model.js';
@@ -5,6 +6,16 @@ import { AppError } from './error.middleware.js';
 
 export const protect = async (req, res, next) => {
   try {
+    const delegatedUserId = delegatedAccount(req);
+    if (delegatedUserId !== undefined) {
+      const actor = delegatedUserId
+        ? await User.findById(delegatedUserId).select('-password -refreshToken') : null;
+      if (!actor || actor.isDeleted || actor.isActive === false || actor.isSuspended) {
+        return next(new AppError('Invalid integration authorization', 401));
+      }
+      req.user = actor;
+      return next();
+    }
     let token = req.cookies?.accessToken;
     if (!token && req.headers?.authorization?.startsWith('Bearer ')) {
       token = req.headers.authorization.split(' ')[1];

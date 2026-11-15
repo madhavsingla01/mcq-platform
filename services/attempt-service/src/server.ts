@@ -19,6 +19,7 @@ const allowedOrigins = env.CLIENT_URL;
 
 const app = express();
 
+
 app.use(cors({
   origin: allowedOrigins,
   credentials: true,
@@ -30,6 +31,13 @@ app.use(cookieParser());
 app.use(csrfProtection);
 
 // Health check
+app.get('/', (_req, res) => {
+  res.set('Cache-Control', 'no-store').json({
+    service: 'attempt-service', message: 'QuizFocus Attempt Service. This port serves the API. Open the QuizFocus desktop app to use the website.',
+    health: '/api/v1/health',
+  });
+});
+
 app.get('/api/v1/health', (req, res) => {
   const healthy = mongoose.connection.readyState === 1;
   res.status(healthy ? 200 : 503).json({

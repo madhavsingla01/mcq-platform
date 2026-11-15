@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Send,
+  Paperclip,
   Search,
   SquarePen,
   ArrowLeft,
@@ -23,12 +24,19 @@ import {
   Reply,
   ChevronDown,
   MoreVertical,
+  Share2,
+  Archive,
   CornerDownLeft,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { MESSAGE_LIMIT, mergeMessages, applyMessageDeletion, applyReadReceipt, canEditMessage, readDraft, writeDraft } from './chatState';
-import { messageService } from '../../services/message.service';
+import { messageService, prepareMessageForward, uploadReadyAttachment } from '../../services/message.service';
+import ShareModal from '../../components/social/ShareModal';
+import MessageText from './MessageText';
+import MessageAttachment from './MessageAttachment';
+import SmallPopup from '../../components/ui/SmallPopup';
+import { ATTACHMENT_ACCEPT, attachmentKind, AttachmentPreview } from './AttachmentPreview';
 import {
   getSocket,
   joinConversation,
@@ -118,10 +126,20 @@ export default function Messages() {
 
   // WhatsApp interaction states
   const [replyingTo, setReplyingTo] = useState(null);
+  const [attachment, setAttachment] = useState(null);
+  const uploadOperation = useRef(null);
+  const attachmentInput = useRef(null);
+  const lastMessageTap = useRef(null);
   const [editingMessage, setEditingMessage] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [copiedMessageId, setCopiedMessageId] = useState(null);
   const [activeActionMenuId, setActiveActionMenuId] = useState(null);
+  const [sharingMessage, setSharingMessage] = useState(null);
+  const [threadMenuOpen, setThreadMenuOpen] = useState(false);
+  const [manageAction, setManageAction] = useState(null);
+  const [managing, setManaging] = useState(false);
+  const threadMenuTrigger = useRef(null);
+  const threadRevision = useRef(0);
   const [hoveredMessageId, setHoveredMessageId] = useState(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const [highlightedMessageId, setHighlightedMessageId] = useState(null);
@@ -246,6 +264,7 @@ export default function Messages() {
   useEffect(() => {
     const handleClickOutside = () => {
       setActiveActionMenuId(null);
+      setThreadMenuOpen(false);
     };
     window.addEventListener('click', handleClickOutside);
     return () => window.removeEventListener('click', handleClickOutside);
@@ -292,11 +311,12 @@ export default function Messages() {
   const loadThread = useCallback(async () => {
     if (!conversationId) return;
     const target = conversationId;
+    const revision = threadRevision.current;
     setLoadingMessages(true);
     setThreadError('');
     try {
       const data = await messageService.getMessages(target, { limit: 40 });
-      if (currentConversationRef.current !== target) return;
+      if (currentConversationRef.current !== target || revision !== threadRevision.current) return;
       setActiveConversation(data.conversation);
       setMessages((previous) => mergeMessages(previous, data.messages || []));
       setHistoryPagination(data.pagination);
@@ -316,6 +336,9 @@ export default function Messages() {
     setEditingMessage(null);
     setDeleteTarget(null);
     setActiveActionMenuId(null);
+    setThreadMenuOpen(false);
+    setManageAction(null);
+    setSharingMessage(null);
     setIsPeerTyping(false);
     setIsPeerOnline(false);
     setPeerLastSeen(null);
@@ -337,13 +360,14 @@ export default function Messages() {
   const loadOlderMessages = async () => {
     if (loadingHistory || !historyPagination?.hasMore) return;
     const target = conversationId;
+    const revision = threadRevision.current;
     const stream = threadStreamRef.current;
     const previousHeight = stream?.scrollHeight || 0;
     const previousTop = stream?.scrollTop || 0;
     setLoadingHistory(true);
     try {
       const data = await messageService.getMessages(target, { before: historyPagination.nextCursor, limit: 40 });
-      if (currentConversationRef.current !== target) return;
+      if (currentConversationRef.current !== target || revision !== threadRevision.current) return;
       setMessages((previous) => mergeMessages(previous, data.messages || []));
       setHistoryPagination(data.pagination);
       requestAnimationFrame(() => {
@@ -356,12 +380,13 @@ export default function Messages() {
   useEffect(() => {
     if (!conversationId || !threadSearch.trim()) { setSearchResults([]); setSearchPagination(null); setSearchError(''); setSearchingMessages(false); return; }
     const controller = new AbortController();
+    const revision = threadRevision.current;
     setSearchingMessages(true);
     setSearchPagination(null);
     const timer = setTimeout(async () => {
       try {
         const data = await messageService.getMessages(conversationId, { q: threadSearch.trim(), match: 'closest', limit: 40 }, controller.signal);
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted || revision !== threadRevision.current) return;
         setSearchResults(data.messages || []);
         setSearchPagination(data.pagination);
         setSearchError('');
@@ -377,16 +402,39 @@ export default function Messages() {
   const loadMoreSearchResults = async () => {
     const target = conversationId;
     const query = threadSearch;
+    const revision = threadRevision.current;
     if (searchingMessages || !searchPagination?.hasMore) return;
     setSearchingMessages(true);
     try {
       const data = await messageService.getMessages(target, { q: query.trim(), match: 'closest', before: searchPagination.nextCursor, limit: 40 });
-      if (currentConversationRef.current !== target || currentSearchRef.current !== query) return;
+      if (currentConversationRef.current !== target || currentSearchRef.current !== query || revision !== threadRevision.current) return;
       setSearchResults(previous => [...new Map([...previous, ...(data.messages || [])].map(message => [message._id, message])).values()]);
       setSearchPagination(data.pagination);
     } catch { toast.error('Could not load more search results.'); }
     finally { if (currentConversationRef.current === target && currentSearchRef.current === query) setSearchingMessages(false); }
   };
+
+  const applyConversationChange = useCallback(({ conversationId: target, action, through }) => {
+    if (action === 'remove') {
+      setConversations(previous => previous.filter(item => item._id !== target || new Date(item.lastMessageAt) > new Date(through)));
+      if (currentConversationRef.current === target) navigate('/messages', { replace: true });
+      return;
+    }
+    const afterClear = item => new Date(item.createdAt) > new Date(through);
+    setConversations(previous => previous.map(item => item._id === target && new Date(item.lastMessageAt) <= new Date(through)
+      ? { ...item, lastMessage: null, lastMessageText: '', unreadCount: 0 } : item));
+    if (currentConversationRef.current !== target) return;
+    threadRevision.current++;
+    setMessages(previous => previous.filter(afterClear));
+    setSearchResults([]);
+    setHistoryPagination(null);
+    setQuery('');
+    setReplyingTo(null);
+    if (editingMessageRef.current) {
+      setEditingMessage(null);
+      setInputText(draftBeforeEditRef.current);
+    }
+  }, [navigate, setQuery]);
 
   useEffect(() => {
     const socket = getSocket();
@@ -405,9 +453,10 @@ export default function Messages() {
       refreshPresence();
       loadConversations(true);
       if (conversationId) {
+        const revision = threadRevision.current;
         try {
           const data = await messageService.getMessages(conversationId, { limit: 40 });
-          if (!cancelled) {
+          if (!cancelled && revision === threadRevision.current) {
             // Reload the latest server state after a connection gap. This also
             // removes messages hidden on another device while disconnected.
             setMessages(data.messages || []);
@@ -416,7 +465,7 @@ export default function Messages() {
             if (!query) requestAnimationFrame(() => scrollToBottom(false));
             else {
               const results = await messageService.getMessages(conversationId, { q: query, match: 'closest', limit: 40 });
-              if (!cancelled && currentSearchRef.current.trim() === query) {
+              if (!cancelled && revision === threadRevision.current && currentSearchRef.current.trim() === query) {
                 setSearchResults(results.messages || []);
                 setSearchPagination(results.pagination);
                 setSearchError('');
@@ -486,7 +535,7 @@ export default function Messages() {
       }
     };
     const subscriptions = { connect: handleConnect, disconnect: handleDisconnect, connect_error: handleDisconnect,
-      'message:new': handleNewMessage, 'conversation:updated': handleConversationUpdated,
+      'message:new': handleNewMessage, 'conversation:updated': handleConversationUpdated, 'conversation:managed': applyConversationChange,
       'typing:update': handleTyping, 'presence:update': handlePresence,
       'message:reaction_update': handleReaction, 'message:edited': handleEdited,
       'message:deleted': handleDeleted, 'message:read_status': handleRead };
@@ -497,7 +546,7 @@ export default function Messages() {
       if (conversationId) leaveConversation(conversationId);
       Object.entries(subscriptions).forEach(([event, handler]) => socket.off(event, handler));
     };
-  }, [conversationId, activeConversation?.otherParticipant?._id, currentUser?._id, loadConversations, scrollToBottom]);
+  }, [conversationId, activeConversation?.otherParticipant?._id, currentUser?._id, loadConversations, scrollToBottom, applyConversationChange]);
 
   const handleInputChange = (event) => {
     const value = event.target.value;
@@ -512,10 +561,41 @@ export default function Messages() {
     typingDebounceTimerRef.current = setTimeout(() => sendTypingStop(conversationId), 2000);
   };
 
-  const handleSendMessage = async (event) => {
+  useEffect(() => {
+    setAttachment(null);
+    return () => { uploadOperation.current?.abort(); uploadOperation.current = null; };
+  }, [conversationId]);
+
+  const chooseAttachment = async (file, caption = '') => {
+    if (!file || !conversationId || editingMessage) return;
+    const kind = attachmentKind(file.name, file.type);
+    if (!kind || !file.size || file.size > 15 * 1024 * 1024) {
+      toast.error('Choose a supported image, audio, video, PDF, spreadsheet or text file up to 15 MB.');
+      return;
+    }
+    const selected = { file, kind, name: file.name, conversationId };
+    uploadOperation.current?.abort();
+    const controller = new AbortController();
+    uploadOperation.current = controller;
+    setAttachment({ ...selected, caption, status: 'Uploading…' });
+    try {
+      const { id } = await uploadReadyAttachment(conversationId, file, kind, controller.signal, () => {
+        setAttachment(current => ({ ...current, status: 'Processing…' }));
+      });
+      if (!controller.signal.aborted) setAttachment(current => ({ ...current, id, status: '' }));
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      setAttachment(current => ({ ...current, status: '', error: error.response?.data?.message || error.message || 'Could not upload the attachment.' }));
+    }
+  };
+
+  const handleSendMessage = async (event, fromAttachment = false) => {
     event?.preventDefault();
-    const text = inputText.trim();
-    if (!text || text.length > MESSAGE_LIMIT || sendingRef.current || !conversationId || loadingMessages || threadError) return;
+    const currentAttachment = !editingMessage && attachment?.conversationId === conversationId ? attachment : null;
+    if (currentAttachment && !fromAttachment) return;
+    const file = fromAttachment ? currentAttachment : null;
+    const text = file ? file.caption.trim() : inputText.trim();
+    if ((!text && !file?.id) || (file && !file.id) || (editingMessage && !text) || text.length > MESSAGE_LIMIT || sendingRef.current || !conversationId || loadingMessages || threadError) return;
     const target = conversationId;
     const belongsToCurrent = () => currentConversationRef.current === target;
     clearTimeout(typingDebounceTimerRef.current);
@@ -544,28 +624,36 @@ export default function Messages() {
       text: replyingTo.text,
     } : null;
     const previousAttempt = retryPayloadRef.current;
-    const clientMessageId = previousAttempt?.conversationId === target && previousAttempt.text === text && previousAttempt.replyId === quote?.messageId
+    const clientMessageId = previousAttempt?.conversationId === target && previousAttempt.text === text && previousAttempt.replyId === quote?.messageId && previousAttempt.assetId === file?.id
       ? previousAttempt.id : (crypto.randomUUID?.() || Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, '0')).join(''));
-    retryPayloadRef.current = { conversationId: target, text, replyId: quote?.messageId, id: clientMessageId };
+    retryPayloadRef.current = { conversationId: target, text, replyId: quote?.messageId, assetId: file?.id, id: clientMessageId };
     const temporaryId = `temp-${clientMessageId}`;
-    const optimistic = { _id: temporaryId, clientMessageId, sender: currentUser, text, type: 'text', replyTo: quote,
+    const optimistic = { _id: temporaryId, clientMessageId, sender: currentUser, text: text || file?.name, type: 'text', replyTo: quote,
       createdAt: new Date().toISOString(), isOptimistic: true, reactions: [] };
     setMessages((previous) => mergeMessages(previous, [optimistic]));
-    setInputText('');
-    setReplyingTo(null);
-    writeDraft(currentUser?._id, target, '');
+    if (!file) {
+      setInputText('');
+      setReplyingTo(null);
+      writeDraft(currentUser?._id, target, '');
+    }
     setQuery('');
     requestAnimationFrame(() => scrollToBottom(false));
     try {
-      const data = await messageService.sendMessage(target, { text, replyTo: quote, clientMessageId });
+      const proof = file?.id ? (await messageService.attachmentStatus(target, file.id)).proof : undefined;
+      if (file?.id && !proof) throw new Error('The attachment is not ready');
+      const data = await messageService.sendMessage(target, { text, replyTo: quote, clientMessageId, attachmentProof: proof });
+      if (belongsToCurrent()) {
+        setAttachment(null);
+        setReplyingTo(null);
+      }
       retryPayloadRef.current = null;
       if (belongsToCurrent()) setMessages((previous) => mergeMessages(previous, [data.message]));
       loadConversations(true);
     } catch (error) {
-      writeDraft(currentUser?._id, target, text);
+      if (!file) writeDraft(currentUser?._id, target, text);
       if (belongsToCurrent()) {
         setMessages((previous) => previous.filter((message) => message._id !== temporaryId));
-        setInputText(text);
+        if (!file) setInputText(text);
         setReplyingTo(replyingTo);
       }
       toast.error(error.apiFailure?.message || error.response?.data?.message || 'Message not confirmed. Your draft is saved; retry to confirm delivery.');
@@ -600,6 +688,30 @@ export default function Messages() {
       toast.success('Message copied');
     } catch { toast.error('Could not copy. Select the message text to copy it.'); }
     setActiveActionMenuId(null);
+  };
+  const handleShareMessage = message => {
+    setActiveActionMenuId(null);
+    setSharingMessage({
+      title: message.media?.fileName || message.quiz?.title || 'Message',
+      preview: message.text || message.media?.fileName,
+      send: prepareMessageForward(conversationId, message),
+    });
+  };
+  const handleManageConversation = async () => {
+    if (!manageAction || managing) return;
+    setManaging(true);
+    try {
+      const clear = manageAction === 'clear';
+      const data = await (clear ? messageService.clearConversation(conversationId) : messageService.removeConversation(conversationId));
+      applyConversationChange(data);
+      setManageAction(null);
+      toast.success(clear ? 'Chat cleared for you' : 'Conversation removed from Messages');
+      loadConversations(true);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not update this conversation.');
+    } finally {
+      setManaging(false);
+    }
   };
   const handleDeleteConfirm = async (mode) => {
     if (!deleteTarget || deleting) return;
@@ -850,6 +962,38 @@ export default function Messages() {
                   )}
                 </div>
               </Link>
+              <div className="thread-options" onClick={event => event.stopPropagation()}
+                onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setThreadMenuOpen(false); }}
+                onKeyDown={event => {
+                  if (event.key === 'Escape' && threadMenuOpen) {
+                    event.stopPropagation();
+                    setThreadMenuOpen(false);
+                    threadMenuTrigger.current?.focus();
+                  }
+                }}>
+                <button type="button" className="thread-options-trigger" ref={threadMenuTrigger}
+                  aria-label="Conversation options" aria-expanded={threadMenuOpen} disabled={!activeConversation}
+                  onClick={() => { setThreadMenuOpen(open => !open); setActiveActionMenuId(null); }}>
+                  <MoreVertical size={19} />
+                </button>
+                {threadMenuOpen && <div className="msg-dropdown-menu menu-align-right thread-options-panel">
+                  {otherUser?.username && <Link to={`/@${otherUser.username}`} className="dropdown-menu-item">
+                    <User size={15} /> View profile
+                  </Link>}
+                  <button type="button" className="dropdown-menu-item" onClick={() => {
+                    setThreadMenuOpen(false);
+                    document.getElementById('app-page-search')?.focus();
+                  }}><Search size={15} /> Search chat</button>
+                  <button type="button" className="dropdown-menu-item danger" disabled={sending} onClick={() => {
+                    setThreadMenuOpen(false);
+                    setManageAction('clear');
+                  }}><Trash2 size={15} /> Clear chat</button>
+                  <button type="button" className="dropdown-menu-item" disabled={sending} onClick={() => {
+                    setThreadMenuOpen(false);
+                    setManageAction('remove');
+                  }}><Archive size={15} /> Remove from Messages</button>
+                </div>}
+              </div>
             </header>
             {!connected && <div className="chat-connection-status" role="status">Reconnecting live updates. You can still send messages.</div>}
             {/* Message Stream */}
@@ -943,6 +1087,24 @@ export default function Messages() {
                         id={`msg-${msg._id}`}
                         className={`thread-msg-row ${isMine ? 'mine' : 'theirs'} ${isHighlighted ? 'highlighted-msg' : ''
                           }`}
+                        onDoubleClick={event => {
+                          if (isDeleted || msg.isOptimistic || event.target.closest('a, button, input, video, audio, .msg-quoted-snippet')) return;
+                          window.getSelection()?.removeAllRanges();
+                          handleStartReply(msg);
+                        }}
+                        onPointerUp={event => {
+                          if (event.pointerType !== 'touch' || isDeleted || msg.isOptimistic ||
+                              event.target.closest('a, button, input, video, audio, .msg-quoted-snippet')) return;
+                          const previous = lastMessageTap.current;
+                          const tap = { id: msg._id, at: event.timeStamp, x: event.clientX, y: event.clientY };
+                          if (previous?.id === tap.id && tap.at - previous.at < 320 &&
+                              Math.hypot(tap.x - previous.x, tap.y - previous.y) < 24) {
+                            lastMessageTap.current = null;
+                            handleStartReply(msg);
+                          } else {
+                            lastMessageTap.current = tap;
+                          }
+                        }}
                       >
                         {!isMine && (
                           <div className="msg-avatar-gutter">
@@ -1040,6 +1202,11 @@ export default function Messages() {
                                       </button>
                                     )}
 
+                                    <button type="button" className="dropdown-menu-item" onClick={() => handleShareMessage(msg)}>
+                                      <Share2 size={14} />
+                                      <span>Share</span>
+                                    </button>
+
                                     {isMine && canEditMessage(msg) && (
                                       <button
                                         type="button"
@@ -1121,14 +1288,18 @@ export default function Messages() {
                           {/* Main Message Bubble */}
                           <div
                             className={`thread-msg-bubble ${isMine ? 'bubble-mine' : 'bubble-theirs'
-                              } ${isDeleted ? 'bubble-deleted' : ''}`}
+                              } ${isDeleted ? 'bubble-deleted' : ''} ${!isDeleted && msg.media?.assetId ? 'bubble-attachment' : ''}`}
                           >
                             {isDeleted ? (
                               <span className="deleted-message-text">
                                 This message was deleted
                               </span>
                             ) : (
-                              <span className="thread-msg-text">{msg.text}</span>
+                              <>
+                                <MessageAttachment conversationId={conversationId} message={msg} onReply={() => handleStartReply(msg)}
+                                  onShare={() => handleShareMessage(msg)} />
+                                {(!msg.media?.assetId || msg.text !== msg.media.fileName) && <span className="thread-msg-text"><MessageText text={msg.text} /></span>}
+                              </>
                             )}
 
                             {/* Timestamp, Edited badge & Receipt inside bubble */}
@@ -1250,8 +1421,38 @@ export default function Messages() {
                 </div>
               )}
 
+              {!editingMessage && attachment?.conversationId === conversationId && (
+                <SmallPopup isOpen title="Send attachment" className="chat-attachment-popup" busy={sending}
+                  onClose={() => { uploadOperation.current?.abort(); setAttachment(null); }}
+                  actions={<>
+                    <Button variant="secondary" disabled={sending}
+                      onClick={() => { uploadOperation.current?.abort(); setAttachment(null); }}>Cancel</Button>
+                    {attachment.error && <Button variant="secondary"
+                      onClick={() => chooseAttachment(attachment.file, attachment.caption)}>Retry upload</Button>}
+                    <Button disabled={!attachment.id || sending} onClick={event => handleSendMessage(event, true)}>
+                      {sending ? 'Sending…' : 'Send'}
+                    </Button>
+                  </>}>
+                  <AttachmentPreview kind={attachment.kind} name={attachment.name} size={attachment.file.size} file={attachment.file} />
+                  <label className="chat-attachment-caption">
+                    Caption <span>(optional)</span>
+                    <textarea autoFocus rows={2} maxLength={MESSAGE_LIMIT} value={attachment.caption} readOnly={sending}
+                      onChange={event => {
+                        const caption = event.target.value;
+                        setAttachment(current => ({ ...current, caption }));
+                      }} />
+                  </label>
+                  <p role={attachment.error ? 'alert' : 'status'}>{attachment.error || attachment.status}</p>
+                </SmallPopup>
+              )}
               {/* Input Form */}
               <form onSubmit={handleSendMessage} className="thread-composer">
+                {!editingMessage && <>
+                  <input ref={attachmentInput} hidden type="file" accept={ATTACHMENT_ACCEPT}
+                    onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; chooseAttachment(file); }} />
+                  <button className="chat-icon-button" type="button" aria-label="Attach a file" disabled={sending || loadingMessages || Boolean(threadError)}
+                    onClick={() => attachmentInput.current?.click()}><Paperclip size={17} /></button>
+                </>}
                 <textarea
                   ref={inputRef}
                   rows={1}
@@ -1283,7 +1484,7 @@ export default function Messages() {
                 <button
                   type="submit"
                   className="btn-send-message"
-                  disabled={!inputText.trim() || sending || loadingMessages || Boolean(threadError)}
+                  disabled={!inputText.trim() || Boolean(attachment) || sending || loadingMessages || Boolean(threadError)}
                   title={editingMessage ? 'Save changes' : 'Send message'}
                   aria-label={editingMessage ? 'Save' : 'Send'}
                 >
@@ -1303,6 +1504,20 @@ export default function Messages() {
           </div>
         )}
       </section>
+
+      {sharingMessage && <ShareModal isOpen forward={sharingMessage} onClose={() => setSharingMessage(null)} />}
+      <SmallPopup isOpen={Boolean(manageAction)} title={manageAction === 'clear' ? 'Clear this chat?' : 'Remove from Messages?'}
+        destructive={manageAction === 'clear'} busy={managing}
+        description={manageAction === 'clear'
+          ? 'This clears the existing messages from your view. The other participant can still see them.'
+          : 'This hides the conversation from your inbox. It will reappear when a new message is sent.'}
+        onClose={() => setManageAction(null)}
+        actions={<>
+          <Button variant="secondary" disabled={managing} onClick={() => setManageAction(null)}>Cancel</Button>
+          <Button variant={manageAction === 'clear' ? 'danger' : 'primary'} disabled={managing} onClick={handleManageConversation}>
+            {managing ? 'Updating…' : manageAction === 'clear' ? 'Clear chat' : 'Remove conversation'}
+          </Button>
+        </>} />
 
       {/* ===== WHATSAPP DELETE CONFIRMATION MODAL ===== */}
       {deleteTarget && (

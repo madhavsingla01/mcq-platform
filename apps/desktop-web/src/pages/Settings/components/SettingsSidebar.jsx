@@ -18,11 +18,6 @@ import { SettingsInfo } from './SettingsSection';
 
 export const SETTINGS_CATEGORIES = [
   {
-    id: 'messaging', title: 'Messaging', shortTitle: 'Messaging', icon: MessageSquare,
-    description: 'Message composer, read receipts and typing privacy',
-    searchTerms: ['chat', 'messages', 'read receipts', 'typing', 'enter'],
-  },
-  {
     id: 'account',
     title: 'Account & Profile',
     shortTitle: 'Account',
@@ -45,6 +40,11 @@ export const SETTINGS_CATEGORIES = [
     icon: Bell,
     description: 'Challenge invites, followers, comments & email digests',
     searchTerms: ['alerts', 'email', 'push', 'updates'],
+  },
+  {
+    id: 'messaging', title: 'Messaging', shortTitle: 'Messaging', icon: MessageSquare,
+    description: 'Message composer, read receipts and typing privacy',
+    searchTerms: ['chat', 'messages', 'read receipts', 'typing', 'enter'],
   },
   {
     id: 'challenges',
@@ -168,6 +168,7 @@ export function SettingsSidebar({
                 aria-current={isActive ? 'page' : undefined}
                 onClick={() => onSelectCategory(cat.id)}
               >
+                <span className="settings-nav-item-number" aria-hidden="true">{String(SETTINGS_CATEGORIES.indexOf(cat) + 1).padStart(2, '0')}</span>
                 <div className="settings-nav-item-icon-box">
                   <Icon size={17} />
                 </div>

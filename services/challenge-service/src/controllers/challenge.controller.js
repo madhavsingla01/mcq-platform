@@ -6,6 +6,9 @@ import Attempt from '../models/Attempt.model.js';
 import env from '../config/env.js';
 import { AppError, catchAsync } from '../middleware/error.middleware.js';
 import { buildClosestSearch } from '../services/closestSearch.js';
+import { stageOutboxEvent, startOutboxWorker } from '../services/outbox/outbox.service.js';
+
+startOutboxWorker();
 
 const deadlinePassedFor = challenge => Boolean(challenge.deadlineAt && new Date(challenge.deadlineAt) <= new Date());
 const editableDraft = {
@@ -14,6 +17,10 @@ const editableDraft = {
     { challengeStatus: { $in: [null, 'active'] }, 'metadata.savedAsDraft': true, isPublic: { $ne: true } },
   ],
 };
+
+const draftWriteAvailable = () => ({
+  $or: [{ draftWriteToken: { $exists: false } }, { draftWriteExpiresAt: { $lte: new Date() } }],
+});
 
 const participantMedia = clips => (clips || []).map(clip => ({
   kind: clip.kind, assetId: clip.assetId, label: clip.label, transcript: clip.transcript,
@@ -173,6 +180,7 @@ const saveChallengeDraft = async (req, res) => {
   const validDuration = Number.isInteger(duration) && duration >= 1 && duration <= 180;
   const deadline = body.deadlineAt ? new Date(body.deadlineAt) : null;
   const validDeadline = deadline && Number.isFinite(deadline.getTime()) && deadline > new Date();
+  if (req.query.scope === 'integration' && body.deadlineAt && !validDeadline) throw new AppError('Choose a future deadline.', 400);
   const accessType = body.accessType === 'invite_only' ? 'invite_only' : 'public';
   const inviteAccessType = ['invitation', 'approval'].includes(body.inviteAccessType) ? body.inviteAccessType : null;
   if (accessType === 'invite_only' && !inviteAccessType) {
@@ -201,9 +209,17 @@ const saveChallengeDraft = async (req, res) => {
       uploader: req.user._id,
       isChallenge: true,
       ...editableDraft,
+      ...(req.query.scope === 'integration' ? { isRestricted: { $ne: true } } : {}),
     }).select('+draftData');
     if (!challenge) throw new AppError('Challenge draft not found.', 404);
-    challenge.$where = editableDraft;
+    if (req.query.scope === 'integration' && challenge.updatedAt?.toISOString() !== body.expectedUpdatedAt) {
+      throw new AppError('The challenge draft changed. Reload it and try again.', 409);
+    }
+    challenge.$where = {
+      updatedAt: challenge.updatedAt,
+      $and: [editableDraft, draftWriteAvailable()],
+      ...(req.query.scope === 'integration' ? { isRestricted: { $ne: true } } : {}),
+    };
   } else {
     challenge = new Challenge({
       title,
@@ -243,50 +259,19 @@ const saveChallengeDraft = async (req, res) => {
     message: 'Challenge draft saved.',
     data: {
       challengeId: challenge._id,
-      challenge: { _id: challenge._id, title: challenge.title, challengeStatus: challenge.challengeStatus, updatedAt: challenge.updatedAt },
+      challenge: {
+        _id: challenge._id, title: challenge.title, challengeStatus: challenge.challengeStatus, updatedAt: challenge.updatedAt,
+        ...(req.query.scope === 'integration' ? {
+          description: draftData.description, category: draftData.category, difficulty: draftData.difficulty,
+          tags: draftData.tags, isChallenge: true, questionCount: draftData.questions.length,
+          deadlineAt: draftData.deadlineAt, durationMinutes: draftData.durationMinutes,
+        } : {}),
+      },
     },
   });
 };
 
-/**
- * POST /api/v1/challenges
- * Create a new competitive challenge (strictly <= 10 questions).
- */
-export const createChallenge = catchAsync(async (req, res) => {
-  if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
-    throw new AppError('Request body must be an object.', 400);
-  }
-
-  if (req.body.isDraft === true) {
-    await validateChallengeMedia(req, true);
-    await saveChallengeDraft(req, res);
-    return;
-  }
-
-  let existingDraft = null;
-  if (req.body.draftId) {
-    existingDraft = await Challenge.findOne({
-      _id: req.body.draftId,
-      uploader: req.user._id,
-      isChallenge: true,
-    }).select('+draftData');
-    if (!existingDraft) throw new AppError('Challenge draft not found.', 404);
-    if (existingDraft.challengeStatus === 'publishing') {
-      throw new AppError('Challenge publication is already in progress.', 409);
-    }
-    const legacyDraft = [undefined, null, 'active'].includes(existingDraft.challengeStatus)
-      && existingDraft.metadata?.savedAsDraft === true && !existingDraft.isPublic;
-    if (existingDraft.challengeStatus !== 'draft' && !legacyDraft) {
-      res.json({
-        success: true,
-        message: 'Challenge was already published.',
-        data: { challengeId: existingDraft._id, quizId: existingDraft._id, challenge: existingDraft },
-      });
-      return;
-    }
-    req.body = { ...(existingDraft.draftData || {}), ...req.body };
-  }
-
+async function validateChallengePublication(req) {
   await validateChallengeMedia(req, false);
 
   const {
@@ -372,6 +357,86 @@ export const createChallenge = catchAsync(async (req, res) => {
 
   const totalMarks = normalizedList.reduce((sum, question) => sum + question.marks, 0);
   if (!Number.isFinite(totalMarks)) throw new AppError('Total challenge marks exceed the supported range.', 400);
+  return { title, description, category, difficulty, thumbnail, duration, deadlineDate, accessType, inviteAccessType, tags, normalizedList, totalMarks };
+}
+
+export const validateIntegrationChallengeDraft = catchAsync(async (req, res) => {
+  const draft = await Challenge.findOne({
+    _id: req.params.id, uploader: req.user._id, isChallenge: true, isRestricted: { $ne: true }, ...editableDraft,
+  }).select('+draftData').lean();
+  if (!draft) throw new AppError('Challenge draft not found.', 404);
+
+  const questions = draft.draftData?.questions ??
+    await Question.find({ quizId: draft._id }).sort({ orderIndex: 1, questionNumber: 1 }).lean();
+  req.body = { ...draft, ...draft.draftData, questions };
+  await validateChallengePublication(req);
+  res.json({ success: true, data: { valid: true } });
+});
+
+/**
+ * POST /api/v1/challenges
+ * Create a new competitive challenge (strictly <= 10 questions).
+ */
+export const createChallenge = catchAsync(async (req, res) => {
+  if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+    throw new AppError('Request body must be an object.', 400);
+  }
+
+  if (req.body.isDraft === true) {
+    if (req.query.scope === 'integration' && req.body.draftId) {
+      const current = await Challenge.findOne({
+        _id: req.body.draftId, uploader: req.user._id, isChallenge: true,
+        isRestricted: { $ne: true }, ...editableDraft,
+      }).select('+draftData').lean();
+      if (!current) throw new AppError('Challenge draft not found.', 404);
+      const previous = current.draftData || {
+        title: current.title, description: current.description, thumbnail: current.thumbnail,
+        category: current.category, difficulty: current.difficulty, tags: current.tags,
+        durationMinutes: current.durationMinutes || null,
+        deadlineAt: current.deadlineAt || null, accessType: current.accessType, inviteAccessType: current.inviteAccessType,
+        questions: await Question.find({ quizId: current._id }).sort({ orderIndex: 1, questionNumber: 1 }).lean(),
+      };
+      const { appendQuestions, ...incoming } = req.body;
+      if (appendQuestions !== undefined &&
+          (!Array.isArray(appendQuestions) || appendQuestions.length < 1 || appendQuestions.length > 10 || incoming.questions !== undefined)) {
+        throw new AppError('Provide 1 to 10 questions to append.', 400);
+      }
+      req.body = {
+        ...previous, ...incoming, visibility: 'private',
+        ...(appendQuestions ? { questions: [...previous.questions, ...appendQuestions] } : {}),
+        expectedUpdatedAt: current.updatedAt?.toISOString(),
+      };
+    }
+    await validateChallengeMedia(req, true);
+    await saveChallengeDraft(req, res);
+    return;
+  }
+
+  let existingDraft = null;
+  if (req.body.draftId) {
+    existingDraft = await Challenge.findOne({
+      _id: req.body.draftId,
+      uploader: req.user._id,
+      isChallenge: true,
+    }).select('+draftData');
+    if (!existingDraft) throw new AppError('Challenge draft not found.', 404);
+    if (existingDraft.challengeStatus === 'publishing') {
+      throw new AppError('Challenge publication is already in progress.', 409);
+    }
+    const legacyDraft = [undefined, null, 'active'].includes(existingDraft.challengeStatus)
+      && existingDraft.metadata?.savedAsDraft === true && !existingDraft.isPublic;
+    if (existingDraft.challengeStatus !== 'draft' && !legacyDraft) {
+      res.json({
+        success: true,
+        message: 'Challenge was already published.',
+        data: { challengeId: existingDraft._id, quizId: existingDraft._id, challenge: existingDraft },
+      });
+      return;
+    }
+    req.body = { ...(existingDraft.draftData || {}), ...req.body };
+  }
+
+  const { title, description, category, difficulty, thumbnail, duration, deadlineDate, accessType, inviteAccessType, tags, normalizedList, totalMarks } = await validateChallengePublication(req);
 
   const challengeCode = generateChallengeCode();
 
@@ -388,7 +453,7 @@ export const createChallenge = catchAsync(async (req, res) => {
 
   if (existingDraft) {
     const claimedDraft = await Challenge.findOneAndUpdate(
-      { _id: existingDraft._id, uploader: req.user._id, ...editableDraft },
+      { _id: existingDraft._id, uploader: req.user._id, updatedAt: existingDraft.updatedAt, $and: [editableDraft, draftWriteAvailable()] },
       { $set: { challengeStatus: 'publishing' } },
       { new: true }
     ).select('+draftData');
@@ -482,6 +547,25 @@ export const createChallenge = catchAsync(async (req, res) => {
     }
     throw error;
   }
+
+  stageOutboxEvent({
+    eventType: 'challenge.created.v1',
+    producer: 'challenge-service',
+    data: {
+      challengeId: challenge._id.toString(),
+      creatorId: (challenge.uploader?._id || challenge.uploader || req.user._id).toString(),
+      title: challenge.title,
+      category: challenge.category || 'General',
+      difficulty: challenge.difficulty || 'Intermediate',
+      durationMinutes: challenge.duration || 60,
+      deadlineAt: challenge.deadlineAt ? new Date(challenge.deadlineAt).toISOString() : undefined,
+      accessType: challenge.isPublic ? 'public' : 'invite_only',
+      totalQuestions: challenge.questions?.length || normalizedList.length || 5,
+      totalMarks: challenge.totalMarks || 100,
+      tags: challenge.tags || [],
+      createdAt: challenge.createdAt ? new Date(challenge.createdAt).toISOString() : new Date().toISOString(),
+    },
+  });
 
   res.status(201).json({
     success: true,

@@ -98,13 +98,13 @@ const mergeAnswerStates = (baseAnswer = createDefaultAnswerState(), incomingAnsw
   const selectionConflict =
     normalizedBase.isLocked &&
     normalizedBase.selectedAnswer &&
-    normalizedIncoming.selectedAnswer &&
     normalizedBase.selectedAnswer !== normalizedIncoming.selectedAnswer;
 
   let selectedAnswer = normalizedBase.selectedAnswer;
 
-  if (!selectionConflict && normalizedIncoming.selectedAnswer) {
-    if (!selectedAnswer || incomingSubmittedAt >= baseSubmittedAt) {
+  const incomingHasSelection = Boolean(normalizedIncoming.selectedAnswer || incomingSubmittedAt);
+  if (!selectionConflict && incomingHasSelection) {
+    if (incomingSubmittedAt >= baseSubmittedAt || (!baseSubmittedAt && !selectedAnswer)) {
       selectedAnswer = normalizedIncoming.selectedAnswer;
     }
   }
